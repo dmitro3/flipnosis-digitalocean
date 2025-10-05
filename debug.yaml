@@ -1,1690 +1,217 @@
-index-d152c56c.js:220 ✅ Rainbow Kit configuration created successfully
-index-d152c56c.js:220 Rainbow Kit Config: {chains: Array(7), projectId: undefined}
-index-d152c56c.js:220 🚀 Application starting... {timestamp: '2025-09-29T13:57:34.214Z', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', url: 'https://www.flipnosis.fun/battle-royale/br_1759153847759_6ab8a73c6f55b16a'}
-index-d152c56c.js:220 🔍 App.jsx - Starting render: {config: {…}, hasChains: true, chainsLength: 7, timestamp: '2025-09-29T13:57:34.221Z'}
-index-d152c56c.js:220 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1759153847759_6ab8a73c6f55b16a
-index-d152c56c.js:220 🔄 Loading game data for: br_1759153847759_6ab8a73c6f55b16a
-index-d152c56c.js:220 📑 Active tab changed to: game
-index-d152c56c.js:31 🔧 Initializing contract service from WalletContext...
-index-d152c56c.js:31 ✅ Contract service initialized with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-d152c56c.js:31 ✅ Contract service initialized successfully
-index-d152c56c.js:220 ✅ Game data loaded successfully
-index-d152c56c.js:212 Should use 3D: false Game phase: filling
-index-d152c56c.js:192 🔌 Connecting to Socket.io: wss://www.flipnosis.fun
-index-d152c56c.js:220 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1759153847759_6ab8a73c6f55b16a
-index-d152c56c.js:220 🔄 Game data already loaded for: br_1759153847759_6ab8a73c6f55b16a
-index-d152c56c.js:192 ✅ Socket.io connected
-index-d152c56c.js:192 📤 Emitted: join_room
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 Should use 3D: true Game phase: completed
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759153847759_6ab8a73c6f55b16a
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:168 🔍 Processing battle royale games: 0 total
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:212 🧹 Cleaning up BattleRoyaleGamePageTab
-index-d152c56c.js:168 🔍 Fetching data from: https://flipnosis.fun/api/listings
-index-d152c56c.js:168 🔍 Processing battle royale games: 0 total
-index-d152c56c.js:168 🔍 Processing battle royale games: 0 total
-index-d152c56c.js:168 📊 Listings response status: 200 
-index-d152c56c.js:168 ✅ Listings loaded: 0 items
-index-d152c56c.js:168 🔍 Fetching data from: https://flipnosis.fun/api/games
-index-d152c56c.js:168 📊 Games response status: 200 
-index-d152c56c.js:168 ✅ Games loaded: 0 items
-index-d152c56c.js:168 🔍 Fetching data from: https://flipnosis.fun/api/battle-royale
-index-d152c56c.js:168 📊 Battle Royale response status: 200 
-index-d152c56c.js:168 ✅ Battle Royale games loaded: 50 items
-index-d152c56c.js:168 🔍 Processing battle royale games: 50 total
-index-d152c56c.js:168 🔍 Battle royale game: br_1759153847759_6ab8a73c6f55b16a status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759153094224_3b075155f490fd45 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759151960995_28b44e11aadf13d8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759144720561_05935be582cd55fe status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759143535681_ea9682a25ca75ea2 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759055770483_5b8fbdc69f6d11b2 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759003522345_a14b2d2b5c2e93c1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758990514871_ed4ed3fbd4a9d988 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758984351206_28e514fc57896950 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758983592876_72d71e240a1e53ae status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758982629243_23462139a2f087c1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758981528963_2bc4f1e4d9603f7e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758980349527_946d513496d5a0dc status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758979235395_a61908290bf6bfa3 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758976729792_9252b42bba34d1ac status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758973214146_3779f77475b55ad9 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758972464935_92e5f9b5bf6e0718 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758971228772_6a96b1ad23c90264 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758970450998_8a1075551fbba2ef status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758969661231_8880815f0de2d13a status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758968745516_640ed3d65781e9de status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758918561672_61ac7b2018975e9d status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758909318418_10edf1827c0908d8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758906936952_a8ababed4d706885 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758906074289_d523fa5975bf60f7 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758905733102_444351fedfc66209 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758905262235_209e266d04355bd5 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758904426895_3f0fc90acaac79ae status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758896702091_0003b2b5592237f0 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758896439559_e11eb6d3d566bc02 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758895458848_0dc60e76cdb433e1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
-index-d152c56c.js:168 🔍 Processing battle royale games: 50 total
-index-d152c56c.js:168 🔍 Battle royale game: br_1759153847759_6ab8a73c6f55b16a status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759153094224_3b075155f490fd45 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759151960995_28b44e11aadf13d8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759144720561_05935be582cd55fe status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759143535681_ea9682a25ca75ea2 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759055770483_5b8fbdc69f6d11b2 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759003522345_a14b2d2b5c2e93c1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758990514871_ed4ed3fbd4a9d988 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758984351206_28e514fc57896950 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758983592876_72d71e240a1e53ae status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758982629243_23462139a2f087c1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758981528963_2bc4f1e4d9603f7e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758980349527_946d513496d5a0dc status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758979235395_a61908290bf6bfa3 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758976729792_9252b42bba34d1ac status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758973214146_3779f77475b55ad9 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758972464935_92e5f9b5bf6e0718 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758971228772_6a96b1ad23c90264 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758970450998_8a1075551fbba2ef status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758969661231_8880815f0de2d13a status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758968745516_640ed3d65781e9de status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758918561672_61ac7b2018975e9d status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758909318418_10edf1827c0908d8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758906936952_a8ababed4d706885 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758906074289_d523fa5975bf60f7 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758905733102_444351fedfc66209 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758905262235_209e266d04355bd5 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758904426895_3f0fc90acaac79ae status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758896702091_0003b2b5592237f0 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758896439559_e11eb6d3d566bc02 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758895458848_0dc60e76cdb433e1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
-index-d152c56c.js:168 🔍 Processing battle royale games: 50 total
-index-d152c56c.js:168 🔍 Battle royale game: br_1759153847759_6ab8a73c6f55b16a status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759153094224_3b075155f490fd45 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759151960995_28b44e11aadf13d8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759144720561_05935be582cd55fe status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759143535681_ea9682a25ca75ea2 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759055770483_5b8fbdc69f6d11b2 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759003522345_a14b2d2b5c2e93c1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758990514871_ed4ed3fbd4a9d988 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758984351206_28e514fc57896950 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758983592876_72d71e240a1e53ae status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758982629243_23462139a2f087c1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758981528963_2bc4f1e4d9603f7e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758980349527_946d513496d5a0dc status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758979235395_a61908290bf6bfa3 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758976729792_9252b42bba34d1ac status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758973214146_3779f77475b55ad9 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758972464935_92e5f9b5bf6e0718 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758971228772_6a96b1ad23c90264 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758970450998_8a1075551fbba2ef status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758969661231_8880815f0de2d13a status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758968745516_640ed3d65781e9de status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758918561672_61ac7b2018975e9d status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758909318418_10edf1827c0908d8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758906936952_a8ababed4d706885 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758906074289_d523fa5975bf60f7 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758905733102_444351fedfc66209 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758905262235_209e266d04355bd5 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758904426895_3f0fc90acaac79ae status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758896702091_0003b2b5592237f0 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758896439559_e11eb6d3d566bc02 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758895458848_0dc60e76cdb433e1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
-index-d152c56c.js:168 🔍 Processing battle royale games: 50 total
-index-d152c56c.js:168 🔍 Battle royale game: br_1759153847759_6ab8a73c6f55b16a status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759153094224_3b075155f490fd45 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759151960995_28b44e11aadf13d8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759144720561_05935be582cd55fe status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759143535681_ea9682a25ca75ea2 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759055770483_5b8fbdc69f6d11b2 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1759003522345_a14b2d2b5c2e93c1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758990514871_ed4ed3fbd4a9d988 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758984351206_28e514fc57896950 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758983592876_72d71e240a1e53ae status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758982629243_23462139a2f087c1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758981528963_2bc4f1e4d9603f7e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758980349527_946d513496d5a0dc status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758979235395_a61908290bf6bfa3 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758976729792_9252b42bba34d1ac status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758973214146_3779f77475b55ad9 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758972464935_92e5f9b5bf6e0718 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758971228772_6a96b1ad23c90264 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758970450998_8a1075551fbba2ef status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758969661231_8880815f0de2d13a status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758968745516_640ed3d65781e9de status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758918561672_61ac7b2018975e9d status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758909318418_10edf1827c0908d8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758906936952_a8ababed4d706885 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758906074289_d523fa5975bf60f7 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758905733102_444351fedfc66209 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758905262235_209e266d04355bd5 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758904426895_3f0fc90acaac79ae status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758896702091_0003b2b5592237f0 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758896439559_e11eb6d3d566bc02 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758895458848_0dc60e76cdb433e1 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
-index-d152c56c.js:168 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
-index-d152c56c.js:185 🏆 Battle Royale creation page loaded
-index-d152c56c.js:185 🔍 Wallet status: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', isConnected: true, chainId: 8453}
-index-d152c56c.js:31 📞 Manually loading NFTs for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-d152c56c.js:31 🚀 loadNFTs called with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-d152c56c.js:31 🔍 Current chain info: {chainId: 8453, currentChain: {…}, availableChains: Array(7)}
-index-d152c56c.js:31 🔍 Loading NFTs for: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', chain: 'Base', network: 'base-mainnet'}
-index-d152c56c.js:31 🎨 Total NFTs found: 21
-index-d152c56c.js:31 ✅ Loaded NFTs: 21
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiddueexahniaic5xxvj4krsbqtwvfvja3ctnjbgt3zhmr77x3z25y/image.webp
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieq4pxcymnusz7jjae7vn4ucpekhbzixfcs5tksda6wcmsx3xuud4/3919
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeibzsjsiwiy73paonxcno5wvcyhkaud3zfyix327etkldpta7vg3li/image.webp
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1312
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1307
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihf6jea44em5pp52dqhqu3z33axaafi32mgacwd64qanhzwk52vhm/2063
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3753
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3623
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihax46fzh6fx257325yuelpq74oyc2knm4en7g6xsw3u7njwp2nr4/1.png
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiajxidbvrf4pzugxelsuioy2quxlldziceuuwrrlfdlgz67yz4i4u/3531
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeic3by4zpmw4pfgisa2gqaoke4c5teisby623n3g3mqouufxf4zbpm/image.jpeg
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafkreib2amqj2zcewaw2sdtzjq27tyq6hcdiyv7ofp6ymiytqlf7t4gb7y
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1308
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiaa3l7kbebplqnnb7oqxpdkibcg3rgx24lq4rv55d75bwwcvmtzdm/9
-index-d152c56c.js:168 ✅ Image loaded successfully: https://i2.seadn.io/base/0xfe9117d6d0b973faae61d9a85a741ce41bd4bc80/e01891c370cd76c8a210c8c5fabac9/c1e01891c370cd76c8a210c8c5fabac9.png
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeid7syd6tj5iez5lzeg2efnqejcxh6rex6ln2saqbeuymijzdfuabm/2561
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicst6aup3a2kcbve45sw3od3cltpsewbf723hk43budowfq35tad4/2384
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicokheinuxbqhgrnzhpnplksgkyf4sm5it2mxz7plhp5vpvhumjrq/image.png
-index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiava3asjrljldv4t54hz46x7xbky6g7ap6v7vddifohl2szjv5p3e/4281.png
-2index-d152c56c.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmbhsSeehQgBiQB7BVgbBmoPUzWuwsiAm9Y9AXmZ4cyymr
-index-d152c56c.js:185 🎨 NFT selected for Battle Royale: {contractAddress: '0x4B8B400DDD95285733b111E2C249556bf76b552f', tokenId: '2063', name: 'CABC #2063', collection: 'Based CABC 2026', image: 'https://ipfs.io/ipfs/bafybeihf6jea44em5pp52dqhqu3z33axaafi32mgacwd64qanhzwk52vhm/2063', …}
-index-d152c56c.js:185 Sending Battle Royale request: {creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', nft_contract: '0x4B8B400DDD95285733b111E2C249556bf76b552f', nft_token_id: '2063', nft_name: 'CABC #2063', nft_image: 'https://ipfs.io/ipfs/bafybeihf6jea44em5pp52dqhqu3z33axaafi32mgacwd64qanhzwk52vhm/2063', …}
-index-d152c56c.js:185 ✅ Battle Royale game created: {success: true, gameId: 'br_1759154273695_26df058833b3182f', message: 'Battle Royale game created successfully'}
-index-d152c56c.js:31 🏆 Creating Battle Royale game: br_1759154273695_26df058833b3182f
-index-d152c56c.js:31 🔐 Approving NFT transfer...
-index-d152c56c.js:31 🔓 Approving NFT for transfer: {nftContract: '0x4B8B400DDD95285733b111E2C249556bf76b552f', tokenId: '2063'}
-index-d152c56c.js:31 🔓 NFT approval tx: 0xfa6587daa14a0350f5f787f220f57904b0efd04d36e6290911d68e29fb9555ce
-index-d152c56c.js:31 ✅ NFT approval confirmed
-index-d152c56c.js:31 ✅ NFT approval successful: 0xfa6587daa14a0350f5f787f220f57904b0efd04d36e6290911d68e29fb9555ce
-index-d152c56c.js:31 🏆 Battle Royale creation tx: 0x185bdfda9f1b547a70d2eafdcae47348b894658ab9587ac10de8386983096d91
-index-d152c56c.js:31 ✅ Battle Royale created successfully
-index-d152c56c.js:220 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1759154273695_26df058833b3182f
-index-d152c56c.js:220 🔄 Loading game data for: br_1759154273695_26df058833b3182f
-index-d152c56c.js:220 📑 Active tab changed to: details
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:220 ✅ Game data loaded successfully
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 ✅ Listener registered for: chat_message
-index-d152c56c.js:220 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1759154273695_26df058833b3182f
-index-d152c56c.js:220 🔄 Game data already loaded for: br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 📜 Loaded 0 chat messages for game br_1759154273695_26df058833b3182f
-index-d152c56c.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
-index-d152c56c.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
-index-d152c56c.js:31 🌐 Profile data received: {address: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
-index-d152c56c.js:192 💬 Sending chat message: {message: 'nbnv', from: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
-index-d152c56c.js:192 📤 Emitted: chat_message
-index-d152c56c.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-d152c56c.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
-index-d152c56c.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
-index-d152c56c.js:220 📑 Switching to tab: game (current tab: details)
-index-d152c56c.js:212 Should use 3D: false Game phase: filling
-index-d152c56c.js:192 🔄 Switching rooms from game_br_1759153847759_6ab8a73c6f55b16a to game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 🔌 Disconnecting Socket.io...
-index-d152c56c.js:192 🔌 Socket.io disconnected: io client disconnect
-index-d152c56c.js:192 🔌 Connecting to Socket.io: wss://www.flipnosis.fun
-index-d152c56c.js:220 📑 Active tab changed to: game
-index-d152c56c.js:192 ✅ Listener removed for: chat_message
-index-d152c56c.js:192 ✅ Socket.io connected
-index-d152c56c.js:192 📤 Emitted: join_room
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'filling', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: filling
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'filling', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: filling
-index-d152c56c.js:212 🚀 Start game button clicked! {gameId: 'br_1759154273695_26df058833b3182f', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', currentPlayers: 2, gameStatus: 'filling', isCreator: true}
-index-d152c56c.js:192 📤 Emitted: battle_royale_start_early
-index-d152c56c.js:212 🚀 Sent start game request to server
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 🚀 Battle Royale game starting: {gameId: 'br_1759154273695_26df058833b3182f', countdown: 3, message: 'Battle Royale starting in 3 seconds!'}
-index-d152c56c.js:212 📊 Game starting event received
-index-d152c56c.js:212 📊 Game status updated to: starting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:212 Should use 3D: true Game phase: revealing_target
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'starting', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: starting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'starting', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: starting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'starting', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: starting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'starting', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: starting
-index-d152c56c.js:212 Should use 3D: true Game phase: charging_power
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'starting', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: starting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'starting', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: starting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'revealing_target', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'revealing_target', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'revealing_target', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'revealing_target', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'revealing_target', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'revealing_target', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: executing_flips
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'waiting_choice', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: showing_result
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: completed
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: revealing_target
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: completed
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: revealing_target
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 Should use 3D: true Game phase: completed
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: revealing_target
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: completed
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: revealing_target
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: completed
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: revealing_target
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: completed
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: revealing_target
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-2index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 Should use 3D: true Game phase: completed
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'round_active', gamePhase: 'showing_result', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: in_progress
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-2index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-2index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-2index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-2index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-2index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-2index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener removed for: battle_royale_starting
-index-d152c56c.js:192 ✅ Already connected to room: game_br_1759154273695_26df058833b3182f
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_state_update
-index-d152c56c.js:192 ✅ Listener registered for: battle_royale_starting
-index-d152c56c.js:192 📤 Emitted: join_battle_royale_room
-index-d152c56c.js:192 📤 Emitted: request_battle_royale_state
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
-index-d152c56c.js:212 📊 Battle Royale state update received: {phase: 'completed', gamePhase: 'game_complete', status: undefined, currentPlayers: 2, playerSlots: 8}
-index-d152c56c.js:212 📊 Setting game status to: completed
-index-d152c56c.js:212 Game is completed, not redirecting
+🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'filling', currentPlayers: 1, …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'filling', currentPlayers: 2, …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 🪙 Slot clicked: 0 Player at slot: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', joinedAt: '2025-10-05T12:54:35.273Z', coin: {…}, choice: null, status: 'active'} Can join: false Address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-e94e5671.js:200 🪙 Opening coin selector for current user slot
+index-e94e5671.js:200 🪙 Loading custom coin for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-e94e5671.js:31 🪙 Getting coin heads image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-e94e5671.js:31 🌐 Fetching profile from: https://www.flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-e94e5671.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-e94e5671.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
+index-e94e5671.js:31 🪙 Profile loaded for heads: {hasProfile: true, hasHeadsImage: true, headsLength: 154182}
+index-e94e5671.js:31 🪙 Getting coin tails image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-e94e5671.js:31 🌐 Fetching profile from: https://www.flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-e94e5671.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-e94e5671.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
+index-e94e5671.js:31 🪙 Profile loaded for tails: {hasProfile: true, hasTailsImage: true, tailsLength: 103006}
+index-e94e5671.js:200 🪙 Custom coin loaded: {hasHeads: true, hasTails: true, headsLength: 154182, tailsLength: 103006}
+index-e94e5671.js:200 🪙 Coin selected: {id: 'mario', type: 'default', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png'}
+index-e94e5671.js:200 🪙 Sending optimized coin to parent: {id: 'mario', type: 'default', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png'}
+index-e94e5671.js:200 🪙 Coin selected: {id: 'mario', type: 'default', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png'} Selected slot: 0 Current address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-e94e5671.js:192 📤 Emitted: battle_royale_update_coin
+index-e94e5671.js:200 🪙 Sent coin update to server: {id: 'mario', type: 'default', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png'}
+index-e94e5671.js:192 ✅ Listener removed for: battle_royale_state_update
+index-e94e5671.js:192 ✅ Listener removed for: battle_royale_starting
+index-e94e5671.js:192 ✅ Already connected to room: game_br_1759668853538_499a6795aabde088
+index-e94e5671.js:192 ✅ Listener registered for: battle_royale_state_update
+index-e94e5671.js:192 ✅ Listener registered for: battle_royale_starting
+index-e94e5671.js:192 📤 Emitted: join_battle_royale_room
+index-e94e5671.js:192 📤 Emitted: request_battle_royale_state
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:192 ✅ Listener removed for: battle_royale_state_update
+index-e94e5671.js:192 ✅ Listener removed for: battle_royale_starting
+index-e94e5671.js:192 ✅ Already connected to room: game_br_1759668853538_499a6795aabde088
+index-e94e5671.js:192 ✅ Listener registered for: battle_royale_state_update
+index-e94e5671.js:192 ✅ Listener registered for: battle_royale_starting
+index-e94e5671.js:192 📤 Emitted: join_battle_royale_room
+index-e94e5671.js:192 📤 Emitted: request_battle_royale_state
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 🚀 Creator starting game early {gameId: 'br_1759668853538_499a6795aabde088', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-e94e5671.js:192 📤 Emitted: battle_royale_start_early
+index-e94e5671.js:200 🚀 Game starting: {gameId: 'br_1759668853538_499a6795aabde088', countdown: 3, message: 'Battle Royale starting in 3 seconds!'}
+index-e94e5671.js:200 🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'starting', currentPlayers: 2, …}
+index-e94e5671.js:192 ✅ Listener removed for: battle_royale_state_update
+index-e94e5671.js:192 ✅ Listener removed for: battle_royale_starting
+index-e94e5671.js:192 ✅ Already connected to room: game_br_1759668853538_499a6795aabde088
+index-e94e5671.js:192 ✅ Listener registered for: battle_royale_state_update
+index-e94e5671.js:192 ✅ Listener registered for: battle_royale_starting
+index-e94e5671.js:192 📤 Emitted: join_battle_royale_room
+index-e94e5671.js:192 📤 Emitted: request_battle_royale_state
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'starting', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'starting', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'in_progress', currentPlayers: 2, …}
+index-e94e5671.js:192 ✅ Listener removed for: battle_royale_state_update
+index-e94e5671.js:192 ✅ Listener removed for: battle_royale_starting
+index-e94e5671.js:192 ✅ Already connected to room: game_br_1759668853538_499a6795aabde088
+index-e94e5671.js:192 ✅ Listener registered for: battle_royale_state_update
+index-e94e5671.js:192 ✅ Listener registered for: battle_royale_starting
+index-e94e5671.js:192 📤 Emitted: join_battle_royale_room
+index-e94e5671.js:192 📤 Emitted: request_battle_royale_state
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+
+aND PLAYER 2
+SES Removing unpermitted intrinsics lockdown-install.js:1:203117
+🪙 Sending optimized coin to parent: 
+Object { id: "manga", type: "default", name: "Heroine", headsImage: "/coins/mangah.png", tailsImage: "/coins/mangat.png" }
+index-e94e5671.js:200:5092
+🪙 Coin selected: 
+Object { id: "manga", type: "default", name: "Heroine", headsImage: "/coins/mangah.png", tailsImage: "/coins/mangat.png" }
+ Selected slot: 1 Current address: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-e94e5671.js:200:18367
+📤 Emitted: battle_royale_update_coin index-e94e5671.js:192:85054
+🪙 Sent coin update to server: 
+Object { id: "manga", type: "default", name: "Heroine", headsImage: "/coins/mangah.png", tailsImage: "/coins/mangat.png" }
+index-e94e5671.js:200:18679
+✅ Listener removed for: battle_royale_state_update index-e94e5671.js:192:85272
+✅ Listener removed for: battle_royale_starting index-e94e5671.js:192:85272
+✅ Already connected to room: game_br_1759668853538_499a6795aabde088 index-e94e5671.js:192:83618
+✅ Listener registered for: battle_royale_state_update index-e94e5671.js:192:85183
+✅ Listener registered for: battle_royale_starting index-e94e5671.js:192:85183
+📤 Emitted: join_battle_royale_room index-e94e5671.js:192:85054
+📤 Emitted: request_battle_royale_state index-e94e5671.js:192:85054
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
+index-e94e5671.js:200:12500
+✅ Listener removed for: battle_royale_state_update index-e94e5671.js:192:85272
+✅ Listener removed for: battle_royale_starting index-e94e5671.js:192:85272
+✅ Already connected to room: game_br_1759668853538_499a6795aabde088 index-e94e5671.js:192:83618
+✅ Listener registered for: battle_royale_state_update index-e94e5671.js:192:85183
+✅ Listener registered for: battle_royale_starting index-e94e5671.js:192:85183
+📤 Emitted: join_battle_royale_room index-e94e5671.js:192:85054
+📤 Emitted: request_battle_royale_state index-e94e5671.js:192:85054
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
+index-e94e5671.js:200:12500
+🚀 Game starting: 
+Object { gameId: "br_1759668853538_499a6795aabde088", countdown: 3, message: "Battle Royale starting in 3 seconds!" }
+index-e94e5671.js:200:13145
+🎮 Join eligibility: 
+Object { address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", hasAddress: true, userAlreadyJoined: true, gameStatus: "starting", currentPlayers: 2, isCreator: false, creatorParticipates: true, isCreatorAndParticipating: false, canJoin: false }
+index-e94e5671.js:200:15647
+✅ Listener removed for: battle_royale_state_update index-e94e5671.js:192:85272
+✅ Listener removed for: battle_royale_starting index-e94e5671.js:192:85272
+✅ Already connected to room: game_br_1759668853538_499a6795aabde088 index-e94e5671.js:192:83618
+✅ Listener registered for: battle_royale_state_update index-e94e5671.js:192:85183
+✅ Listener registered for: battle_royale_starting index-e94e5671.js:192:85183
+📤 Emitted: join_battle_royale_room index-e94e5671.js:192:85054
+📤 Emitted: request_battle_royale_state index-e94e5671.js:192:85054
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "starting", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "starting", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+🎮 Join eligibility: 
+Object { address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", hasAddress: true, userAlreadyJoined: true, gameStatus: "in_progress", currentPlayers: 2, isCreator: false, creatorParticipates: true, isCreatorAndParticipating: false, canJoin: false }
+index-e94e5671.js:200:15647
+✅ Listener removed for: battle_royale_state_update index-e94e5671.js:192:85272
+✅ Listener removed for: battle_royale_starting index-e94e5671.js:192:85272
+✅ Already connected to room: game_br_1759668853538_499a6795aabde088 index-e94e5671.js:192:83618
+✅ Listener registered for: battle_royale_state_update index-e94e5671.js:192:85183
+✅ Listener registered for: battle_royale_starting index-e94e5671.js:192:85183
+📤 Emitted: join_battle_royale_room index-e94e5671.js:192:85054
+📤 Emitted: request_battle_royale_state index-e94e5671.js:192:85054
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+🔄 Page became visible, refreshing ETH price cache index-e94e5671.js:31:75996
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
+index-e94e5671.js:200:12500
+📊 Lobby state update: 
+Object { gameId: "br_1759668853538_499a6795aabde088", phase: "eliminating", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: [], eliminatedPlayers: (2) […], currentRound: 1, … }
+index-e94e5671.js:200:12500

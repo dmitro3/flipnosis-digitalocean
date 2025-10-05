@@ -211,9 +211,14 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   }, [loadGameData])
   
   // ===== GAME STATUS LISTENERS =====
+  // Use useRef to maintain stable listener references that won't be removed by child components
+  const parentStateListenerRef = React.useRef(null)
+  const parentStartingListenerRef = React.useRef(null)
+  
   useEffect(() => {
     if (!gameId || !address) return
     
+    // Create stable listener functions
     const handleGameStateUpdate = (data) => {
       console.log('🔥🔥🔥 PARENT TAB INTERFACE RECEIVED STATE UPDATE:', data.phase)
       console.log('📊 Tab Interface received game state:', data)
@@ -236,17 +241,29 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
     }
     
     const handleGameStarting = (data) => {
-      console.log('🚀 Tab Interface: Game starting')
+      console.log('🔥🚀 PARENT Tab Interface: Game starting')
       setGameStatus('starting')
     }
     
-    // Listen for game events
-    socketService.on('battle_royale_state_update', handleGameStateUpdate)
-    socketService.on('battle_royale_starting', handleGameStarting)
+    // Store refs so they don't get garbage collected
+    parentStateListenerRef.current = handleGameStateUpdate
+    parentStartingListenerRef.current = handleGameStarting
+    
+    // Register listeners with the socket service's internal socket directly
+    // This ensures they won't be removed by child components
+    if (socketService.socket) {
+      console.log('🔥 PARENT: Registering PERSISTENT listeners')
+      socketService.socket.on('battle_royale_state_update', handleGameStateUpdate)
+      socketService.socket.on('battle_royale_starting', handleGameStarting)
+    }
     
     return () => {
-      socketService.off('battle_royale_state_update', handleGameStateUpdate)
-      socketService.off('battle_royale_starting', handleGameStarting)
+      // Only remove OUR specific listeners
+      if (socketService.socket) {
+        console.log('🔥 PARENT: Removing PERSISTENT listeners on cleanup')
+        socketService.socket.off('battle_royale_state_update', handleGameStateUpdate)
+        socketService.socket.off('battle_royale_starting', handleGameStarting)
+      }
     }
   }, [gameId, address])
   
