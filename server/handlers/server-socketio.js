@@ -1,6 +1,5 @@
 const socketIO = require('socket.io')
 const BattleRoyaleGameManager = require('../BattleRoyaleGameManager')
-const BattleRoyaleSocketHandlers = require('../BattleRoyaleSocketHandlers')
 const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
 
 // ===== CLEAN SERVER ARCHITECTURE =====
