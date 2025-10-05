@@ -1,0 +1,427 @@
+import React, { useState, useCallback } from 'react'
+import styled from '@emotion/styled'
+import { ethers } from 'ethers'
+import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
+import { useWallet } from '../../contexts/WalletContext'
+import { useToast } from '../../contexts/ToastContext'
+import contractService from '../../services/ContractService'
+import ProfilePicture from '../ProfilePicture'
+import CoinSelector from '../CoinSelector'
+
+const Container = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
+  
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+`
+
+const NFTPanel = styled.div`
+  background: rgba(0, 0, 40, 0.8);
+  border: 2px solid #FF1493;
+  border-radius: 1rem;
+  padding: 2rem;
+  backdrop-filter: blur(15px);
+  height: fit-content;
+`
+
+const NFTImage = styled.img`
+  width: 100%;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+`
+
+const InfoRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+`
+
+const GamePanel = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+`
+
+const StatusBar = styled.div`
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #00ff88;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+  color: white;
+  
+  h2 {
+    color: #00ff88;
+    margin: 0 0 0.5rem 0;
+  }
+`
+
+const PlayerGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #FF1493;
+  border-radius: 1rem;
+  padding: 2rem;
+  min-height: 400px;
+`
+
+const PlayerSlot = styled.div`
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  padding: 1rem;
+  background: ${props => {
+    if (props.occupied) {
+      return props.isCurrentUser 
+        ? 'linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 204, 106, 0.2))'
+        : 'linear-gradient(135deg, rgba(0, 191, 255, 0.2), rgba(138, 43, 226, 0.2))'
+    }
+    return 'rgba(255, 255, 255, 0.05)'
+  }};
+  border: 3px solid ${props => {
+    if (props.occupied) {
+      return props.isCurrentUser ? '#00ff88' : '#00bfff'
+    }
+    return 'rgba(255, 255, 255, 0.2)'
+  }};
+  cursor: ${props => props.canJoin ? 'pointer' : 'default'};
+  transition: all 0.3s ease;
+  position: relative;
+  
+  &:hover {
+    ${props => props.canJoin && `
+      border-color: #ff1493;
+      background: rgba(255, 20, 147, 0.1);
+      transform: translateY(-5px);
+    `}
+  }
+`
+
+const CoinDisplay = styled.div`
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #FFD700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  background: radial-gradient(circle, #FFD700, #FFA500);
+  cursor: ${props => props.clickable ? 'pointer' : 'default'};
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`
+
+const ActionButton = styled.button`
+  background: linear-gradient(135deg, #ff1493, #ff69b4);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 2rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(255, 20, 147, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`
+
+const CoinChangeButton = styled.button`
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+  
+  &:hover {
+    background: linear-gradient(135deg, #FFA500, #FF8C00);
+    transform: translateY(-2px);
+  }
+`
+
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+`
+
+const ModalContent = styled.div`
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid #FFD700;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+`
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #FFD700;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  
+  &:hover {
+    color: #ff6b6b;
+  }
+`
+
+const LobbyScreen = () => {
+  const { gameState, playerCoinImages, address, updateCoin, startGameEarly } = useBattleRoyaleGame()
+  const { isContractInitialized } = useWallet()
+  const { showToast } = useToast()
+  
+  const [isJoining, setIsJoining] = useState(false)
+  const [showCoinSelector, setShowCoinSelector] = useState(false)
+  const [selectedSlotAddress, setSelectedSlotAddress] = useState(null)
+  const [coinSides, setCoinSides] = useState({}) // Track heads/tails display
+
+  if (!gameState) return null
+
+  const isCreator = gameState.creator?.toLowerCase() === address?.toLowerCase()
+  const userInGame = gameState.playerSlots?.some(addr => addr?.toLowerCase() === address?.toLowerCase())
+  const canJoin = !userInGame && gameState.currentPlayers < 6
+
+  const handleJoinGame = async () => {
+    if (!isContractInitialized || !contractService) {
+      showToast('Connect your wallet first', 'error')
+      return
+    }
+
+    setIsJoining(true)
+    try {
+      showToast('Opening MetaMask...', 'info')
+      
+      const totalPrize = parseFloat(gameState.entryFee || 0)
+      const entryFeeUSD = totalPrize / 6
+      const serviceFeeUSD = parseFloat(gameState.serviceFee || 0)
+      const totalAmountUSD = entryFeeUSD + serviceFeeUSD
+      
+      const totalAmountETHWei = await contractService.getETHAmount(totalAmountUSD)
+      const totalAmountETH = ethers.formatEther(totalAmountETHWei)
+      
+      const result = await contractService.joinBattleRoyale(gameState.gameId, totalAmountETH)
+      
+      if (result.success) {
+        showToast('Successfully joined!', 'success')
+      } else {
+        throw new Error(result.error || 'Failed to join')
+      }
+    } catch (error) {
+      console.error('Join error:', error)
+      showToast(`Failed to join: ${error.message}`, 'error')
+    } finally {
+      setIsJoining(false)
+    }
+  }
+
+  const handleCoinClick = (playerAddress) => {
+    if (playerAddress?.toLowerCase() === address?.toLowerCase()) {
+      setSelectedSlotAddress(playerAddress)
+      setShowCoinSelector(true)
+    } else {
+      // Toggle coin side for viewing
+      const key = playerAddress?.toLowerCase()
+      setCoinSides(prev => ({
+        ...prev,
+        [key]: prev[key] === 'tailsImage' ? 'headsImage' : 'tailsImage'
+      }))
+    }
+  }
+
+  const handleCoinSelect = (coinData) => {
+    updateCoin(coinData)
+    setShowCoinSelector(false)
+    setSelectedSlotAddress(null)
+  }
+
+  const formatAddress = (addr) => {
+    if (!addr) return ''
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  }
+
+  return (
+    <Container>
+      {/* LEFT: NFT INFO */}
+      <NFTPanel>
+        <h2 style={{ color: '#FF1493', marginTop: 0 }}>🎨 NFT Prize</h2>
+        <NFTImage src={gameState.nftImage} alt={gameState.nftName} />
+        <InfoRow>
+          <span>Name:</span>
+          <strong>{gameState.nftName}</strong>
+        </InfoRow>
+        <InfoRow>
+          <span>Collection:</span>
+          <strong>{gameState.nftCollection}</strong>
+        </InfoRow>
+        <InfoRow>
+          <span>Entry Fee:</span>
+          <strong style={{ color: '#00ff88' }}>${gameState.entryFee}</strong>
+        </InfoRow>
+        <InfoRow>
+          <span>Creator:</span>
+          <strong>{formatAddress(gameState.creator)}</strong>
+        </InfoRow>
+      </NFTPanel>
+
+      {/* RIGHT: GAME AREA */}
+      <GamePanel>
+        <StatusBar>
+          <h2>⏳ Waiting for Players</h2>
+          <p style={{ fontSize: '1.2rem', margin: 0 }}>
+            {gameState.currentPlayers} / 6 Players
+          </p>
+          {isCreator && gameState.currentPlayers >= 2 && (
+            <ActionButton
+              onClick={startGameEarly}
+              style={{ marginTop: '1rem', background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
+            >
+              🚀 Start Game Early ({gameState.currentPlayers}/6)
+            </ActionButton>
+          )}
+        </StatusBar>
+
+        <PlayerGrid>
+          {Array.from({ length: 6 }, (_, i) => {
+            const playerAddr = gameState.playerSlots?.[i]
+            const player = playerAddr ? gameState.players?.[playerAddr.toLowerCase()] : null
+            const isCurrentUser = playerAddr?.toLowerCase() === address?.toLowerCase()
+            const images = playerAddr ? playerCoinImages[playerAddr.toLowerCase()] : null
+            const side = coinSides[playerAddr?.toLowerCase()] || 'headsImage'
+
+            return (
+              <PlayerSlot
+                key={i}
+                occupied={!!player}
+                isCurrentUser={isCurrentUser}
+                canJoin={!player && canJoin}
+                onClick={() => !player && canJoin && handleJoinGame()}
+              >
+                <div style={{
+                  position: 'absolute',
+                  top: '0.5rem',
+                  left: '0.5rem',
+                  color: '#aaa',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold'
+                }}>
+                  {i + 1}
+                </div>
+
+                {player ? (
+                  <>
+                    <CoinDisplay clickable onClick={() => handleCoinClick(playerAddr)}>
+                      {images ? (
+                        <img src={images[side]} alt="coin" />
+                      ) : (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          width: '100%',
+                          height: '100%',
+                          fontSize: '3rem'
+                        }}>🪙</div>
+                      )}
+                    </CoinDisplay>
+                    
+                    <div style={{ color: 'white', fontSize: '0.7rem', textAlign: 'center' }}>
+                      {formatAddress(playerAddr)}
+                    </div>
+                    
+                    {player.isCreator && (
+                      <div style={{ color: '#FFD700', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                        👑 Creator
+                      </div>
+                    )}
+                    
+                    {isCurrentUser && (
+                      <CoinChangeButton onClick={() => handleCoinClick(playerAddr)}>
+                        Change Coin
+                      </CoinChangeButton>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ color: '#FF1493', fontSize: '0.9rem', fontWeight: 'bold', textAlign: 'center' }}>
+                    {canJoin ? '➕ Click to Join' : 'Waiting...'}
+                  </div>
+                )}
+              </PlayerSlot>
+            )
+          })}
+        </PlayerGrid>
+
+        {!userInGame && canJoin && (
+          <ActionButton onClick={handleJoinGame} disabled={isJoining}>
+            {isJoining ? 'Joining...' : '🎮 Join Battle Royale'}
+          </ActionButton>
+        )}
+      </GamePanel>
+
+      {/* COIN SELECTOR MODAL */}
+      {showCoinSelector && (
+        <Modal>
+          <ModalContent>
+            <CloseButton onClick={() => setShowCoinSelector(false)}>×</CloseButton>
+            <h2 style={{ color: '#FFD700', textAlign: 'center', marginBottom: '1rem' }}>
+              Choose Your Coin
+            </h2>
+            <CoinSelector
+              selectedCoin={gameState.players?.[selectedSlotAddress?.toLowerCase()]?.coin}
+              onCoinSelect={handleCoinSelect}
+              showCustomOption={true}
+            />
+          </ModalContent>
+        </Modal>
+      )}
+    </Container>
+  )
+}
+
+export default LobbyScreen

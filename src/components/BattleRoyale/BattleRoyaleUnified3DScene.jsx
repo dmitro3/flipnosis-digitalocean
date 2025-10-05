@@ -1,57 +1,37 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useCallback } from 'react'
 import * as THREE from 'three'
 
 const globalTextureCache = new Map()
-
-// Power configurations for optimized rendering
-const powerConfigs = [
-  { minFlips: 5, duration: 2000, speed: 1 },
-  { minFlips: 6, duration: 3000, speed: 1.2 },
-  { minFlips: 7, duration: 4000, speed: 1.4 },
-  { minFlips: 8, duration: 5000, speed: 1.6 },
-  { minFlips: 9, duration: 6000, speed: 1.8 },
-  { minFlips: 10, duration: 7000, speed: 2 },
-  { minFlips: 12, duration: 8000, speed: 2.3 },
-  { minFlips: 14, duration: 10000, speed: 2.6 },
-  { minFlips: 16, duration: 12000, speed: 3 },
-  { minFlips: 20, duration: 15000, speed: 3.5 }
-];
 
 const BattleRoyaleUnified3DScene = ({
   players = [],
   gamePhase = 'filling',
   serverState = null,
-  flipStates = {},
   playerCoinImages = {},
-  currentUserAddress = null,
-  onFlipComplete = () => {}
+  currentUserAddress = null
 }) => {
   const mountRef = useRef(null)
   const sceneRef = useRef(null)
   const rendererRef = useRef(null)
   const cameraRef = useRef(null)
-  const coinsRef = useRef([]) // Array of 6 coin meshes in 3x2 grid
-  const textureCache = useRef({})
+  const coinsRef = useRef([]) // 6 coins
+  const coinStatesRef = useRef([]) // Animation states
   const animationIdRef = useRef(null)
-  const coinStatesRef = useRef([]) // Track animation state for each coin
 
-  // Fixed 3x2 grid layout for all players - moved to component scope
+  // Fixed 3x2 grid positions
   const coinPositions = [
-    // Top row (3 coins) - increased y from 3 to 4
     { x: -8, y: 4, z: 0, scale: 1 },    // Top left
-    { x: 0, y: 4, z: 0, scale: 1 },     // Top center  
+    { x: 0, y: 4, z: 0, scale: 1 },     // Top center
     { x: 8, y: 4, z: 0, scale: 1 },     // Top right
-    // Bottom row (3 coins) - decreased y from -3 to -4
     { x: -8, y: -4, z: 0, scale: 1 },   // Bottom left
     { x: 0, y: -4, z: 0, scale: 1 },    // Bottom center
-    { x: 8, y: -4, z: 0, scale: 1 },    // Bottom right
+    { x: 8, y: -4, z: 0, scale: 1 }     // Bottom right
   ]
 
-  // Optimized texture creation with global caching
-  const createOptimizedTexture = useCallback((type, customImage = null) => {
+  // Create optimized texture
+  const createTexture = useCallback((type, customImage = null) => {
     const cacheKey = `${type}-${customImage || 'default'}`
     
-    // Check global cache first
     if (globalTextureCache.has(cacheKey)) {
       return globalTextureCache.get(cacheKey)
     }
@@ -65,10 +45,11 @@ const BattleRoyaleUnified3DScene = ({
         globalTextureCache.set(cacheKey, texture)
         return texture
       } catch (error) {
-        console.error(`❌ Error loading custom texture: ${customImage}`, error)
+        console.error('Error loading texture:', customImage, error)
       }
     }
 
+    // Generate default texture
     const size = 512
     const canvas = document.createElement('canvas')
     canvas.width = size
@@ -78,18 +59,9 @@ const BattleRoyaleUnified3DScene = ({
     if (type === 'edge') {
       ctx.fillStyle = '#F8F8F8'
       ctx.fillRect(0, 0, size, size)
-      ctx.strokeStyle = '#E0E0E0'
-      ctx.lineWidth = 2
-      for (let i = 0; i < size; i += 12) {
-        ctx.beginPath()
-        ctx.moveTo(i, 0)
-        ctx.lineTo(i, size)
-        ctx.stroke()
-      }
     } else if (type === 'heads') {
       const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
       gradient.addColorStop(0, '#FFD700')
-      gradient.addColorStop(0.5, '#FFA500')
       gradient.addColorStop(1, '#FF8C00')
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, size, size)
@@ -101,7 +73,6 @@ const BattleRoyaleUnified3DScene = ({
     } else if (type === 'tails') {
       const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
       gradient.addColorStop(0, '#E5E5E5')
-      gradient.addColorStop(0.5, '#C0C0C0')
       gradient.addColorStop(1, '#A0A0A0')
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, size, size)
@@ -110,8 +81,6 @@ const BattleRoyaleUnified3DScene = ({
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('T', size/2, size/2)
-    } else {
-      ctx.clearRect(0, 0, size, size)
     }
 
     const texture = new THREE.CanvasTexture(canvas)
@@ -121,47 +90,18 @@ const BattleRoyaleUnified3DScene = ({
     return texture
   }, [])
 
-  // Initialize Three.js scene with 6 coins in 3x2 grid
+  // Initialize scene
   useEffect(() => {
     if (!mountRef.current || sceneRef.current) return
 
-    console.log('🎬 Creating unified Battle Royale 3D scene')
-    console.log('📊 Players data:', players)
-    console.log('🖼️ Player coin images:', playerCoinImages)
-    
-    // Clear any existing scene
-    if (sceneRef.current) {
-      // Properly dispose of existing scene
-      const scene = sceneRef.current
-      scene.traverse((child) => {
-        if (child.geometry) {
-          child.geometry.dispose()
-        }
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(material => {
-              if (material.map) material.map.dispose()
-              material.dispose()
-            })
-          } else {
-            if (child.material.map) child.material.map.dispose()
-            child.material.dispose()
-          }
-        }
-      })
-      scene.clear()
-    }
+    console.log('🎬 Initializing 3D scene')
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(50, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 1000)
     camera.position.set(0, 0, 25)
     camera.lookAt(0, 0, 0)
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: 'high-performance'
-    })
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
     renderer.setClearColor(0x000000, 0)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -171,235 +111,84 @@ const BattleRoyaleUnified3DScene = ({
     rendererRef.current = renderer
     cameraRef.current = camera
 
-    // Enhanced lighting for optimal coin rendering
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.3)
-    scene.add(ambientLight)
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 1.3))
+    const directional = new THREE.DirectionalLight(0xffffff, 1.0)
+    directional.position.set(5, 5, 5)
+    scene.add(directional)
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
-    directionalLight.position.set(5, 5, 5)
-    scene.add(directionalLight)
-
-    const spotLight = new THREE.SpotLight(0xffffff, 0.6)
-    spotLight.position.set(0, 10, 5)
-    spotLight.angle = Math.PI / 6
-    spotLight.penumbra = 0.1
-    spotLight.decay = 2
-    spotLight.distance = 20
-    scene.add(spotLight)
-
-    const fillLight = new THREE.DirectionalLight(0xFFFFFF, 0.4)
-    fillLight.position.set(0, -3, 5)
-    scene.add(fillLight)
-
-    // Create coins only for actual players (not empty slots)
-    const numPlayers = players.filter(p => p?.address).length
-    
-    // Only create coins for players that actually exist
-    const activePlayers = players.filter(p => p?.address)
-    console.log(`🎯 Creating ${activePlayers.length} coins for active players`)
-
+    // Create 6 coin slots
     for (let i = 0; i < 6; i++) {
-      const player = players[i]
+      const materials = [
+        new THREE.MeshStandardMaterial({ map: createTexture('edge'), metalness: 0.3, roughness: 0.2 }),
+        new THREE.MeshStandardMaterial({ map: createTexture('heads'), metalness: 0.3, roughness: 0.2 }),
+        new THREE.MeshStandardMaterial({ map: createTexture('tails'), metalness: 0.3, roughness: 0.2 })
+      ]
+
+      const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 48)
+      const coin = new THREE.Mesh(geometry, materials)
       
-      if (player?.address) {
-        const playerAddressLower = player.address.toLowerCase()
-        const coinImages = playerCoinImages[playerAddressLower]
-        
-        console.log(`🪙 Creating coin ${i} for player ${player.address}:`, {
-          address: player.address,
-          addressLower: playerAddressLower,
-          coinImages: coinImages,
-          availableImages: Object.keys(playerCoinImages)
-        })
-        
-        const materials = [
-          new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('edge'),
-            metalness: 0.3,
-            roughness: 0.2,
-            color: 0xFFFFFF,
-            emissive: 0x222222,
-            emissiveIntensity: 0.1
-          }),
-          new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('heads', coinImages?.headsImage || '/coins/plainh.png'),
-            metalness: 0.3,
-            roughness: 0.2,
-            color: 0xFFFFFF,
-            emissive: 0x222222,
-            emissiveIntensity: 0.1
-          }),
-          new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('tails', coinImages?.tailsImage || '/coins/plaint.png'),
-            metalness: 0.3,
-            roughness: 0.2,
-            color: 0xFFFFFF,
-            emissive: 0x222222,
-            emissiveIntensity: 0.1
-          })
-        ]
-
-        // Detect device performance
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-        const segments = isMobile ? 32 : 48
-        
-        const geometry = new THREE.CylinderGeometry(3, 3, 0.4, segments)
-        const coin = new THREE.Mesh(geometry, materials)
-        
-        const posData = coinPositions[i]
-        coin.position.set(posData.x, posData.y, posData.z)
-        // Make the coin edge thicker so it looks good standing up
-        coin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
-        // Make coin stand on edge like a wheel - correct orientation
-        coin.rotation.x = Math.PI // Flip to show heads face up initially
-        coin.rotation.y = Math.PI / 2 // Rotated 90 degrees for proper facing
-        coin.rotation.z = 0 // No tilt
-
-        scene.add(coin)
-        coinsRef.current[i] = coin
-
-        // Initialize coin state
-        coinStatesRef.current[i] = {
-          isFlipping: false,
-          flipStartTime: null,
-          flipDuration: 2000,
-          flipResult: null,
-          startRotation: { x: 0, y: Math.PI / 2, z: 0 },
-          targetRotation: 0,
-          isCharging: false,
-          power: 0
-        }
-      } else {
-        coinsRef.current[i] = null
-        coinStatesRef.current[i] = null
-      }
-    }
-
-    // Clear any leftover coins - keep only 6 coins
-    coinsRef.current = coinsRef.current.slice(0, 6)
-    coinStatesRef.current = coinStatesRef.current.slice(0, 6)
-
-    // Create visual frames for each coin slot
-    for (let i = 0; i < 6; i++) {
       const pos = coinPositions[i]
-      const player = players[i]
-      
-      // Only create frame if player exists
-      if (player?.address) {
-        const frameGeometry = new THREE.BoxGeometry(5, 5, 0.1)
-        const edges = new THREE.EdgesGeometry(frameGeometry)
-        const frameMaterial = new THREE.LineBasicMaterial({ 
-          color: 0x00ff88,
-          linewidth: 1,
-          opacity: 0.3,
-          transparent: true
-        })
-        const frame = new THREE.LineSegments(edges, frameMaterial)
-        frame.position.set(pos.x, pos.y, pos.z - 2)
-        scene.add(frame)
+      coin.position.set(pos.x, pos.y, pos.z)
+      coin.scale.set(pos.scale, 1.5 * pos.scale, pos.scale)
+      coin.rotation.x = Math.PI
+      coin.rotation.y = Math.PI / 2
+      coin.visible = false // Hide until player joins
+
+      scene.add(coin)
+      coinsRef.current[i] = coin
+      coinStatesRef.current[i] = {
+        isFlipping: false,
+        flipStartTime: null,
+        flipDuration: 2000,
+        flipResult: null
       }
     }
 
-    // Animation loop with adaptive frame rate
-    let lastFrameTime = 0
-    const targetFrameTime = 1000 / 30 // 30 FPS default
-
+    // Animation loop
     const animate = (currentTime) => {
       if (!sceneRef.current || !rendererRef.current) return
 
-      // Adaptive frame rate
-      const deltaTime = currentTime - lastFrameTime
-      
-      // Determine target FPS based on activity
-      let targetFPS = 30 // Default: 30 FPS
-      
-      const hasFlippingCoins = coinStatesRef.current.some(state => state?.isFlipping)
-      if (hasFlippingCoins) {
-        targetFPS = 60 // During flips: 60 FPS
-      }
-      
-      const frameInterval = 1000 / targetFPS
-      
-      if (deltaTime >= frameInterval) {
-        lastFrameTime = currentTime - (deltaTime % frameInterval)
+      const time = currentTime * 0.001
+
+      coinsRef.current.forEach((coin, index) => {
+        if (!coin || !coin.visible) return
         
-        const time = currentTime * 0.001
+        const state = coinStatesRef.current[index]
+        const pos = coinPositions[index]
 
-        // Update each coin
-        coinsRef.current.forEach((coin, index) => {
-          if (!coin) return
+        if (state.isFlipping) {
+          const elapsed = currentTime - state.flipStartTime
+          const progress = Math.min(elapsed / state.flipDuration, 1)
+          const easeOut = 1 - Math.pow(1 - progress, 3)
           
-          const state = coinStatesRef.current[index]
-          if (!state) return
+          // Flip animation
+          const heightProgress = Math.sin(progress * Math.PI)
+          coin.position.y = pos.y + (heightProgress * 2.5)
+          coin.position.z = pos.z + (Math.sin(progress * Math.PI) * 2)
+          coin.rotation.x += 0.3
           
-          const player = players[index]
-          if (!player?.address) return
-          
-          const posData = coinPositions[index]
-
-          if (state.isFlipping) {
-            // Flip animation
-            const elapsed = currentTime - state.flipStartTime
-            const progress = Math.min(elapsed / state.flipDuration, 1)
-            const easeOut = 1 - Math.pow(1 - progress, 3)
-            
-            const heightProgress = Math.sin(progress * Math.PI)
-            const launchHeight = 2.5
-            coin.position.y = posData.y + (heightProgress * launchHeight)
-            
-            // Forward spinning animation - coins spin towards viewer
-            const totalRotation = 10 * Math.PI * 2
-            coin.rotation.x = state.startRotation.x + (totalRotation * easeOut)
-            
-            // Add forward motion effect
-            const forwardProgress = Math.sin(progress * Math.PI)
-            coin.position.z = posData.z + (forwardProgress * 2) // Move towards viewer
-            
-            const wobbleAmount = 0.1 * Math.sin(elapsed * 0.01) * (1 - progress)
-            coin.rotation.y = Math.PI / 2 + wobbleAmount
-            coin.rotation.z = wobbleAmount * 0.5
-
-            if (progress >= 1) {
-              state.isFlipping = false
-              coin.position.y = posData.y
-              coin.position.z = posData.z // Reset to original position
-              
-              // Correct final rotation - heads = 0 (heads up), tails = Math.PI (tails up)
-              const finalRotation = state.flipResult === 'heads' ? 0 : Math.PI
-              const currentRotations = Math.floor(coin.rotation.x / (Math.PI * 2))
-              coin.rotation.x = currentRotations * Math.PI * 2 + finalRotation
-              coin.rotation.y = Math.PI / 2
-              coin.rotation.z = 0
-
-              if (player?.address && onFlipComplete) {
-                onFlipComplete(player.address, state.flipResult)
-              }
-            }
-          } else {
-            // Idle animation - smooth auto-rotation
-            const baseScale = posData.scale
-            coin.scale.set(baseScale, 1.5 * baseScale, baseScale)
-            coin.position.y = posData.y
-            
-            // Smooth auto-rotation - coins spin like wheels
-            coin.rotation.x += 0.02 // Smooth rotation speed
-            
-            // Gentle floating motion
-            coin.position.y = posData.y + Math.sin(time * 0.5) * 0.2
+          if (progress >= 1) {
+            state.isFlipping = false
+            coin.position.y = pos.y
+            coin.position.z = pos.z
+            coin.rotation.x = state.flipResult === 'heads' ? 0 : Math.PI
+            coin.rotation.y = Math.PI / 2
           }
-        })
-
-        if (renderer && scene && camera) {
-          renderer.render(scene, camera)
+        } else {
+          // Idle animation
+          coin.rotation.x += 0.02
+          coin.position.y = pos.y + Math.sin(time * 0.5 + index) * 0.2
         }
-      }
-      
+      })
+
+      renderer.render(scene, camera)
       animationIdRef.current = requestAnimationFrame(animate)
     }
 
     animate(0)
 
-    // Handle window resize
+    // Resize handler
     const handleResize = () => {
       if (!mountRef.current || !camera || !renderer) return
       camera.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight
@@ -413,320 +202,123 @@ const BattleRoyaleUnified3DScene = ({
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current)
       }
-      
-      // Cleanup coins
       coinsRef.current.forEach(coin => {
         if (coin) {
           if (coin.geometry) coin.geometry.dispose()
           if (Array.isArray(coin.material)) {
-            coin.material.forEach(mat => {
-              if (mat.map && !globalTextureCache.has(mat.map)) {
-                mat.map.dispose()
-              }
-              mat.dispose()
-            })
+            coin.material.forEach(mat => mat.dispose())
           }
         }
       })
-      
       if (renderer) renderer.dispose()
-      
-      // Don't clear global texture cache - it persists across games
-      // Only clear local references
-      textureCache.current = {}
-      
       sceneRef.current = null
-      rendererRef.current = null
     }
-  }, [])
+  }, [createTexture])
 
-  // Handle player changes without recreating the scene
+  // Update coins based on players
   useEffect(() => {
     if (!sceneRef.current) return
 
-    // Update existing coins or create new ones for new players
-    for (let i = 0; i < 6; i++) {
-      const player = players[i]
-      const existingCoin = coinsRef.current[i]
-      
-      if (player?.address && !existingCoin) {
-        // Create new coin for new player
-        const posData = coinPositions[i]
-        
-        const materials = [
-          new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('edge'),
-            metalness: 0.3,
-            roughness: 0.2,
-            color: 0xFFFFFF,
-            emissive: 0x222222,
-            emissiveIntensity: 0.1
-          }),
-          new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('heads', playerCoinImages[player.address.toLowerCase()]?.headsImage || '/coins/plainh.png'),
-            metalness: 0.3,
-            roughness: 0.2,
-            color: 0xFFFFFF,
-            emissive: 0x222222,
-            emissiveIntensity: 0.1
-          }),
-          new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('tails', playerCoinImages[player.address.toLowerCase()]?.tailsImage || '/coins/plaint.png'),
-            metalness: 0.3,
-            roughness: 0.2,
-            color: 0xFFFFFF,
-            emissive: 0x222222,
-            emissiveIntensity: 0.1
-          })
-        ]
+    players.forEach((player, index) => {
+      const coin = coinsRef.current[index]
+      if (!coin) return
 
-        const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 48)
-        const newCoin = new THREE.Mesh(geometry, materials)
+      if (player?.address) {
+        // Show coin and update textures
+        coin.visible = true
         
-        newCoin.position.set(posData.x, posData.y, posData.z)
-        newCoin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
-        // Make coin stand on edge like a wheel - correct orientation
-        newCoin.rotation.x = Math.PI // Flip to show heads face up initially
-        newCoin.rotation.y = Math.PI / 2 // Rotated 90 degrees for proper facing
-        newCoin.rotation.z = 0 // No tilt
-
-        sceneRef.current.add(newCoin)
-        coinsRef.current[i] = newCoin
-
-        coinStatesRef.current[i] = {
-          isFlipping: false,
-          flipStartTime: null,
-          flipDuration: 2000,
-          flipResult: null,
-          startRotation: { x: 0, y: Math.PI / 2, z: 0 },
-          targetRotation: 0,
-          isCharging: false,
-          power: 0
-        }
-      } else if (!player?.address && existingCoin) {
-        // Remove coin for player that left
-        sceneRef.current.remove(existingCoin)
-        existingCoin.geometry.dispose()
-        if (Array.isArray(existingCoin.material)) {
-          existingCoin.material.forEach(mat => {
-            if (mat.map) mat.map.dispose()
-            mat.dispose()
-          })
-        }
-        coinsRef.current[i] = null
-        coinStatesRef.current[i] = null
-      } else if (player?.address && existingCoin) {
-        // Update textures for existing player - check if we have new images
-        const playerAddressLower = player.address.toLowerCase()
-        const images = playerCoinImages[playerAddressLower]
-        
-        // Only update if we have new images to avoid unnecessary updates
-        if (images) {
-          console.log(`🎯 Updating coin textures for player ${i}:`, {
-            address: player.address,
-            addressLower: playerAddressLower,
-            images: images,
-            allCoinImages: Object.keys(playerCoinImages)
-          })
-          
+        const images = playerCoinImages[player.address.toLowerCase()]
+        if (images && coin.material[1]) {
           // Update heads texture
-          if (existingCoin.material[1] && images.headsImage) {
-            if (existingCoin.material[1].map) {
-              existingCoin.material[1].map.dispose()
-            }
-            const newHeadsTexture = createOptimizedTexture('heads', images.headsImage)
-            existingCoin.material[1].map = newHeadsTexture
-            existingCoin.material[1].needsUpdate = true
-          }
-
+          const newHeadsTexture = createTexture('heads', images.headsImage)
+          coin.material[1].map = newHeadsTexture
+          coin.material[1].needsUpdate = true
+          
           // Update tails texture
-          if (existingCoin.material[2] && images.tailsImage) {
-            if (existingCoin.material[2].map) {
-              existingCoin.material[2].map.dispose()
-            }
-            const newTailsTexture = createOptimizedTexture('tails', images.tailsImage)
-            existingCoin.material[2].map = newTailsTexture
-            existingCoin.material[2].needsUpdate = true
-          }
+          const newTailsTexture = createTexture('tails', images.tailsImage)
+          coin.material[2].map = newTailsTexture
+          coin.material[2].needsUpdate = true
         }
-      }
-    }
-  }, [players, playerCoinImages])
-
-  // Handle flip states from server
-  useEffect(() => {
-    if (!flipStates || !coinsRef.current.length) return
-
-    Object.entries(flipStates).forEach(([playerAddress, flipState]) => {
-      const playerIndex = players.findIndex(p => p?.address === playerAddress)
-      if (playerIndex === -1 || playerIndex >= 6) return
-
-      const state = coinStatesRef.current[playerIndex]
-      const coin = coinsRef.current[playerIndex]
-
-      if (flipState.isFlipping && !state.isFlipping) {
-        // Start flip animation for small coin
-        const power = flipState.creatorPower || flipState.joinerPower || 1
-        const powerLevel = Math.max(1, Math.min(10, Math.ceil(power)))
-        const config = powerConfigs[Math.max(0, powerLevel - 1)]
-
-        state.isFlipping = true
-        state.flipStartTime = Date.now()
-        state.flipDuration = config.duration
-        state.flipResult = flipState.flipResult
-        state.startRotation = {
-          x: coin.rotation.x,
-          y: coin.rotation.y,
-          z: coin.rotation.z
-        }
-        state.totalRotations = config.minFlips * Math.PI * 2
-        state.speed = config.speed
-        state.power = power
-
-        console.log(`🎲 Starting flip for coin ${playerIndex}:`, {
-          result: flipState.flipResult,
-          power,
-          duration: config.duration
-        })
+      } else {
+        coin.visible = false
       }
     })
-  }, [flipStates, players])
+  }, [players, playerCoinImages, createTexture])
 
-  // Handle power charging from server state
+  // Handle flip animations from server
   useEffect(() => {
-    if (!serverState?.players || !coinsRef.current.length) return
+    if (!serverState?.players) return
 
-    for (let i = 0; i < 6; i++) {
-      const player = players[i]
-      if (!player?.address) continue
+    Object.entries(serverState.players).forEach(([playerAddress, playerData]) => {
+      if (playerData.hasFlipped && playerData.flipResult) {
+        const playerIndex = players.findIndex(p => p?.address?.toLowerCase() === playerAddress.toLowerCase())
+        if (playerIndex === -1 || playerIndex >= 6) return
 
-      const serverPlayer = serverState.players[player.address]
-      const state = coinStatesRef.current[i]
-
-      if (serverPlayer?.power && !state.isFlipping) {
-        state.isCharging = true
-        state.power = serverPlayer.power
-      } else if (!serverPlayer?.power) {
-        state.isCharging = false
-        state.power = 0
+        const state = coinStatesRef.current[playerIndex]
+        if (!state.isFlipping) {
+          state.isFlipping = true
+          state.flipStartTime = Date.now()
+          state.flipDuration = 2000
+          state.flipResult = playerData.flipResult
+          console.log(`🎲 Starting flip animation for slot ${playerIndex}: ${playerData.flipResult}`)
+        }
       }
-    }
+    })
   }, [serverState, players])
 
-  // Listen for individual player flip events - REGISTER ONCE
-  useEffect(() => {
-    if (!sceneRef.current) return
-
-    const handlePlayerFlipped = (data) => {
-      console.log('🎲 Unified scene received player flip:', data)
-      const { playerAddress, flipResult, coinState } = data
-      const playerIndex = players.findIndex(p => p?.address?.toLowerCase() === playerAddress?.toLowerCase())
+  // Display player choices
+  const renderChoiceOverlays = () => {
+    return players.map((player, index) => {
+      if (!player?.address) return null
       
-      if (playerIndex === -1 || playerIndex >= 6) {
-        console.warn(`⚠️ Player index not found for ${playerAddress}`)
-        return
-      }
-
-      const state = coinStatesRef.current[playerIndex]
-      const coin = coinsRef.current[playerIndex]
-
-      if (!state || !coin) {
-        console.warn(`⚠️ Coin state or mesh not found for index ${playerIndex}`)
-        return
-      }
-
-      // Use server-provided coin state or defaults
-      const flipDuration = coinState?.flipDuration || 2000
-      const totalRotations = coinState?.totalRotations || (10 * Math.PI * 2)
-      const powerUsed = coinState?.powerUsed || 1
-
-      state.isFlipping = true
-      state.flipStartTime = Date.now()
-      state.flipDuration = flipDuration
-      state.flipResult = flipResult
-      state.totalRotations = totalRotations
-      state.speed = 1 + (powerUsed * 0.2) // Power affects speed
-      state.power = powerUsed
-      state.startRotation = {
-        x: coin.rotation.x,
-        y: coin.rotation.y,
-        z: coin.rotation.z
-      }
-
-      console.log(`✅ Coin ${playerIndex} flip animation started: ${flipResult} (power: ${powerUsed}, duration: ${flipDuration}ms)`)
-    }
-
-    // Use global socketService
-    if (typeof window !== 'undefined' && window.socketService) {
-      console.log('✅ Registering unified scene flip listener')
-      window.socketService.on('battle_royale_player_flipped', handlePlayerFlipped)
-
-      return () => {
-        console.log('🧹 Cleaning up unified scene flip listener')
-        window.socketService.off('battle_royale_player_flipped', handlePlayerFlipped)
-      }
-    }
-  }, []) // EMPTY - register once on mount
+      const playerData = serverState?.players?.[player.address.toLowerCase()]
+      const choice = playerData?.choice
+      
+      if (!choice) return null
+      
+      const pos = coinPositions[index]
+      
+      return (
+        <div
+          key={`choice-${index}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: `translate(${pos.x * 15 + 50}px, ${-pos.y * 15 + 130}px)`,
+            color: choice === 'heads' ? '#FFD700' : '#C0C0C0',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            textShadow: '0 0 10px rgba(0,0,0,0.8)',
+            textAlign: 'center',
+            pointerEvents: 'none',
+            zIndex: 100
+          }}
+        >
+          <div style={{
+            background: 'rgba(0,0,0,0.8)',
+            padding: '0.3rem 0.6rem',
+            borderRadius: '0.5rem',
+            border: `2px solid ${choice === 'heads' ? '#FFD700' : '#C0C0C0'}`,
+            textTransform: 'uppercase'
+          }}>
+            {choice}
+          </div>
+        </div>
+      )
+    })
+  }
 
   return (
     <div
       ref={mountRef}
       style={{
         width: '100%',
-        height: '600px',
-        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(138, 43, 226, 0.3))',
-        borderRadius: '1rem',
-        border: '2px solid rgba(255, 20, 147, 0.3)',
-        position: 'relative',
-        overflow: 'hidden',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
+        height: '100%',
+        position: 'relative'
       }}
     >
-      {/* Choice Display Overlay */}
-      {players.map((player, index) => {
-        if (!player?.address) return null
-        
-        const choice = serverState?.players?.[player.address.toLowerCase()]?.choice
-        const posData = coinPositions[index]
-        
-        if (!choice) return null
-        
-        return (
-          <div
-            key={`choice-${index}`}
-            style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              transform: `translate(
-                ${posData.x * 15 + 50}px,
-                ${-posData.y * 15 + 50 + 80}px
-              )`,
-              color: choice === 'heads' ? '#FFD700' : '#C0C0C0',
-              fontSize: '1.2rem',
-              fontWeight: 'bold',
-              textShadow: '0 0 10px rgba(0,0,0,0.8)',
-              textAlign: 'center',
-              pointerEvents: 'none',
-              zIndex: 100,
-              minWidth: '60px'
-            }}
-          >
-            <div style={{
-              background: 'rgba(0,0,0,0.7)',
-              padding: '0.3rem 0.6rem',
-              borderRadius: '0.5rem',
-              border: `2px solid ${choice === 'heads' ? '#FFD700' : '#C0C0C0'}`,
-              textTransform: 'uppercase',
-              letterSpacing: '1px'
-            }}>
-              {choice}
-            </div>
-          </div>
-        )
-      })}
+      {renderChoiceOverlays()}
     </div>
   )
 }

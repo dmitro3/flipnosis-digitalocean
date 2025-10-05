@@ -6,8 +6,6 @@ import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./components/Dashboard";
 import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
-import BattleRoyaleLobby from "./components/BattleRoyale/BattleRoyaleLobby";
-import BattleRoyaleGameRoom from "./components/BattleRoyale/BattleRoyaleGameRoom";
 import BattleRoyaleContainer from "./components/BattleRoyale/BattleRoyaleContainer";
 import ErrorBoundary from "./components/BattleRoyale/ErrorBoundary";
 
@@ -53,14 +51,6 @@ export const router = createBrowserRouter([
         element: (
           <ErrorBoundary>
             <BattleRoyaleContainer />
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: "battle-royale/:gameId/play",
-        element: (
-          <ErrorBoundary>
-            <BattleRoyaleGameRoom />
           </ErrorBoundary>
         ),
       },

@@ -1,0 +1,302 @@
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { useWallet } from './WalletContext'
+import { useToast } from './ToastContext'
+import { useProfile } from './ProfileContext'
+import socketService from '../services/SocketService'
+
+const BattleRoyaleGameContext = createContext(null)
+
+export const useBattleRoyaleGame = () => {
+  const context = useContext(BattleRoyaleGameContext)
+  if (!context) {
+    throw new Error('useBattleRoyaleGame must be used within BattleRoyaleGameProvider')
+  }
+  return context
+}
+
+export const BattleRoyaleGameProvider = ({ gameId, children }) => {
+  const { address } = useWallet()
+  const { showToast } = useToast()
+  const { getCoinHeadsImage, getCoinTailsImage } = useProfile()
+
+  // ===== SINGLE SOURCE OF TRUTH =====
+  const [gameState, setGameState] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [connected, setConnected] = useState(false)
+  const [playerCoinImages, setPlayerCoinImages] = useState({})
+  const [imagesLoading, setImagesLoading] = useState(true)
+  
+  // Track loaded images to prevent re-loading
+  const loadedAddresses = useRef(new Set())
+  const socketInitialized = useRef(false)
+
+  // ===== LOAD COIN IMAGES =====
+  const loadCoinImagesForPlayer = useCallback(async (playerAddress, coinData) => {
+    const key = playerAddress.toLowerCase()
+    
+    if (loadedAddresses.current.has(key)) {
+      return // Already loaded
+    }
+
+    try {
+      let headsImage, tailsImage
+
+      if (coinData?.type === 'custom') {
+        headsImage = await getCoinHeadsImage(playerAddress)
+        tailsImage = await getCoinTailsImage(playerAddress)
+      } else {
+        headsImage = coinData?.headsImage || '/coins/plainh.png'
+        tailsImage = coinData?.tailsImage || '/coins/plaint.png'
+      }
+
+      setPlayerCoinImages(prev => ({
+        ...prev,
+        [key]: { headsImage, tailsImage }
+      }))
+
+      loadedAddresses.current.add(key)
+      console.log(`✅ Loaded coin images for ${playerAddress}`)
+    } catch (error) {
+      console.error('Error loading coin images:', error)
+      setPlayerCoinImages(prev => ({
+        ...prev,
+        [key]: { 
+          headsImage: '/coins/plainh.png', 
+          tailsImage: '/coins/plaint.png' 
+        }
+      }))
+      loadedAddresses.current.add(key)
+    }
+  }, [getCoinHeadsImage, getCoinTailsImage])
+
+  // ===== LOAD ALL PLAYER IMAGES =====
+  const loadAllPlayerImages = useCallback(async (players) => {
+    if (!players) return
+
+    setImagesLoading(true)
+    const loadPromises = []
+
+    Object.entries(players).forEach(([playerAddress, playerData]) => {
+      if (playerData?.coin) {
+        loadPromises.push(loadCoinImagesForPlayer(playerAddress, playerData.coin))
+      }
+    })
+
+    await Promise.all(loadPromises)
+    setImagesLoading(false)
+    console.log('✅ All player coin images loaded')
+  }, [loadCoinImagesForPlayer])
+
+  // ===== SOCKET EVENT HANDLERS =====
+  const handleStateUpdate = useCallback((data) => {
+    console.log('📊 Game state update:', data.phase)
+    setGameState(data)
+    setLoading(false)
+
+    // Load coin images for any new players
+    if (data.players) {
+      loadAllPlayerImages(data.players)
+    }
+  }, [loadAllPlayerImages])
+
+  const handleRoundStart = useCallback((data) => {
+    console.log('🚀 Round starting:', data.round)
+    showToast(`Round ${data.round} - Choose wisely!`, 'info')
+  }, [showToast])
+
+  const handlePlayerFlipped = useCallback((data) => {
+    console.log('🪙 Player flipped:', data.playerAddress)
+    // State update will be sent separately by server
+  }, [])
+
+  const handleRoundEnd = useCallback((data) => {
+    console.log('🏁 Round ending:', data)
+    if (data.eliminatedPlayers?.length > 0) {
+      showToast(`${data.eliminatedPlayers.length} players eliminated`, 'warning')
+    }
+  }, [showToast])
+
+  const handleGameComplete = useCallback((data) => {
+    console.log('🏆 Game complete:', data)
+    const isWinner = data.winner === address
+    showToast(
+      isWinner ? '🎉 You won!' : `Game over! Winner: ${data.winner?.slice(0, 6)}...`,
+      isWinner ? 'success' : 'info'
+    )
+  }, [address, showToast])
+
+  const handleGameStarting = useCallback((data) => {
+    console.log('⏱️ Game starting in:', data.countdown)
+    showToast(`Game starting in ${data.countdown} seconds!`, 'success')
+  }, [showToast])
+
+  const handleError = useCallback((data) => {
+    console.error('❌ Battle Royale error:', data)
+    showToast(data.message || 'Game error', 'error')
+  }, [showToast])
+
+  // ===== SOCKET INITIALIZATION =====
+  useEffect(() => {
+    if (!gameId || !address || socketInitialized.current) return
+
+    let mounted = true
+
+    const initializeSocket = async () => {
+      try {
+        console.log('🔌 Initializing Battle Royale socket...')
+        
+        await socketService.connect(gameId, address)
+        
+        if (!mounted) return
+
+        // Register all event listeners
+        socketService.on('battle_royale_state_update', handleStateUpdate)
+        socketService.on('battle_royale_round_start', handleRoundStart)
+        socketService.on('battle_royale_player_flipped', handlePlayerFlipped)
+        socketService.on('battle_royale_round_end', handleRoundEnd)
+        socketService.on('battle_royale_game_complete', handleGameComplete)
+        socketService.on('battle_royale_starting', handleGameStarting)
+        socketService.on('battle_royale_error', handleError)
+
+        // Join room
+        const roomId = `game_${gameId}`
+        socketService.emit('join_battle_royale_room', { roomId, address })
+
+        // Request initial state
+        socketService.emit('request_battle_royale_state', { gameId })
+
+        setConnected(true)
+        socketInitialized.current = true
+        console.log('✅ Socket initialized successfully')
+
+      } catch (error) {
+        console.error('❌ Socket initialization failed:', error)
+        if (mounted) {
+          setError('Failed to connect to game')
+          setLoading(false)
+        }
+      }
+    }
+
+    initializeSocket()
+
+    return () => {
+      mounted = false
+      if (socketInitialized.current) {
+        socketService.off('battle_royale_state_update', handleStateUpdate)
+        socketService.off('battle_royale_round_start', handleRoundStart)
+        socketService.off('battle_royale_player_flipped', handlePlayerFlipped)
+        socketService.off('battle_royale_round_end', handleRoundEnd)
+        socketService.off('battle_royale_game_complete', handleGameComplete)
+        socketService.off('battle_royale_starting', handleGameStarting)
+        socketService.off('battle_royale_error', handleError)
+        socketInitialized.current = false
+      }
+    }
+  }, [gameId, address, handleStateUpdate, handleRoundStart, handlePlayerFlipped, handleRoundEnd, handleGameComplete, handleGameStarting, handleError])
+
+  // ===== PLAYER ACTIONS =====
+  const makeChoice = useCallback((choice) => {
+    if (!gameId || !address || !gameState) return false
+
+    if (gameState.phase !== 'round_active') {
+      showToast('Wait for the round to start', 'warning')
+      return false
+    }
+
+    socketService.emit('battle_royale_player_choice', {
+      gameId,
+      address,
+      choice
+    })
+    
+    console.log(`🎯 Choice made: ${choice}`)
+    return true
+  }, [gameId, address, gameState, showToast])
+
+  const flipCoin = useCallback((power = 5) => {
+    if (!gameId || !address || !gameState) return false
+
+    if (gameState.phase !== 'round_active') {
+      showToast('Wait for the round to start', 'warning')
+      return false
+    }
+
+    const player = gameState.players?.[address.toLowerCase()]
+    if (!player?.choice) {
+      showToast('Choose heads or tails first', 'warning')
+      return false
+    }
+
+    if (player.hasFlipped) {
+      showToast('You already flipped', 'warning')
+      return false
+    }
+
+    socketService.emit('battle_royale_flip_coin', {
+      gameId,
+      address,
+      power
+    })
+
+    console.log(`🪙 Coin flipped with power ${power}`)
+    return true
+  }, [gameId, address, gameState, showToast])
+
+  const updateCoin = useCallback((coinData) => {
+    if (!gameId || !address) return false
+
+    socketService.emit('battle_royale_update_coin', {
+      gameId,
+      address,
+      coin: coinData
+    })
+
+    console.log('🪙 Coin updated:', coinData.name)
+    return true
+  }, [gameId, address])
+
+  const startGameEarly = useCallback(() => {
+    if (!gameId || !address || !gameState) return false
+
+    const isCreator = gameState.creator?.toLowerCase() === address?.toLowerCase()
+    if (!isCreator) {
+      showToast('Only the creator can start the game', 'error')
+      return false
+    }
+
+    if (gameState.currentPlayers < 2) {
+      showToast('Need at least 2 players to start', 'error')
+      return false
+    }
+
+    socketService.emit('battle_royale_start_early', {
+      gameId,
+      address
+    })
+
+    console.log('🚀 Starting game early')
+    return true
+  }, [gameId, address, gameState, showToast])
+
+  // ===== CONTEXT VALUE =====
+  const value = {
+    gameState,
+    loading: loading || imagesLoading,
+    error,
+    connected,
+    playerCoinImages,
+    address,
+    makeChoice,
+    flipCoin,
+    updateCoin,
+    startGameEarly
+  }
+
+  return (
+    <BattleRoyaleGameContext.Provider value={value}>
+      {children}
+    </BattleRoyaleGameContext.Provider>
+  )
+}

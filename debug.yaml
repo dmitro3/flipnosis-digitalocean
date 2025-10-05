@@ -1,217 +1,172 @@
-🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'filling', currentPlayers: 1, …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'filling', currentPlayers: 2, …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 🪙 Slot clicked: 0 Player at slot: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', joinedAt: '2025-10-05T12:54:35.273Z', coin: {…}, choice: null, status: 'active'} Can join: false Address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-e94e5671.js:200 🪙 Opening coin selector for current user slot
-index-e94e5671.js:200 🪙 Loading custom coin for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-e94e5671.js:31 🪙 Getting coin heads image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-e94e5671.js:31 🌐 Fetching profile from: https://www.flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-e94e5671.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
-index-e94e5671.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
-index-e94e5671.js:31 🪙 Profile loaded for heads: {hasProfile: true, hasHeadsImage: true, headsLength: 154182}
-index-e94e5671.js:31 🪙 Getting coin tails image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-e94e5671.js:31 🌐 Fetching profile from: https://www.flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-e94e5671.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
-index-e94e5671.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
-index-e94e5671.js:31 🪙 Profile loaded for tails: {hasProfile: true, hasTailsImage: true, tailsLength: 103006}
-index-e94e5671.js:200 🪙 Custom coin loaded: {hasHeads: true, hasTails: true, headsLength: 154182, tailsLength: 103006}
-index-e94e5671.js:200 🪙 Coin selected: {id: 'mario', type: 'default', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png'}
-index-e94e5671.js:200 🪙 Sending optimized coin to parent: {id: 'mario', type: 'default', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png'}
-index-e94e5671.js:200 🪙 Coin selected: {id: 'mario', type: 'default', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png'} Selected slot: 0 Current address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-e94e5671.js:192 📤 Emitted: battle_royale_update_coin
-index-e94e5671.js:200 🪙 Sent coin update to server: {id: 'mario', type: 'default', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png'}
-index-e94e5671.js:192 ✅ Listener removed for: battle_royale_state_update
-index-e94e5671.js:192 ✅ Listener removed for: battle_royale_starting
-index-e94e5671.js:192 ✅ Already connected to room: game_br_1759668853538_499a6795aabde088
-index-e94e5671.js:192 ✅ Listener registered for: battle_royale_state_update
-index-e94e5671.js:192 ✅ Listener registered for: battle_royale_starting
-index-e94e5671.js:192 📤 Emitted: join_battle_royale_room
-index-e94e5671.js:192 📤 Emitted: request_battle_royale_state
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:192 ✅ Listener removed for: battle_royale_state_update
-index-e94e5671.js:192 ✅ Listener removed for: battle_royale_starting
-index-e94e5671.js:192 ✅ Already connected to room: game_br_1759668853538_499a6795aabde088
-index-e94e5671.js:192 ✅ Listener registered for: battle_royale_state_update
-index-e94e5671.js:192 ✅ Listener registered for: battle_royale_starting
-index-e94e5671.js:192 📤 Emitted: join_battle_royale_room
-index-e94e5671.js:192 📤 Emitted: request_battle_royale_state
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 🚀 Creator starting game early {gameId: 'br_1759668853538_499a6795aabde088', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
-index-e94e5671.js:192 📤 Emitted: battle_royale_start_early
-index-e94e5671.js:200 🚀 Game starting: {gameId: 'br_1759668853538_499a6795aabde088', countdown: 3, message: 'Battle Royale starting in 3 seconds!'}
-index-e94e5671.js:200 🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'starting', currentPlayers: 2, …}
-index-e94e5671.js:192 ✅ Listener removed for: battle_royale_state_update
-index-e94e5671.js:192 ✅ Listener removed for: battle_royale_starting
-index-e94e5671.js:192 ✅ Already connected to room: game_br_1759668853538_499a6795aabde088
-index-e94e5671.js:192 ✅ Listener registered for: battle_royale_state_update
-index-e94e5671.js:192 ✅ Listener registered for: battle_royale_starting
-index-e94e5671.js:192 📤 Emitted: join_battle_royale_room
-index-e94e5671.js:192 📤 Emitted: request_battle_royale_state
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'starting', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'starting', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'in_progress', currentPlayers: 2, …}
-index-e94e5671.js:192 ✅ Listener removed for: battle_royale_state_update
-index-e94e5671.js:192 ✅ Listener removed for: battle_royale_starting
-index-e94e5671.js:192 ✅ Already connected to room: game_br_1759668853538_499a6795aabde088
-index-e94e5671.js:192 ✅ Listener registered for: battle_royale_state_update
-index-e94e5671.js:192 ✅ Listener registered for: battle_royale_starting
-index-e94e5671.js:192 📤 Emitted: join_battle_royale_room
-index-e94e5671.js:192 📤 Emitted: request_battle_royale_state
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-index-e94e5671.js:200 📊 Lobby state update: {gameId: 'br_1759668853538_499a6795aabde088', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
-
-aND PLAYER 2
-SES Removing unpermitted intrinsics lockdown-install.js:1:203117
-🪙 Sending optimized coin to parent: 
-Object { id: "manga", type: "default", name: "Heroine", headsImage: "/coins/mangah.png", tailsImage: "/coins/mangat.png" }
-index-e94e5671.js:200:5092
-🪙 Coin selected: 
-Object { id: "manga", type: "default", name: "Heroine", headsImage: "/coins/mangah.png", tailsImage: "/coins/mangat.png" }
- Selected slot: 1 Current address: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-e94e5671.js:200:18367
-📤 Emitted: battle_royale_update_coin index-e94e5671.js:192:85054
-🪙 Sent coin update to server: 
-Object { id: "manga", type: "default", name: "Heroine", headsImage: "/coins/mangah.png", tailsImage: "/coins/mangat.png" }
-index-e94e5671.js:200:18679
-✅ Listener removed for: battle_royale_state_update index-e94e5671.js:192:85272
-✅ Listener removed for: battle_royale_starting index-e94e5671.js:192:85272
-✅ Already connected to room: game_br_1759668853538_499a6795aabde088 index-e94e5671.js:192:83618
-✅ Listener registered for: battle_royale_state_update index-e94e5671.js:192:85183
-✅ Listener registered for: battle_royale_starting index-e94e5671.js:192:85183
-📤 Emitted: join_battle_royale_room index-e94e5671.js:192:85054
-📤 Emitted: request_battle_royale_state index-e94e5671.js:192:85054
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
-index-e94e5671.js:200:12500
-✅ Listener removed for: battle_royale_state_update index-e94e5671.js:192:85272
-✅ Listener removed for: battle_royale_starting index-e94e5671.js:192:85272
-✅ Already connected to room: game_br_1759668853538_499a6795aabde088 index-e94e5671.js:192:83618
-✅ Listener registered for: battle_royale_state_update index-e94e5671.js:192:85183
-✅ Listener registered for: battle_royale_starting index-e94e5671.js:192:85183
-📤 Emitted: join_battle_royale_room index-e94e5671.js:192:85054
-📤 Emitted: request_battle_royale_state index-e94e5671.js:192:85054
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "filling", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
-index-e94e5671.js:200:12500
-🚀 Game starting: 
-Object { gameId: "br_1759668853538_499a6795aabde088", countdown: 3, message: "Battle Royale starting in 3 seconds!" }
-index-e94e5671.js:200:13145
-🎮 Join eligibility: 
-Object { address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", hasAddress: true, userAlreadyJoined: true, gameStatus: "starting", currentPlayers: 2, isCreator: false, creatorParticipates: true, isCreatorAndParticipating: false, canJoin: false }
-index-e94e5671.js:200:15647
-✅ Listener removed for: battle_royale_state_update index-e94e5671.js:192:85272
-✅ Listener removed for: battle_royale_starting index-e94e5671.js:192:85272
-✅ Already connected to room: game_br_1759668853538_499a6795aabde088 index-e94e5671.js:192:83618
-✅ Listener registered for: battle_royale_state_update index-e94e5671.js:192:85183
-✅ Listener registered for: battle_royale_starting index-e94e5671.js:192:85183
-📤 Emitted: join_battle_royale_room index-e94e5671.js:192:85054
-📤 Emitted: request_battle_royale_state index-e94e5671.js:192:85054
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "starting", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "starting", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 0, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-🎮 Join eligibility: 
-Object { address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", hasAddress: true, userAlreadyJoined: true, gameStatus: "in_progress", currentPlayers: 2, isCreator: false, creatorParticipates: true, isCreatorAndParticipating: false, canJoin: false }
-index-e94e5671.js:200:15647
-✅ Listener removed for: battle_royale_state_update index-e94e5671.js:192:85272
-✅ Listener removed for: battle_royale_starting index-e94e5671.js:192:85272
-✅ Already connected to room: game_br_1759668853538_499a6795aabde088 index-e94e5671.js:192:83618
-✅ Listener registered for: battle_royale_state_update index-e94e5671.js:192:85183
-✅ Listener registered for: battle_royale_starting index-e94e5671.js:192:85183
-📤 Emitted: join_battle_royale_room index-e94e5671.js:192:85054
-📤 Emitted: request_battle_royale_state index-e94e5671.js:192:85054
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-🔄 Page became visible, refreshing ETH price cache index-e94e5671.js:31:75996
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "round_active", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: (2) […], eliminatedPlayers: [], currentRound: 1, … }
-index-e94e5671.js:200:12500
-📊 Lobby state update: 
-Object { gameId: "br_1759668853538_499a6795aabde088", phase: "eliminating", maxPlayers: 6, currentPlayers: 2, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerSlots: (6) […], activePlayers: [], eliminatedPlayers: (2) […], currentRound: 1, … }
-index-e94e5671.js:200:12500
+index-4182c03b.js:211 ✅ Rainbow Kit configuration created successfully
+index-4182c03b.js:211 Rainbow Kit Config: {chains: Array(7), projectId: undefined}
+index-4182c03b.js:211 🚀 Application starting... {timestamp: '2025-10-05T14:19:31.509Z', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', url: 'https://www.flipnosis.fun/battle-royale/br_1759673496621_1f03d45ebcd3e0f2'}
+index-4182c03b.js:211 🔍 App.jsx - Starting render: {config: {…}, hasChains: true, chainsLength: 7, timestamp: '2025-10-05T14:19:31.513Z'}
+index-4182c03b.js:211 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1759673496621_1f03d45ebcd3e0f2
+index-4182c03b.js:211 🔄 Loading game data for: br_1759673496621_1f03d45ebcd3e0f2
+index-4182c03b.js:211 🔥 PARENT: Tab interface mounted, child components will handle connections
+index-4182c03b.js:211 📑 Active tab changed to: game
+index-4182c03b.js:211 ✅ Game data loaded successfully
+index-4182c03b.js:203 🔌 Connecting to Battle Royale game server...
+index-4182c03b.js:192 🔌 Connecting to Socket.io: wss://www.flipnosis.fun
+index-4182c03b.js:211 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1759673496621_1f03d45ebcd3e0f2
+index-4182c03b.js:211 🔄 Game data already loaded for: br_1759673496621_1f03d45ebcd3e0f2
+index-4182c03b.js:31 🔧 Initializing contract service from WalletContext...
+index-4182c03b.js:31 ✅ Contract service initialized with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4182c03b.js:31 ✅ Contract service initialized successfully
+index-4182c03b.js:192 ✅ Socket.io connected
+index-4182c03b.js:192 📤 Emitted: join_room
+index-4182c03b.js:203 ✅ Connected to Battle Royale server
+index-4182c03b.js:192 ✅ Listener registered for: room_joined
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_state_update
+index-4182c03b.js:192 ✅ Listener registered for: roundStart
+index-4182c03b.js:192 ✅ Listener registered for: roundEnd
+index-4182c03b.js:192 ✅ Listener registered for: gameWon
+index-4182c03b.js:192 ✅ Listener registered for: allEliminated
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_player_flipped
+index-4182c03b.js:192 📤 Emitted: join_battle_royale_room
+index-4182c03b.js:192 📤 Emitted: request_battle_royale_state
+index-4182c03b.js:203 🏠 Battle Royale room joined: {roomId: 'game_br_1759673496621_1f03d45ebcd3e0f2', role: 'spectator', members: 1}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: false, gameStatus: 'filling', currentPlayers: 0, …}
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_state_update
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_starting
+index-4182c03b.js:192 📤 Emitted: join_battle_royale_room
+index-4182c03b.js:192 📤 Emitted: request_battle_royale_state
+index-4182c03b.js:203 🪙 Creator initialization check: {hasGameData: true, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', creator_participates_raw: 1, creator_participates_type: 'number', creatorParticipates: true, …}
+index-4182c03b.js:203 🪙 Creator initialized in slot 0 : {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', coin: {…}, isCreator: true}
+index-4182c03b.js:203 🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'filling', currentPlayers: 1, …}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🔄 Retrying state request...
+index-4182c03b.js:192 📤 Emitted: request_battle_royale_state
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🔄 Backup state request...
+index-4182c03b.js:192 📤 Emitted: request_battle_royale_state
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🪙 Loading custom coin for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4182c03b.js:31 🪙 Getting coin heads image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4182c03b.js:31 🌐 Fetching profile from: https://www.flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4182c03b.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-4182c03b.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
+index-4182c03b.js:31 🪙 Profile loaded for heads: {hasProfile: true, hasHeadsImage: true, headsLength: 154182}
+index-4182c03b.js:31 🪙 Getting coin tails image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4182c03b.js:31 🌐 Fetching profile from: https://www.flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4182c03b.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-4182c03b.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
+index-4182c03b.js:31 🪙 Profile loaded for tails: {hasProfile: true, hasTailsImage: true, tailsLength: 103006}
+index-4182c03b.js:203 🪙 Custom coin loaded: {hasHeads: true, hasTails: true, headsLength: 154182, tailsLength: 103006}
+index-4182c03b.js:203 🪙 Coin selected: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
+index-4182c03b.js:203 🪙 Sending optimized coin to parent: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
+index-4182c03b.js:203 🪙 Coin selected: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'} Selected slot: 0 Current address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4182c03b.js:192 📤 Emitted: battle_royale_update_coin
+index-4182c03b.js:203 🪙 Sent coin update to server: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
+index-4182c03b.js:192 ✅ Listener removed for: battle_royale_state_update
+index-4182c03b.js:192 ✅ Listener removed for: battle_royale_starting
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_state_update
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_starting
+index-4182c03b.js:192 📤 Emitted: join_battle_royale_room
+index-4182c03b.js:192 📤 Emitted: request_battle_royale_state
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:192 ✅ Listener removed for: battle_royale_state_update
+index-4182c03b.js:192 ✅ Listener removed for: battle_royale_starting
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_state_update
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_starting
+index-4182c03b.js:192 📤 Emitted: join_battle_royale_room
+index-4182c03b.js:192 📤 Emitted: request_battle_royale_state
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 1, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'filling', currentPlayers: 2, …}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'filling', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🚀 Creator starting game early {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4182c03b.js:192 📤 Emitted: battle_royale_start_early
+index-4182c03b.js:203 🚀 Game starting: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', countdown: 3, message: 'Battle Royale starting in 3 seconds!'}
+index-4182c03b.js:203 🎮 Join eligibility: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', hasAddress: true, userAlreadyJoined: true, gameStatus: 'starting', currentPlayers: 2, …}
+index-4182c03b.js:192 ✅ Listener removed for: battle_royale_state_update
+index-4182c03b.js:192 ✅ Listener removed for: battle_royale_starting
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_state_update
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_starting
+index-4182c03b.js:192 📤 Emitted: join_battle_royale_room
+index-4182c03b.js:192 📤 Emitted: request_battle_royale_state
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'starting', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'starting', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'starting', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:203 📊 Lobby state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'starting', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:192 ✅ Listener removed for: battle_royale_state_update
+index-4182c03b.js:192 ✅ Listener removed for: battle_royale_starting
+index-4182c03b.js:203 🧹 Cleaning up BattleRoyaleGamePageTab
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎬 Creating unified Battle Royale 3D scene
+index-4182c03b.js:200 📊 Players data: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+index-4182c03b.js:200 🖼️ Player coin images: {0xdd6377919ef1ad4babbead667efe3f6607558628: {…}, 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6: {…}}
+index-4182c03b.js:200 🎯 Creating 2 coins for active players
+index-4182c03b.js:200 🪙 Creating coin 0 for player 0xdd6377919ef1ad4babbead667efe3f6607558628: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', coinImages: {…}, availableImages: Array(2)}
+index-4182c03b.js:200 🪙 Creating coin 1 for player 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6: {address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', addressLower: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6', coinImages: undefined, availableImages: Array(2)}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:200 ✅ Registering unified scene flip listener
+index-4182c03b.js:192 ✅ Listener registered for: battle_royale_player_flipped
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎯 Player 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628 chose heads
+index-4182c03b.js:192 📤 Emitted: battle_royale_player_choice
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎯 Player 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628 chose tails
+index-4182c03b.js:192 📤 Emitted: battle_royale_player_choice
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'round_active', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🎯 Updating coin textures for player 0: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', addressLower: '0xdd6377919ef1ad4babbead667efe3f6607558628', images: {…}, allCoinImages: Array(2)}
+index-4182c03b.js:203 🎮 Battle Royale state update: {gameId: 'br_1759673496621_1f03d45ebcd3e0f2', phase: 'eliminating', maxPlayers: 6, currentPlayers: 2, creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', …}
+index-4182c03b.js:200 🧹 Cleaning up unified scene flip listener
+index-4182c03b.js:192 ✅ Listener removed for: battle_royale_player_flipped
