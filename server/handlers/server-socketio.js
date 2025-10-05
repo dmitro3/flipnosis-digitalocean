@@ -12,7 +12,7 @@ class GameServer {
     this.dbService = dbService
     
     // Initialize managers FIRST
-    this.gameManager = new GameManager()
+    // this.gameManager = new GameManager() // TODO: Not implemented yet - for 1v1 games
     this.battleRoyaleManager = new BattleRoyaleGameManager()
     
     // Then instantiate handlers (FIXED: They are classes, not modules)
@@ -25,7 +25,6 @@ class GameServer {
     this.battleRoyaleRooms = new Map() // gameId -> Set of socketIds
     
     console.log('✅ SocketService: Managers initialized:', {
-      gameManager: !!this.gameManager,
       battleRoyaleManager: !!this.battleRoyaleManager,
       oneVOneHandlers: !!this.oneVOneHandlers,
       battleRoyaleHandlers: !!this.battleRoyaleHandlers
