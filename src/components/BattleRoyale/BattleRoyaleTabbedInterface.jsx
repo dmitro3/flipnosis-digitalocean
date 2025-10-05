@@ -215,18 +215,24 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
     if (!gameId || !address) return
     
     const handleGameStateUpdate = (data) => {
+      console.log('🔥🔥🔥 PARENT TAB INTERFACE RECEIVED STATE UPDATE:', data.phase)
       console.log('📊 Tab Interface received game state:', data)
       
       // Update game status based on server state
       if (data.phase === 'starting') {
+        console.log('🔥 Parent setting status to: starting')
         setGameStatus('starting')
       } else if (data.phase === 'round_active') {
+        console.log('🔥 Parent setting status to: in_progress')
         setGameStatus('in_progress')
       } else if (data.phase === 'completed') {
+        console.log('🔥 Parent setting status to: completed')
         setGameStatus('completed')
       } else {
+        console.log('🔥 Parent setting status to: filling')
         setGameStatus('filling')
       }
+      console.log('🔥 Parent gameStatus after update:', data.phase)
     }
     
     const handleGameStarting = (data) => {
