@@ -22,12 +22,14 @@ const GameContainer = styled.div`
 
 const GameLayout = styled.div`
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   flex: 1;
+  gap: 2rem;
   
-  @media (max-width: 1200px) {
+  @media (max-width: 1400px) {
     flex-direction: column;
+    gap: 1rem;
   }
 `
 
@@ -40,7 +42,9 @@ const ActivePlayerPanel = styled.div`
   border-radius: 1rem;
   padding: 1.5rem;
   text-align: center;
-  min-width: 300px;
+  min-width: 400px;
+  flex: 1;
+  max-width: 500px;
   
   .round-timer {
     color: #00bfff;
@@ -242,7 +246,16 @@ const BattleRoyaleGameRoom = ({
 
   // Handle choice selection (heads/tails)
   const handleChoiceSelect = useCallback((choice) => {
-    if (!gameId || !address || !serverState) return
+    if (!gameId || !address || !serverState) {
+      console.log('❌ Cannot select choice - missing data:', { gameId, address, serverState })
+      return
+    }
+    
+    if (serverState.phase !== 'round_active') {
+      console.log('❌ Cannot select choice - wrong phase:', serverState.phase)
+      showToast('Game is not active', 'error')
+      return
+    }
     
     console.log(`🎯 Player ${address} chose ${choice}`)
     
@@ -280,7 +293,29 @@ const BattleRoyaleGameRoom = ({
 
   // Handle coin flip
   const handleFlipCoin = useCallback(() => {
-    if (!gameId || !address || !serverState) return
+    if (!gameId || !address || !serverState) {
+      console.log('❌ Cannot flip - missing data:', { gameId, address, serverState })
+      return
+    }
+    
+    if (serverState.phase !== 'round_active') {
+      console.log('❌ Cannot flip - wrong phase:', serverState.phase)
+      showToast('Game is not active', 'error')
+      return
+    }
+    
+    const currentPlayer = serverState.players?.[address.toLowerCase()]
+    if (!currentPlayer?.choice) {
+      console.log('❌ Cannot flip - no choice made')
+      showToast('Please select heads or tails first', 'error')
+      return
+    }
+    
+    if (currentPlayer.hasFlipped) {
+      console.log('❌ Cannot flip - already flipped')
+      showToast('You already flipped this round', 'error')
+      return
+    }
     
     const finalPower = Math.round(powerLevel)
     console.log(`🪙 Player ${address} flipping coin with power ${finalPower}`)
@@ -289,7 +324,7 @@ const BattleRoyaleGameRoom = ({
       socketService.emit('battle_royale_flip_coin', {
         gameId,
         address,
-        power: finalPower
+        powerLevel: finalPower
       })
       
       setIsCharging(false)
@@ -492,109 +527,146 @@ const BattleRoyaleGameRoom = ({
   }
 
   // If game is in filling phase, show the lobby
-  if (serverState?.phase === 'filling' || !serverState) {
+  if (!serverState || serverState?.phase === 'filling') {
     return <BattleRoyaleGamePageTab gameData={gameData} gameId={gameId} address={address} isCreator={isCreator} />
+  }
+  
+  // If game is in starting phase, show countdown
+  if (serverState?.phase === 'starting') {
+    return (
+      <GameContainer>
+        <div style={{
+          textAlign: 'center',
+          color: 'white',
+          fontSize: '2rem',
+          padding: '4rem',
+          background: 'rgba(0, 0, 0, 0.7)',
+          borderRadius: '1rem',
+          border: '2px solid #FFD700'
+        }}>
+          <h2>🚀 Game Starting...</h2>
+          <p>Get ready for Battle Royale!</p>
+          <p>Players: {serverState.currentPlayers}/6</p>
+        </div>
+      </GameContainer>
+    )
   }
 
   return (
     <GameContainer>
-      {/* 3D Battle Royale Scene */}
-      {serverState?.phase === 'round_active' && (
-        <div style={{
-          width: '100%',
-          height: '600px',
-          background: 'rgba(0, 0, 0, 0.3)',
-          borderRadius: '1rem',
-          overflow: 'hidden',
-          border: '2px solid #FFD700',
-          marginBottom: '2rem'
-        }}>
-          <BattleRoyaleUnified3DScene
-            players={serverState.playerSlots?.map((address, index) => ({
-              address,
-              slotNumber: index,
-              ...(address && serverState.players?.[address])
-            })) || []}
-            gamePhase={serverState.phase}
-            serverState={serverState}
-            flipStates={{}}
-            playerCoinImages={playerCoinImages}
-            currentUserAddress={address}
-            onFlipComplete={(playerAddress, result) => {
-              console.log(`🪙 Flip complete for ${playerAddress}: ${result}`)
-            }}
-          />
-        </div>
-      )}
-
-      {/* Main game layout - Only show active player panel */}
+      {/* Main game layout - Side by side */}
       <div id="gamePhase">
         <GameLayout>
-          {/* Active player panel - centered */}
-          <ActivePlayerPanel>
-            <div className="round-timer">
-              {serverState?.roundCountdown || 20}
+          {/* 3D Battle Royale Scene */}
+          {serverState?.phase === 'round_active' && (
+            <div style={{
+              flex: 2,
+              height: '600px',
+              background: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: '1rem',
+              overflow: 'hidden',
+              border: '2px solid #FFD700',
+              minWidth: '600px'
+            }}>
+              <BattleRoyaleUnified3DScene
+                players={serverState.playerSlots?.map((address, index) => ({
+                  address,
+                  slotNumber: index,
+                  ...(address && serverState.players?.[address])
+                })) || []}
+                gamePhase={serverState.phase}
+                serverState={serverState}
+                flipStates={{}}
+                playerCoinImages={playerCoinImages}
+                currentUserAddress={address}
+                onFlipComplete={(playerAddress, result) => {
+                  console.log(`🪙 Flip complete for ${playerAddress}: ${result}`)
+                }}
+              />
             </div>
-            
-            <div className="player-coin-large">
-              {currentPlayer && playerCoinImages[address.toLowerCase()] ? (
-                <img 
-                  src={playerCoinImages[address.toLowerCase()].headsImage} 
-                  alt="Your coin"
-                  className="coin-image"
-                />
-              ) : (
-                '🪙'
-              )}
-          </div>
-            
-            <div className="choice-buttons">
-              <button 
-                className="choice-btn" 
-                data-choice="heads"
-                onClick={() => handleChoiceSelect('heads')}
-                disabled={currentPlayer?.hasFlipped || serverState?.phase !== 'round_active'}
-              >
-                HEADS
-              </button>
-              <button 
-                className="choice-btn" 
-                data-choice="tails"
-                onClick={() => handleChoiceSelect('tails')}
-                disabled={currentPlayer?.hasFlipped || serverState?.phase !== 'round_active'}
-              >
-                TAILS
-              </button>
+          )}
+
+          {/* Active player panel - Side by side */}
+          {serverState?.phase === 'round_active' && (
+            <ActivePlayerPanel>
+              <div className="round-timer">
+                Round {serverState?.currentRound || 1} - {serverState?.roundCountdown || 20}s
               </div>
               
-            <div className="flip-button-container">
-              <button 
-                className="flip-btn" 
-                onClick={handleFlipCoin}
-                onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                disabled={
-                  !currentPlayer?.choice || 
-                  currentPlayer?.hasFlipped || 
-                  serverState?.phase !== 'round_active'
-                }
-              >
-                {isCharging ? `CHARGING... ${Math.round(powerLevel * 10)}%` : 'FLIP COIN'}
-              </button>
-            </div>
-            
-            <div className="power-bar-container">
-              <div className="power-bar">
-                <div 
-                  className="power-fill" 
-                  style={{ width: `${(powerLevel / 10) * 100}%` }}
-                ></div>
+              <div className="player-coin-large">
+                {currentPlayer && playerCoinImages[address.toLowerCase()] ? (
+                  <img 
+                    src={playerCoinImages[address.toLowerCase()].headsImage} 
+                    alt="Your coin"
+                    className="coin-image"
+                  />
+                ) : (
+                  '🪙'
+                )}
               </div>
-              <div className="power-label">POWER: <span className="power-value">{Math.round(powerLevel * 10)}%</span></div>
-            </div>
-          </ActivePlayerPanel>
+              
+              <div className="choice-buttons">
+                <button 
+                  className={`choice-btn ${currentPlayer?.choice === 'heads' ? 'selected' : ''}`}
+                  data-choice="heads"
+                  onClick={() => handleChoiceSelect('heads')}
+                  disabled={currentPlayer?.hasFlipped || serverState?.phase !== 'round_active'}
+                >
+                  HEADS
+                </button>
+                <button 
+                  className={`choice-btn ${currentPlayer?.choice === 'tails' ? 'selected' : ''}`}
+                  data-choice="tails"
+                  onClick={() => handleChoiceSelect('tails')}
+                  disabled={currentPlayer?.hasFlipped || serverState?.phase !== 'round_active'}
+                >
+                  TAILS
+                </button>
+              </div>
+              
+              <div className="flip-button-container">
+                <button 
+                  className="flip-btn" 
+                  onClick={handleFlipCoin}
+                  onMouseDown={handleMouseDown}
+                  onMouseUp={handleMouseUp}
+                  disabled={
+                    !currentPlayer?.choice || 
+                    currentPlayer?.hasFlipped || 
+                    serverState?.phase !== 'round_active'
+                  }
+                >
+                  {isCharging ? `CHARGING... ${Math.round(powerLevel * 10)}%` : 'FLIP COIN'}
+                </button>
+              </div>
+              
+              <div className="power-bar-container">
+                <div className="power-bar">
+                  <div 
+                    className="power-fill" 
+                    style={{ width: `${(powerLevel / 10) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="power-label">POWER: <span className="power-value">{Math.round(powerLevel * 10)}%</span></div>
+              </div>
+              
+              {/* Show current choice */}
+              {currentPlayer?.choice && (
+                <div style={{
+                  marginTop: '1rem',
+                  padding: '0.5rem',
+                  background: 'rgba(255, 215, 0, 0.2)',
+                  borderRadius: '0.5rem',
+                  color: '#FFD700',
+                  fontWeight: 'bold'
+                }}>
+                  Your Choice: {currentPlayer.choice.toUpperCase()}
+                </div>
+              )}
+            </ActivePlayerPanel>
+          )}
         </GameLayout>
-        </div>
+      </div>
     </GameContainer>
   )
 }

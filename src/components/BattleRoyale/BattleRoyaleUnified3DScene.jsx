@@ -375,11 +375,16 @@ const BattleRoyaleUnified3DScene = ({
               }
             }
           } else {
-            // Idle animation - very slow
+            // Idle animation - smooth auto-rotation
             const baseScale = posData.scale
             coin.scale.set(baseScale, 1.5 * baseScale, baseScale)
             coin.position.y = posData.y
-            coin.rotation.x += 0.000017 // Very slow idle rotation
+            
+            // Smooth auto-rotation - coins spin like wheels
+            coin.rotation.x += 0.02 // Smooth rotation speed
+            
+            // Gentle floating motion
+            coin.position.y = posData.y + Math.sin(time * 0.5) * 0.2
           }
         })
 
