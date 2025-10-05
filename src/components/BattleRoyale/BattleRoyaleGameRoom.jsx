@@ -182,19 +182,24 @@ const ActivePlayerPanel = styled.div`
 
 
 const BattleRoyaleGameRoom = ({ 
+  gameData,
   gameId: propGameId, 
+  address: propAddress,
+  isCreator: propIsCreator,
   gameState: propGameState, 
   onMakeChoice, 
   onExecuteFlip, 
   onSpectate 
 }) => {
   const { gameId: paramGameId } = useParams()
-  const { address } = useWallet()
+  const { address: walletAddress } = useWallet()
   const { showToast } = useToast()
   const { getCoinHeadsImage, getCoinTailsImage } = useProfile()
   
-  // Use gameId from props or URL params
+  // Use props or fallback to wallet/params
   const gameId = propGameId || paramGameId
+  const address = propAddress || walletAddress
+  const isCreator = propIsCreator || (gameData?.creator?.toLowerCase() === address?.toLowerCase())
   
   // Server-controlled state - ONLY from server
   const [serverState, setServerState] = useState(null)
@@ -204,8 +209,7 @@ const BattleRoyaleGameRoom = ({
   const [isCharging, setIsCharging] = useState(false)
   const [powerLevel, setPowerLevel] = useState(1)
   
-  // Fix the isCreator check - add this near the top of the component:
-  const isCreator = serverState?.creator?.toLowerCase() === address?.toLowerCase()
+  // isCreator already defined above
 
   // Load coin images for players
   const loadPlayerCoinImages = useCallback(async (playerAddress, coinData) => {
@@ -367,6 +371,7 @@ const BattleRoyaleGameRoom = ({
 
     let mounted = true
     let connectionTimeout = null
+    let cleanupFunctions = []
     
     console.log('🔌 Connecting to Battle Royale game server...')
 
@@ -382,8 +387,6 @@ const BattleRoyaleGameRoom = ({
         }
         
         // Register event listeners with proper cleanup
-        const cleanupFunctions = []
-        
         const setupListener = (event, handler) => {
           socketService.on(event, handler)
           cleanupFunctions.push(() => socketService.off(event, handler))
@@ -421,9 +424,6 @@ const BattleRoyaleGameRoom = ({
           }
         }, 500)
         
-        // Store cleanup functions for later use
-        return cleanupFunctions
-        
       } catch (error) {
         console.error('❌ Failed to connect to Battle Royale game server:', error)
         if (mounted) {
@@ -432,12 +432,7 @@ const BattleRoyaleGameRoom = ({
       }
     }
 
-    connectToGame().then(cleanupFunctions => {
-      // Store cleanup functions for component unmount
-      if (cleanupFunctions) {
-        mounted.cleanup = cleanupFunctions
-      }
-    })
+    connectToGame()
 
     return () => {
       mounted = false
@@ -448,9 +443,8 @@ const BattleRoyaleGameRoom = ({
       }
       
       // Execute cleanup functions
-      if (mounted.cleanup) {
-        mounted.cleanup.forEach(cleanup => cleanup())
-      }
+      cleanupFunctions.forEach(cleanup => cleanup())
+      cleanupFunctions = []
     }
   }, [gameId, address]) // Removed handlers from dependencies to prevent re-connections
 

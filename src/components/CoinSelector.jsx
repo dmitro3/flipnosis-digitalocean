@@ -44,11 +44,11 @@ const CoinSelector = ({
       tailsImage: '/coins/luigi.png'
     },
     {
-      id: 'clown',
+      id: 'jestress',
       type: 'default',
-      name: 'Bozo',
-      headsImage: '/coins/clownh.png',
-      tailsImage: '/coins/clownt.png'
+      name: 'Jestress',
+      headsImage: '/coins/jestressh.png',
+      tailsImage: '/coins/jestresst.png'
     },
     {
       id: 'dragon',
@@ -77,6 +77,13 @@ const CoinSelector = ({
       name: 'Pharaoh',
       headsImage: '/coins/pharaohh.png',
       tailsImage: '/coins/pharaoht.png'
+    },
+    {
+      id: 'calavera',
+      type: 'default',
+      name: 'Calavera',
+      headsImage: '/coins/calaverah.png',
+      tailsImage: '/coins/calaverat.png'
     }
   ]
 
