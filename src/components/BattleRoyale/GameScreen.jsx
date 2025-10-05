@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react'
 import styled from '@emotion/styled'
 import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
 import BattleRoyaleUnified3DScene from './BattleRoyaleUnified3DScene'
+import FloatingChatWidget from './FloatingChatWidget'
 import './BattleRoyaleCoins.css'
 
 const Container = styled.div`
@@ -407,6 +408,9 @@ const GameScreen = () => {
           )}
         </ControlPanel>
       </GameLayout>
+      
+      {/* Floating Chat Widget */}
+      <FloatingChatWidget />
     </Container>
   )
 }
