@@ -852,20 +852,21 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         </div>
       )}
 
-      {/* Lobby Display - 6 Player Slots */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gridTemplateRows: 'repeat(2, 1fr)',
-        gap: '1rem',
-        padding: '2rem',
-        background: 'rgba(0, 0, 0, 0.3)',
-        borderRadius: '1rem',
-        border: '2px solid rgba(255, 20, 147, 0.3)',
-        backdropFilter: 'blur(10px)',
-        minHeight: '400px'
-      }}>
-        {players.map((player, index) => (
+      {/* Lobby Display - 6 Player Slots - Only show when not in progress */}
+      {gameStatus !== 'in_progress' && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateRows: 'repeat(2, 1fr)',
+          gap: '1rem',
+          padding: '2rem',
+          background: 'rgba(0, 0, 0, 0.3)',
+          borderRadius: '1rem',
+          border: '2px solid rgba(255, 20, 147, 0.3)',
+          backdropFilter: 'blur(10px)',
+          minHeight: '400px'
+        }}>
+          {players.map((player, index) => (
           <div
             key={index}
             style={{
@@ -1047,7 +1048,8 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             )}
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Join button and coin selector modal remain the same */}
       {!userAlreadyJoined && gameStatus === 'filling' && (!isCreator || isCreatorAndParticipating) && (

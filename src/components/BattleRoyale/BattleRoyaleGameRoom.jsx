@@ -20,8 +20,9 @@ const GameContainer = styled.div`
 `
 
 const GameLayout = styled.div`
-    display: flex;
-  gap: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   flex: 1;
   
   @media (max-width: 1200px) {
@@ -29,72 +30,6 @@ const GameLayout = styled.div`
   }
 `
 
-const PlayersGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  flex: 1;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`
-
-const PlayerSlot = styled.div`
-  background: ${props => {
-    if (props.isEliminated) {
-      return 'linear-gradient(135deg, rgba(255, 0, 0, 0.2) 0%, rgba(139, 0, 0, 0.2) 100%)'
-    }
-    return 'linear-gradient(135deg, rgba(0, 191, 255, 0.1) 0%, rgba(138, 43, 226, 0.1) 100%)'
-  }};
-  border: 2px solid ${props => props.isEliminated ? '#ff0000' : '#00bfff'};
-  border-radius: 1rem;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
-  opacity: ${props => props.isEliminated ? 0.3 : 1};
-  filter: ${props => props.isEliminated ? 'grayscale(100%)' : 'none'};
-  
-  .player-coin {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    transition: all 0.3s ease;
-    
-    img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    
-    &.spinning {
-      animation: spin 2s linear infinite;
-    }
-  }
-  
-  .player-name {
-    color: white;
-    font-size: 0.9rem;
-    font-weight: bold;
-    text-align: center;
-    font-family: monospace;
-  }
-  
-  .player-status {
-    color: #aaa;
-      font-size: 0.8rem;
-      text-align: center;
-  }
-`
 
 
 const ActivePlayerPanel = styled.div`
@@ -555,56 +490,10 @@ const BattleRoyaleGameRoom = ({
         </div>
       )}
 
-      {/* Main game layout */}
+      {/* Main game layout - Only show active player panel */}
       <div id="gamePhase">
         <GameLayout>
-          {/* Left side: 6 player coins grid */}
-          <PlayersGrid>
-            {(serverState.playerSlots || new Array(6).fill(null)).map((playerAddress, index) => {
-              if (!playerAddress) {
-                return (
-                  <PlayerSlot key={index} data-player-index={index}>
-                    <div className="player-coin">?</div>
-                    <div className="player-name">Empty</div>
-                    <div className="player-status">Waiting...</div>
-                  </PlayerSlot>
-                )
-              }
-              
-              const player = serverState.players?.[playerAddress.toLowerCase()]
-              const coinImages = playerCoinImages[playerAddress.toLowerCase()]
-              const isEliminated = player?.status === 'eliminated'
-              const isCurrentUser = playerAddress.toLowerCase() === address?.toLowerCase()
-              
-              return (
-                <PlayerSlot 
-                  key={index} 
-                  data-player-index={index}
-                  isEliminated={isEliminated}
-                  isCurrentUser={isCurrentUser}
-                >
-                  <div className="player-coin">
-                    {coinImages ? (
-                      <img 
-                        src={coinImages.headsImage} 
-                        alt={`${player?.name || formatAddress(playerAddress)} coin`}
-                      />
-                    ) : (
-                      '🪙'
-                    )}
-              </div>
-                  <div className="player-name">
-                    {player?.name || formatAddress(playerAddress)}
-              </div>
-                  <div className="player-status">
-                    {isEliminated ? 'Eliminated' : 'Alive'}
-              </div>
-                </PlayerSlot>
-              )
-            })}
-          </PlayersGrid>
-          
-          {/* Right side: Active player panel */}
+          {/* Active player panel - centered */}
           <ActivePlayerPanel>
             <div className="round-timer">
               {serverState?.roundCountdown || 20}
