@@ -91,6 +91,8 @@ const ActionButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  min-height: 48px;
+  width: 100%;
   
   &:hover {
     background: rgba(255, 255, 255, 0.2);
