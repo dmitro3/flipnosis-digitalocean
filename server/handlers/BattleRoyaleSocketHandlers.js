@@ -2,7 +2,7 @@
 
 class BattleRoyaleSocketHandlers {
   // Join room and request state
-  async handleJoinRoom(socket, data, gameManager, io, dbService) {
+  async handleJoinBattleRoyaleRoom(socket, data, gameManager, io, dbService) {
     const { roomId, address } = data
     const gameId = roomId.startsWith('game_') ? roomId.substring(5) : roomId
     
@@ -36,7 +36,7 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Request state
-  async handleRequestState(socket, data, gameManager) {
+  async handleRequestBattleRoyaleState(socket, data, gameManager) {
     const { gameId } = data
     const state = gameManager.getFullGameState(gameId)
     
@@ -48,7 +48,7 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Player joins game (after payment)
-  async handleJoinGame(socket, data, gameManager, io, dbService) {
+  async handleJoinBattleRoyale(socket, data, gameManager, io, dbService) {
     const { gameId, address } = data
     console.log(`🎮 ${address} joining game: ${gameId}`)
     
@@ -98,7 +98,7 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Player makes choice
-  async handlePlayerChoice(socket, data, gameManager, io) {
+  async handleBattleRoyalePlayerChoice(socket, data, gameManager, io) {
     const { gameId, address, choice } = data
     console.log(`🎯 ${address} chose ${choice}`)
     
@@ -113,7 +113,7 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Player flips coin
-  async handleFlipCoin(socket, data, gameManager, io) {
+  async handleBattleRoyaleFlipCoin(socket, data, gameManager, io) {
     const { gameId, address } = data
     console.log(`🪙 ${address} flipping coin`)
     
@@ -127,7 +127,7 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Update coin
-  async handleUpdateCoin(socket, data, gameManager, io) {
+  async handleBattleRoyaleUpdateCoin(socket, data, gameManager, io) {
     const { gameId, address, coin } = data
     console.log(`🪙 ${address} updating coin`)
     
@@ -143,7 +143,7 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Start game early
-  async handleStartEarly(socket, data, gameManager, io, dbService) {
+  async handleBattleRoyaleStartEarly(socket, data, gameManager, io, dbService) {
     const { gameId, address } = data
     console.log(`🚀 ${address} starting game early: ${gameId}`)
     
@@ -177,6 +177,24 @@ class BattleRoyaleSocketHandlers {
         console.error('Failed to update DB:', error)
       }
     }
+  }
+
+  // Spectate Battle Royale
+  async handleSpectateBattleRoyale(socket, data, gameManager) {
+    const { gameId, address } = data
+    console.log(`👁️ ${address} spectating: ${gameId}`)
+    
+    const game = gameManager.getGame(gameId)
+    if (!game) {
+      socket.emit('battle_royale_error', { message: 'Game not found' })
+      return
+    }
+    
+    // Send current state for spectating
+    const state = gameManager.getFullGameState(gameId)
+    socket.emit('battle_royale_state_update', state)
+    
+    console.log(`✅ ${address} spectating game ${gameId}`)
   }
 }
 
