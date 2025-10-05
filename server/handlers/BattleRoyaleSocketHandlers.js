@@ -9,12 +9,12 @@ class BattleRoyaleSocketHandlers {
   // Join Battle Royale Room
   async handleJoinBattleRoyaleRoom(socket, data, battleRoyaleManager, io) {
     const { roomId, address } = data
-    const gameId = roomId.startsWith('br_') ? roomId.substring(3) : roomId
+    const gameId = roomId.startsWith('game_') ? roomId.substring(5) : roomId
     
     console.log(`🎮 ${address} joining Battle Royale room: ${gameId}`)
     
     // Join socket room
-    socket.join(`br_${gameId}`)
+    socket.join(`game_${gameId}`)
     
     // Get or create game
     let game = battleRoyaleManager.getGame(gameId)
@@ -29,13 +29,13 @@ class BattleRoyaleSocketHandlers {
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     socket.emit('battle_royale_state_update', fullState)
     
-    console.log(`✅ ${address} joined Battle Royale room ${gameId}`)
+    console.log(`✅ ${address} joined Battle Royale room game_${gameId}`)
   }
 
   // Player Choice Handler - SIMPLIFIED
   async handleBattleRoyalePlayerChoice(socket, data, battleRoyaleManager, io) {
     const { gameId, address, choice } = data
-    console.log(`🎯 Battle Royale choice: ${address} chose ${choice} in ${gameId}`)
+    console.log(`🎯 Battle Royale choice: ${address} chose ${choice}`)
     
     const success = battleRoyaleManager.setPlayerChoice(gameId, address, choice)
     if (!success) {
@@ -43,16 +43,14 @@ class BattleRoyaleSocketHandlers {
       return
     }
 
-    // Broadcast updated state immediately
-    const roomId = `br_${gameId}`
+    const roomId = `game_${gameId}`
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     io.to(roomId).emit('battle_royale_state_update', fullState)
     
-    // Also broadcast that this player made a choice
     io.to(roomId).emit('battle_royale_player_chose', {
       gameId,
       playerAddress: address,
-      hasChosen: true // Don't reveal the actual choice
+      hasChosen: true
     })
   }
 
@@ -60,8 +58,8 @@ class BattleRoyaleSocketHandlers {
 
   // Execute Flip - SIMPLIFIED (no power charging)
   async handleBattleRoyaleExecuteFlip(socket, data, battleRoyaleManager, io) {
-    const { gameId, address, power } = data
-    console.log(`🪙 Battle Royale flip execute: ${address} with power ${power || 1} in ${gameId}`)
+    const { gameId, address } = data
+    console.log(`🪙 Battle Royale flip execute: ${address}`)
     
     const game = battleRoyaleManager.getGame(gameId)
     if (!game) {
@@ -74,13 +72,9 @@ class BattleRoyaleSocketHandlers {
       socket.emit('battle_royale_error', { message: 'Player not found' })
       return
     }
-
-    // Set the power level
-    player.power = power || 1
     
-    // Execute the flip immediately
     const success = battleRoyaleManager.executePlayerFlip(gameId, address, (roomId, eventType, eventData) => {
-      io.to(roomId).emit(eventType, eventData)
+      io.to(`game_${gameId}`).emit(eventType, eventData)
     })
 
     if (!success) {
@@ -126,7 +120,7 @@ class BattleRoyaleSocketHandlers {
       console.log(`✅ Updated coin for ${address}:`, player.coin)
 
       // BROADCAST state to all players in room
-      const roomId = `br_${gameId}`
+      const roomId = `game_${gameId}`
       const gameState = battleRoyaleManager.getFullGameState(gameId)
       
       console.log(`📢 Broadcasting state update to room ${roomId}`)
@@ -231,7 +225,7 @@ class BattleRoyaleSocketHandlers {
       }
 
       // Join room first
-      const roomId = `br_${gameId}`
+      const roomId = `game_${gameId}`
       socket.join(roomId)
       console.log(`✅ Socket ${socket.id} joined room ${roomId}`)
 
@@ -293,8 +287,7 @@ class BattleRoyaleSocketHandlers {
         // Auto-start the game
         setTimeout(() => {
           battleRoyaleManager.prepareGameStart(gameId, (roomId, eventType, eventData) => {
-            console.log(`📡 Auto-start broadcasting ${eventType} to ${roomId}`)
-            io.to(roomId).emit(eventType, eventData)
+            io.to(`game_${gameId}`).emit(eventType, eventData)
           })
         }, 1000) // Small delay to ensure all clients are ready
       }
@@ -320,7 +313,7 @@ class BattleRoyaleSocketHandlers {
     battleRoyaleManager.addSpectator(gameId, address)
     
     // Join room
-    const roomId = `br_${gameId}`
+    const roomId = `game_${gameId}`
     socket.join(roomId)
 
     // Send current state

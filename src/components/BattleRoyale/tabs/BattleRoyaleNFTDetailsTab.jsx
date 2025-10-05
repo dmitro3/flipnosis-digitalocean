@@ -505,7 +505,7 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
   const loadChatHistory = useCallback(async () => {
     try {
       // For battle royale, we need to use the br_ format for the API call
-      const cleanGameId = gameId.startsWith('br_') ? gameId : `br_${gameId}`
+      const cleanGameId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
       const response = await fetch(`/api/chat/${cleanGameId}?limit=100`)
       if (response.ok) {
         const data = await response.json()
@@ -545,7 +545,7 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
         }
 
         // Join the battle royale room - use br_ format for battle royale
-        const roomId = gameId.startsWith('br_') ? gameId : `br_${gameId}`
+        const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
         socketService.emit('join_battle_royale_room', {
           roomId: roomId,
           address
@@ -599,7 +599,7 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
     console.log('💬 Sending chat message:', { message: messageText, from: address })
     
     // Use br_ format for battle royale room
-    const roomId = gameId.startsWith('br_') ? gameId : `br_${gameId}`
+    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
     
     // Send to server via socket
     socketService.emit('chat_message', {

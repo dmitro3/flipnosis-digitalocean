@@ -349,7 +349,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         socketService.on('battle_royale_state_update', onStateUpdate)
         socketService.on('battle_royale_starting', onGameStarting)
         
-        socketService.emit('join_battle_royale_room', { roomId: `br_${gameId}`, address })
+        socketService.emit('join_battle_royale_room', { roomId: `game_${gameId}`, address })
         socketService.emit('request_battle_royale_state', { gameId })
       } catch (err) {
         console.error('Socket setup failed:', err)

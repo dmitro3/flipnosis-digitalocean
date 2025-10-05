@@ -321,8 +321,8 @@ class BattleRoyaleGameManager {
         countdown: 3,
         message: 'Battle Royale starting in 3 seconds!'
       }
-      console.log(`📡 Broadcasting battle_royale_starting event:`, startEvent)
-      broadcastFn(`br_${gameId}`, 'battle_royale_starting', startEvent)
+      console.log(`📡 Broadcasting battle_royale_starting event`)
+      broadcastFn(`game_${gameId}`, 'battle_royale_starting', startEvent)
     } else {
       console.warn(`⚠️ No broadcast function provided for game start: ${gameId}`)
     }
@@ -384,7 +384,7 @@ class BattleRoyaleGameManager {
 
     // Broadcast round start immediately
     if (broadcastFn) {
-      broadcastFn(`br_${gameId}`, 'battle_royale_round_start', {
+      broadcastFn(`game_${gameId}`, 'battle_royale_round_start', {
         gameId,
         round: game.currentRound,
         roundDuration: 20000,
@@ -392,7 +392,7 @@ class BattleRoyaleGameManager {
       })
       
       const fullState = this.getFullGameState(gameId)
-      broadcastFn(`br_${gameId}`, 'battle_royale_state_update', fullState)
+      broadcastFn(`game_${gameId}`, 'battle_royale_state_update', fullState)
     }
 
     // Start countdown timer
@@ -413,7 +413,7 @@ class BattleRoyaleGameManager {
       // Broadcast countdown update
       if (broadcastFn) {
         const state = this.getFullGameState(gameId)
-        broadcastFn(`br_${gameId}`, 'battle_royale_state_update', state)
+        broadcastFn(`game_${gameId}`, 'battle_royale_state_update', state)
       }
     }, 1000)
 
@@ -554,7 +554,7 @@ class BattleRoyaleGameManager {
 
     // Immediately broadcast this player's flip state to everyone
     if (broadcastFn) {
-      broadcastFn(`br_${gameId}`, 'battle_royale_player_flipped', {
+      broadcastFn(`game_${gameId}`, 'battle_royale_player_flipped', {
         gameId,
         playerAddress,
         flipResult,
@@ -564,7 +564,7 @@ class BattleRoyaleGameManager {
       
       // Also send full state update
       const fullState = this.getFullGameState(gameId)
-      broadcastFn(`br_${gameId}`, 'battle_royale_state_update', fullState)
+      broadcastFn(`game_${gameId}`, 'battle_royale_state_update', fullState)
     }
 
     return true
@@ -574,7 +574,7 @@ class BattleRoyaleGameManager {
   broadcastFlipComplete(gameId, playerAddress, flipResult, broadcastFn) {
     if (!broadcastFn) return
     
-    broadcastFn(`br_${gameId}`, 'battle_royale_player_flipped', {
+    broadcastFn(`game_${gameId}`, 'battle_royale_player_flipped', {
       gameId,
       playerAddress,
       flipResult,
@@ -664,7 +664,7 @@ class BattleRoyaleGameManager {
 
     // Broadcast results
     if (broadcastFn) {
-      broadcastFn(`br_${gameId}`, 'battle_royale_round_end', {
+      broadcastFn(`game_${gameId}`, 'battle_royale_round_end', {
         gameId,
         round: game.currentRound,
         eliminatedPlayers: eliminatedThisRound,
@@ -715,7 +715,7 @@ class BattleRoyaleGameManager {
     console.log(`🎉 Battle Royale winner: ${game.winner || 'None'}`)
 
     if (broadcastFn) {
-      broadcastFn(`br_${gameId}`, 'battle_royale_game_complete', {
+      broadcastFn(`game_${gameId}`, 'battle_royale_game_complete', {
         gameId,
         winner: game.winner,
         totalRounds: game.currentRound,
