@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import styled from '@emotion/styled'
 import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
-import BattleRoyaleUnified3DScene from './BattleRoyaleUnified3DScene'
+import DynamicGrid from './DynamicGrid'
 import FloatingChatWidget from './FloatingChatWidget'
 import socketService from '../../services/SocketService'
 import './BattleRoyaleCoins.css'
@@ -25,18 +25,17 @@ const GameLayout = styled.div`
   }
 `
 
-const SceneContainer = styled.div`
+const ArenaContainer = styled.div`
   flex: 2;
-  min-width: 600px;
-  height: 600px;
+  min-height: 700px;
   background: rgba(0, 0, 0, 0.8);
   border: 2px solid #FFD700;
   border-radius: 1rem;
   overflow: hidden;
+  position: relative;
   
   @media (max-width: 1200px) {
-    min-width: 100%;
-    height: 500px;
+    min-height: 600px;
   }
 `
 
@@ -55,6 +54,50 @@ const ControlPanel = styled.div`
   @media (max-width: 1200px) {
     max-width: 100%;
   }
+`
+const AbilityButton = styled.button`
+  padding: 1rem 2rem;
+  background: ${props => props.available 
+    ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' 
+    : 'rgba(100, 100, 100, 0.3)'};
+  border: 2px solid ${props => props.available ? '#FFD700' : '#666'};
+  border-radius: 1rem;
+  color: ${props => props.available ? '#000' : '#999'};
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: ${props => props.available ? 'pointer' : 'not-allowed'};
+  transition: all 0.3s ease;
+  font-family: 'Hyperwave', 'Poppins', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  
+  ${props => props.available && `
+    &:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5); }
+    animation: abilityPulse 2s ease-in-out infinite;
+    @keyframes abilityPulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+      50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.8); }
+    }
+  `}
+`
+
+const LightningBanner = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.95), rgba(255, 140, 0, 0.95));
+  border: 3px solid #FFD700;
+  border-radius: 1rem;
+  padding: 2rem 4rem;
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #000;
+  text-align: center;
+  z-index: 100;
+  animation: lightningFlash 0.5s ease-in-out infinite;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 80px rgba(255, 215, 0, 0.6);
+  @keyframes lightningFlash { 0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); } }
 `
 
 const StatusHeader = styled.div`
@@ -385,7 +428,7 @@ const WinnerDisplay = styled.div`
 `
 
 const GameScreen = () => {
-  const { gameState, playerCoinImages, address, makeChoice, flipCoin } = useBattleRoyaleGame()
+  const { gameState, playerCoinImages, address } = useBattleRoyaleGame()
   const [localChoice, setLocalChoice] = useState(null)
   const [power, setPower] = useState(1)
   const [isCharging, setIsCharging] = useState(false)
@@ -413,12 +456,9 @@ const GameScreen = () => {
 
   const handleChoiceClick = useCallback((choice) => {
     if (!isInGame || isEliminated || phase !== 'round_active') return
-    
-    const success = makeChoice(choice)
-    if (success) {
-      setLocalChoice(choice)
-    }
-  }, [isInGame, isEliminated, phase, makeChoice])
+    socketService.emit('battle_royale_player_choice', { gameId: gameState.gameId, address, choice })
+    setLocalChoice(choice)
+  }, [isInGame, isEliminated, phase, gameState.gameId, address])
 
   // Start charging power
   const handleFlipMouseDown = useCallback(() => {
@@ -451,11 +491,7 @@ const GameScreen = () => {
     
     setIsCharging(false)
     
-    // Send flip with power
-    const success = flipCoin(Math.floor(power))
-    if (success) {
-      console.log(`🪙 Flipped with power: ${Math.floor(power)}`)
-    }
+    socketService.emit('battle_royale_flip_coin', { gameId: gameState.gameId, address, power: Math.floor(power) })
     
     // Reset power after a delay
     setTimeout(() => setPower(1), 500)
@@ -471,21 +507,12 @@ const GameScreen = () => {
     setPower(1)
   }, [])
 
-  // Listen for round end messages
   useEffect(() => {
-    const handleRoundEnd = (data) => {
-      if (data.message) {
-        setReplayMessage(data.message)
-        // Clear message after 5 seconds
-        setTimeout(() => setReplayMessage(null), 5000)
-      }
+    const handleLightningActivated = () => {
+      setReplayMessage(null)
     }
-
-    socketService.on('battle_royale_round_end', handleRoundEnd)
-
-    return () => {
-      socketService.off('battle_royale_round_end', handleRoundEnd)
-    }
+    socketService.on('battle_royale_lightning_activated', handleLightningActivated)
+    return () => socketService.off('battle_royale_lightning_activated', handleLightningActivated)
   }, [])
 
   // PHASE: STARTING
@@ -539,16 +566,16 @@ const GameScreen = () => {
   return (
     <Container>
       <GameLayout>
-        {/* 3D SCENE */}
-        <SceneContainer>
-          <BattleRoyaleUnified3DScene
+        {/* ARENA WITH DYNAMIC GRID */}
+        <ArenaContainer>
+          <DynamicGrid
             players={scenePlayersArray}
+            currentUserAddress={address}
             gamePhase={phase}
             serverState={gameState}
             playerCoinImages={playerCoinImages}
-            currentUserAddress={address}
           />
-        </SceneContainer>
+        </ArenaContainer>
 
         {/* CONTROL PANEL */}
         <ControlPanel>
@@ -640,7 +667,35 @@ const GameScreen = () => {
                 </>
               )}
 
-              {/* STATUS INFO */}
+          {/* ABILITIES */}
+          {phase === 'round_active' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <AbilityButton
+                available={player?.hasShield}
+                onClick={() => {
+                  if (!isInGame || isEliminated || !player.hasShield) return
+                  const confirmDeploy = window.confirm('Deploy your shield? This will protect you from elimination this round.')
+                  if (confirmDeploy) socketService.emit('battle_royale_deploy_shield', { gameId: gameState.gameId, address })
+                }}
+                disabled={!player?.hasShield}
+              >
+                🛡️ {player?.hasShield ? 'DEPLOY SHIELD' : 'SHIELD USED'}
+              </AbilityButton>
+              <AbilityButton
+                available={player?.hasLightningRound}
+                onClick={() => {
+                  if (!isInGame || isEliminated || !player.hasLightningRound) return
+                  const confirmLightning = window.confirm('Activate Lightning Round? All players will have only 5 seconds to choose!')
+                  if (confirmLightning) socketService.emit('battle_royale_activate_lightning', { gameId: gameState.gameId, address })
+                }}
+                disabled={!player?.hasLightningRound}
+              >
+                ⚡ {player?.hasLightningRound ? 'LIGHTNING ROUND' : 'LOCKED'}
+              </AbilityButton>
+            </div>
+          )}
+
+          {/* STATUS INFO */}
               {player.choice && (
                 <InfoBox color="#FFD700">
                   Your Choice: {player.choice.toUpperCase()}

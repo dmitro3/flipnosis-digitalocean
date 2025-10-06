@@ -105,7 +105,8 @@ initialize(server, dbService) {
           data, 
           this.battleRoyaleManager, 
           this.io, 
-          this.dbService
+          this.dbService,
+          this.socketTracker
         )
       }))
 
@@ -156,6 +157,28 @@ initialize(server, dbService) {
           socket, 
           data, 
           this.battleRoyaleManager, 
+          this.io
+        )
+      }))
+
+      // Shield deploy
+      socket.on('battle_royale_deploy_shield', safeHandler((data) => {
+        console.log(`📥 battle_royale_deploy_shield from ${socket.id}`, data)
+        return this.battleRoyaleHandlers.handleBattleRoyaleDeployShield(
+          socket,
+          data,
+          this.battleRoyaleManager,
+          this.io
+        )
+      }))
+
+      // Lightning round activate
+      socket.on('battle_royale_activate_lightning', safeHandler((data) => {
+        console.log(`📥 battle_royale_activate_lightning from ${socket.id}`, data)
+        return this.battleRoyaleHandlers.handleBattleRoyaleActivateLightning(
+          socket,
+          data,
+          this.battleRoyaleManager,
           this.io
         )
       }))

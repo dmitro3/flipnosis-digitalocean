@@ -8,7 +8,8 @@ const BattleRoyaleUnified3DScene = ({
   gamePhase = 'filling',
   serverState = null,
   playerCoinImages = {},
-  currentUserAddress = null
+  currentUserAddress = null,
+  singleCoinMode = false
 }) => {
   const mountRef = useRef(null)
   const sceneRef = useRef(null)
@@ -18,14 +19,16 @@ const BattleRoyaleUnified3DScene = ({
   const coinStatesRef = useRef([]) // Animation states
   const animationIdRef = useRef(null)
 
-  // Fixed 3x2 grid positions - adjusted Y values to be lower (inside container)
-  const coinPositions = [
-    { x: -8, y: 1, z: 0, scale: 1 },    // Top left
-    { x: 0, y: 1, z: 0, scale: 1 },     // Top center
-    { x: 8, y: 1, z: 0, scale: 1 },     // Top right
-    { x: -8, y: -5, z: 0, scale: 1 },   // Bottom left
-    { x: 0, y: -5, z: 0, scale: 1 },    // Bottom center
-    { x: 8, y: -5, z: 0, scale: 1 }     // Bottom right
+  // Positions (supports single coin mode)
+  const coinPositions = singleCoinMode ? [
+    { x: 0, y: 0, z: 0, scale: 1 }
+  ] : [
+    { x: -8, y: 1, z: 0, scale: 1 },
+    { x: 0, y: 1, z: 0, scale: 1 },
+    { x: 8, y: 1, z: 0, scale: 1 },
+    { x: -8, y: -5, z: 0, scale: 1 },
+    { x: 0, y: -5, z: 0, scale: 1 },
+    { x: 8, y: -5, z: 0, scale: 1 }
   ]
 
   // Create optimized texture
@@ -131,8 +134,9 @@ const BattleRoyaleUnified3DScene = ({
     directional.position.set(5, 5, 5)
     scene.add(directional)
 
-    // Create 6 coin slots
-    for (let i = 0; i < 6; i++) {
+    // Create coin slots
+    const numCoins = singleCoinMode ? 1 : 6
+    for (let i = 0; i < numCoins; i++) {
       const materials = [
         new THREE.MeshStandardMaterial({ map: createTexture('edge'), metalness: 0.3, roughness: 0.2 }),
         new THREE.MeshStandardMaterial({ map: createTexture('heads'), metalness: 0.3, roughness: 0.2 }),
@@ -177,24 +181,23 @@ const BattleRoyaleUnified3DScene = ({
           const elapsed = currentTime - state.flipStartTime
           const progress = Math.min(elapsed / state.flipDuration, 1)
           
-          // Easing function for smooth landing
+          // Easing function for smooth deceleration at the end
           const easeOut = 1 - Math.pow(1 - progress, 3)
           
-          // Flip animation - spins based on power, goes up and comes down
-          const flipSpeed = 0.15 + (state.flipPower * 0.03) // More power = faster spin
+          // Flip animation - spins based on power
           const numRotations = 3 + state.flipPower // More power = more rotations
           
-          // Height arc - goes up then comes down
+          // Height arc - goes up a little then comes down
           const heightProgress = Math.sin(progress * Math.PI)
-          const maxHeight = 2 + (state.flipPower * 0.3) // More power = higher flip
+          const maxHeight = 1.5 + (state.flipPower * 0.2) // Slight upward movement
           coin.position.y = pos.y + (heightProgress * maxHeight)
-          coin.position.z = pos.z + (Math.sin(progress * Math.PI) * 1.5)
           
-          // Rotation during flip
-          coin.rotation.x = (progress * numRotations * Math.PI * 2)
+          // Rotation during flip - speed controlled by power, slows down at end
+          const spinProgress = progress < 0.85 ? progress : 0.85 + (progress - 0.85) * 0.3 // Slow down in last 15%
+          coin.rotation.x = (spinProgress * numRotations * Math.PI * 2)
           
           if (progress >= 1) {
-            // Landing - set final orientation based on result
+            // Landing - set final orientation based on result, facing forward
             state.isFlipping = false
             state.hasLanded = true
             coin.position.y = pos.y
@@ -204,11 +207,12 @@ const BattleRoyaleUnified3DScene = ({
             console.log(`🎯 Coin ${index} landed: ${state.flipResult}`)
           }
         } else if (!state.hasLanded) {
-          // Idle animation - gentle floating before flip
-          coin.rotation.x += 0.02
-          coin.position.y = pos.y + Math.sin(time * 0.5 + index) * 0.2
+          // Idle animation - face forward with gentle floating
+          coin.rotation.x = 0
+          coin.rotation.y = Math.PI / 2
+          coin.position.y = pos.y + Math.sin(time * 0.5 + index) * 0.15
         } else {
-          // Landed - gentle breathing animation
+          // Landed - stay facing forward with gentle breathing
           coin.position.y = pos.y + Math.sin(time * 0.3 + index) * 0.05
         }
       })
@@ -324,7 +328,7 @@ const BattleRoyaleUnified3DScene = ({
             position: 'absolute',
             left: '50%',
             top: '50%',
-            transform: `translate(${pos.x * 15 + 50}px, ${-pos.y * 15 + 130}px)`,
+            transform: `translate(${pos.x * 15 - 40}px, ${-pos.y * 15 + 130}px)`,
             textAlign: 'center',
             pointerEvents: 'none',
             zIndex: 100
@@ -349,18 +353,19 @@ const BattleRoyaleUnified3DScene = ({
           {/* Win/Lose display */}
           {showResult && (
             <div style={{
-              color: isWin ? '#00ff88' : '#ff6b6b',
-              fontSize: '1.3rem',
+              color: isWin ? '#00ff88' : '#ff3333',
+              fontSize: '1.5rem',
               fontWeight: 'bold',
-              textShadow: `0 0 15px ${isWin ? 'rgba(0,255,136,0.8)' : 'rgba(255,107,107,0.8)'}`,
-              background: isWin ? 'rgba(0,255,136,0.15)' : 'rgba(255,107,107,0.15)',
-              padding: '0.5rem 1rem',
+              textShadow: `0 0 20px ${isWin ? 'rgba(0,255,136,1)' : 'rgba(255,51,51,1)'}, 0 0 40px ${isWin ? 'rgba(0,255,136,0.6)' : 'rgba(255,51,51,0.6)'}`,
+              background: isWin ? 'rgba(0,255,136,0.2)' : 'rgba(255,51,51,0.2)',
+              padding: '0.6rem 1.2rem',
               borderRadius: '0.5rem',
-              border: `3px solid ${isWin ? '#00ff88' : '#ff6b6b'}`,
+              border: `3px solid ${isWin ? '#00ff88' : '#ff3333'}`,
               textTransform: 'uppercase',
-              animation: 'resultPop 0.5s ease-out'
+              animation: 'resultPop 0.5s ease-out',
+              letterSpacing: '0.1em'
             }}>
-              {isWin ? '✅ WIN' : '❌ LOSE'}
+              {isWin ? 'WIN' : 'LOSE'}
             </div>
           )}
         </div>

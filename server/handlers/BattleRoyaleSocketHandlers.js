@@ -63,9 +63,10 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Player joins game (after payment)
-  async handleJoinBattleRoyale(socket, data, gameManager, io, dbService) {
+  async handleJoinBattleRoyale(socket, data, gameManager, io, dbService, socketTracker) {
     const { gameId, address } = data
     console.log(`🎮 ${address} joining game: ${gameId}`)
+    console.log(`🔌 Socket ID: ${socket.id}`)
     
     const roomId = `game_${gameId}`
     
@@ -84,6 +85,13 @@ class BattleRoyaleSocketHandlers {
     // Join the room BEFORE adding player
     socket.join(roomId)
     console.log(`🏠 ${address} joined socket room ${roomId}`)
+    
+    // ALSO add to socket tracker
+    if (socketTracker) {
+      socketTracker.addSocketToGame(gameId, socket.id, address)
+      console.log(`✅ Socket ${socket.id} added to tracker for game ${gameId}`)
+    }
+    
     console.log(`📡 Room now has ${io.sockets.adapter.rooms.get(roomId)?.size || 0} sockets`)
     
     // Add player to game
@@ -95,9 +103,23 @@ class BattleRoyaleSocketHandlers {
       console.log(`📊 Player slots:`, state.playerSlots)
       console.log(`📊 Players:`, Object.keys(state.players))
       
-      // Broadcast to ALL players in the room (including the joiner)
-      console.log(`📡 Broadcasting updated state to ALL players in room ${roomId}`)
-      io.to(roomId).emit('battle_royale_state_update', state)
+      // Broadcast using tracker
+      console.log(`📡 Broadcasting updated state to ALL players`)
+      if (socketTracker) {
+        const gameSockets = socketTracker.getGameSockets(gameId)
+        console.log(`📡 Tracker has ${gameSockets?.size || 0} sockets for game ${gameId}`)
+        if (gameSockets) {
+          gameSockets.forEach(socketId => {
+            const targetSocket = io.sockets.sockets.get(socketId)
+            if (targetSocket) {
+              targetSocket.emit('battle_royale_state_update', state)
+              console.log(`✅ Sent join update to socket ${socketId}`)
+            }
+          })
+        }
+      } else {
+        io.to(roomId).emit('battle_royale_state_update', state)
+      }
       
       console.log(`✅ ${address} joined game successfully, new player count: ${state.currentPlayers}`)
     } else {
@@ -138,48 +160,71 @@ class BattleRoyaleSocketHandlers {
   // Update coin
   async handleBattleRoyaleUpdateCoin(socket, data, gameManager, io, dbService = null, socketTracker = null) {
     const { gameId, address, coin, coinData } = data
-    console.log(`🪙 ${address} updating coin in game ${gameId}`)
-    console.log(`🔌 Socket ID: ${socket.id}`)
+    console.log(`\n${'='.repeat(60)}`)
+    console.log(`🪙 COIN UPDATE REQUEST`)
+    console.log(`Game ID: ${gameId}`)
+    console.log(`Address: ${address}`)
+    console.log(`Socket ID: ${socket.id}`)
+    console.log(`Coin: ${(coin || coinData)?.name}`)
     
     // Handle both parameter names for compatibility
     const coinToUpdate = coin || coinData
-    console.log(`🪙 Coin data:`, coinToUpdate)
+    
+    // Check if socketTracker exists
+    console.log(`📊 SocketTracker available: ${!!socketTracker}`)
+    if (socketTracker) {
+      console.log(`📊 Tracker stats:`, socketTracker.getStats())
+    }
     
     const success = await gameManager.updatePlayerCoin(gameId, address, coinToUpdate, dbService)
     if (success) {
       // Broadcast updated state
       const state = gameManager.getFullGameState(gameId)
       
-      console.log(`📊 Updated coin for ${address} to ${coinToUpdate?.name || 'unknown'}`)
+      console.log(`✅ Coin updated in game state`)
       console.log(`📊 State has ${state.currentPlayers} players:`, Object.keys(state.players))
+      console.log(`📊 Player ${address.slice(0, 8)}... now has coin:`, state.players[address.toLowerCase()]?.coin?.name)
       
       // Use our socket tracker for direct broadcast
       if (socketTracker) {
         const gameSockets = socketTracker.getGameSockets(gameId)
-        console.log(`📡 Broadcasting to ${gameSockets?.size || 0} tracked sockets`)
+        console.log(`📡 Tracker has ${gameSockets?.size || 0} sockets for this game`)
         
-        if (gameSockets) {
+        if (gameSockets && gameSockets.size > 0) {
+          console.log(`📡 Socket IDs in tracker:`, Array.from(gameSockets))
+          
+          let successCount = 0
           gameSockets.forEach(socketId => {
             const targetSocket = io.sockets.sockets.get(socketId)
             if (targetSocket) {
               targetSocket.emit('battle_royale_state_update', state)
               console.log(`✅ Sent update to socket ${socketId}`)
+              successCount++
             } else {
               console.log(`⚠️ Socket ${socketId} no longer exists, removing from tracker`)
               socketTracker.removeSocketFromGame(gameId, socketId)
             }
           })
+          console.log(`📡 Successfully sent to ${successCount}/${gameSockets.size} sockets`)
+        } else {
+          console.log(`⚠️ WARNING: No sockets tracked for this game!`)
+          console.log(`⚠️ Falling back to room-based broadcast`)
+          const roomId = `game_${gameId}`
+          io.to(roomId).emit('battle_royale_state_update', state)
         }
       } else {
-        // Fallback to room-based broadcast
+        console.log(`⚠️ WARNING: SocketTracker not available!`)
+        console.log(`⚠️ Falling back to room-based broadcast`)
         const roomId = `game_${gameId}`
         io.to(roomId).emit('battle_royale_state_update', state)
         console.log(`📡 Broadcasted to room ${roomId}`)
       }
       
-      console.log(`✅ Coin update broadcasted successfully`)
+      console.log(`✅ Coin update broadcast complete`)
+      console.log(`${'='.repeat(60)}\n`)
     } else {
       console.log(`❌ Failed to update coin for ${address}`)
+      console.log(`${'='.repeat(60)}\n`)
       socket.emit('battle_royale_error', { message: 'Cannot update coin' })
     }
   }
@@ -237,6 +282,30 @@ class BattleRoyaleSocketHandlers {
     socket.emit('battle_royale_state_update', state)
     
     console.log(`✅ ${address} spectating game ${gameId}`)
+  }
+
+  // Deploy shield
+  async handleBattleRoyaleDeployShield(socket, data, gameManager, io) {
+    const { gameId, address } = data
+    console.log(`🛡️ ${address} deploying shield`)
+    const success = gameManager.deployShield(gameId, address, (room, event, payload) => {
+      io.to(room).emit(event, payload)
+    })
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot deploy shield' })
+    }
+  }
+
+  // Activate Lightning Round
+  async handleBattleRoyaleActivateLightning(socket, data, gameManager, io) {
+    const { gameId, address } = data
+    console.log(`⚡ ${address} activating Lightning Round`)
+    const success = gameManager.activateLightningRound(gameId, address, (room, event, payload) => {
+      io.to(room).emit(event, payload)
+    })
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot activate Lightning Round' })
+    }
   }
 }
 
