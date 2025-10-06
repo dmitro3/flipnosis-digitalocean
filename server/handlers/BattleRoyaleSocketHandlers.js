@@ -7,8 +7,12 @@ class BattleRoyaleSocketHandlers {
     const gameId = roomId.startsWith('game_') ? roomId.substring(5) : roomId
     
     console.log(`🏠 ${address} joining room: ${gameId}`)
+    console.log(`🔌 Socket ID: ${socket.id}`)
     
     socket.join(`game_${gameId}`)
+    
+    console.log(`✅ Socket ${socket.id} joined room game_${gameId}`)
+    console.log(`📡 Room game_${gameId} now has ${io.sockets.adapter.rooms.get(`game_${gameId}`)?.size || 0} sockets`)
     
     // Load game from DB if not in memory
     let game = await gameManager.loadGameFromDatabase(gameId, dbService)
@@ -127,20 +131,38 @@ class BattleRoyaleSocketHandlers {
   async handleBattleRoyaleUpdateCoin(socket, data, gameManager, io, dbService = null) {
     const { gameId, address, coin, coinData } = data
     console.log(`🪙 ${address} updating coin in game ${gameId}`)
+    console.log(`🔌 Socket ID: ${socket.id}`)
     
     // Handle both parameter names for compatibility
     const coinToUpdate = coin || coinData
     console.log(`🪙 Coin data:`, coinToUpdate)
     
+    const roomId = `game_${gameId}`
+    
+    // Check if THIS socket is in the room
+    const socketRooms = Array.from(socket.rooms)
+    console.log(`🔍 Socket ${socket.id} is in rooms:`, socketRooms)
+    console.log(`🔍 Looking for room: ${roomId}`)
+    
+    if (!socketRooms.includes(roomId)) {
+      console.log(`⚠️ Socket ${socket.id} is NOT in room ${roomId}, joining now...`)
+      socket.join(roomId)
+      console.log(`✅ Socket ${socket.id} joined room ${roomId}`)
+    }
+    
     const success = await gameManager.updatePlayerCoin(gameId, address, coinToUpdate, dbService)
     if (success) {
       // Broadcast updated state to ALL players in the room
       const state = gameManager.getFullGameState(gameId)
-      const roomId = `game_${gameId}`
       
       console.log(`📊 Updated coin for ${address} to ${coinToUpdate?.name || 'unknown'}`)
       console.log(`📡 Broadcasting coin update to room ${roomId}`)
-      console.log(`📡 Room has ${io.sockets.adapter.rooms.get(roomId)?.size || 0} sockets`)
+      
+      const room = io.sockets.adapter.rooms.get(roomId)
+      console.log(`📡 Room ${roomId} has ${room?.size || 0} sockets`)
+      if (room) {
+        console.log(`📡 Socket IDs in room:`, Array.from(room))
+      }
       console.log(`📊 State has ${state.currentPlayers} players:`, Object.keys(state.players))
       
       // Broadcast to everyone in the room
