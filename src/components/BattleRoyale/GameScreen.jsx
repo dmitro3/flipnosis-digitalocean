@@ -615,13 +615,13 @@ const GameScreen = () => {
             </ReplayNotification>
           )}
           
-          <StatusHeader urgent={countdown <= 5}>
+          <StatusHeader urgent={false}>
             <div className="phase">
               {phase === 'round_active' ? '⚔️ BATTLE ACTIVE' : '📊 ROUND ENDING'}
             </div>
-            <div className="timer">
+            {/* <div className="timer">
               {countdown}s
-            </div>
+            </div> */}
             <div className="round-info">
               Round {currentRound} • {gameState.activePlayers?.length || 0} Players Alive
             </div>
