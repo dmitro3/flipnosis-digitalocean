@@ -2,14 +2,22 @@
 
 class BattleRoyaleSocketHandlers {
   // Join room and request state
-  async handleJoinBattleRoyaleRoom(socket, data, gameManager, io, dbService) {
+  async handleJoinBattleRoyaleRoom(socket, data, gameManager, io, dbService, socketTracker) {
     const { roomId, address } = data
     const gameId = roomId.startsWith('game_') ? roomId.substring(5) : roomId
     
     console.log(`🏠 ${address} joining room: ${gameId}`)
     console.log(`🔌 Socket ID: ${socket.id}`)
     
+    // Join both socket.io room AND our tracking system
     socket.join(`game_${gameId}`)
+    
+    // Track this socket in our game tracker
+    if (socketTracker) {
+      socketTracker.addSocketToGame(gameId, socket.id, address)
+      console.log(`✅ Socket ${socket.id} tracked for game ${gameId}`)
+      console.log(`📊 Game ${gameId} now has ${socketTracker.getGameSockets(gameId)?.size || 0} tracked sockets`)
+    }
     
     console.log(`✅ Socket ${socket.id} joined room game_${gameId}`)
     console.log(`📡 Room game_${gameId} now has ${io.sockets.adapter.rooms.get(`game_${gameId}`)?.size || 0} sockets`)
@@ -128,7 +136,7 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Update coin
-  async handleBattleRoyaleUpdateCoin(socket, data, gameManager, io, dbService = null) {
+  async handleBattleRoyaleUpdateCoin(socket, data, gameManager, io, dbService = null, socketTracker = null) {
     const { gameId, address, coin, coinData } = data
     console.log(`🪙 ${address} updating coin in game ${gameId}`)
     console.log(`🔌 Socket ID: ${socket.id}`)
@@ -137,36 +145,37 @@ class BattleRoyaleSocketHandlers {
     const coinToUpdate = coin || coinData
     console.log(`🪙 Coin data:`, coinToUpdate)
     
-    const roomId = `game_${gameId}`
-    
-    // Check if THIS socket is in the room
-    const socketRooms = Array.from(socket.rooms)
-    console.log(`🔍 Socket ${socket.id} is in rooms:`, socketRooms)
-    console.log(`🔍 Looking for room: ${roomId}`)
-    
-    if (!socketRooms.includes(roomId)) {
-      console.log(`⚠️ Socket ${socket.id} is NOT in room ${roomId}, joining now...`)
-      socket.join(roomId)
-      console.log(`✅ Socket ${socket.id} joined room ${roomId}`)
-    }
-    
     const success = await gameManager.updatePlayerCoin(gameId, address, coinToUpdate, dbService)
     if (success) {
-      // Broadcast updated state to ALL players in the room
+      // Broadcast updated state
       const state = gameManager.getFullGameState(gameId)
       
       console.log(`📊 Updated coin for ${address} to ${coinToUpdate?.name || 'unknown'}`)
-      console.log(`📡 Broadcasting coin update to room ${roomId}`)
-      
-      const room = io.sockets.adapter.rooms.get(roomId)
-      console.log(`📡 Room ${roomId} has ${room?.size || 0} sockets`)
-      if (room) {
-        console.log(`📡 Socket IDs in room:`, Array.from(room))
-      }
       console.log(`📊 State has ${state.currentPlayers} players:`, Object.keys(state.players))
       
-      // Broadcast to everyone in the room
-      io.to(roomId).emit('battle_royale_state_update', state)
+      // Use our socket tracker for direct broadcast
+      if (socketTracker) {
+        const gameSockets = socketTracker.getGameSockets(gameId)
+        console.log(`📡 Broadcasting to ${gameSockets?.size || 0} tracked sockets`)
+        
+        if (gameSockets) {
+          gameSockets.forEach(socketId => {
+            const targetSocket = io.sockets.sockets.get(socketId)
+            if (targetSocket) {
+              targetSocket.emit('battle_royale_state_update', state)
+              console.log(`✅ Sent update to socket ${socketId}`)
+            } else {
+              console.log(`⚠️ Socket ${socketId} no longer exists, removing from tracker`)
+              socketTracker.removeSocketFromGame(gameId, socketId)
+            }
+          })
+        }
+      } else {
+        // Fallback to room-based broadcast
+        const roomId = `game_${gameId}`
+        io.to(roomId).emit('battle_royale_state_update', state)
+        console.log(`📡 Broadcasted to room ${roomId}`)
+      }
       
       console.log(`✅ Coin update broadcasted successfully`)
     } else {

@@ -1,6 +1,7 @@
 const socketIO = require('socket.io')
 const BattleRoyaleGameManager = require('../BattleRoyaleGameManager')
 const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
+const SocketTracker = require('./SocketTracker')
 
 // ===== CLEAN SERVER ARCHITECTURE =====
 
@@ -15,6 +16,9 @@ class GameServer {
     // this.gameManager = new GameManager() // TODO: Not implemented yet - for 1v1 games
     this.battleRoyaleManager = new BattleRoyaleGameManager()
     
+    // Initialize socket tracker for reliable broadcasting
+    this.socketTracker = new SocketTracker()
+    
     // Then instantiate handlers (FIXED: They are classes, not modules)
     // this.oneVOneHandlers = require('./1v1SocketHandlers') // TODO: Not implemented yet
     const BattleRoyaleSocketHandlersClass = require('./BattleRoyaleSocketHandlers')
@@ -26,7 +30,8 @@ class GameServer {
     
     console.log('✅ SocketService: Managers initialized:', {
       battleRoyaleManager: !!this.battleRoyaleManager,
-      battleRoyaleHandlers: !!this.battleRoyaleHandlers
+      battleRoyaleHandlers: !!this.battleRoyaleHandlers,
+      socketTracker: !!this.socketTracker
     })
   }
 
@@ -88,7 +93,8 @@ initialize(server, dbService) {
           data, 
           this.battleRoyaleManager, 
           this.io,
-          this.dbService
+          this.dbService,
+          this.socketTracker
         )
       }))
 
@@ -110,7 +116,8 @@ initialize(server, dbService) {
           data, 
           this.battleRoyaleManager, 
           this.io,
-          this.dbService
+          this.dbService,
+          this.socketTracker
         )
       }))
 
@@ -223,6 +230,11 @@ initialize(server, dbService) {
       console.log(`❌ ${socketData.address} disconnected from ${socketData.roomId}`)
       this.socketData.delete(socket.id)
     }
+    
+    // Clean up from socket tracker
+    this.socketTracker.removeSocket(socket.id)
+    
+    console.log(`🧹 Socket ${socket.id} cleaned up from all trackers`)
   }
 }
 
