@@ -35,7 +35,10 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
   const loadCoinImagesForPlayer = useCallback(async (playerAddress, coinData) => {
     const key = playerAddress.toLowerCase()
     
+    console.log(`🖼️ Loading coin images for ${playerAddress}, coinData:`, coinData)
+    
     if (loadedAddresses.current.has(key)) {
+      console.log(`🖼️ Coin images already loaded for ${playerAddress}`)
       return // Already loaded
     }
 
@@ -43,9 +46,11 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
       let headsImage, tailsImage
 
       if (coinData?.type === 'custom') {
+        console.log(`🖼️ Loading custom coin for ${playerAddress}`)
         headsImage = await getCoinHeadsImage(playerAddress)
         tailsImage = await getCoinTailsImage(playerAddress)
       } else {
+        console.log(`🖼️ Loading default coin for ${playerAddress}:`, coinData?.headsImage, coinData?.tailsImage)
         headsImage = coinData?.headsImage || '/coins/plainh.png'
         tailsImage = coinData?.tailsImage || '/coins/plaint.png'
       }
@@ -56,7 +61,7 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
       }))
 
       loadedAddresses.current.add(key)
-      console.log(`✅ Loaded coin images for ${playerAddress}`)
+      console.log(`✅ Loaded coin images for ${playerAddress}: ${headsImage}, ${tailsImage}`)
     } catch (error) {
       console.error('Error loading coin images:', error)
       setPlayerCoinImages(prev => ({
@@ -72,14 +77,21 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
 
   // ===== LOAD ALL PLAYER IMAGES =====
   const loadAllPlayerImages = useCallback(async (players) => {
-    if (!players) return
+    if (!players) {
+      console.log('🖼️ No players to load images for')
+      return
+    }
 
+    console.log('🖼️ Loading coin images for players:', Object.keys(players))
     setImagesLoading(true)
     const loadPromises = []
 
     Object.entries(players).forEach(([playerAddress, playerData]) => {
+      console.log(`🖼️ Player ${playerAddress} has coin:`, playerData?.coin)
       if (playerData?.coin) {
         loadPromises.push(loadCoinImagesForPlayer(playerAddress, playerData.coin))
+      } else {
+        console.log(`⚠️ Player ${playerAddress} has no coin data`)
       }
     })
 
@@ -90,7 +102,12 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
 
   // ===== SOCKET EVENT HANDLERS =====
   const handleStateUpdate = useCallback((data) => {
-    console.log('📊 Game state update:', data.phase)
+    console.log('📊 Game state update received:', {
+      phase: data.phase,
+      currentPlayers: data.currentPlayers,
+      playerSlots: data.playerSlots,
+      players: data.players ? Object.keys(data.players) : 'none'
+    })
     setGameState(data)
     setLoading(false)
 

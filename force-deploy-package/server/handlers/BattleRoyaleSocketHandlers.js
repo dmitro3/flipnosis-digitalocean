@@ -154,7 +154,10 @@ class BattleRoyaleSocketHandlers {
     // Broadcast updated state
     const roomId = gameId
     const fullState = battleRoyaleManager.getFullGameState(gameId)
+    console.log(`📡 Broadcasting coin update to room ${roomId}`)
+    console.log(`📡 Room has ${io.sockets.adapter.rooms.get(roomId)?.size || 0} sockets`)
     io.to(roomId).emit('battle_royale_state_update', fullState)
+    console.log(`✅ Coin update broadcasted successfully`)
   }
 
   // Request Game State
