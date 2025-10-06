@@ -312,13 +312,25 @@ class BattleRoyaleGameManager {
   // ===== UPDATE COIN =====
   updatePlayerCoin(gameId, playerAddress, coinData) {
     const game = this.games.get(gameId)
-    if (!game) return false
+    if (!game) {
+      console.log(`❌ Game not found: ${gameId}`)
+      return false
+    }
+
+    // Allow coin updates during filling phase
+    if (game.phase !== this.PHASES.FILLING) {
+      console.log(`❌ Cannot update coin - game phase is ${game.phase}`)
+      return false
+    }
 
     const player = game.players[playerAddress]
-    if (!player) return false
+    if (!player) {
+      console.log(`❌ Player not found: ${playerAddress}`)
+      return false
+    }
 
     player.coin = coinData
-    console.log(`✅ Coin updated for ${playerAddress}`)
+    console.log(`✅ Coin updated for ${playerAddress}:`, coinData.name)
     return true
   }
 

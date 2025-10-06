@@ -1227,7 +1227,17 @@ const Home = () => {
                               </GameStat>
                               <GameStat>
                                 <span>Entry Fee</span>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: theme.colors.neonPink }}>${(selectedFlip.entry_fee || 0).toFixed(2)}</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: theme.colors.neonPink }}>
+                                  ${(() => {
+                                    const fee = selectedFlip.entry_fee || 0
+                                    const num = parseFloat(fee)
+                                    if (num < 1) {
+                                      return (Math.ceil(num * 100) / 100).toFixed(2)
+                                    } else {
+                                      return (Math.round(num * 100) / 100).toFixed(2)
+                                    }
+                                  })()}
+                                </div>
                               </GameStat>
                             </>
                           ) : (

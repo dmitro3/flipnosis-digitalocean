@@ -181,9 +181,20 @@ initialize(server, dbService) {
   }
 
   // ===== CHAT SYSTEM =====
-  handleChatMessage(socket, data) {
+  async handleChatMessage(socket, data) {
     const { roomId, message, address } = data
     console.log(`💬 Chat from ${address} in ${roomId}: ${message}`)
+    
+    // Save to database if it's a battle royale game
+    if (roomId.startsWith('game_') && this.dbService) {
+      try {
+        const gameId = roomId.substring(5) // Remove 'game_' prefix
+        await this.dbService.saveBattleRoyaleChatMessage(gameId, address, message)
+        console.log(`✅ Chat message saved to database for game ${gameId}`)
+      } catch (error) {
+        console.error('❌ Error saving chat message:', error)
+      }
+    }
     
     // Broadcast to room
     socket.to(roomId).emit('chat_message', {

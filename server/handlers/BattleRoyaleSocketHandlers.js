@@ -55,17 +55,39 @@ class BattleRoyaleSocketHandlers {
     const roomId = `game_${gameId}`
     socket.join(roomId)
     
+    // Load game from DB if not in memory
+    let game = gameManager.getGame(gameId)
+    if (!game && dbService) {
+      try {
+        const gameData = await dbService.getBattleRoyaleGame(gameId)
+        if (gameData && gameData.status === 'filling') {
+          game = gameManager.createBattleRoyale(gameId, gameData, dbService)
+          console.log(`🔍 Game loaded from database: ${gameId}`)
+        }
+      } catch (error) {
+        console.error('Error loading game:', error)
+      }
+    }
+    
+    if (!game) {
+      socket.emit('battle_royale_error', { message: 'Game not found' })
+      return
+    }
+    
     // Add player to game
     const success = gameManager.addPlayer(gameId, address)
     if (success) {
-      // Broadcast updated state
+      // Send state to the joining player first
       const state = gameManager.getFullGameState(gameId)
+      socket.emit('battle_royale_state_update', state)
+      
+      // Then broadcast to all players in the room
       io.to(roomId).emit('battle_royale_state_update', state)
+      
+      console.log(`✅ ${address} joined game successfully`)
     } else {
       socket.emit('battle_royale_error', { message: 'Failed to join game' })
     }
-    
-    console.log(`✅ ${address} joined game`)
   }
 
   // Player makes choice

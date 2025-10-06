@@ -978,6 +978,28 @@ class DatabaseService {
     })
   }
 
+  // Get Battle Royale chat messages
+  async getBattleRoyaleChatMessages(gameId, limit = 100) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT id, sender_address, message, created_at as timestamp
+        FROM battle_royale_chat 
+        WHERE game_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT ?
+      `
+      
+      this.db.all(sql, [gameId, limit], (err, messages) => {
+        if (err) {
+          console.error('❌ Error fetching Battle Royale chat messages:', err)
+          reject(err)
+        } else {
+          resolve(messages || [])
+        }
+      })
+    })
+  }
+
   // Get Battle Royale game by ID
   async getBattleRoyaleGame(gameId) {
     return new Promise((resolve, reject) => {
