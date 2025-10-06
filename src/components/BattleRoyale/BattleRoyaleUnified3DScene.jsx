@@ -18,14 +18,14 @@ const BattleRoyaleUnified3DScene = ({
   const coinStatesRef = useRef([]) // Animation states
   const animationIdRef = useRef(null)
 
-  // Fixed 3x2 grid positions
+  // Fixed 3x2 grid positions - adjusted Y values to be lower (inside container)
   const coinPositions = [
-    { x: -8, y: 4, z: 0, scale: 1 },    // Top left
-    { x: 0, y: 4, z: 0, scale: 1 },     // Top center
-    { x: 8, y: 4, z: 0, scale: 1 },     // Top right
-    { x: -8, y: -4, z: 0, scale: 1 },   // Bottom left
-    { x: 0, y: -4, z: 0, scale: 1 },    // Bottom center
-    { x: 8, y: -4, z: 0, scale: 1 }     // Bottom right
+    { x: -8, y: 1, z: 0, scale: 1 },    // Top left
+    { x: 0, y: 1, z: 0, scale: 1 },     // Top center
+    { x: 8, y: 1, z: 0, scale: 1 },     // Top right
+    { x: -8, y: -5, z: 0, scale: 1 },   // Bottom left
+    { x: 0, y: -5, z: 0, scale: 1 },    // Bottom center
+    { x: 8, y: -5, z: 0, scale: 1 }     // Bottom right
   ]
 
   // Create optimized texture
@@ -39,13 +39,27 @@ const BattleRoyaleUnified3DScene = ({
     if (customImage && customImage !== '/coins/plainh.png' && customImage !== '/coins/plaint.png') {
       try {
         const loader = new THREE.TextureLoader()
-        const texture = loader.load(customImage)
+        const texture = loader.load(
+          customImage,
+          // Success callback
+          (loadedTexture) => {
+            console.log('✅ Texture loaded successfully:', customImage)
+          },
+          // Progress callback
+          undefined,
+          // Error callback - fallback to default
+          (error) => {
+            console.error('❌ Error loading texture:', customImage, error)
+            console.log('🔄 Falling back to default texture')
+          }
+        )
         texture.colorSpace = THREE.SRGBColorSpace
-        texture.flipY = false
+        texture.flipY = true // Changed to true to fix upside-down images
         globalTextureCache.set(cacheKey, texture)
         return texture
       } catch (error) {
         console.error('Error loading texture:', customImage, error)
+        // Fall through to default texture generation
       }
     }
 
@@ -85,7 +99,7 @@ const BattleRoyaleUnified3DScene = ({
 
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
-    texture.flipY = false
+    texture.flipY = true // Fixed orientation
     globalTextureCache.set(cacheKey, texture)
     return texture
   }, [])
@@ -141,7 +155,9 @@ const BattleRoyaleUnified3DScene = ({
         isFlipping: false,
         flipStartTime: null,
         flipDuration: 2000,
-        flipResult: null
+        flipResult: null,
+        hasLanded: false,
+        flipPower: 5
       }
     }
 
@@ -160,25 +176,40 @@ const BattleRoyaleUnified3DScene = ({
         if (state.isFlipping) {
           const elapsed = currentTime - state.flipStartTime
           const progress = Math.min(elapsed / state.flipDuration, 1)
+          
+          // Easing function for smooth landing
           const easeOut = 1 - Math.pow(1 - progress, 3)
           
-          // Flip animation
+          // Flip animation - spins based on power, goes up and comes down
+          const flipSpeed = 0.15 + (state.flipPower * 0.03) // More power = faster spin
+          const numRotations = 3 + state.flipPower // More power = more rotations
+          
+          // Height arc - goes up then comes down
           const heightProgress = Math.sin(progress * Math.PI)
-          coin.position.y = pos.y + (heightProgress * 2.5)
-          coin.position.z = pos.z + (Math.sin(progress * Math.PI) * 2)
-          coin.rotation.x += 0.3
+          const maxHeight = 2 + (state.flipPower * 0.3) // More power = higher flip
+          coin.position.y = pos.y + (heightProgress * maxHeight)
+          coin.position.z = pos.z + (Math.sin(progress * Math.PI) * 1.5)
+          
+          // Rotation during flip
+          coin.rotation.x = (progress * numRotations * Math.PI * 2)
           
           if (progress >= 1) {
+            // Landing - set final orientation based on result
             state.isFlipping = false
+            state.hasLanded = true
             coin.position.y = pos.y
             coin.position.z = pos.z
             coin.rotation.x = state.flipResult === 'heads' ? 0 : Math.PI
             coin.rotation.y = Math.PI / 2
+            console.log(`🎯 Coin ${index} landed: ${state.flipResult}`)
           }
-        } else {
-          // Idle animation
+        } else if (!state.hasLanded) {
+          // Idle animation - gentle floating before flip
           coin.rotation.x += 0.02
           coin.position.y = pos.y + Math.sin(time * 0.5 + index) * 0.2
+        } else {
+          // Landed - gentle breathing animation
+          coin.position.y = pos.y + Math.sin(time * 0.3 + index) * 0.05
         }
       })
 
@@ -255,28 +286,36 @@ const BattleRoyaleUnified3DScene = ({
         if (playerIndex === -1 || playerIndex >= 6) return
 
         const state = coinStatesRef.current[playerIndex]
-        if (!state.isFlipping) {
+        if (!state.isFlipping && !state.hasLanded) {
           state.isFlipping = true
           state.flipStartTime = Date.now()
-          state.flipDuration = 2000
+          state.flipPower = playerData.flipPower || 5 // Use server-sent power or default
+          state.flipDuration = 1500 + (state.flipPower * 100) // Longer power = longer flip
           state.flipResult = playerData.flipResult
-          console.log(`🎲 Starting flip animation for slot ${playerIndex}: ${playerData.flipResult}`)
+          console.log(`🎲 Starting flip animation for slot ${playerIndex}: ${playerData.flipResult} with power ${state.flipPower}`)
         }
       }
     })
   }, [serverState, players])
 
-  // Display player choices
+  // Display player choices and results
   const renderChoiceOverlays = () => {
     return players.map((player, index) => {
       if (!player?.address) return null
       
       const playerData = serverState?.players?.[player.address.toLowerCase()]
       const choice = playerData?.choice
+      const hasFlipped = playerData?.hasFlipped
+      const flipResult = playerData?.flipResult
+      const state = coinStatesRef.current[index]
       
       if (!choice) return null
       
       const pos = coinPositions[index]
+      
+      // Show Win/Lose if coin has landed
+      const showResult = state?.hasLanded && hasFlipped && flipResult
+      const isWin = showResult && choice === flipResult
       
       return (
         <div
@@ -286,24 +325,44 @@ const BattleRoyaleUnified3DScene = ({
             left: '50%',
             top: '50%',
             transform: `translate(${pos.x * 15 + 50}px, ${-pos.y * 15 + 130}px)`,
-            color: choice === 'heads' ? '#FFD700' : '#C0C0C0',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            textShadow: '0 0 10px rgba(0,0,0,0.8)',
             textAlign: 'center',
             pointerEvents: 'none',
             zIndex: 100
           }}
         >
+          {/* Choice display */}
           <div style={{
+            color: choice === 'heads' ? '#FFD700' : '#C0C0C0',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            textShadow: '0 0 10px rgba(0,0,0,0.8)',
             background: 'rgba(0,0,0,0.8)',
             padding: '0.3rem 0.6rem',
             borderRadius: '0.5rem',
             border: `2px solid ${choice === 'heads' ? '#FFD700' : '#C0C0C0'}`,
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            marginBottom: '0.5rem'
           }}>
             {choice}
           </div>
+          
+          {/* Win/Lose display */}
+          {showResult && (
+            <div style={{
+              color: isWin ? '#00ff88' : '#ff6b6b',
+              fontSize: '1.3rem',
+              fontWeight: 'bold',
+              textShadow: `0 0 15px ${isWin ? 'rgba(0,255,136,0.8)' : 'rgba(255,107,107,0.8)'}`,
+              background: isWin ? 'rgba(0,255,136,0.15)' : 'rgba(255,107,107,0.15)',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              border: `3px solid ${isWin ? '#00ff88' : '#ff6b6b'}`,
+              textTransform: 'uppercase',
+              animation: 'resultPop 0.5s ease-out'
+            }}>
+              {isWin ? '✅ WIN' : '❌ LOSE'}
+            </div>
+          )}
         </div>
       )
     })

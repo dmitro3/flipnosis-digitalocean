@@ -115,10 +115,10 @@ class BattleRoyaleSocketHandlers {
 
   // Player flips coin
   async handleBattleRoyaleFlipCoin(socket, data, gameManager, io) {
-    const { gameId, address } = data
-    console.log(`🪙 ${address} flipping coin`)
+    const { gameId, address, power } = data
+    console.log(`🪙 ${address} flipping coin with power ${power}`)
     
-    const success = gameManager.executePlayerFlip(gameId, address, (room, event, data) => {
+    const success = gameManager.executePlayerFlip(gameId, address, power, (room, event, data) => {
       io.to(room).emit(event, data)
     })
     

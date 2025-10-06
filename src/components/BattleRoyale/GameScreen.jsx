@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import styled from '@emotion/styled'
 import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
 import BattleRoyaleUnified3DScene from './BattleRoyaleUnified3DScene'
 import FloatingChatWidget from './FloatingChatWidget'
+import socketService from '../../services/SocketService'
 import './BattleRoyaleCoins.css'
 
 const Container = styled.div`
@@ -111,38 +112,71 @@ const ChoiceButtons = styled.div`
   justify-content: center;
   
   button {
-    padding: 1rem 2rem;
+    padding: 1.2rem 2.5rem;
     border: none;
-    border-radius: 0.5rem;
-    font-size: 1.1rem;
+    border-radius: 1rem;
+    font-size: 1.3rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
     flex: 1;
+    font-family: 'Hyperwave', 'Poppins', sans-serif;
+    letter-spacing: 2px;
+    position: relative;
+    overflow: hidden;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+    
+    &:hover:not(:disabled)::before {
+      left: 100%;
+    }
     
     &.heads {
-      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-      color: #333;
+      background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+      color: #000;
+      border: 3px solid #00ff88;
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
       
       &:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(0, 255, 136, 0.6);
+      }
+      
+      &:active:not(:disabled) {
+        transform: translateY(-1px) scale(0.98);
       }
     }
     
     &.tails {
-      background: linear-gradient(135deg, #c0c0c0 0%, #e5e5e5 100%);
-      color: #333;
+      background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
+      color: #fff;
+      border: 3px solid #ff1493;
+      box-shadow: 0 0 20px rgba(255, 20, 147, 0.4);
       
       &:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(192, 192, 192, 0.3);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(255, 20, 147, 0.6);
+      }
+      
+      &:active:not(:disabled) {
+        transform: translateY(-1px) scale(0.98);
       }
     }
     
     &.selected {
-      border: 3px solid #00ff88;
-      box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+      border: 4px solid #FFD700;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.3);
+      animation: selectedPulse 1.5s ease-in-out infinite;
     }
     
     &:disabled {
@@ -150,6 +184,11 @@ const ChoiceButtons = styled.div`
       cursor: not-allowed;
       transform: none;
     }
+  }
+  
+  @keyframes selectedPulse {
+    0%, 100% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(255, 215, 0, 1), inset 0 0 30px rgba(255, 215, 0, 0.5); }
   }
 `
 
@@ -159,15 +198,44 @@ const FlipButton = styled.button`
   border: 3px solid #00ff88;
   padding: 1.5rem 3rem;
   border-radius: 2rem;
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   text-transform: uppercase;
+  font-family: 'Hyperwave', 'Poppins', sans-serif;
+  letter-spacing: 3px;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s;
+  }
+  
+  &:hover:not(:disabled)::before {
+    left: 100%;
+  }
   
   &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(-1px) scale(1.02);
+  }
+  
+  &.charging {
+    animation: chargeGlow 0.3s ease-in-out infinite;
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
   }
   
   &:disabled {
@@ -175,6 +243,78 @@ const FlipButton = styled.button`
     cursor: not-allowed;
     transform: none;
   }
+  
+  @keyframes chargeGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.6); }
+    50% { box-shadow: 0 0 40px rgba(0, 255, 136, 1); }
+  }
+`
+
+const PowerBarContainer = styled.div`
+  margin-top: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #00bfff;
+  border-radius: 1rem;
+  padding: 0.8rem;
+  text-align: center;
+`
+
+const PowerLabel = styled.div`
+  color: #00bfff;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  font-family: 'Hyperwave', 'Poppins', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+`
+
+const PowerBarTrack = styled.div`
+  width: 100%;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 15px;
+  overflow: hidden;
+  border: 2px solid #00bfff;
+  position: relative;
+`
+
+const PowerBarFill = styled.div`
+  height: 100%;
+  background: linear-gradient(90deg, #00ff88 0%, #00ffff 50%, #ffff00 100%);
+  border-radius: 15px;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 1s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+`
+
+const PowerValue = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: bold;
+  font-size: 0.9rem;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  z-index: 1;
+  font-family: 'Hyperwave', 'Poppins', sans-serif;
 `
 
 const InfoBox = styled.div`
@@ -185,6 +325,34 @@ const InfoBox = styled.div`
   text-align: center;
   color: ${props => props.color || 'white'};
   font-weight: bold;
+`
+
+const ReplayNotification = styled.div`
+  background: linear-gradient(135deg, #ff8c00 0%, #ffa500 100%);
+  border: 3px solid #ffd700;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+  color: #000;
+  font-weight: bold;
+  font-size: 1.3rem;
+  box-shadow: 0 0 30px rgba(255, 140, 0, 0.6);
+  animation: replayPulse 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+  font-family: 'Hyperwave', 'Poppins', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  
+  @keyframes replayPulse {
+    0%, 100% { 
+      box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
+      transform: scale(1);
+    }
+    50% { 
+      box-shadow: 0 0 40px rgba(255, 140, 0, 1);
+      transform: scale(1.02);
+    }
+  }
 `
 
 const WinnerDisplay = styled.div`
@@ -219,6 +387,10 @@ const WinnerDisplay = styled.div`
 const GameScreen = () => {
   const { gameState, playerCoinImages, address, makeChoice, flipCoin } = useBattleRoyaleGame()
   const [localChoice, setLocalChoice] = useState(null)
+  const [power, setPower] = useState(1)
+  const [isCharging, setIsCharging] = useState(false)
+  const [replayMessage, setReplayMessage] = useState(null)
+  const chargeIntervalRef = useRef(null)
 
   if (!gameState) return null
 
@@ -248,14 +420,73 @@ const GameScreen = () => {
     }
   }, [isInGame, isEliminated, phase, makeChoice])
 
-  const handleFlipClick = useCallback(() => {
+  // Start charging power
+  const handleFlipMouseDown = useCallback(() => {
     if (!isInGame || isEliminated || phase !== 'round_active') return
+    if (!player.choice || player.hasFlipped) return
     
-    const success = flipCoin(5)
-    if (success) {
-      // Choice locked
+    setIsCharging(true)
+    setPower(1)
+    
+    // Increase power over time
+    chargeIntervalRef.current = setInterval(() => {
+      setPower(prev => {
+        const newPower = prev + 0.5
+        return newPower > 10 ? 10 : newPower // Max power = 10
+      })
+    }, 100)
+  }, [isInGame, isEliminated, phase, player])
+
+  // Release and flip
+  const handleFlipMouseUp = useCallback(() => {
+    if (!isInGame || isEliminated || phase !== 'round_active') return
+    if (!player.choice || player.hasFlipped) return
+    if (!isCharging) return
+    
+    // Clear interval
+    if (chargeIntervalRef.current) {
+      clearInterval(chargeIntervalRef.current)
+      chargeIntervalRef.current = null
     }
-  }, [isInGame, isEliminated, phase, flipCoin])
+    
+    setIsCharging(false)
+    
+    // Send flip with power
+    const success = flipCoin(Math.floor(power))
+    if (success) {
+      console.log(`🪙 Flipped with power: ${Math.floor(power)}`)
+    }
+    
+    // Reset power after a delay
+    setTimeout(() => setPower(1), 500)
+  }, [isInGame, isEliminated, phase, player, flipCoin, power, isCharging])
+
+  // Handle mouse leave (cancel charge)
+  const handleFlipMouseLeave = useCallback(() => {
+    if (chargeIntervalRef.current) {
+      clearInterval(chargeIntervalRef.current)
+      chargeIntervalRef.current = null
+    }
+    setIsCharging(false)
+    setPower(1)
+  }, [])
+
+  // Listen for round end messages
+  useEffect(() => {
+    const handleRoundEnd = (data) => {
+      if (data.message) {
+        setReplayMessage(data.message)
+        // Clear message after 5 seconds
+        setTimeout(() => setReplayMessage(null), 5000)
+      }
+    }
+
+    socketService.on('battle_royale_round_end', handleRoundEnd)
+
+    return () => {
+      socketService.off('battle_royale_round_end', handleRoundEnd)
+    }
+  }, [])
 
   // PHASE: STARTING
   if (phase === 'starting') {
@@ -321,6 +552,13 @@ const GameScreen = () => {
 
         {/* CONTROL PANEL */}
         <ControlPanel>
+          {/* REPLAY NOTIFICATION */}
+          {replayMessage && (
+            <ReplayNotification>
+              ⚠️ {replayMessage}
+            </ReplayNotification>
+          )}
+          
           <StatusHeader urgent={countdown <= 5}>
             <div className="phase">
               {phase === 'round_active' ? '⚔️ BATTLE ACTIVE' : '📊 ROUND ENDING'}
@@ -376,12 +614,30 @@ const GameScreen = () => {
 
               {/* FLIP BUTTON */}
               {phase === 'round_active' && (
-                <FlipButton
-                  onClick={handleFlipClick}
-                  disabled={!player.choice || player.hasFlipped}
-                >
-                  {player.hasFlipped ? '✅ FLIPPED' : '🪙 FLIP COIN'}
-                </FlipButton>
+                <>
+                  <FlipButton
+                    className={isCharging ? 'charging' : ''}
+                    onMouseDown={handleFlipMouseDown}
+                    onMouseUp={handleFlipMouseUp}
+                    onMouseLeave={handleFlipMouseLeave}
+                    onTouchStart={handleFlipMouseDown}
+                    onTouchEnd={handleFlipMouseUp}
+                    disabled={!player.choice || player.hasFlipped}
+                  >
+                    {player.hasFlipped ? '✅ FLIPPED' : isCharging ? '⚡ CHARGING...' : '🪙 HOLD TO FLIP'}
+                  </FlipButton>
+                  
+                  {/* POWER BAR */}
+                  {!player.hasFlipped && (
+                    <PowerBarContainer>
+                      <PowerLabel>Flip Power</PowerLabel>
+                      <PowerBarTrack>
+                        <PowerBarFill style={{ width: `${(power / 10) * 100}%` }} />
+                        <PowerValue>{Math.floor(power)}/10</PowerValue>
+                      </PowerBarTrack>
+                    </PowerBarContainer>
+                  )}
+                </>
               )}
 
               {/* STATUS INFO */}

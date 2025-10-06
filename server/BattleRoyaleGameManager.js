@@ -228,7 +228,7 @@ class BattleRoyaleGameManager {
   }
 
   // ===== FLIP COIN =====
-  executePlayerFlip(gameId, playerAddress, broadcastFn) {
+  executePlayerFlip(gameId, playerAddress, power, broadcastFn) {
     const game = this.games.get(gameId)
     if (!game || game.phase !== this.PHASES.ROUND_ACTIVE) return false
 
@@ -241,14 +241,16 @@ class BattleRoyaleGameManager {
     
     player.hasFlipped = true
     player.flipResult = flipResult
+    player.flipPower = power || 5 // Store power for animation
 
-    console.log(`🪙 ${playerAddress} flipped: ${flipResult} (chose ${player.choice})`)
+    console.log(`🪙 ${playerAddress} flipped with power ${power}: ${flipResult} (chose ${player.choice})`)
 
     // Broadcast individual flip
     broadcastFn(`game_${gameId}`, 'battle_royale_player_flipped', {
       gameId,
       playerAddress,
-      flipResult
+      flipResult,
+      flipPower: power
     })
 
     this.broadcastState(gameId, broadcastFn)
@@ -292,9 +294,92 @@ class BattleRoyaleGameManager {
         survived.push(addr)
       } else {
         eliminated.push(addr)
-        player.status = 'eliminated'
-        player.eliminatedInRound = game.currentRound
       }
+    })
+
+    // ===== EDGE CASE HANDLING =====
+    // Case 1: All players won → everyone continues to next round
+    if (eliminated.length === 0 && survived.length > 1) {
+      console.log(`✅ All players survived! Continuing to next round...`)
+      
+      broadcastFn(`game_${gameId}`, 'battle_royale_round_end', {
+        gameId,
+        round: game.currentRound,
+        eliminatedPlayers: [],
+        survivingPlayers: survived,
+        message: 'All players survived! Next round...'
+      })
+
+      this.broadcastState(gameId, broadcastFn)
+      setTimeout(() => this.startNextRound(gameId, broadcastFn), 5000)
+      return true
+    }
+
+    // Case 2: All players lost → can't eliminate everyone, replay round
+    // This includes the final 2 scenario where both lose
+    if (survived.length === 0) {
+      const isFinalTwo = game.activePlayers.length === 2
+      const message = isFinalTwo 
+        ? '⚠️ Final 2 both lost! Replaying round...'
+        : '⚠️ All players lost! Replaying round...'
+      
+      console.log(message)
+      
+      // Reset all players for replay
+      game.activePlayers.forEach(addr => {
+        const player = game.players[addr]
+        player.choice = null
+        player.hasFlipped = false
+        player.flipResult = null
+      })
+
+      broadcastFn(`game_${gameId}`, 'battle_royale_round_end', {
+        gameId,
+        round: game.currentRound,
+        eliminatedPlayers: [],
+        survivingPlayers: game.activePlayers,
+        message: isFinalTwo ? 'Final 2 both lost! Replaying...' : 'All players lost! Replaying...'
+      })
+
+      this.broadcastState(gameId, broadcastFn)
+      
+      // Replay the same round
+      setTimeout(() => {
+        game.phase = this.PHASES.ROUND_ACTIVE
+        game.roundCountdown = 20
+
+        broadcastFn(`game_${gameId}`, 'battle_royale_round_start', {
+          gameId,
+          round: game.currentRound,
+          isReplay: true
+        })
+
+        this.broadcastState(gameId, broadcastFn)
+
+        // Countdown timer
+        const timer = setInterval(() => {
+          game.roundCountdown--
+          
+          if (game.roundCountdown <= 0) {
+            clearInterval(timer)
+            this.endRound(gameId, broadcastFn)
+          } else {
+            this.broadcastState(gameId, broadcastFn)
+          }
+        }, 1000)
+
+        this.roundTimers.set(gameId, timer)
+      }, 5000)
+      
+      return true
+    }
+
+    // ===== NORMAL ELIMINATION =====
+    // Actually eliminate the players
+    eliminated.forEach(addr => {
+      const player = game.players[addr]
+      player.status = 'eliminated'
+      player.eliminatedInRound = game.currentRound
     })
 
     game.activePlayers = survived
