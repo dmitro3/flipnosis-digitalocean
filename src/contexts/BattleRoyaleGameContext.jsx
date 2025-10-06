@@ -103,11 +103,20 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
   // ===== SOCKET EVENT HANDLERS =====
   const handleStateUpdate = useCallback((data) => {
     console.log('📊 Game state update received:', {
+      gameId: data.gameId,
       phase: data.phase,
       currentPlayers: data.currentPlayers,
       playerSlots: data.playerSlots,
-      players: data.players ? Object.keys(data.players) : 'none'
+      playerAddresses: data.players ? Object.keys(data.players) : 'none'
     })
+    
+    // Debug: Show each player and their slot
+    if (data.players) {
+      Object.entries(data.players).forEach(([addr, player]) => {
+        console.log(`  👤 Player ${addr.slice(0, 6)}... in slot ${player.slotNumber}, coin: ${player.coin?.name || 'none'}`)
+      })
+    }
+    
     setGameState(data)
     setLoading(false)
 
@@ -264,13 +273,19 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
   const updateCoin = useCallback((coinData) => {
     if (!gameId || !address) return false
 
+    console.log('🪙 Updating coin to:', coinData.name, 'for address:', address)
+    
+    // Clear cached coin images for this player to force reload
+    const key = address.toLowerCase()
+    loadedAddresses.current.delete(key)
+    
     socketService.emit('battle_royale_update_coin', {
       gameId,
       address,
       coin: coinData
     })
 
-    console.log('🪙 Coin updated:', coinData.name)
+    console.log('🪙 Coin update request sent to server')
     return true
   }, [gameId, address])
 

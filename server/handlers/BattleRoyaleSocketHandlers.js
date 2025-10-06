@@ -27,11 +27,23 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Request state
-  async handleRequestBattleRoyaleState(socket, data, gameManager) {
+  async handleRequestBattleRoyaleState(socket, data, gameManager, dbService) {
     const { gameId } = data
-    const state = gameManager.getFullGameState(gameId)
+    console.log(`📊 Requesting state for: ${gameId}`)
     
+    // Load game from DB if not in memory
+    let game = await gameManager.loadGameFromDatabase(gameId, dbService)
+    
+    if (!game) {
+      console.log(`❌ Game not found: ${gameId}`)
+      socket.emit('battle_royale_error', { message: 'Game not found' })
+      return
+    }
+    
+    // Get and send state
+    const state = gameManager.getFullGameState(gameId)
     if (state) {
+      console.log(`✅ Sending state for ${gameId} - Phase: ${state.phase}, Players: ${state.currentPlayers}`)
       socket.emit('battle_royale_state_update', state)
     } else {
       socket.emit('battle_royale_error', { message: 'Game not found' })
@@ -44,8 +56,6 @@ class BattleRoyaleSocketHandlers {
     console.log(`🎮 ${address} joining game: ${gameId}`)
     
     const roomId = `game_${gameId}`
-    socket.join(roomId)
-    console.log(`🏠 ${address} joined room ${roomId}`)
     
     // Load game from DB if not in memory
     let game = await gameManager.loadGameFromDatabase(gameId, dbService)
@@ -56,19 +66,25 @@ class BattleRoyaleSocketHandlers {
       return
     }
     
-    console.log(`🎮 Game loaded, current players: ${game.currentPlayers}`)
+    console.log(`🎮 Game loaded, current players before join: ${game.currentPlayers}`)
+    console.log(`🎮 Current player slots before join:`, game.playerSlots)
+    
+    // Join the room BEFORE adding player
+    socket.join(roomId)
+    console.log(`🏠 ${address} joined socket room ${roomId}`)
+    console.log(`📡 Room now has ${io.sockets.adapter.rooms.get(roomId)?.size || 0} sockets`)
     
     // Add player to game
     const success = gameManager.addPlayer(gameId, address)
     if (success) {
-      // Send state to the joining player first
+      // Get updated state
       const state = gameManager.getFullGameState(gameId)
-      console.log(`📡 Sending state to joining player ${address}`)
-      socket.emit('battle_royale_state_update', state)
+      console.log(`📊 Updated game state: ${state.currentPlayers} players`)
+      console.log(`📊 Player slots:`, state.playerSlots)
+      console.log(`📊 Players:`, Object.keys(state.players))
       
-      // Then broadcast to all players in the room
-      console.log(`📡 Broadcasting player join to room ${roomId}`)
-      console.log(`📡 Room has ${io.sockets.adapter.rooms.get(roomId)?.size || 0} sockets`)
+      // Broadcast to ALL players in the room (including the joiner)
+      console.log(`📡 Broadcasting updated state to ALL players in room ${roomId}`)
       io.to(roomId).emit('battle_royale_state_update', state)
       
       console.log(`✅ ${address} joined game successfully, new player count: ${state.currentPlayers}`)
@@ -110,20 +126,29 @@ class BattleRoyaleSocketHandlers {
   // Update coin
   async handleBattleRoyaleUpdateCoin(socket, data, gameManager, io, dbService = null) {
     const { gameId, address, coin, coinData } = data
-    console.log(`🪙 ${address} updating coin`)
+    console.log(`🪙 ${address} updating coin in game ${gameId}`)
     
     // Handle both parameter names for compatibility
     const coinToUpdate = coin || coinData
+    console.log(`🪙 Coin data:`, coinToUpdate)
     
     const success = await gameManager.updatePlayerCoin(gameId, address, coinToUpdate, dbService)
     if (success) {
-      // Broadcast updated state
+      // Broadcast updated state to ALL players in the room
       const state = gameManager.getFullGameState(gameId)
-      console.log(`📡 Broadcasting coin update to room game_${gameId}`)
-      console.log(`📡 Room has ${io.sockets.adapter.rooms.get(`game_${gameId}`)?.size || 0} sockets`)
-      io.to(`game_${gameId}`).emit('battle_royale_state_update', state)
+      const roomId = `game_${gameId}`
+      
+      console.log(`📊 Updated coin for ${address} to ${coinToUpdate?.name || 'unknown'}`)
+      console.log(`📡 Broadcasting coin update to room ${roomId}`)
+      console.log(`📡 Room has ${io.sockets.adapter.rooms.get(roomId)?.size || 0} sockets`)
+      console.log(`📊 State has ${state.currentPlayers} players:`, Object.keys(state.players))
+      
+      // Broadcast to everyone in the room
+      io.to(roomId).emit('battle_royale_state_update', state)
+      
       console.log(`✅ Coin update broadcasted successfully`)
     } else {
+      console.log(`❌ Failed to update coin for ${address}`)
       socket.emit('battle_royale_error', { message: 'Cannot update coin' })
     }
   }

@@ -128,7 +128,8 @@ initialize(server, dbService) {
         return this.battleRoyaleHandlers.handleRequestBattleRoyaleState(
           socket, 
           data, 
-          this.battleRoyaleManager
+          this.battleRoyaleManager,
+          this.dbService
         )
       }))
 

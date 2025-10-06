@@ -88,11 +88,24 @@ class BattleRoyaleGameManager {
     const game = this.games.get(gameId)
     if (!game || game.phase !== this.PHASES.FILLING) return false
     if (game.currentPlayers >= 6) return false
-    if (game.players[playerAddress]) return false
+    
+    // Check if player already exists (case-insensitive)
+    const existingPlayer = Object.keys(game.players).find(
+      addr => addr.toLowerCase() === playerAddress.toLowerCase()
+    )
+    if (existingPlayer) {
+      console.log(`⚠️ Player ${playerAddress} already in game`)
+      return false
+    }
 
-    // Find empty slot (skip 0 if creator is there)
-    const slotIndex = game.playerSlots.findIndex((slot, idx) => slot === null && idx !== 0)
-    if (slotIndex === -1) return false
+    // Find first empty slot
+    const slotIndex = game.playerSlots.findIndex(slot => slot === null)
+    if (slotIndex === -1) {
+      console.log(`❌ No empty slots available for ${playerAddress}`)
+      return false
+    }
+
+    console.log(`🎮 Adding player ${playerAddress} to slot ${slotIndex}`)
 
     game.players[playerAddress] = {
       address: playerAddress,
@@ -117,7 +130,9 @@ class BattleRoyaleGameManager {
     game.activePlayers.push(playerAddress)
     game.currentPlayers++
 
-    console.log(`✅ Player joined: ${playerAddress} (${game.currentPlayers}/6)`)
+    console.log(`✅ Player joined: ${playerAddress} in slot ${slotIndex} (${game.currentPlayers}/6)`)
+    console.log(`📊 Current player slots:`, game.playerSlots)
+    console.log(`📊 Current players:`, Object.keys(game.players))
 
     // Auto-start if full
     if (game.currentPlayers === 6) {
