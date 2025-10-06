@@ -55,10 +55,12 @@ class BattleRoyaleGameManager {
   // ===== ADD CREATOR =====
   addCreatorAsPlayer(gameId, creatorAddress) {
     const game = this.games.get(gameId)
-    if (!game || game.players[creatorAddress]) return
+    const normalizedAddress = creatorAddress.toLowerCase()
+    
+    if (!game || game.players[normalizedAddress]) return
 
-    game.players[creatorAddress] = {
-      address: creatorAddress,
+    game.players[normalizedAddress] = {
+      address: creatorAddress, // Store original case for display
       slotNumber: 0,
       isCreator: true,
       entryPaid: true,
@@ -76,11 +78,11 @@ class BattleRoyaleGameManager {
       joinedAt: new Date().toISOString()
     }
 
-    game.playerSlots[0] = creatorAddress
-    game.activePlayers.push(creatorAddress)
+    game.playerSlots[0] = normalizedAddress
+    game.activePlayers.push(normalizedAddress)
     game.currentPlayers = 1
 
-    console.log(`✅ Creator added: ${creatorAddress}`)
+    console.log(`✅ Creator added: ${creatorAddress} (normalized: ${normalizedAddress})`)
   }
 
   // ===== ADD PLAYER =====
@@ -89,11 +91,11 @@ class BattleRoyaleGameManager {
     if (!game || game.phase !== this.PHASES.FILLING) return false
     if (game.currentPlayers >= 6) return false
     
-    // Check if player already exists (case-insensitive)
-    const existingPlayer = Object.keys(game.players).find(
-      addr => addr.toLowerCase() === playerAddress.toLowerCase()
-    )
-    if (existingPlayer) {
+    // Normalize address to lowercase for consistent storage
+    const normalizedAddress = playerAddress.toLowerCase()
+    
+    // Check if player already exists
+    if (game.players[normalizedAddress]) {
       console.log(`⚠️ Player ${playerAddress} already in game`)
       return false
     }
@@ -105,10 +107,10 @@ class BattleRoyaleGameManager {
       return false
     }
 
-    console.log(`🎮 Adding player ${playerAddress} to slot ${slotIndex}`)
+    console.log(`🎮 Adding player ${playerAddress} to slot ${slotIndex} (normalized: ${normalizedAddress})`)
 
-    game.players[playerAddress] = {
-      address: playerAddress,
+    game.players[normalizedAddress] = {
+      address: playerAddress, // Store original case for display
       slotNumber: slotIndex,
       isCreator: false,
       entryPaid: true,
@@ -126,13 +128,13 @@ class BattleRoyaleGameManager {
       joinedAt: new Date().toISOString()
     }
 
-    game.playerSlots[slotIndex] = playerAddress
-    game.activePlayers.push(playerAddress)
+    game.playerSlots[slotIndex] = normalizedAddress
+    game.activePlayers.push(normalizedAddress)
     game.currentPlayers++
 
     console.log(`✅ Player joined: ${playerAddress} in slot ${slotIndex} (${game.currentPlayers}/6)`)
     console.log(`📊 Current player slots:`, game.playerSlots)
-    console.log(`📊 Current players:`, Object.keys(game.players))
+    console.log(`📊 Current players (normalized):`, Object.keys(game.players))
 
     // Auto-start if full
     if (game.currentPlayers === 6) {
@@ -216,7 +218,8 @@ class BattleRoyaleGameManager {
     const game = this.games.get(gameId)
     if (!game || game.phase !== this.PHASES.ROUND_ACTIVE) return false
 
-    const player = game.players[playerAddress]
+    const normalizedAddress = playerAddress.toLowerCase()
+    const player = game.players[normalizedAddress]
     if (!player || player.hasFlipped) return false
 
     player.choice = choice
@@ -229,7 +232,8 @@ class BattleRoyaleGameManager {
     const game = this.games.get(gameId)
     if (!game || game.phase !== this.PHASES.ROUND_ACTIVE) return false
 
-    const player = game.players[playerAddress]
+    const normalizedAddress = playerAddress.toLowerCase()
+    const player = game.players[normalizedAddress]
     if (!player || player.hasFlipped || !player.choice) return false
 
     // Calculate result (50/50)
@@ -361,22 +365,13 @@ class BattleRoyaleGameManager {
       return false
     }
 
-    const player = game.players[playerAddress]
+    // Normalize address for lookup
+    const normalizedAddress = playerAddress.toLowerCase()
+    const player = game.players[normalizedAddress]
+    
     if (!player) {
-      console.log(`❌ Player not found: ${playerAddress}`)
-      console.log(`Looking for exact match, but available players are:`, Object.keys(game.players))
-      
-      // Try case-insensitive lookup
-      const lowerAddress = playerAddress.toLowerCase()
-      const foundPlayer = Object.keys(game.players).find(key => key.toLowerCase() === lowerAddress)
-      if (foundPlayer) {
-        console.log(`✅ Found player with case-insensitive lookup: ${foundPlayer}`)
-        const actualPlayer = game.players[foundPlayer]
-        actualPlayer.coin = coinData
-        console.log(`✅ Coin updated for ${foundPlayer}:`, coinData.name)
-        return true
-      }
-      
+      console.log(`❌ Player not found: ${playerAddress} (normalized: ${normalizedAddress})`)
+      console.log(`Available players (normalized):`, Object.keys(game.players))
       return false
     }
 
