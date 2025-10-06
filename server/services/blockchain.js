@@ -5,8 +5,15 @@ class BlockchainService {
     this.rpcUrl = rpcUrl
     this.contractAddress = contractAddress
     this.contractOwnerKey = contractOwnerKey
-    this.provider = new ethers.JsonRpcProvider(rpcUrl)
-    this.contractOwnerWallet = contractOwnerKey ? new ethers.Wallet(contractOwnerKey, this.provider) : null
+    
+    try {
+      this.provider = new ethers.JsonRpcProvider(rpcUrl)
+      this.contractOwnerWallet = contractOwnerKey ? new ethers.Wallet(contractOwnerKey, this.provider) : null
+    } catch (error) {
+      console.error('❌ Error initializing blockchain service:', error.message)
+      this.provider = null
+      this.contractOwnerWallet = null
+    }
     
     // Updated ABI for simplified contract
     this.CONTRACT_ABI = [
@@ -184,7 +191,10 @@ class BlockchainService {
    * Monitor game events
    */
   async setupEventListeners(callback) {
-    if (!this.contractOwnerWallet) return
+    if (!this.contractOwnerWallet || !this.provider) {
+      console.log('⚠️ Blockchain event listeners not configured (missing wallet or provider)')
+      return
+    }
     
     try {
       const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.provider)

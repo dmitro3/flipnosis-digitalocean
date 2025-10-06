@@ -13,6 +13,10 @@ const { BlockchainService } = require('./services/blockchain')
 const CleanupService = require('./services/cleanupService')
 
 console.log('🚀 Starting CryptoFlipz Server...')
+console.log('📍 Working directory:', process.cwd())
+console.log('📍 Server directory:', __dirname)
+console.log('🔧 Node version:', process.version)
+console.log('🔧 Platform:', process.platform)
 
 const app = express()
 const server = http.createServer(app)
@@ -23,6 +27,14 @@ const DATABASE_PATH = path.join(__dirname, 'flipz.db')
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+
+console.log('⚙️ Configuration:')
+console.log('  - PORT:', PORT)
+console.log('  - DATABASE_PATH:', DATABASE_PATH)
+console.log('  - DATABASE_EXISTS:', fs.existsSync(DATABASE_PATH))
+console.log('  - CONTRACT_ADDRESS:', CONTRACT_ADDRESS)
+console.log('  - HAS_PRIVATE_KEY:', !!CONTRACT_OWNER_KEY)
+console.log('  - RPC_URL:', RPC_URL ? RPC_URL.substring(0, 50) + '...' : 'NOT SET')
 
 // ===== MIDDLEWARE =====
 app.use(cors({
@@ -54,23 +66,52 @@ if (fs.existsSync(distPath)) {
 
 // ===== SERVICES INITIALIZATION =====
 async function initializeServices() {
-  // Initialize database
-  const dbService = new DatabaseService(DATABASE_PATH)
-  await dbService.initialize()
-  console.log('✅ Database initialized')
+  // Initialize database with error handling
+  let dbService
+  try {
+    dbService = new DatabaseService(DATABASE_PATH)
+    await dbService.initialize()
+    console.log('✅ Database initialized')
+  } catch (error) {
+    console.error('❌ Failed to initialize database:', error)
+    console.error('⚠️ Server will continue but database functionality will be limited')
+    // Create a minimal dbService to prevent crashes
+    dbService = {
+      db: null,
+      initialize: async () => {},
+      getDatabase: () => null
+    }
+  }
 
-  // Initialize blockchain service
-  const blockchainService = new BlockchainService(
-    RPC_URL,
-    CONTRACT_ADDRESS,
-    CONTRACT_OWNER_KEY
-  )
-  console.log('✅ Blockchain service initialized')
+  // Initialize blockchain service with error handling
+  let blockchainService
+  try {
+    blockchainService = new BlockchainService(
+      RPC_URL,
+      CONTRACT_ADDRESS,
+      CONTRACT_OWNER_KEY
+    )
+    console.log('✅ Blockchain service initialized')
+  } catch (error) {
+    console.error('❌ Failed to initialize blockchain service:', error)
+    console.error('⚠️ Server will continue but blockchain functionality will be limited')
+    blockchainService = {
+      hasOwnerWallet: () => false,
+      setupEventListeners: () => {}
+    }
+  }
 
-  // Initialize cleanup service
-  const cleanupService = new CleanupService(dbService, blockchainService)
-  cleanupService.start()
-  console.log('✅ Cleanup service started')
+  // Initialize cleanup service with error handling
+  let cleanupService
+  try {
+    cleanupService = new CleanupService(dbService, blockchainService)
+    cleanupService.start()
+    console.log('✅ Cleanup service started')
+  } catch (error) {
+    console.error('❌ Failed to start cleanup service:', error)
+    console.error('⚠️ Server will continue but cleanup functionality will be limited')
+    cleanupService = { start: () => {}, stop: () => {} }
+  }
 
   // Setup blockchain event listeners
   blockchainService.setupEventListeners((event) => {
@@ -99,6 +140,42 @@ async function initializeServices() {
   return { dbService, blockchainService, cleanupService }
 }
 
+// ===== GLOBAL ERROR HANDLERS =====
+// Prevent server crashes from unhandled errors
+process.on('uncaughtException', (error) => {
+  console.error('❌ UNCAUGHT EXCEPTION:', error)
+  console.error('Stack trace:', error.stack)
+  // Log memory usage when crash occurs
+  const memUsage = process.memoryUsage()
+  console.error('💾 Memory at crash:', {
+    heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + ' MB',
+    heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024) + ' MB',
+    rss: Math.round(memUsage.rss / 1024 / 1024) + ' MB'
+  })
+  // Don't exit - keep server running
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ UNHANDLED PROMISE REJECTION:', reason)
+  console.error('Promise:', promise)
+  // Don't exit - keep server running
+})
+
+// Memory monitoring - log warnings at high usage
+setInterval(() => {
+  const memUsage = process.memoryUsage()
+  const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024)
+  const heapTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024)
+  
+  if (heapUsedMB > 800) {
+    console.warn(`⚠️ High memory usage: ${heapUsedMB} MB / ${heapTotalMB} MB`)
+    if (global.gc) {
+      console.log('🧹 Running garbage collection...')
+      global.gc()
+    }
+  }
+}, 60000) // Check every minute
+
 // ===== SERVER STARTUP =====
 initializeServices()
   .then(({ dbService, blockchainService, cleanupService }) => {
@@ -117,19 +194,54 @@ initializeServices()
       global.pendingBlockchainEvents = []
     }
     
-    // Setup API routes - pass gameServerInstance
-    const apiRouter = createApiRoutes(dbService, blockchainService, gameServerInstance)
-    app.use('/api', apiRouter)
-    console.log('✅ API routes configured')
+    // Setup API routes - pass gameServerInstance with error handling
+    try {
+      const apiRouter = createApiRoutes(dbService, blockchainService, gameServerInstance)
+      app.use('/api', apiRouter)
+      console.log('✅ API routes configured')
+    } catch (error) {
+      console.error('❌ Error setting up API routes:', error)
+      console.error('⚠️ Server will continue but API routes may be limited')
+    }
     
     // Health check endpoint
     app.get('/health', (req, res) => {
+      const memUsage = process.memoryUsage()
       res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
         socketio: 'active',
-        database: 'connected',
-        blockchain: blockchainService.hasOwnerWallet() ? 'ready' : 'view-only'
+        database: dbService && dbService.db ? 'connected' : 'disconnected',
+        blockchain: blockchainService.hasOwnerWallet() ? 'ready' : 'view-only',
+        memory: {
+          heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + ' MB',
+          heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024) + ' MB',
+          rss: Math.round(memUsage.rss / 1024 / 1024) + ' MB'
+        }
+      })
+    })
+    
+    // Process info endpoint for debugging
+    app.get('/api/process-info', (req, res) => {
+      const memUsage = process.memoryUsage()
+      res.json({
+        pid: process.pid,
+        uptime: process.uptime(),
+        nodeVersion: process.version,
+        platform: process.platform,
+        cpuUsage: process.cpuUsage(),
+        memory: {
+          heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + ' MB',
+          heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024) + ' MB',
+          external: Math.round(memUsage.external / 1024 / 1024) + ' MB',
+          rss: Math.round(memUsage.rss / 1024 / 1024) + ' MB'
+        },
+        env: {
+          NODE_ENV: process.env.NODE_ENV,
+          PORT: process.env.PORT,
+          hasPrivateKey: !!process.env.CONTRACT_OWNER_KEY || !!process.env.PRIVATE_KEY
+        }
       })
     })
     

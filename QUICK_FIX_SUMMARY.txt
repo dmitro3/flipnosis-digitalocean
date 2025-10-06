@@ -1,0 +1,59 @@
+================================================================================
+                    🔧 SERVER CRASH FIX - QUICK SUMMARY
+================================================================================
+
+PROBLEM:
+  Your server was returning HTTP 521 errors (server down/crashed)
+
+ROOT CAUSE:
+  Missing error handlers → Any uncaught error would crash the entire server
+
+WHAT I FIXED:
+  ✅ Added global error handlers (uncaught exceptions & promise rejections)
+  ✅ Wrapped all Socket.IO handlers in error protection
+  ✅ Made service initialization graceful (continues even if services fail)
+  ✅ Added memory monitoring (warns at high usage)
+  ✅ Enhanced logging and diagnostics
+  ✅ Added health check endpoints
+  ✅ Improved PM2 configuration
+
+FILES CHANGED:
+  1. server/server.js
+  2. server/handlers/server-socketio.js
+  3. server/services/blockchain.js
+  4. ecosystem.config.js
+
+WHAT TO DO NOW:
+  1. Commit & push these changes
+  2. Deploy to Hetzner (using your normal process)
+  3. Verify server starts successfully
+  4. Check https://www.flipnosis.fun/health
+
+DEPLOYMENT COMMANDS:
+  git add .
+  git commit -m "Fix server crashes with comprehensive error handling"
+  git push origin main
+  
+  # Then deploy to Hetzner using your existing deployment process
+
+VERIFICATION:
+  After deployment, run:
+  
+  curl https://www.flipnosis.fun/health
+  
+  Should return:
+  {
+    "status": "healthy",
+    "uptime": <seconds>,
+    "database": "connected",
+    ...
+  }
+
+MORE INFO:
+  - See SERVER_CRASH_FIX.md for detailed explanation
+  - See DEPLOYMENT_CHECKLIST.md for step-by-step deployment
+
+================================================================================
+                    ✨ Your server should now be stable! ✨
+================================================================================
+

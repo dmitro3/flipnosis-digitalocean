@@ -60,101 +60,111 @@ initialize(server, dbService) {
     this.io.on('connection', (socket) => {
       console.log('✅ New connection:', socket.id)
 
+      // Wrap all socket handlers in try-catch to prevent crashes
+      const safeHandler = (handler) => async (data) => {
+        try {
+          await handler(data)
+        } catch (error) {
+          console.error('❌ Socket handler error:', error)
+          socket.emit('error', { message: 'An error occurred processing your request' })
+        }
+      }
+
       // Room management
-      socket.on('join_room', (data) => this.handleJoinRoom(socket, data))
+      socket.on('join_room', safeHandler((data) => this.handleJoinRoom(socket, data)))
       
       // Chat system (preserved)
-      socket.on('chat_message', (data) => this.handleChatMessage(socket, data))
+      socket.on('chat_message', safeHandler((data) => this.handleChatMessage(socket, data)))
       
       // Offer system (preserved - only for notifications)
       
       // Deposit system removed - using polling instead
       
       // ===== BATTLE ROYALE ACTIONS =====
-      socket.on('join_battle_royale_room', (data) => {
+      socket.on('join_battle_royale_room', safeHandler((data) => {
         console.log(`📥 join_battle_royale_room from ${socket.id}`, data)
-        this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(
+        return this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(
           socket, 
           data, 
           this.battleRoyaleManager, 
           this.io,
           this.dbService
         )
-      })
+      }))
 
-      socket.on('join_battle_royale', (data) => {
+      socket.on('join_battle_royale', safeHandler((data) => {
         console.log(`📥 join_battle_royale from ${socket.id}`, data)
-        this.battleRoyaleHandlers.handleJoinBattleRoyale(
+        return this.battleRoyaleHandlers.handleJoinBattleRoyale(
           socket, 
           data, 
           this.battleRoyaleManager, 
           this.io, 
           this.dbService
         )
-      })
+      }))
 
-      socket.on('battle_royale_update_coin', (data) => {
+      socket.on('battle_royale_update_coin', safeHandler((data) => {
         console.log(`📥 battle_royale_update_coin from ${socket.id}`, data)
-        this.battleRoyaleHandlers.handleBattleRoyaleUpdateCoin(
+        return this.battleRoyaleHandlers.handleBattleRoyaleUpdateCoin(
           socket, 
           data, 
           this.battleRoyaleManager, 
           this.io,
           this.dbService
         )
-      })
+      }))
 
-      socket.on('spectate_battle_royale', (data) => {
+      socket.on('spectate_battle_royale', safeHandler((data) => {
         console.log(`📥 spectate_battle_royale from ${socket.id}`)
-        this.battleRoyaleHandlers.handleSpectateBattleRoyale(
+        return this.battleRoyaleHandlers.handleSpectateBattleRoyale(
           socket, 
           data, 
           this.battleRoyaleManager
         )
-      })
+      }))
 
-      socket.on('request_battle_royale_state', (data) => {
+      socket.on('request_battle_royale_state', safeHandler((data) => {
         console.log(`📥 request_battle_royale_state from ${socket.id}`)
-        this.battleRoyaleHandlers.handleRequestBattleRoyaleState(
+        return this.battleRoyaleHandlers.handleRequestBattleRoyaleState(
           socket, 
           data, 
           this.battleRoyaleManager
         )
-      })
+      }))
 
-      socket.on('battle_royale_player_choice', (data) => {
+      socket.on('battle_royale_player_choice', safeHandler((data) => {
         console.log(`📥 battle_royale_player_choice from ${socket.id}`, data)
-        this.battleRoyaleHandlers.handleBattleRoyalePlayerChoice(
+        return this.battleRoyaleHandlers.handleBattleRoyalePlayerChoice(
           socket, 
           data, 
           this.battleRoyaleManager, 
           this.io
         )
-      })
+      }))
 
-      socket.on('battle_royale_flip_coin', (data) => {
+      socket.on('battle_royale_flip_coin', safeHandler((data) => {
         console.log(`📥 battle_royale_flip_coin from ${socket.id}`, data)
-        this.battleRoyaleHandlers.handleBattleRoyaleFlipCoin(
+        return this.battleRoyaleHandlers.handleBattleRoyaleFlipCoin(
           socket, 
           data, 
           this.battleRoyaleManager, 
           this.io
         )
-      })
+      }))
 
-      socket.on('battle_royale_start_early', (data) => {
+      socket.on('battle_royale_start_early', safeHandler((data) => {
         console.log(`📥 battle_royale_start_early from ${socket.id}`, data)
-        this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(
+        return this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(
           socket, 
           data, 
           this.battleRoyaleManager, 
           this.io, 
           this.dbService
         )
-      })
+      }))
       
       // Disconnection
-      socket.on('disconnect', () => this.handleDisconnect(socket))
+      socket.on('disconnect', safeHandler(() => this.handleDisconnect(socket)))
     })
   }
 
