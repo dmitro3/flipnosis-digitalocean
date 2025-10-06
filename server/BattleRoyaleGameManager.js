@@ -339,6 +339,25 @@ class BattleRoyaleGameManager {
     return this.games.get(gameId)
   }
 
+  // ===== LOAD GAME FROM DB =====
+  async loadGameFromDatabase(gameId, dbService) {
+    if (this.games.has(gameId)) {
+      return this.games.get(gameId) // Already loaded
+    }
+
+    try {
+      const gameData = await dbService.getBattleRoyaleGame(gameId)
+      if (gameData && gameData.status === 'filling') {
+        console.log(`🔄 Loading game from database: ${gameId}`)
+        return this.createBattleRoyale(gameId, gameData, dbService)
+      }
+    } catch (error) {
+      console.error(`❌ Error loading game ${gameId} from database:`, error)
+    }
+
+    return null
+  }
+
   getFullGameState(gameId) {
     const game = this.games.get(gameId)
     if (!game) return null

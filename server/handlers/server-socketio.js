@@ -108,7 +108,9 @@ initialize(server, dbService) {
         this.battleRoyaleHandlers.handleSpectateBattleRoyale(
           socket, 
           data, 
-          this.battleRoyaleManager
+          this.battleRoyaleManager,
+          this.io,
+          this.dbService
         )
       })
 
@@ -117,7 +119,9 @@ initialize(server, dbService) {
         this.battleRoyaleHandlers.handleRequestBattleRoyaleState(
           socket, 
           data, 
-          this.battleRoyaleManager
+          this.battleRoyaleManager,
+          this.io,
+          this.dbService
         )
       })
 

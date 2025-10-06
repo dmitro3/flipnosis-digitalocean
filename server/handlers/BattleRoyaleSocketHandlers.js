@@ -11,19 +11,10 @@ class BattleRoyaleSocketHandlers {
     socket.join(`game_${gameId}`)
     
     // Load game from DB if not in memory
-    let game = gameManager.getGame(gameId)
-    if (!game && dbService) {
-      try {
-        const gameData = await dbService.getBattleRoyaleGame(gameId)
-        if (gameData) {
-          game = gameManager.createBattleRoyale(gameId, gameData, dbService)
-        }
-      } catch (error) {
-        console.error('Error loading game:', error)
-      }
-    }
+    let game = await gameManager.loadGameFromDatabase(gameId, dbService)
     
     if (!game) {
+      console.log(`❌ Game not found: ${gameId}`)
       socket.emit('battle_royale_error', { message: 'Game not found' })
       return
     }
@@ -36,11 +27,14 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Request state
-  async handleRequestBattleRoyaleState(socket, data, gameManager) {
+  async handleRequestBattleRoyaleState(socket, data, gameManager, io, dbService) {
     const { gameId } = data
-    const state = gameManager.getFullGameState(gameId)
     
-    if (state) {
+    // Try to load game from database if not in memory
+    let game = await gameManager.loadGameFromDatabase(gameId, dbService)
+    
+    if (game) {
+      const state = gameManager.getFullGameState(gameId)
       socket.emit('battle_royale_state_update', state)
     } else {
       socket.emit('battle_royale_error', { message: 'Game not found' })
@@ -56,20 +50,10 @@ class BattleRoyaleSocketHandlers {
     socket.join(roomId)
     
     // Load game from DB if not in memory
-    let game = gameManager.getGame(gameId)
-    if (!game && dbService) {
-      try {
-        const gameData = await dbService.getBattleRoyaleGame(gameId)
-        if (gameData && gameData.status === 'filling') {
-          game = gameManager.createBattleRoyale(gameId, gameData, dbService)
-          console.log(`🔍 Game loaded from database: ${gameId}`)
-        }
-      } catch (error) {
-        console.error('Error loading game:', error)
-      }
-    }
+    let game = await gameManager.loadGameFromDatabase(gameId, dbService)
     
     if (!game) {
+      console.log(`❌ Game not found: ${gameId}`)
       socket.emit('battle_royale_error', { message: 'Game not found' })
       return
     }
@@ -172,11 +156,13 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Spectate Battle Royale
-  async handleSpectateBattleRoyale(socket, data, gameManager) {
+  async handleSpectateBattleRoyale(socket, data, gameManager, io, dbService) {
     const { gameId, address } = data
     console.log(`👁️ ${address} spectating: ${gameId}`)
     
-    const game = gameManager.getGame(gameId)
+    // Load game from DB if not in memory
+    let game = await gameManager.loadGameFromDatabase(gameId, dbService)
+    
     if (!game) {
       socket.emit('battle_royale_error', { message: 'Game not found' })
       return
