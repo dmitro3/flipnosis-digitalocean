@@ -162,6 +162,30 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
     showToast(data.message || 'Game error', 'error')
   }, [showToast])
 
+  const handleShieldDeployed = useCallback((data) => {
+    console.log('🛡️ Shield deployed by:', data.playerAddress)
+    showToast('Shield deployed!', 'info')
+  }, [showToast])
+
+  const handleLightningActivated = useCallback((data) => {
+    console.log('⚡ Lightning Round activated by:', data.playerAddress)
+    showToast('⚡ LIGHTNING ROUND ACTIVATED!', 'warning')
+  }, [showToast])
+
+  const handleLightningEarned = useCallback((data) => {
+    console.log('⚡ Lightning Round earned by:', data.playerAddress)
+    if (data.playerAddress === address) {
+      showToast('⚡ You earned Lightning Round!', 'success')
+    }
+  }, [address, showToast])
+
+  const handleShieldSaved = useCallback((data) => {
+    console.log('🛡️ Shield saved player:', data.playerAddress)
+    if (data.playerAddress === address) {
+      showToast('🛡️ Shield saved you!', 'success')
+    }
+  }, [address, showToast])
+
   // ===== SOCKET INITIALIZATION =====
   useEffect(() => {
     if (!gameId || !address || socketInitialized.current) return
@@ -184,6 +208,10 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
         socketService.on('battle_royale_game_complete', handleGameComplete)
         socketService.on('battle_royale_starting', handleGameStarting)
         socketService.on('battle_royale_error', handleError)
+        socketService.on('battle_royale_shield_deployed', handleShieldDeployed)
+        socketService.on('battle_royale_lightning_activated', handleLightningActivated)
+        socketService.on('battle_royale_lightning_earned', handleLightningEarned)
+        socketService.on('battle_royale_shield_saved', handleShieldSaved)
 
         // Join room
         const roomId = `game_${gameId}`
@@ -217,10 +245,14 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
         socketService.off('battle_royale_game_complete', handleGameComplete)
         socketService.off('battle_royale_starting', handleGameStarting)
         socketService.off('battle_royale_error', handleError)
+        socketService.off('battle_royale_shield_deployed', handleShieldDeployed)
+        socketService.off('battle_royale_lightning_activated', handleLightningActivated)
+        socketService.off('battle_royale_lightning_earned', handleLightningEarned)
+        socketService.off('battle_royale_shield_saved', handleShieldSaved)
         socketInitialized.current = false
       }
     }
-  }, [gameId, address, handleStateUpdate, handleRoundStart, handlePlayerFlipped, handleRoundEnd, handleGameComplete, handleGameStarting, handleError])
+  }, [gameId, address, handleStateUpdate, handleRoundStart, handlePlayerFlipped, handleRoundEnd, handleGameComplete, handleGameStarting, handleError, handleShieldDeployed, handleLightningActivated, handleLightningEarned, handleShieldSaved])
 
   // ===== PLAYER ACTIONS =====
   const makeChoice = useCallback((choice) => {

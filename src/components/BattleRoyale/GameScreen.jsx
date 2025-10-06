@@ -428,11 +428,12 @@ const WinnerDisplay = styled.div`
 `
 
 const GameScreen = () => {
-  const { gameState, playerCoinImages, address } = useBattleRoyaleGame()
+  const { gameState, playerCoinImages, address, makeChoice, flipCoin } = useBattleRoyaleGame()
   const [localChoice, setLocalChoice] = useState(null)
   const [power, setPower] = useState(1)
   const [isCharging, setIsCharging] = useState(false)
   const [replayMessage, setReplayMessage] = useState(null)
+  const [showLightningBanner, setShowLightningBanner] = useState(false)
   const chargeIntervalRef = useRef(null)
 
   if (!gameState) return null
@@ -456,9 +457,11 @@ const GameScreen = () => {
 
   const handleChoiceClick = useCallback((choice) => {
     if (!isInGame || isEliminated || phase !== 'round_active') return
-    socketService.emit('battle_royale_player_choice', { gameId: gameState.gameId, address, choice })
-    setLocalChoice(choice)
-  }, [isInGame, isEliminated, phase, gameState.gameId, address])
+    const success = makeChoice(choice)
+    if (success) {
+      setLocalChoice(choice)
+    }
+  }, [isInGame, isEliminated, phase, makeChoice])
 
   // Start charging power
   const handleFlipMouseDown = useCallback(() => {
@@ -491,7 +494,10 @@ const GameScreen = () => {
     
     setIsCharging(false)
     
-    socketService.emit('battle_royale_flip_coin', { gameId: gameState.gameId, address, power: Math.floor(power) })
+    const success = flipCoin(Math.floor(power))
+    if (success) {
+      console.log(`🪙 Flipped with power: ${Math.floor(power)}`)
+    }
     
     // Reset power after a delay
     setTimeout(() => setPower(1), 500)
@@ -507,12 +513,29 @@ const GameScreen = () => {
     setPower(1)
   }, [])
 
+  // Listen for round end messages and lightning activation
   useEffect(() => {
-    const handleLightningActivated = () => {
-      setReplayMessage(null)
+    const handleRoundEnd = (data) => {
+      if (data.message) {
+        setReplayMessage(data.message)
+        // Clear message after 5 seconds
+        setTimeout(() => setReplayMessage(null), 5000)
+      }
     }
+
+    const handleLightningActivated = (data) => {
+      console.log('⚡ Lightning Round activated!', data)
+      setShowLightningBanner(true)
+      setTimeout(() => setShowLightningBanner(false), 3000)
+    }
+
+    socketService.on('battle_royale_round_end', handleRoundEnd)
     socketService.on('battle_royale_lightning_activated', handleLightningActivated)
-    return () => socketService.off('battle_royale_lightning_activated', handleLightningActivated)
+
+    return () => {
+      socketService.off('battle_royale_round_end', handleRoundEnd)
+      socketService.off('battle_royale_lightning_activated', handleLightningActivated)
+    }
   }, [])
 
   // PHASE: STARTING
@@ -568,6 +591,12 @@ const GameScreen = () => {
       <GameLayout>
         {/* ARENA WITH DYNAMIC GRID */}
         <ArenaContainer>
+          {showLightningBanner && (
+            <LightningBanner>
+              ⚡ LIGHTNING ROUND ⚡
+            </LightningBanner>
+          )}
+          
           <DynamicGrid
             players={scenePlayersArray}
             currentUserAddress={address}
