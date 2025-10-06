@@ -197,19 +197,19 @@ class BattleRoyaleGameManager {
 
     this.broadcastState(gameId, broadcastFn)
 
-    // Countdown timer
-    const timer = setInterval(() => {
-      game.roundCountdown--
-      
-      if (game.roundCountdown <= 0) {
-        clearInterval(timer)
-        this.endRound(gameId, broadcastFn)
-      } else {
-        this.broadcastState(gameId, broadcastFn)
-      }
-    }, 1000)
+    // Countdown timer - DISABLED FOR TESTING
+    // const timer = setInterval(() => {
+    //   game.roundCountdown--
+    //   
+    //   if (game.roundCountdown <= 0) {
+    //     clearInterval(timer)
+    //     this.endRound(gameId, broadcastFn)
+    //   } else {
+    //     this.broadcastState(gameId, broadcastFn)
+    //   }
+    // }, 1000)
 
-    this.roundTimers.set(gameId, timer)
+    // this.roundTimers.set(gameId, timer)
     return true
   }
 
@@ -356,19 +356,19 @@ class BattleRoyaleGameManager {
 
         this.broadcastState(gameId, broadcastFn)
 
-        // Countdown timer
-        const timer = setInterval(() => {
-          game.roundCountdown--
-          
-          if (game.roundCountdown <= 0) {
-            clearInterval(timer)
-            this.endRound(gameId, broadcastFn)
-          } else {
-            this.broadcastState(gameId, broadcastFn)
-          }
-        }, 1000)
+        // Countdown timer - DISABLED FOR TESTING
+        // const timer = setInterval(() => {
+        //   game.roundCountdown--
+        //   
+        //   if (game.roundCountdown <= 0) {
+        //     clearInterval(timer)
+        //     this.endRound(gameId, broadcastFn)
+        //   } else {
+        //     this.broadcastState(gameId, broadcastFn)
+        //   }
+        // }, 1000)
 
-        this.roundTimers.set(gameId, timer)
+        // this.roundTimers.set(gameId, timer)
       }, 5000)
       
       return true
