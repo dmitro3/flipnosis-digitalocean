@@ -911,12 +911,45 @@ class BattleRoyaleGameManager {
   }
 
   // ===== COIN UPDATE =====
-  updatePlayerCoin(gameId, playerAddress, coinData) {
+  async updatePlayerCoin(gameId, playerAddress, coinData, dbService = null) {
+    console.log(`🪙 updatePlayerCoin called: gameId=${gameId}, playerAddress=${playerAddress}, coinData=`, coinData)
+    
     const game = this.battleRoyaleGames.get(gameId)
-    if (!game) return false
+    if (!game) {
+      console.log(`❌ Game not found in memory: ${gameId}`)
+      console.log(`Available games:`, Array.from(this.battleRoyaleGames.keys()))
+      return false
+    }
+
+    console.log(`🎮 Game found, current phase: ${game.phase}`)
+    console.log(`🎮 Available players:`, Array.from(game.players.keys()))
 
     const player = game.players.get(playerAddress)
-    if (!player) return false
+    if (!player) {
+      console.log(`❌ Player not found: ${playerAddress}`)
+      console.log(`Looking for exact match, but available players are:`, Array.from(game.players.keys()))
+      
+      // Try case-insensitive lookup
+      const lowerAddress = playerAddress.toLowerCase()
+      const foundPlayer = Array.from(game.players.keys()).find(key => key.toLowerCase() === lowerAddress)
+      if (foundPlayer) {
+        console.log(`✅ Found player with case-insensitive lookup: ${foundPlayer}`)
+        const actualPlayer = game.players.get(foundPlayer)
+        actualPlayer.coin = {
+          id: coinData.id || 'plain',
+          type: coinData.type || 'default',
+          name: coinData.name || 'Classic',
+          headsImage: coinData.headsImage || '/coins/plainh.png',
+          tailsImage: coinData.tailsImage || '/coins/plaint.png',
+          material: coinData.material || null
+        }
+        game.lastActivity = Date.now()
+        console.log(`✅ Updated coin for ${foundPlayer}: ${coinData.name}`)
+        return true
+      }
+      
+      return false
+    }
 
     // Update player's coin data
     player.coin = {

@@ -322,15 +322,26 @@ class BattleRoyaleGameManager {
   }
 
   // ===== UPDATE COIN =====
-  updatePlayerCoin(gameId, playerAddress, coinData) {
-    const game = this.games.get(gameId)
+  async updatePlayerCoin(gameId, playerAddress, coinData, dbService = null) {
+    console.log(`🪙 updatePlayerCoin called: gameId=${gameId}, playerAddress=${playerAddress}, coinData=`, coinData)
+    
+    let game = this.games.get(gameId)
+    if (!game && dbService) {
+      console.log(`🔄 Game not in memory, loading from database: ${gameId}`)
+      game = await this.loadGameFromDatabase(gameId, dbService)
+    }
+    
     if (!game) {
       console.log(`❌ Game not found: ${gameId}`)
+      console.log(`Available games:`, Array.from(this.games.keys()))
       return false
     }
 
-    // Allow coin updates during filling phase
-    if (game.phase !== this.PHASES.FILLING) {
+    console.log(`🎮 Game found, current phase: ${game.phase}`)
+    console.log(`🎮 Available players:`, Object.keys(game.players))
+
+    // Allow coin updates during filling and starting phases
+    if (game.phase !== this.PHASES.FILLING && game.phase !== this.PHASES.STARTING) {
       console.log(`❌ Cannot update coin - game phase is ${game.phase}`)
       return false
     }
@@ -338,6 +349,19 @@ class BattleRoyaleGameManager {
     const player = game.players[playerAddress]
     if (!player) {
       console.log(`❌ Player not found: ${playerAddress}`)
+      console.log(`Looking for exact match, but available players are:`, Object.keys(game.players))
+      
+      // Try case-insensitive lookup
+      const lowerAddress = playerAddress.toLowerCase()
+      const foundPlayer = Object.keys(game.players).find(key => key.toLowerCase() === lowerAddress)
+      if (foundPlayer) {
+        console.log(`✅ Found player with case-insensitive lookup: ${foundPlayer}`)
+        const actualPlayer = game.players[foundPlayer]
+        actualPlayer.coin = coinData
+        console.log(`✅ Coin updated for ${foundPlayer}:`, coinData.name)
+        return true
+      }
+      
       return false
     }
 

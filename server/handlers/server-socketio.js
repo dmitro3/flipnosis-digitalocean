@@ -99,7 +99,8 @@ initialize(server, dbService) {
           socket, 
           data, 
           this.battleRoyaleManager, 
-          this.io
+          this.io,
+          this.dbService
         )
       })
 

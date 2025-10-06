@@ -101,14 +101,14 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Update coin
-  async handleBattleRoyaleUpdateCoin(socket, data, gameManager, io) {
+  async handleBattleRoyaleUpdateCoin(socket, data, gameManager, io, dbService = null) {
     const { gameId, address, coin, coinData } = data
     console.log(`🪙 ${address} updating coin`)
     
     // Handle both parameter names for compatibility
     const coinToUpdate = coin || coinData
     
-    const success = gameManager.updatePlayerCoin(gameId, address, coinToUpdate)
+    const success = await gameManager.updatePlayerCoin(gameId, address, coinToUpdate, dbService)
     if (success) {
       // Broadcast updated state
       const state = gameManager.getFullGameState(gameId)
