@@ -63,7 +63,13 @@ class BattleRoyaleGameManager {
       isCreator: true,
       entryPaid: true,
       status: 'active',
-      coin: { id: 'plain', type: 'default', name: 'Classic' },
+      coin: { 
+        id: 'plain', 
+        type: 'default', 
+        name: 'Classic',
+        headsImage: '/coins/plainh.png',
+        tailsImage: '/coins/plaint.png'
+      },
       choice: null,
       hasFlipped: false,
       flipResult: null,
@@ -94,7 +100,13 @@ class BattleRoyaleGameManager {
       isCreator: false,
       entryPaid: true,
       status: 'active',
-      coin: { id: 'plain', type: 'default', name: 'Classic' },
+      coin: { 
+        id: 'plain', 
+        type: 'default', 
+        name: 'Classic',
+        headsImage: '/coins/plainh.png',
+        tailsImage: '/coins/plaint.png'
+      },
       choice: null,
       hasFlipped: false,
       flipResult: null,

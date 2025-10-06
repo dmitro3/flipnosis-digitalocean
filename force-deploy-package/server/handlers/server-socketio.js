@@ -822,10 +822,16 @@ class GameServer {
   }
 
   async handleBattleRoyaleUpdateCoin(socket, data) {
-    const { gameId, address, coinData } = data
-    console.log(`🪙 Battle Royale coin update: ${address} changing coin to ${coinData.name} in ${gameId}`)
+    const { gameId, address, coinData, coin } = data
+    console.log(`🪙 Battle Royale coin update: ${address} changing coin in ${gameId}`)
     
-    const success = this.battleRoyaleManager.updatePlayerCoin(gameId, address, coinData)
+    // Handle both parameter names for compatibility
+    const coinToUpdate = coinData || coin
+    if (coinToUpdate?.name) {
+      console.log(`🪙 Changing coin to: ${coinToUpdate.name}`)
+    }
+    
+    const success = this.battleRoyaleManager.updatePlayerCoin(gameId, address, coinToUpdate)
     if (!success) {
       socket.emit('battle_royale_error', { message: 'Cannot update coin' })
       return

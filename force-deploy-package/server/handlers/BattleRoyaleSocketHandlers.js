@@ -139,10 +139,13 @@ class BattleRoyaleSocketHandlers {
 
   // Update Player Coin
   async handleBattleRoyaleUpdateCoin(socket, data, battleRoyaleManager, io) {
-    const { gameId, address, coinData } = data
+    const { gameId, address, coinData, coin } = data
     console.log(`🪙 Battle Royale coin update: ${address} changing coin in ${gameId}`)
     
-    const success = battleRoyaleManager.updatePlayerCoin(gameId, address, coinData)
+    // Handle both parameter names for compatibility
+    const coinToUpdate = coinData || coin
+    
+    const success = battleRoyaleManager.updatePlayerCoin(gameId, address, coinToUpdate)
     if (!success) {
       socket.emit('battle_royale_error', { message: 'Cannot update coin' })
       return
