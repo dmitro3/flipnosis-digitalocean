@@ -27,14 +27,11 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Request state
-  async handleRequestBattleRoyaleState(socket, data, gameManager, io, dbService) {
+  async handleRequestBattleRoyaleState(socket, data, gameManager) {
     const { gameId } = data
+    const state = gameManager.getFullGameState(gameId)
     
-    // Try to load game from database if not in memory
-    let game = await gameManager.loadGameFromDatabase(gameId, dbService)
-    
-    if (game) {
-      const state = gameManager.getFullGameState(gameId)
+    if (state) {
       socket.emit('battle_royale_state_update', state)
     } else {
       socket.emit('battle_royale_error', { message: 'Game not found' })
@@ -156,13 +153,11 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Spectate Battle Royale
-  async handleSpectateBattleRoyale(socket, data, gameManager, io, dbService) {
+  async handleSpectateBattleRoyale(socket, data, gameManager) {
     const { gameId, address } = data
     console.log(`👁️ ${address} spectating: ${gameId}`)
     
-    // Load game from DB if not in memory
-    let game = await gameManager.loadGameFromDatabase(gameId, dbService)
-    
+    const game = gameManager.getGame(gameId)
     if (!game) {
       socket.emit('battle_royale_error', { message: 'Game not found' })
       return
