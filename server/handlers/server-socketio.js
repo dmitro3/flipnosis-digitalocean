@@ -189,12 +189,12 @@ initialize(server, dbService) {
     const { roomId, message, address } = data
     console.log(`💬 Chat from ${address} in ${roomId}: ${message}`)
     
-    // Save to database if it's a battle royale game
-    if (roomId.startsWith('game_') && this.dbService) {
+    // Save to database using existing chat_messages table
+    if (this.dbService) {
       try {
-        const gameId = roomId.substring(5) // Remove 'game_' prefix
-        await this.dbService.saveBattleRoyaleChatMessage(gameId, address, message)
-        console.log(`✅ Chat message saved to database for game ${gameId}`)
+        // Use roomId as-is for chat_messages table
+        await this.dbService.saveChatMessage(roomId, address, message)
+        console.log(`✅ Chat message saved to database for room ${roomId}`)
       } catch (error) {
         console.error('❌ Error saving chat message:', error)
       }

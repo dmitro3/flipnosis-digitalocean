@@ -1494,19 +1494,11 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     const limit = parseInt(req.query.limit) || 50
     
     try {
-      // Check if this is a battle royale game
-      if (gameId.startsWith('br_')) {
-        // For battle royale games, use the battle royale chat table
-        const messages = await dbService.getBattleRoyaleChatMessages(gameId, limit)
-        console.log(`📚 API: Returning ${messages.length} battle royale chat messages for game ${gameId}`)
-        res.json({ messages })
-      } else {
-        // For regular games, use the regular chat table
-        const roomId = gameId
-        const messages = await dbService.getChatHistory(roomId, limit)
-        console.log(`📚 API: Returning ${messages.length} chat messages for game ${gameId} (room: ${roomId})`)
-        res.json({ messages })
-      }
+      // Use the existing chat_messages table for all games (including battle royale)
+      const roomId = gameId.startsWith('br_') ? gameId : gameId
+      const messages = await dbService.getChatHistory(roomId, limit)
+      console.log(`📚 API: Returning ${messages.length} chat messages for game ${gameId} (room: ${roomId})`)
+      res.json({ messages })
     } catch (error) {
       console.error('❌ Error fetching chat history:', error)
       res.status(500).json({ error: 'Failed to fetch chat history' })
