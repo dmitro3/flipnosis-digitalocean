@@ -157,7 +157,47 @@ const PhysicsScene = ({
     console.log('📊 Obstacles received:', obstacles)
     console.log('📊 Number of obstacles:', obstacles?.length || 0)
     
-    // Always use starfield - it's more reliable and looks good
+    // ===== LOAD NEBULA GLB SKYBOX =====
+    console.log('🌌 Loading nebula.glb skybox...')
+    const gltfLoader = new GLTFLoader()
+    
+    gltfLoader.load(
+      '/images/space/nebula.glb',
+      (gltf) => {
+        console.log('✅ Nebula GLB loaded successfully')
+        const nebulaSkybox = gltf.scene
+        
+        // Scale it HUGE to surround the entire scene
+        nebulaSkybox.scale.set(500, 500, 500)
+        
+        // Position at origin
+        nebulaSkybox.position.set(0, 0, 0)
+        
+        // Make sure it renders behind everything
+        nebulaSkybox.traverse((child) => {
+          if (child.isMesh) {
+            child.renderOrder = -1000
+            // If the inside is visible, flip normals or use DoubleSide
+            if (child.material) {
+              child.material.side = THREE.BackSide // Render inside of sphere
+            }
+          }
+        })
+        
+        scene.add(nebulaSkybox)
+        console.log('✅ Nebula skybox added to scene')
+      },
+      (progress) => {
+        const percent = (progress.loaded / progress.total) * 100
+        console.log(`🌌 Loading nebula: ${percent.toFixed(1)}%`)
+      },
+      (error) => {
+        console.error('❌ Failed to load nebula.glb:', error)
+        console.log('⚠️ Continuing with procedural starfield only')
+      }
+    )
+    
+    // Always use starfield as backup/enhancement
     console.log('🌟 Creating vertical space starfield...')
     createStarfield(scene)
     
