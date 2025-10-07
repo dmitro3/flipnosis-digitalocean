@@ -1763,8 +1763,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         })
       }
 
-      // Generate unique game ID
-      const gameId = `br_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+      // Generate unique game ID with physics prefix
+      const gameId = `physics_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
 
       // Create game in database
       const gameData = {
@@ -1783,8 +1783,13 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       }
 
       await dbService.createBattleRoyaleGame(gameData)
+      
+      // Create physics game in manager
+      if (gameServer && gameServer.physicsGameManager) {
+        gameServer.physicsGameManager.createPhysicsGame(gameId, gameData)
+      }
 
-      console.log(`✅ Battle Royale game created: ${gameId}`)
+      console.log(`✅ 3D Physics Battle Royale game created: ${gameId}`)
       
       res.json({
         success: true,
@@ -1934,6 +1939,11 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
 
       await dbService.addBattleRoyalePlayer(gameId, playerData)
 
+      // Add player to physics game manager
+      if (gameServer && gameServer.physicsGameManager) {
+        gameServer.physicsGameManager.addPlayer(gameId, player_address)
+      }
+
       // Update game player count
       const newParticipantCount = participants.length + 1
       await dbService.updateBattleRoyaleGame(gameId, {
@@ -1941,7 +1951,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         status: newParticipantCount >= game.max_players ? 'ready' : 'filling'
       })
 
-      console.log(`✅ Player ${player_address} joined Battle Royale ${gameId} in slot ${assignedSlot}`)
+      console.log(`✅ Player ${player_address} joined 3D Physics Battle Royale ${gameId} in slot ${assignedSlot}`)
 
       res.json({
         success: true,

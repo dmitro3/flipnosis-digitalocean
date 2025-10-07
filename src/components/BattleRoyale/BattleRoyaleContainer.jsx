@@ -2,7 +2,6 @@ import React from 'react'
 import { useParams } from 'react-router-dom'
 import { BattleRoyaleGameProvider, useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
 import LobbyScreen from './LobbyScreen'
-import GameScreen from './GameScreen'
 import PhysicsGameScreen from './PhysicsGameScreen'
 import ErrorBoundary from './ErrorBoundary'
 import hazeVideo from '../../../Images/Video/haze.webm'
@@ -111,14 +110,8 @@ const BattleRoyaleContent = () => {
     return <LobbyScreen />
   }
 
-  // Physics game route
-  const isPhysicsGame = gameState.gameId?.startsWith('physics_')
-  if (isPhysicsGame) {
-    return <PhysicsGameScreen />
-  }
-
-  // Non-physics default
-  return <GameScreen />
+  // All Battle Royale games now use 3D Physics
+  return <PhysicsGameScreen />
 }
 
 // Main container component

@@ -186,6 +186,46 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
     }
   }, [address, showToast])
 
+  // ===== PHYSICS GAME EVENT HANDLERS =====
+  const handlePhysicsStateUpdate = useCallback((data) => {
+    console.log('🎮 Physics state update:', data)
+    setGameState(data)
+    setLoading(false)
+    if (data.players) {
+      loadAllPlayerImages(data.players)
+    }
+  }, [loadAllPlayerImages])
+
+  const handlePhysicsTurnStart = useCallback((data) => {
+    console.log('🎯 Turn started for:', data.playerAddress)
+    const isMyTurn = data.playerAddress?.toLowerCase() === address?.toLowerCase()
+    if (isMyTurn) {
+      showToast('Your turn! Aim and fire!', 'info')
+    }
+  }, [address, showToast])
+
+  const handlePhysicsCoinLanded = useCallback((data) => {
+    console.log('🎲 Coin landed:', data)
+    const wasMe = data.playerAddress?.toLowerCase() === address?.toLowerCase()
+    if (wasMe) {
+      showToast(data.won ? '✅ You won!' : '❌ You lost a life', data.won ? 'success' : 'warning')
+    }
+  }, [address, showToast])
+
+  const handlePhysicsGameOver = useCallback((data) => {
+    console.log('🏆 Physics game over:', data)
+    const isWinner = data.winner?.toLowerCase() === address?.toLowerCase()
+    showToast(
+      isWinner ? '🎉 Victory! You won!' : `Game over! Winner: ${data.winner?.slice(0, 6)}...`,
+      isWinner ? 'success' : 'info'
+    )
+  }, [address, showToast])
+
+  const handlePhysicsGameStarting = useCallback((data) => {
+    console.log('⏱️ Physics game starting:', data.countdown)
+    showToast(`Game starting in ${data.countdown} seconds!`, 'success')
+  }, [showToast])
+
   // ===== SOCKET INITIALIZATION =====
   useEffect(() => {
     if (!gameId || !address || socketInitialized.current) return
@@ -212,6 +252,13 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
         socketService.on('battle_royale_lightning_activated', handleLightningActivated)
         socketService.on('battle_royale_lightning_earned', handleLightningEarned)
         socketService.on('battle_royale_shield_saved', handleShieldSaved)
+        
+        // Physics game event listeners
+        socketService.on('physics_state_update', handlePhysicsStateUpdate)
+        socketService.on('physics_turn_start', handlePhysicsTurnStart)
+        socketService.on('physics_coin_landed', handlePhysicsCoinLanded)
+        socketService.on('physics_game_over', handlePhysicsGameOver)
+        socketService.on('physics_game_starting', handlePhysicsGameStarting)
 
         // Join room
         const roomId = `game_${gameId}`
@@ -249,27 +296,26 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
         socketService.off('battle_royale_lightning_activated', handleLightningActivated)
         socketService.off('battle_royale_lightning_earned', handleLightningEarned)
         socketService.off('battle_royale_shield_saved', handleShieldSaved)
+        
+        // Physics game event listeners
+        socketService.off('physics_state_update', handlePhysicsStateUpdate)
+        socketService.off('physics_turn_start', handlePhysicsTurnStart)
+        socketService.off('physics_coin_landed', handlePhysicsCoinLanded)
+        socketService.off('physics_game_over', handlePhysicsGameOver)
+        socketService.off('physics_game_starting', handlePhysicsGameStarting)
         socketInitialized.current = false
       }
     }
-  }, [gameId, address, handleStateUpdate, handleRoundStart, handlePlayerFlipped, handleRoundEnd, handleGameComplete, handleGameStarting, handleError, handleShieldDeployed, handleLightningActivated, handleLightningEarned, handleShieldSaved])
+  }, [gameId, address, handleStateUpdate, handleRoundStart, handlePlayerFlipped, handleRoundEnd, handleGameComplete, handleGameStarting, handleError, handleShieldDeployed, handleLightningActivated, handleLightningEarned, handleShieldSaved, handlePhysicsStateUpdate, handlePhysicsTurnStart, handlePhysicsCoinLanded, handlePhysicsGameOver, handlePhysicsGameStarting])
 
   // ===== PLAYER ACTIONS =====
   const makeChoice = useCallback((choice) => {
     if (!gameId || !address || !gameState) return false
-    const isPhysicsGame = gameState.gameId?.startsWith('physics_')
-    if (isPhysicsGame) {
-      socketService.emit('physics_set_choice', { gameId, address, choice })
-      return true
-    }
-    if (gameState.phase !== 'round_active') {
-      showToast('Wait for the round to start', 'warning')
-      return false
-    }
-    socketService.emit('battle_royale_player_choice', { gameId, address, choice })
+    // All games are now physics games
+    socketService.emit('physics_set_choice', { gameId, address, choice })
     console.log(`🎯 Choice made: ${choice}`)
     return true
-  }, [gameId, address, gameState, showToast])
+  }, [gameId, address, gameState])
 
   const flipCoin = useCallback((power = 5) => {
     if (!gameId || !address || !gameState) return false
