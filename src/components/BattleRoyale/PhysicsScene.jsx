@@ -1,7 +1,15 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
-const PhysicsScene = ({ obstacles = [], players = {}, coinPositions = [], cameraTarget = null, currentPlayerAddress = null, isMyTurn = false }) => {
+const PhysicsScene = ({ 
+  obstacles = [], 
+  players = {}, 
+  coinPositions = [],
+  cameraTarget = null,
+  currentPlayerAddress = null,
+  isMyTurn = false
+}) => {
   const mountRef = useRef(null)
   const sceneRef = useRef(null)
   const cameraRef = useRef(null)
@@ -10,124 +18,397 @@ const PhysicsScene = ({ obstacles = [], players = {}, coinPositions = [], camera
   const coinRef = useRef(null)
   const animationIdRef = useRef(null)
   const cameraBasePositionRef = useRef({ x: 0, y: 5, z: 30 })
-
+  const [assetsLoaded, setAssetsLoaded] = useState(false)
+  
+  // Initialize scene
   useEffect(() => {
     if (!mountRef.current) return
+    
+    console.log('🎬 Initializing Physics Scene')
+    
+    // Scene setup
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x000011)
-    const camera = new THREE.PerspectiveCamera(60, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 1000)
+    scene.background = new THREE.Color(0x000008) // Very dark blue-black
+    
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(
+      60,
+      mountRef.current.clientWidth / mountRef.current.clientHeight,
+      0.1,
+      1000
+    )
     camera.position.set(0, 5, 30)
     camera.lookAt(0, 20, 0)
+    
+    // Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.5
+    
     mountRef.current.appendChild(renderer.domElement)
-    const ambientLight = new THREE.AmbientLight(0x404080, 1.5)
-    scene.add(ambientLight)
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5)
-    directionalLight.position.set(10, 50, 10)
-    directionalLight.castShadow = true
-    directionalLight.shadow.camera.left = -50
-    directionalLight.shadow.camera.right = 50
-    directionalLight.shadow.camera.top = 50
-    directionalLight.shadow.camera.bottom = -50
-    scene.add(directionalLight)
-    const pointLight1 = new THREE.PointLight(0x00ffff, 2, 100)
-    pointLight1.position.set(-20, 30, 10)
-    scene.add(pointLight1)
-    const pointLight2 = new THREE.PointLight(0xff00ff, 2, 100)
-    pointLight2.position.set(20, 30, -10)
-    scene.add(pointLight2)
-    const starGeometry = new THREE.BufferGeometry()
-    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, sizeAttenuation: true })
-    const starVertices = []
-    for (let i = 0; i < 1000; i++) { const x = (Math.random() - 0.5) * 200; const y = (Math.random() - 0.5) * 200; const z = (Math.random() - 0.5) * 200; starVertices.push(x, y, z) }
-    starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3))
-    const stars = new THREE.Points(starGeometry, starMaterial)
-    scene.add(stars)
-    obstacles.forEach((obstacle, index) => {
-      let geometry, material
-      if (obstacle.type === 'sphere') {
-        geometry = new THREE.SphereGeometry(obstacle.radius, 32, 32)
-        const colors = [0xff6b6b, 0x6b9eff, 0x9eff6b, 0xff6bff, 0xffff6b, 0x6bffff]
-        const color = colors[index % colors.length]
-        material = new THREE.MeshStandardMaterial({ color, metalness: 0.3, roughness: 0.7, emissive: color, emissiveIntensity: 0.2 })
-      }
-      const mesh = new THREE.Mesh(geometry, material)
-      mesh.position.set(obstacle.position.x, obstacle.position.y, obstacle.position.z)
-      mesh.castShadow = true
-      mesh.receiveShadow = true
-      scene.add(mesh)
-      obstaclesRef.current.push(mesh)
-    })
+    
+    // Store references
     sceneRef.current = scene
     cameraRef.current = camera
     rendererRef.current = renderer
+    
+    // Load assets
+    loadAssets(scene)
+    
+    // Lighting
+    setupLighting(scene)
+    
+    // Animation loop
     const animate = () => {
       if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
-      if (stars) { stars.rotation.y += 0.0002 }
+      
+      // Smoothly move camera to target
       if (cameraTarget && isMyTurn) {
-        const targetPos = new THREE.Vector3(cameraTarget.x, cameraTarget.y - 5, cameraTarget.z + 15)
+        // Follow coin up
+        const targetPos = new THREE.Vector3(
+          cameraTarget.x,
+          cameraTarget.y - 5,
+          cameraTarget.z + 15
+        )
+        
         camera.position.lerp(targetPos, 0.05)
         camera.lookAt(cameraTarget.x, cameraTarget.y, cameraTarget.z)
       } else {
-        const basePos = new THREE.Vector3(cameraBasePositionRef.current.x, cameraBasePositionRef.current.y, cameraBasePositionRef.current.z)
+        // Return to base position
+        const basePos = new THREE.Vector3(
+          cameraBasePositionRef.current.x,
+          cameraBasePositionRef.current.y,
+          cameraBasePositionRef.current.z
+        )
+        
         camera.position.lerp(basePos, 0.02)
         camera.lookAt(0, 20, 0)
       }
+      
+      // Slowly rotate obstacles for visual interest
+      obstaclesRef.current.forEach((obstacle, index) => {
+        if (obstacle) {
+          obstacle.rotation.y += 0.001 * (index % 2 === 0 ? 1 : -1)
+        }
+      })
+      
       renderer.render(scene, camera)
       animationIdRef.current = requestAnimationFrame(animate)
     }
+    
     animate()
+    
+    // Resize handler
     const handleResize = () => {
       if (!mountRef.current || !camera || !renderer) return
       camera.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight
       camera.updateProjectionMatrix()
       renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
     }
+    
     window.addEventListener('resize', handleResize)
+    
+    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
-      if (animationIdRef.current) { cancelAnimationFrame(animationIdRef.current) }
-      obstaclesRef.current.forEach(obstacle => { if (obstacle.geometry) obstacle.geometry.dispose(); if (obstacle.material) obstacle.material.dispose() })
-      if (renderer) { renderer.dispose(); if (mountRef.current) { mountRef.current.removeChild(renderer.domElement) } }
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current)
+      }
+      
+      obstaclesRef.current.forEach(obstacle => {
+        if (obstacle) {
+          if (obstacle.geometry) obstacle.geometry.dispose()
+          if (obstacle.material) {
+            if (Array.isArray(obstacle.material)) {
+              obstacle.material.forEach(mat => mat.dispose())
+            } else {
+              obstacle.material.dispose()
+            }
+          }
+        }
+      })
+      
+      if (renderer) {
+        renderer.dispose()
+        if (mountRef.current) {
+          mountRef.current.removeChild(renderer.domElement)
+        }
+      }
+      
       sceneRef.current = null
       cameraRef.current = null
       rendererRef.current = null
     }
-  }, [obstacles])
-
+  }, [])
+  
+  // Load skybox and obstacle textures
+  const loadAssets = async (scene) => {
+    console.log('📦 Loading assets...')
+    
+    // Load skybox
+    const gltfLoader = new GLTFLoader()
+    gltfLoader.load(
+      '/images/space/space.glb',
+      (gltf) => {
+        console.log('✅ Skybox loaded')
+        const skybox = gltf.scene
+        skybox.scale.set(500, 500, 500) // Make it huge
+        scene.add(skybox)
+      },
+      undefined,
+      (error) => {
+        console.warn('⚠️ Skybox not loaded, using starfield fallback:', error)
+        createStarfield(scene) // Fallback to starfield
+      }
+    )
+    
+    // Load obstacle textures
+    const textureLoader = new THREE.TextureLoader()
+    const loadedTextures = []
+    let loadedCount = 0
+    
+    for (let i = 1; i <= 20; i++) {
+      textureLoader.load(
+        `/images/space/${i}.png`,
+        (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace
+          loadedTextures[i - 1] = texture
+          loadedCount++
+          
+          if (loadedCount === 20) {
+            console.log('✅ All obstacle textures loaded')
+            createObstacles(scene, loadedTextures)
+            setAssetsLoaded(true)
+          }
+        },
+        undefined,
+        (error) => {
+          console.error(`❌ Failed to load texture ${i}.png:`, error)
+          loadedCount++
+          
+          if (loadedCount === 20) {
+            console.log('⚠️ Some textures failed, proceeding with loaded ones')
+            createObstacles(scene, loadedTextures)
+            setAssetsLoaded(true)
+          }
+        }
+      )
+    }
+  }
+  
+  // Create starfield fallback
+  const createStarfield = (scene) => {
+    const starGeometry = new THREE.BufferGeometry()
+    const starMaterial = new THREE.PointsMaterial({ 
+      color: 0xffffff, 
+      size: 0.7, 
+      sizeAttenuation: true,
+      transparent: true,
+      opacity: 0.8
+    })
+    
+    const starVertices = []
+    for (let i = 0; i < 2000; i++) {
+      const x = (Math.random() - 0.5) * 400
+      const y = (Math.random() - 0.5) * 400
+      const z = (Math.random() - 0.5) * 400
+      starVertices.push(x, y, z)
+    }
+    
+    starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3))
+    const stars = new THREE.Points(starGeometry, starMaterial)
+    scene.add(stars)
+  }
+  
+  // Create obstacles from loaded textures
+  const createObstacles = (scene, textures) => {
+    if (!obstacles || obstacles.length === 0) {
+      console.warn('⚠️ No obstacle data provided')
+      return
+    }
+    
+    console.log(`🪐 Creating ${obstacles.length} obstacles`)
+    
+    obstacles.forEach((obstacle, index) => {
+      const texture = textures[obstacle.textureIndex - 1]
+      
+      if (!texture) {
+        console.warn(`⚠️ Texture missing for obstacle ${index}`)
+        return
+      }
+      
+      // Create sphere geometry
+      const geometry = new THREE.SphereGeometry(obstacle.radius, 32, 32)
+      
+      // Create material with texture
+      const material = new THREE.MeshStandardMaterial({
+        map: texture,
+        metalness: 0.3,
+        roughness: 0.6,
+        emissive: new THREE.Color(0x222244),
+        emissiveIntensity: 0.2,
+      })
+      
+      const mesh = new THREE.Mesh(geometry, material)
+      mesh.position.set(
+        obstacle.position.x,
+        obstacle.position.y,
+        obstacle.position.z
+      )
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      
+      // Add glow effect for larger objects
+      if (obstacle.radius > 4) {
+        const glowGeometry = new THREE.SphereGeometry(obstacle.radius * 1.1, 16, 16)
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: 0x4466ff,
+          transparent: true,
+          opacity: 0.15,
+          side: THREE.BackSide
+        })
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+        mesh.add(glow)
+      }
+      
+      scene.add(mesh)
+      obstaclesRef.current[index] = mesh
+    })
+  }
+  
+  // Setup lighting
+  const setupLighting = (scene) => {
+    // Ambient light
+    const ambientLight = new THREE.AmbientLight(0x404080, 2)
+    scene.add(ambientLight)
+    
+    // Main directional light (sun)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+    directionalLight.position.set(50, 100, 50)
+    directionalLight.castShadow = true
+    directionalLight.shadow.camera.left = -100
+    directionalLight.shadow.camera.right = 100
+    directionalLight.shadow.camera.top = 100
+    directionalLight.shadow.camera.bottom = -100
+    directionalLight.shadow.mapSize.width = 2048
+    directionalLight.shadow.mapSize.height = 2048
+    scene.add(directionalLight)
+    
+    // Colored point lights for atmosphere
+    const pointLight1 = new THREE.PointLight(0x00ffff, 3, 150)
+    pointLight1.position.set(-30, 40, 20)
+    scene.add(pointLight1)
+    
+    const pointLight2 = new THREE.PointLight(0xff00ff, 3, 150)
+    pointLight2.position.set(30, 60, -20)
+    scene.add(pointLight2)
+    
+    const pointLight3 = new THREE.PointLight(0xffff00, 2, 100)
+    pointLight3.position.set(0, 80, 0)
+    scene.add(pointLight3)
+    
+    // Hemisphere light for ambient color
+    const hemisphereLight = new THREE.HemisphereLight(0x4466ff, 0x000000, 1)
+    scene.add(hemisphereLight)
+  }
+  
+  // Update coin position from server
   useEffect(() => {
     if (!sceneRef.current || coinPositions.length === 0) return
+    
     const latestPosition = coinPositions[coinPositions.length - 1]
+    
+    // Create or update coin mesh
     if (!coinRef.current) {
-      const coinGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.2, 32)
-      const coinMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2, emissive: 0xffd700, emissiveIntensity: 0.3 })
+      const coinGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.3, 32)
+      const coinMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xffd700, 
+        metalness: 0.9, 
+        roughness: 0.1,
+        emissive: 0xffd700,
+        emissiveIntensity: 0.5
+      })
+      
       const coin = new THREE.Mesh(coinGeometry, coinMaterial)
       coin.castShadow = true
+      
+      // Add glow to coin
+      const glowGeometry = new THREE.CylinderGeometry(1.7, 1.7, 0.4, 32)
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffd700,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.BackSide
+      })
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+      coin.add(glow)
+      
       sceneRef.current.add(coin)
       coinRef.current = coin
     }
-    coinRef.current.position.set(latestPosition.position.x, latestPosition.position.y, latestPosition.position.z)
-    coinRef.current.quaternion.set(latestPosition.rotation.x, latestPosition.rotation.y, latestPosition.rotation.z, latestPosition.rotation.w)
+    
+    // Update position and rotation
+    coinRef.current.position.set(
+      latestPosition.position.x,
+      latestPosition.position.y,
+      latestPosition.position.z
+    )
+    
+    coinRef.current.quaternion.set(
+      latestPosition.rotation.x,
+      latestPosition.rotation.y,
+      latestPosition.rotation.z,
+      latestPosition.rotation.w
+    )
+    
   }, [coinPositions])
-
+  
+  // Clean up coin when positions are cleared
   useEffect(() => {
     if (coinPositions.length === 0 && coinRef.current && sceneRef.current) {
       sceneRef.current.remove(coinRef.current)
       coinRef.current.geometry.dispose()
-      coinRef.current.material.dispose()
+      if (Array.isArray(coinRef.current.material)) {
+        coinRef.current.material.forEach(mat => mat.dispose())
+      } else {
+        coinRef.current.material.dispose()
+      }
       coinRef.current = null
     }
   }, [coinPositions.length])
-
+  
   return (
-    <div ref={mountRef} style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }} />
+    <div
+      ref={mountRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'absolute',
+        top: 0,
+        left: 0
+      }}
+    >
+      {!assetsLoaded && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          color: '#00ffff',
+          fontSize: '1.5rem',
+          fontWeight: 'bold',
+          textShadow: '0 0 20px rgba(0, 255, 255, 0.8)',
+          zIndex: 10
+        }}>
+          Loading Space Assets...
+        </div>
+      )}
+    </div>
   )
 }
 
 export default PhysicsScene
-
-

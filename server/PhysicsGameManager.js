@@ -70,21 +70,42 @@ class PhysicsGameManager {
 
   createObstacles(world) {
     const obstacles = []
-    for (let i = 0; i < 15; i++) {
-      const radius = 2 + Math.random() * 3
-      const x = (Math.random() - 0.5) * 40
-      const y = 10 + Math.random() * 60
-      const z = (Math.random() - 0.5) * 40
-
+    
+    // Create 20 obstacles matching your 20 images
+    for (let i = 0; i < 20; i++) {
+      // Varied sizes - mix of small, medium, large
+      let radius
+      if (i < 8) {
+        radius = 1.5 + Math.random() * 1.5 // Small: 1.5-3
+      } else if (i < 16) {
+        radius = 3 + Math.random() * 2 // Medium: 3-5
+      } else {
+        radius = 5 + Math.random() * 3 // Large: 5-8
+      }
+      
+      // Spread obstacles across the space
+      const x = (Math.random() - 0.5) * 50 // -25 to 25
+      const y = 15 + Math.random() * 70 // Height from 15 to 85 (tall space)
+      const z = (Math.random() - 0.5) * 50 // -25 to 25
+      
       const obstacleBody = new CANNON.Body({
-        mass: 0,
+        mass: 0, // Static obstacles
         shape: new CANNON.Sphere(radius),
         position: new CANNON.Vec3(x, y, z),
         material: new CANNON.Material({ friction: 0.3, restitution: 0.7 })
       })
+      
       world.addBody(obstacleBody)
-      obstacles.push({ id: `obstacle_${i}`, type: 'sphere', radius, position: { x, y, z } })
+      
+      obstacles.push({
+        id: `obstacle_${i}`,
+        type: 'sphere',
+        radius,
+        position: { x, y, z },
+        textureIndex: i + 1 // Maps to 1.png, 2.png, etc.
+      })
     }
+    
     return obstacles
   }
 
