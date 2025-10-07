@@ -291,6 +291,23 @@ initialize(server, dbService) {
 
       socket.on('battle_royale_start_early', safeHandler((data) => {
         console.log(`📥 battle_royale_start_early from ${socket.id}`, data)
+        const { gameId, address } = data || {}
+        // If this is a physics game, route to physics start logic for compatibility with clients
+        if (gameId && (gameId.startsWith('physics_') || `${gameId}`.includes('physics_'))) {
+          const game = this.physicsGameManager.getGame(gameId)
+          if (!game) {
+            socket.emit('physics_error', { message: 'Game not found' })
+            return
+          }
+          if (game.creator?.toLowerCase() !== address?.toLowerCase()) {
+            socket.emit('physics_error', { message: 'Only creator can start game' })
+            return
+          }
+          this.physicsGameManager.startGame(gameId, (room, event, payload) => {
+            this.io.to(room).emit(event, payload)
+          })
+          return
+        }
         return this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(
           socket, 
           data, 
