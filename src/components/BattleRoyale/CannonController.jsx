@@ -5,57 +5,75 @@ const ControlPanel = styled.div`
   background: rgba(0, 0, 40, 0.98);
   border: 3px solid #00ffff;
   border-radius: 1rem;
-  padding: 1rem;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
   height: 100%;
   box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
   backdrop-filter: blur(10px);
   overflow: hidden;
 `
 
-const CoinPreview = styled.div`
+const CoinButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem;
   background: rgba(0, 191, 255, 0.1);
-  border: 2px solid #00bfff;
-  border-radius: 0.5rem;
+  border: 3px solid #00bfff;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
   
   img {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
     border: 2px solid #FFD700;
   }
   
   .coin-info {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     .coin-name {
       color: #00ffff;
       font-weight: bold;
-      font-size: 0.8rem;
+      font-size: 1.4rem;
+      font-family: 'Hyperwave', sans-serif;
+      letter-spacing: 1px;
     }
     .coin-hint {
       color: #aaa;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
     }
+  }
+  
+  &:hover:not(:disabled) {
+    background: rgba(0, 191, 255, 0.2);
+    transform: translateY(-2px);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `
 
 const ChoiceButtons = styled.div`
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   justify-content: center;
   
   button { 
     flex: 1; 
-    padding: 0.75rem; 
+    padding: 0.6rem; 
     border: none; 
-    border-radius: 0.75rem; 
-    font-size: 1.1rem; 
+    border-radius: 0.6rem; 
+    font-size: 1.4rem; 
     font-weight: bold; 
     cursor: pointer; 
     transition: all 0.3s ease; 
@@ -173,20 +191,28 @@ const PowerMeter = styled.div`
   }
 `
 
+const BottomRow = styled.div`
+  display: flex;
+  gap: 0.4rem;
+  align-items: stretch;
+`
+
 const FireButton = styled.button`
   background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
   color: white;
   border: 3px solid #ff1493;
-  padding: 0.8rem;
-  border-radius: 1rem;
-  font-size: 1.1rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.6rem;
+  font-size: 1.4rem;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   text-transform: uppercase;
   position: relative;
   overflow: hidden;
-  flex-shrink: 0;
+  flex: 1;
+  font-family: 'Hyperwave', sans-serif;
+  letter-spacing: 1px;
   
   &::before { 
     content: ''; 
@@ -289,19 +315,7 @@ const CannonController = ({
 
   return (
     <ControlPanel>
-      <CoinPreview>
-        <img 
-          src={currentCoin?.headsImage || '/coins/plainh.png'} 
-          alt="Current coin" 
-        />
-        <div className="coin-info">
-          <div className="coin-name">{currentCoin?.name || 'Classic'}</div>
-          <div className="coin-hint">
-            {hasFired ? 'Locked until next round' : 'Your coin'}
-          </div>
-        </div>
-      </CoinPreview>
-      
+      {/* Top Row - Heads/Tails buttons with bigger text */}
       <ChoiceButtons>
         <button 
           className={`heads ${selectedChoice === 'heads' ? 'selected' : ''}`} 
@@ -318,6 +332,32 @@ const CannonController = ({
           TAILS
         </button>
       </ChoiceButtons>
+      
+      {/* Bottom Row - Coin selector and Fire button side by side */}
+      <BottomRow>
+        <CoinButton disabled={disabled || hasFired}>
+          <img 
+            src={currentCoin?.headsImage || '/coins/plainh.png'} 
+            alt="Current coin" 
+          />
+          <div className="coin-info">
+            <div className="coin-name">{currentCoin?.name || 'Classic'}</div>
+            <div className="coin-hint">Your coin</div>
+          </div>
+        </CoinButton>
+        
+        <FireButton 
+          className={isCharging ? 'charging' : ''} 
+          onMouseDown={handleFireMouseDown} 
+          onMouseUp={handleFireMouseUp} 
+          onMouseLeave={handleFireMouseLeave} 
+          onTouchStart={handleFireMouseDown} 
+          onTouchEnd={handleFireMouseUp} 
+          disabled={disabled || !selectedChoice || hasFired}
+        >
+          {hasFired ? '✅ FIRED!' : (isCharging ? '⚡ CHARGE' : '🚀 FLIP')}
+        </FireButton>
+      </BottomRow>
       
       <AngleControl>
         <label>🎯 Aim Angle</label>
@@ -339,18 +379,6 @@ const CannonController = ({
           <div className="power-value">{Math.floor(power)}/10</div>
         </div>
       </PowerMeter>
-      
-      <FireButton 
-        className={isCharging ? 'charging' : ''} 
-        onMouseDown={handleFireMouseDown} 
-        onMouseUp={handleFireMouseUp} 
-        onMouseLeave={handleFireMouseLeave} 
-        onTouchStart={handleFireMouseDown} 
-        onTouchEnd={handleFireMouseUp} 
-        disabled={disabled || !selectedChoice || hasFired}
-      >
-        {hasFired ? '✅ FIRED!' : (isCharging ? '⚡ CHARGING...' : '🚀 HOLD TO FIRE')}
-      </FireButton>
       
       {hasFired && (
         <StatusText hasFired={true}>

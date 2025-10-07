@@ -26,7 +26,7 @@ const PhysicsScene = ({
     console.log('🎬 Initializing Physics Scene')
     
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x000008)
+    scene.background = new THREE.Color(0x000020) // Slightly lighter for visibility
     
     const camera = new THREE.PerspectiveCamera(
       75, // Wider FOV for better view
@@ -153,30 +153,9 @@ const PhysicsScene = ({
   const loadAssets = async (scene) => {
     console.log('📦 Loading assets...')
     
-    // Load skybox from correct path
-    const gltfLoader = new GLTFLoader()
-    const skyboxPath = '/images/space/space.glb'
-    
-    console.log(`🔍 Attempting to load skybox from: ${skyboxPath}`)
-    
-    gltfLoader.load(
-      skyboxPath,
-      (gltf) => {
-        console.log('✅ Skybox loaded successfully!')
-        const skybox = gltf.scene
-        skybox.scale.set(500, 500, 500)
-        scene.add(skybox)
-      },
-      (progress) => {
-        const percent = (progress.loaded / progress.total * 100).toFixed(0)
-        console.log(`📥 Loading skybox: ${percent}%`)
-      },
-      (error) => {
-        console.warn('⚠️ Skybox not loaded, using starfield fallback:', error)
-        console.warn('Check that file exists at:', skyboxPath)
-        createStarfield(scene)
-      }
-    )
+    // Always use starfield - it's more reliable and looks good
+    console.log('🌟 Creating vertical space starfield...')
+    createStarfield(scene)
     
     // Load obstacle textures
     const textureLoader = new THREE.TextureLoader()
@@ -213,51 +192,77 @@ const PhysicsScene = ({
     }
   }
   
-  // Create starfield fallback - vertical space tunnel
+  // Create starfield - vertical space tunnel
   const createStarfield = (scene) => {
+    // Main starfield
     const starGeometry = new THREE.BufferGeometry()
     const starMaterial = new THREE.PointsMaterial({ 
       color: 0xffffff, 
-      size: 1.2, 
+      size: 2.5, 
       sizeAttenuation: true,
       transparent: true,
-      opacity: 0.9
+      opacity: 1.0
     })
     
     const starVertices = []
     // Create a vertical tunnel of stars - matches obstacle height
-    for (let i = 0; i < 4000; i++) {
-      const x = (Math.random() - 0.5) * 200
-      const y = Math.random() * 600 // Tall vertical spread to match obstacles (0-600)
-      const z = (Math.random() - 0.5) * 200
+    for (let i = 0; i < 5000; i++) {
+      const x = (Math.random() - 0.5) * 300
+      const y = Math.random() * 700 - 50 // Tall vertical spread
+      const z = (Math.random() - 0.5) * 300
       starVertices.push(x, y, z)
     }
     
     starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3))
     const stars = new THREE.Points(starGeometry, starMaterial)
     scene.add(stars)
+    console.log('⭐ Added main starfield with 5000 stars')
     
-    // Add some colored nebula clouds
-    const nebulaGeometry = new THREE.BufferGeometry()
-    const nebulaMaterial = new THREE.PointsMaterial({ 
-      color: 0x4466ff, 
-      size: 3, 
+    // Add purple nebula clouds
+    const nebula1Geometry = new THREE.BufferGeometry()
+    const nebula1Material = new THREE.PointsMaterial({ 
+      color: 0x6644ff, 
+      size: 5, 
+      sizeAttenuation: true,
+      transparent: true,
+      opacity: 0.4
+    })
+    
+    const nebula1Vertices = []
+    for (let i = 0; i < 1000; i++) {
+      const x = (Math.random() - 0.5) * 250
+      const y = Math.random() * 700 - 50
+      const z = (Math.random() - 0.5) * 250
+      nebula1Vertices.push(x, y, z)
+    }
+    
+    nebula1Geometry.setAttribute('position', new THREE.Float32BufferAttribute(nebula1Vertices, 3))
+    const nebula1 = new THREE.Points(nebula1Geometry, nebula1Material)
+    scene.add(nebula1)
+    
+    // Add cyan nebula clouds
+    const nebula2Geometry = new THREE.BufferGeometry()
+    const nebula2Material = new THREE.PointsMaterial({ 
+      color: 0x00ffff, 
+      size: 4, 
       sizeAttenuation: true,
       transparent: true,
       opacity: 0.3
     })
     
-    const nebulaVertices = []
+    const nebula2Vertices = []
     for (let i = 0; i < 800; i++) {
-      const x = (Math.random() - 0.5) * 150
-      const y = Math.random() * 600 // Match star field height
-      const z = (Math.random() - 0.5) * 150
-      nebulaVertices.push(x, y, z)
+      const x = (Math.random() - 0.5) * 200
+      const y = Math.random() * 700 - 50
+      const z = (Math.random() - 0.5) * 200
+      nebula2Vertices.push(x, y, z)
     }
     
-    nebulaGeometry.setAttribute('position', new THREE.Float32BufferAttribute(nebulaVertices, 3))
-    const nebula = new THREE.Points(nebulaGeometry, nebulaMaterial)
-    scene.add(nebula)
+    nebula2Geometry.setAttribute('position', new THREE.Float32BufferAttribute(nebula2Vertices, 3))
+    const nebula2 = new THREE.Points(nebula2Geometry, nebula2Material)
+    scene.add(nebula2)
+    
+    console.log('🌌 Added nebula clouds')
   }
   
   // Create obstacles from loaded textures
@@ -277,14 +282,14 @@ const PhysicsScene = ({
         return
       }
       
-      const geometry = new THREE.SphereGeometry(obstacle.radius, 32, 32)
+      const geometry = new THREE.SphereGeometry(obstacle.radius, 64, 64)
       
       const material = new THREE.MeshStandardMaterial({
         map: texture,
-        metalness: 0.3,
-        roughness: 0.6,
-        emissive: new THREE.Color(0x222244),
-        emissiveIntensity: 0.2,
+        metalness: 0.4,
+        roughness: 0.5,
+        emissive: new THREE.Color(0x333366),
+        emissiveIntensity: 0.4,
       })
       
       const mesh = new THREE.Mesh(geometry, material)
@@ -296,18 +301,20 @@ const PhysicsScene = ({
       mesh.castShadow = true
       mesh.receiveShadow = true
       
-      // Add glow effect for larger objects
-      if (obstacle.radius > 4) {
-        const glowGeometry = new THREE.SphereGeometry(obstacle.radius * 1.1, 16, 16)
-        const glowMaterial = new THREE.MeshBasicMaterial({
-          color: 0x4466ff,
-          transparent: true,
-          opacity: 0.15,
-          side: THREE.BackSide
-        })
-        const glow = new THREE.Mesh(glowGeometry, glowMaterial)
-        mesh.add(glow)
-      }
+      // Add glow effect to all obstacles for visibility
+      const glowGeometry = new THREE.SphereGeometry(obstacle.radius * 1.15, 32, 32)
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0x6688ff,
+        transparent: true,
+        opacity: 0.25,
+        side: THREE.BackSide
+      })
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+      mesh.add(glow)
+      
+      // Add point light to each obstacle for better visibility
+      const obstacleLight = new THREE.PointLight(0x6688ff, 1.5, obstacle.radius * 5)
+      mesh.add(obstacleLight)
       
       scene.add(mesh)
       obstaclesRef.current[index] = mesh

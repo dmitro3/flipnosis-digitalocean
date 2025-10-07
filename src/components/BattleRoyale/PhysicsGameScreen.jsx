@@ -181,9 +181,9 @@ const PhysicsGameScreen = () => {
           maxPlayers={gameState.maxPlayers || 6}
         />
         
-        {phase === 'round_active' && (
-          <TimerDisplay urgent={urgent}>{turnTimer}s</TimerDisplay>
-        )}
+        <TimerDisplay urgent={urgent}>
+          {phase === 'round_active' ? `${turnTimer}s` : 'WAIT'}
+        </TimerDisplay>
         
         <CannonController 
           onChoiceSelect={handleChoiceSelect} 
