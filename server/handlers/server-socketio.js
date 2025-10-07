@@ -88,8 +88,19 @@ initialize(server, dbService) {
       // Deposit system removed - using polling instead
       
       // ===== BATTLE ROYALE ACTIONS =====
-      socket.on('join_battle_royale_room', safeHandler((data) => {
+      socket.on('join_battle_royale_room', safeHandler(async (data) => {
         console.log(`📥 join_battle_royale_room from ${socket.id}`, data)
+        const { roomId } = data
+        const gameId = roomId.replace('game_', '').replace('physics_', '')
+        
+        // Check if this is a physics game
+        if (gameId.startsWith('physics_') || roomId.includes('physics_')) {
+          console.log(`🎮 Physics game room join: ${gameId}`)
+          // Physics games don't need separate room join logic - they use request_battle_royale_state
+          return
+        }
+        
+        // Old battle royale games
         return this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(
           socket, 
           data, 
@@ -291,13 +302,17 @@ initialize(server, dbService) {
     // Handle Battle Royale room joins
     if (roomId.startsWith('game_')) {
       const gameId = roomId.substring(5)
-      this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(
-        socket, 
-        { roomId, address }, 
-        this.battleRoyaleManager, 
-        this.io,
-        this.dbService
-      )
+      
+      // Skip old handler for physics games - they use request_battle_royale_state instead
+      if (!gameId.startsWith('physics_')) {
+        this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(
+          socket, 
+          { roomId, address }, 
+          this.battleRoyaleManager, 
+          this.io,
+          this.dbService
+        )
+      }
     }
     
     console.log(`✅ ${address} joined room ${roomId}`)
