@@ -18,6 +18,7 @@ const PhysicsScene = ({
   const animationIdRef = useRef(null)
   const [assetsLoaded, setAssetsLoaded] = useState(false)
   const [highestCoin, setHighestCoin] = useState(null)
+  const [glbLoaded, setGlbLoaded] = useState(false)
   
   // Initialize scene
   useEffect(() => {
@@ -59,41 +60,6 @@ const PhysicsScene = ({
       if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
       
       const camera = cameraRef.current
-      
-      // Camera tracking - follow highest coin (pinball style)
-      if (highestCoin) {
-        // Camera follows coin vertically, staying behind it
-        const targetPos = new THREE.Vector3(
-          0, // Keep camera centered horizontally
-          highestCoin.y + 10, // Slightly above coin
-          80 // Keep distance from scene
-        )
-        const lookAtPos = new THREE.Vector3(0, highestCoin.y, 0)
-        
-        camera.position.lerp(targetPos, 0.08) // Smooth following
-        
-        // Smoothly look at the coin's height
-        const currentLookAt = new THREE.Vector3(0, 0, -1)
-        currentLookAt.applyQuaternion(camera.quaternion)
-        const targetLookDir = lookAtPos.clone().sub(camera.position).normalize()
-        currentLookAt.lerp(targetLookDir, 0.08)
-        
-        const lookPoint = camera.position.clone().add(currentLookAt)
-        camera.lookAt(lookPoint)
-      } else {
-        // Return to base position (bottom of pinball machine)
-        const basePos = new THREE.Vector3(0, 5, 80)
-        camera.position.lerp(basePos, 0.05)
-        const baseLookAt = new THREE.Vector3(0, 5, 0)
-        
-        const currentLookAt = new THREE.Vector3(0, 0, -1)
-        currentLookAt.applyQuaternion(camera.quaternion)
-        const targetLookDir = baseLookAt.clone().sub(camera.position).normalize()
-        currentLookAt.lerp(targetLookDir, 0.05)
-        
-        const lookPoint = camera.position.clone().add(currentLookAt)
-        camera.lookAt(lookPoint)
-      }
       
       // Slowly rotate obstacles for visual interest
       obstaclesRef.current.forEach((obstacle, index) => {
@@ -149,15 +115,12 @@ const PhysicsScene = ({
       cameraRef.current = null
       rendererRef.current = null
     }
-  }, [highestCoin])
+  }, []) // Remove highestCoin dependency to prevent re-initialization
   
-  // Load skybox and obstacle textures
-  const loadAssets = async (scene) => {
-    console.log('📦 Loading assets...')
-    console.log('📊 Obstacles received:', obstacles)
-    console.log('📊 Number of obstacles:', obstacles?.length || 0)
+  // Load GLB skybox only once
+  useEffect(() => {
+    if (!sceneRef.current || glbLoaded) return
     
-    // ===== LOAD NEBULA GLB SKYBOX =====
     console.log('🌌 Loading nebula.glb skybox...')
     const gltfLoader = new GLTFLoader()
     
@@ -184,8 +147,9 @@ const PhysicsScene = ({
           }
         })
         
-        scene.add(nebulaSkybox)
+        sceneRef.current.add(nebulaSkybox)
         console.log('✅ Nebula skybox added to scene')
+        setGlbLoaded(true)
       },
       (progress) => {
         const percent = (progress.loaded / progress.total) * 100
@@ -194,8 +158,58 @@ const PhysicsScene = ({
       (error) => {
         console.error('❌ Failed to load nebula.glb:', error)
         console.log('⚠️ Continuing with procedural starfield only')
+        setGlbLoaded(true) // Set to true even on error to prevent retries
       }
     )
+  }, [glbLoaded])
+  
+  // Camera tracking effect - separate from scene initialization
+  useEffect(() => {
+    if (!cameraRef.current) return
+    
+    const camera = cameraRef.current
+    
+    // Camera tracking - follow highest coin (pinball style)
+    if (highestCoin) {
+      // Camera follows coin vertically, staying behind it
+      const targetPos = new THREE.Vector3(
+        0, // Keep camera centered horizontally
+        highestCoin.y + 10, // Slightly above coin
+        80 // Keep distance from scene
+      )
+      const lookAtPos = new THREE.Vector3(0, highestCoin.y, 0)
+      
+      camera.position.lerp(targetPos, 0.08) // Smooth following
+      
+      // Smoothly look at the coin's height
+      const currentLookAt = new THREE.Vector3(0, 0, -1)
+      currentLookAt.applyQuaternion(camera.quaternion)
+      const targetLookDir = lookAtPos.clone().sub(camera.position).normalize()
+      currentLookAt.lerp(targetLookDir, 0.08)
+      
+      const lookPoint = camera.position.clone().add(currentLookAt)
+      camera.lookAt(lookPoint)
+    } else {
+      // Return to base position (bottom of pinball machine)
+      const basePos = new THREE.Vector3(0, 5, 80)
+      camera.position.lerp(basePos, 0.05)
+      const baseLookAt = new THREE.Vector3(0, 5, 0)
+      
+      const currentLookAt = new THREE.Vector3(0, 0, -1)
+      currentLookAt.applyQuaternion(camera.quaternion)
+      const targetLookDir = baseLookAt.clone().sub(camera.position).normalize()
+      currentLookAt.lerp(targetLookDir, 0.05)
+      
+      const lookPoint = camera.position.clone().add(currentLookAt)
+      camera.lookAt(lookPoint)
+    }
+  }, [highestCoin])
+  
+  // Load skybox and obstacle textures
+  const loadAssets = async (scene) => {
+    console.log('📦 Loading assets...')
+    console.log('📊 Obstacles received:', obstacles)
+    console.log('📊 Number of obstacles:', obstacles?.length || 0)
     
     // Always use starfield as backup/enhancement
     console.log('🌟 Creating vertical space starfield...')
