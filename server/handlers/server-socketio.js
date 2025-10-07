@@ -133,14 +133,47 @@ initialize(server, dbService) {
         )
       }))
 
-      socket.on('request_battle_royale_state', safeHandler((data) => {
+      socket.on('request_battle_royale_state', safeHandler(async (data) => {
         console.log(`📥 request_battle_royale_state from ${socket.id}`)
-        return this.battleRoyaleHandlers.handleRequestBattleRoyaleState(
-          socket, 
-          data, 
-          this.battleRoyaleManager,
-          this.dbService
-        )
+        const { gameId } = data
+        
+        // Check if this is a physics game (all new games are)
+        if (gameId && gameId.startsWith('physics_')) {
+          // Load physics game from database if not in memory
+          let game = this.physicsGameManager.getGame(gameId)
+          
+          if (!game) {
+            // Load from database
+            const gameData = await this.dbService.getBattleRoyaleGame(gameId)
+            if (gameData) {
+              console.log(`🔄 Loading physics game from database: ${gameId}`)
+              game = this.physicsGameManager.createPhysicsGame(gameId, gameData)
+              
+              // Load existing players
+              const participants = await this.dbService.getBattleRoyaleParticipants(gameId)
+              for (const participant of participants) {
+                this.physicsGameManager.addPlayer(gameId, participant.player_address)
+              }
+            }
+          }
+          
+          // Send physics state
+          const state = this.physicsGameManager.getFullGameState(gameId)
+          if (state) {
+            console.log(`✅ Sending physics state for ${gameId} - Phase: ${state.phase}, Players: ${state.currentPlayers}`)
+            socket.emit('physics_state_update', state)
+          } else {
+            socket.emit('physics_error', { message: 'Game not found' })
+          }
+        } else {
+          // Old battle royale games
+          return this.battleRoyaleHandlers.handleRequestBattleRoyaleState(
+            socket, 
+            data, 
+            this.battleRoyaleManager,
+            this.dbService
+          )
+        }
       }))
 
       socket.on('battle_royale_player_choice', safeHandler((data) => {
