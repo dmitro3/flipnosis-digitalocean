@@ -1,579 +1,125 @@
-index-335605e8.js:227 ✅ Rainbow Kit configuration created successfully
-index-335605e8.js:227 Rainbow Kit Config: {chains: Array(7), projectId: undefined}
-index-335605e8.js:227 🚀 Application starting... {timestamp: '2025-10-07T12:53:18.758Z', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', url: 'https://www.flipnosis.fun/battle-royale/physics_1759841565282_e03eedb29094ccb7'}
-index-335605e8.js:227 🔍 App.jsx - Starting render: {config: {…}, hasChains: true, chainsLength: 7, timestamp: '2025-10-07T12:53:18.762Z'}
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 🔌 Connecting to Socket.io: wss://www.flipnosis.fun
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ⏳ Already connecting, waiting...
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ⏳ Already connecting, waiting...
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ⏳ Already connecting, waiting...
-index-335605e8.js:31 🔧 Initializing contract service from WalletContext...
-index-335605e8.js:31 ✅ Contract service initialized with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-335605e8.js:31 ✅ Contract service initialized successfully
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ⏳ Already connecting, waiting...
-index-335605e8.js:192 ✅ Socket.io connected
-index-335605e8.js:192 📤 Emitted: join_room
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ✅ Already connected to room: game_physics_1759841565282_e03eedb29094ccb7
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_error
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener registered for: physics_state_update
-index-335605e8.js:192 ✅ Listener registered for: physics_turn_start
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: physics_game_over
-index-335605e8.js:192 ✅ Listener registered for: physics_game_starting
-index-335605e8.js:192 📤 Emitted: join_battle_royale_room
-index-335605e8.js:192 📤 Emitted: request_battle_royale_state
-index-335605e8.js:192 ✅ Socket initialized successfully
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'filling', currentPlayers: 1, playerSlots: Array(6), playerAddresses: Array(1)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Classic
-index-335605e8.js:192 🖼️ Loading coin images for players: ['0xdd6377919ef1ad4babbead667efe3f6607558628']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading default coin for 0xdd6377919ef1ad4babbead667efe3f6607558628: /coins/plainh.png /coins/plaint.png
-index-335605e8.js:192 ✅ Loaded coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628: /coins/plainh.png, /coins/plaint.png
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 ✅ Listener registered for: chat_message
-index-335605e8.js:192 🎮 Physics state update: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'lobby', maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, …}
-index-335605e8.js:192 🖼️ Loading coin images for players: ['0xdd6377919ef1ad4babbead667efe3f6607558628']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'filling', currentPlayers: 1, playerSlots: Array(6), playerAddresses: Array(1)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Classic
-index-335605e8.js:192 🖼️ Loading coin images for players: ['0xdd6377919ef1ad4babbead667efe3f6607558628']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'filling', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Classic
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Classic
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading default coin for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6: /coins/plainh.png /coins/plaint.png
-index-335605e8.js:192 ✅ Loaded coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6: /coins/plainh.png, /coins/plaint.png
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'filling', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Classic
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Jestress
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 🪙 Loading custom coin for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-335605e8.js:31 🪙 Getting coin heads image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-335605e8.js:31 🌐 Fetching profile from: https://www.flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_error
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener removed for: physics_state_update
-index-335605e8.js:192 ✅ Listener removed for: physics_turn_start
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener removed for: physics_game_over
-index-335605e8.js:192 ✅ Listener removed for: physics_game_starting
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ✅ Already connected to room: game_physics_1759841565282_e03eedb29094ccb7
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_error
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener registered for: physics_state_update
-index-335605e8.js:192 ✅ Listener registered for: physics_turn_start
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: physics_game_over
-index-335605e8.js:192 ✅ Listener registered for: physics_game_starting
-index-335605e8.js:192 📤 Emitted: join_battle_royale_room
-index-335605e8.js:192 📤 Emitted: request_battle_royale_state
-index-335605e8.js:192 ✅ Socket initialized successfully
-index-335605e8.js:192 🎮 Physics state update: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'lobby', maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, …}
-index-335605e8.js:192 🖼️ Loading coin images for players: ['0xdd6377919ef1ad4babbead667efe3f6607558628']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'filling', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Classic
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Jestress
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
-index-335605e8.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
-index-335605e8.js:31 🪙 Profile loaded for heads: {hasProfile: true, hasHeadsImage: true, headsLength: 154182}
-index-335605e8.js:31 🪙 Getting coin tails image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-335605e8.js:31 🌐 Fetching profile from: https://www.flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_error
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener removed for: physics_state_update
-index-335605e8.js:192 ✅ Listener removed for: physics_turn_start
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener removed for: physics_game_over
-index-335605e8.js:192 ✅ Listener removed for: physics_game_starting
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ✅ Already connected to room: game_physics_1759841565282_e03eedb29094ccb7
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_error
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener registered for: physics_state_update
-index-335605e8.js:192 ✅ Listener registered for: physics_turn_start
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: physics_game_over
-index-335605e8.js:192 ✅ Listener registered for: physics_game_starting
-index-335605e8.js:192 📤 Emitted: join_battle_royale_room
-index-335605e8.js:192 📤 Emitted: request_battle_royale_state
-index-335605e8.js:192 ✅ Socket initialized successfully
-index-335605e8.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
-index-335605e8.js:192 🎮 Physics state update: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'lobby', maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, …}
-index-335605e8.js:192 🖼️ Loading coin images for players: ['0xdd6377919ef1ad4babbead667efe3f6607558628']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'filling', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Classic
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Jestress
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
-index-335605e8.js:31 🪙 Profile loaded for tails: {hasProfile: true, hasTailsImage: true, tailsLength: 103006}
-index-335605e8.js:192 🪙 Custom coin loaded: {hasHeads: true, hasTails: true, headsLength: 154182, tailsLength: 103006}
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_error
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener removed for: physics_state_update
-index-335605e8.js:192 ✅ Listener removed for: physics_turn_start
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener removed for: physics_game_over
-index-335605e8.js:192 ✅ Listener removed for: physics_game_starting
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ✅ Already connected to room: game_physics_1759841565282_e03eedb29094ccb7
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_error
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener registered for: physics_state_update
-index-335605e8.js:192 ✅ Listener registered for: physics_turn_start
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: physics_game_over
-index-335605e8.js:192 ✅ Listener registered for: physics_game_starting
-index-335605e8.js:192 📤 Emitted: join_battle_royale_room
-index-335605e8.js:192 📤 Emitted: request_battle_royale_state
-index-335605e8.js:192 ✅ Socket initialized successfully
-index-335605e8.js:192 🎮 Physics state update: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'lobby', maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, …}
-index-335605e8.js:192 🖼️ Loading coin images for players: ['0xdd6377919ef1ad4babbead667efe3f6607558628']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'filling', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Classic
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Jestress
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 🪙 Coin selected: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🪙 Sending optimized coin to parent: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🪙 Updating coin to: Calavera for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-335605e8.js:192 📤 Emitted: battle_royale_update_coin
-index-335605e8.js:192 🪙 Coin update request sent to server
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'filling', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Calavera
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Jestress
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Loading default coin for 0xdd6377919ef1ad4babbead667efe3f6607558628: /coins/calaverah.png /coins/calaverat.png
-index-335605e8.js:192 ✅ Loaded coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628: /coins/calaverah.png, /coins/calaverat.png
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 📤 Emitted: battle_royale_start_early
-index-335605e8.js:192 🚀 Starting game early
-index-335605e8.js:192 ⏱️ Game starting in: 3
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_error
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener removed for: physics_state_update
-index-335605e8.js:192 ✅ Listener removed for: physics_turn_start
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener removed for: physics_game_over
-index-335605e8.js:192 ✅ Listener removed for: physics_game_starting
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ✅ Already connected to room: game_physics_1759841565282_e03eedb29094ccb7
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_error
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener registered for: physics_state_update
-index-335605e8.js:192 ✅ Listener registered for: physics_turn_start
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: physics_game_over
-index-335605e8.js:192 ✅ Listener registered for: physics_game_starting
-index-335605e8.js:192 📤 Emitted: join_battle_royale_room
-index-335605e8.js:192 📤 Emitted: request_battle_royale_state
-index-335605e8.js:192 ✅ Socket initialized successfully
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'starting', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Calavera
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Jestress
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 ✅ Listener removed for: chat_message
-index-335605e8.js:222 🎬 Initializing Physics Scene
-index-335605e8.js:222 📦 Loading assets...
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_position
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 🎮 Physics state update: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'lobby', maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, …}
-index-335605e8.js:192 🖼️ Loading coin images for players: ['0xdd6377919ef1ad4babbead667efe3f6607558628']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_position
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: chat_message
-index-335605e8.js:222 ✅ All obstacle textures loaded
-index-335605e8.js:222 ⚠️ No obstacle data provided
-B @ index-335605e8.js:222
-(anonymous) @ index-335605e8.js:222
-(anonymous) @ three-0ee560fa.js:3836
-l @ three-0ee560fa.js:3836Understand this warning
-index-335605e8.js:222 THREE.GLTFLoader: Unknown extension "KHR_materials_pbrSpecularGlossiness".
-parse @ index-335605e8.js:222
-(anonymous) @ index-335605e8.js:222
-(anonymous) @ three-0ee560fa.js:3836
-Promise.then
-load @ three-0ee560fa.js:3836
-load @ index-335605e8.js:222
-C @ index-335605e8.js:222
-(anonymous) @ index-335605e8.js:222
-ol @ vendor-7e712de7.js:32
-Gn @ vendor-7e712de7.js:32
-(anonymous) @ vendor-7e712de7.js:32
-E @ vendor-7e712de7.js:17
-ot @ vendor-7e712de7.js:17Understand this warning
-index-335605e8.js:222 ✅ Skybox loaded
-index-335605e8.js:192 🚀 Round starting: 1
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_error
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener removed for: physics_state_update
-index-335605e8.js:192 ✅ Listener removed for: physics_turn_start
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener removed for: physics_game_over
-index-335605e8.js:192 ✅ Listener removed for: physics_game_starting
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ✅ Already connected to room: game_physics_1759841565282_e03eedb29094ccb7
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_error
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener registered for: physics_state_update
-index-335605e8.js:192 ✅ Listener registered for: physics_turn_start
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: physics_game_over
-index-335605e8.js:192 ✅ Listener registered for: physics_game_starting
-index-335605e8.js:192 📤 Emitted: join_battle_royale_room
-index-335605e8.js:192 📤 Emitted: request_battle_royale_state
-index-335605e8.js:192 ✅ Socket initialized successfully
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'round_active', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Calavera
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Jestress
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 ✅ Listener removed for: chat_message
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_error
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener removed for: physics_state_update
-index-335605e8.js:192 ✅ Listener removed for: physics_turn_start
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener removed for: physics_game_over
-index-335605e8.js:192 ✅ Listener removed for: physics_game_starting
-index-335605e8.js:222 🎬 Initializing Physics Scene
-index-335605e8.js:222 📦 Loading assets...
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_position
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ✅ Already connected to room: game_physics_1759841565282_e03eedb29094ccb7
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_error
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener registered for: physics_state_update
-index-335605e8.js:192 ✅ Listener registered for: physics_turn_start
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: physics_game_over
-index-335605e8.js:192 ✅ Listener registered for: physics_game_starting
-index-335605e8.js:192 📤 Emitted: join_battle_royale_room
-index-335605e8.js:192 📤 Emitted: request_battle_royale_state
-index-335605e8.js:192 ✅ Socket initialized successfully
-index-335605e8.js:192 🎮 Physics state update: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'lobby', maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, …}
-index-335605e8.js:192 🖼️ Loading coin images for players: ['0xdd6377919ef1ad4babbead667efe3f6607558628']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_position
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: chat_message
-index-335605e8.js:192 🎮 Physics state update: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'lobby', maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, …}
-index-335605e8.js:192 🖼️ Loading coin images for players: ['0xdd6377919ef1ad4babbead667efe3f6607558628']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'round_active', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Calavera
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Jestress
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 ✅ Listener removed for: chat_message
-index-335605e8.js:222 🎬 Initializing Physics Scene
-index-335605e8.js:222 📦 Loading assets...
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_position
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'round_active', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Calavera
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Jestress
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:222 ✅ All obstacle textures loaded
-index-335605e8.js:222 ⚠️ No obstacle data provided
-B @ index-335605e8.js:222
-(anonymous) @ index-335605e8.js:222
-(anonymous) @ three-0ee560fa.js:3836
-l @ three-0ee560fa.js:3836Understand this warning
-index-335605e8.js:222 ✅ All obstacle textures loaded
-index-335605e8.js:222 ⚠️ No obstacle data provided
-B @ index-335605e8.js:222
-(anonymous) @ index-335605e8.js:222
-(anonymous) @ three-0ee560fa.js:3836
-l @ three-0ee560fa.js:3836Understand this warning
-2index-335605e8.js:222 THREE.GLTFLoader: Unknown extension "KHR_materials_pbrSpecularGlossiness".
-parse @ index-335605e8.js:222
-(anonymous) @ index-335605e8.js:222
-(anonymous) @ three-0ee560fa.js:3836
-Promise.then
-load @ three-0ee560fa.js:3836
-load @ index-335605e8.js:222
-C @ index-335605e8.js:222
-(anonymous) @ index-335605e8.js:222
-ol @ vendor-7e712de7.js:32
-Gn @ vendor-7e712de7.js:32
-(anonymous) @ vendor-7e712de7.js:32
-E @ vendor-7e712de7.js:17
-ot @ vendor-7e712de7.js:17Understand this warning
-2index-335605e8.js:222 ✅ Skybox loaded
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_error
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener removed for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener removed for: physics_state_update
-index-335605e8.js:192 ✅ Listener removed for: physics_turn_start
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener removed for: physics_game_over
-index-335605e8.js:192 ✅ Listener removed for: physics_game_starting
-index-335605e8.js:192 🔌 Initializing Battle Royale socket...
-index-335605e8.js:192 ✅ Already connected to room: game_physics_1759841565282_e03eedb29094ccb7
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_state_update
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_start
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_player_flipped
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_round_end
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_game_complete
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_starting
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_error
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_deployed
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_activated
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_lightning_earned
-index-335605e8.js:192 ✅ Listener registered for: battle_royale_shield_saved
-index-335605e8.js:192 ✅ Listener registered for: physics_state_update
-index-335605e8.js:192 ✅ Listener registered for: physics_turn_start
-index-335605e8.js:192 ✅ Listener registered for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: physics_game_over
-index-335605e8.js:192 ✅ Listener registered for: physics_game_starting
-index-335605e8.js:192 📤 Emitted: join_battle_royale_room
-index-335605e8.js:192 📤 Emitted: request_battle_royale_state
-index-335605e8.js:192 ✅ Socket initialized successfully
-index-335605e8.js:192 📊 Game state update received: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'round_active', currentPlayers: 2, playerSlots: Array(6), playerAddresses: Array(2)}
-index-335605e8.js:192   👤 Player 0xdd63... in slot 0, coin: Calavera
-index-335605e8.js:192   👤 Player 0xf51d... in slot 1, coin: Jestress
-index-335605e8.js:192 🖼️ Loading coin images for players: (2) ['0xdd6377919ef1ad4babbead667efe3f6607558628', '0xf51d1e69b6857de81432d0d628c45b27dbce97b6']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'calavera', type: 'default', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: {id: 'jestress', type: 'default', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 🎮 Physics state update: {gameId: 'physics_1759841565282_e03eedb29094ccb7', phase: 'lobby', maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, …}
-index-335605e8.js:192 🖼️ Loading coin images for players: ['0xdd6377919ef1ad4babbead667efe3f6607558628']
-index-335605e8.js:192 🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: {id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png'}
-index-335605e8.js:192 🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628
-index-335605e8.js:192 ✅ All player coin images loaded
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_position
-index-335605e8.js:192 ✅ Listener removed for: physics_coin_landed
-index-335605e8.js:192 ✅ Listener registered for: chat_message
+✅ Listener registered for: battle_royale_state_update index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_round_start index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_player_flipped index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_round_end index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_game_complete index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_starting index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_error index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_shield_deployed index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_lightning_activated index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_lightning_earned index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_shield_saved index-9354e69d.js:192:85131
+✅ Listener registered for: physics_state_update index-9354e69d.js:192:85131
+✅ Listener registered for: physics_turn_start index-9354e69d.js:192:85131
+✅ Listener registered for: physics_coin_landed index-9354e69d.js:192:85131
+✅ Listener registered for: physics_game_over index-9354e69d.js:192:85131
+✅ Listener registered for: physics_game_starting index-9354e69d.js:192:85131
+📤 Emitted: join_battle_royale_room index-9354e69d.js:192:85002
+📤 Emitted: request_battle_royale_state index-9354e69d.js:192:85002
+✅ Socket initialized successfully index-9354e69d.js:192:90658
+📊 Game state update received: 
+Object { gameId: "physics_1759842459274_9a0ff4aba25a1286", phase: "filling", currentPlayers: 2, playerSlots: (6) […], playerAddresses: (2) […] }
+index-9354e69d.js:192:87280
+  👤 Player 0xdd63... in slot 0, coin: Classic index-9354e69d.js:192:87529
+  👤 Player 0xf51d... in slot 1, coin: Classic index-9354e69d.js:192:87529
+🖼️ Loading coin images for players: 
+Array [ "0xdd6377919ef1ad4babbead667efe3f6607558628", "0xf51d1e69b6857de81432d0d628c45b27dbce97b6" ]
+index-9354e69d.js:192:86923
+🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: 
+Object { id: "plain", type: "default", name: "Classic", headsImage: "/coins/plainh.png", tailsImage: "/coins/plaint.png" }
+index-9354e69d.js:192:87046
+🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: 
+Object { id: "plain", type: "default", name: "Classic", headsImage: "/coins/plainh.png", tailsImage: "/coins/plaint.png" }
+index-9354e69d.js:192:86122
+🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628 index-9354e69d.js:192:86203
+🖼️ Player 0xf51d1e69b6857de81432d0d628c45b27dbce97b6 has coin: 
+Object { id: "plain", type: "default", name: "Classic", headsImage: "/coins/plainh.png", tailsImage: "/coins/plaint.png" }
+index-9354e69d.js:192:87046
+🖼️ Loading coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6, coinData: 
+Object { id: "plain", type: "default", name: "Classic", headsImage: "/coins/plainh.png", tailsImage: "/coins/plaint.png" }
+index-9354e69d.js:192:86122
+🖼️ Loading default coin for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6: /coins/plainh.png /coins/plaint.png index-9354e69d.js:192:86378
+✅ Loaded coin images for 0xf51d1e69b6857de81432d0d628c45b27dbce97b6: /coins/plainh.png, /coins/plaint.png index-9354e69d.js:192:86605
+✅ All player coin images loaded index-9354e69d.js:192:87207
+🎮 Physics state update: 
+Object { gameId: "physics_1759842459274_9a0ff4aba25a1286", phase: "lobby", maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, serviceFee: 0.1, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerOrder: (1) […], currentTurnPlayer: null, … }
+index-9354e69d.js:192:88987
+🖼️ Loading coin images for players: 
+Array [ "0xdd6377919ef1ad4babbead667efe3f6607558628" ]
+index-9354e69d.js:192:86923
+🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: 
+Object { id: "plain", type: "default", name: "Classic", headsImage: "/coins/plainh.png", tailsImage: "/coins/plaint.png" }
+index-9354e69d.js:192:87046
+🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: 
+Object { id: "plain", type: "default", name: "Classic", headsImage: "/coins/plainh.png", tailsImage: "/coins/plaint.png" }
+index-9354e69d.js:192:86122
+🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628 index-9354e69d.js:192:86203
+✅ All player coin images loaded index-9354e69d.js:192:87207
+🎮 Physics state update: 
+Object { gameId: "physics_1759842459274_9a0ff4aba25a1286", phase: "lobby", maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, serviceFee: 0.1, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerOrder: (1) […], currentTurnPlayer: null, … }
+index-9354e69d.js:192:88987
+🖼️ Loading coin images for players: 
+Array [ "0xdd6377919ef1ad4babbead667efe3f6607558628" ]
+index-9354e69d.js:192:86923
+🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: 
+Object { id: "plain", type: "default", name: "Classic", headsImage: "/coins/plainh.png", tailsImage: "/coins/plaint.png" }
+index-9354e69d.js:192:87046
+🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: 
+Object { id: "plain", type: "default", name: "Classic", headsImage: "/coins/plainh.png", tailsImage: "/coins/plaint.png" }
+index-9354e69d.js:192:86122
+🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628 index-9354e69d.js:192:86203
+✅ All player coin images loaded index-9354e69d.js:192:87207
+✅ Listener removed for: battle_royale_state_update index-9354e69d.js:192:85220
+✅ Listener removed for: battle_royale_round_start index-9354e69d.js:192:85220
+✅ Listener removed for: battle_royale_player_flipped index-9354e69d.js:192:85220
+✅ Listener removed for: battle_royale_round_end index-9354e69d.js:192:85220
+✅ Listener removed for: battle_royale_game_complete index-9354e69d.js:192:85220
+✅ Listener removed for: battle_royale_starting index-9354e69d.js:192:85220
+✅ Listener removed for: battle_royale_error index-9354e69d.js:192:85220
+✅ Listener removed for: battle_royale_shield_deployed index-9354e69d.js:192:85220
+✅ Listener removed for: battle_royale_lightning_activated index-9354e69d.js:192:85220
+✅ Listener removed for: battle_royale_lightning_earned index-9354e69d.js:192:85220
+✅ Listener removed for: battle_royale_shield_saved index-9354e69d.js:192:85220
+✅ Listener removed for: physics_state_update index-9354e69d.js:192:85220
+✅ Listener removed for: physics_turn_start index-9354e69d.js:192:85220
+✅ Listener removed for: physics_coin_landed index-9354e69d.js:192:85220
+✅ Listener removed for: physics_game_over index-9354e69d.js:192:85220
+✅ Listener removed for: physics_game_starting index-9354e69d.js:192:85220
+🔌 Initializing Battle Royale socket... index-9354e69d.js:192:89847
+✅ Already connected to room: game_physics_1759842459274_9a0ff4aba25a1286 index-9354e69d.js:192:83566
+✅ Listener registered for: battle_royale_state_update index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_round_start index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_player_flipped index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_round_end index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_game_complete index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_starting index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_error index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_shield_deployed index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_lightning_activated index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_lightning_earned index-9354e69d.js:192:85131
+✅ Listener registered for: battle_royale_shield_saved index-9354e69d.js:192:85131
+✅ Listener registered for: physics_state_update index-9354e69d.js:192:85131
+✅ Listener registered for: physics_turn_start index-9354e69d.js:192:85131
+✅ Listener registered for: physics_coin_landed index-9354e69d.js:192:85131
+✅ Listener registered for: physics_game_over index-9354e69d.js:192:85131
+✅ Listener registered for: physics_game_starting index-9354e69d.js:192:85131
+📤 Emitted: join_battle_royale_room index-9354e69d.js:192:85002
+📤 Emitted: request_battle_royale_state index-9354e69d.js:192:85002
+✅ Socket initialized successfully index-9354e69d.js:192:90658
+🎮 Physics state update: 
+Object { gameId: "physics_1759842459274_9a0ff4aba25a1286", phase: "lobby", maxPlayers: 2, currentPlayers: 1, entryFee: 0.16666666666666666, serviceFee: 0.1, creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", players: {…}, playerOrder: (1) […], currentTurnPlayer: null, … }
+index-9354e69d.js:192:88987
+🖼️ Loading coin images for players: 
+Array [ "0xdd6377919ef1ad4babbead667efe3f6607558628" ]
+index-9354e69d.js:192:86923
+🖼️ Player 0xdd6377919ef1ad4babbead667efe3f6607558628 has coin: 
+Object { id: "plain", type: "default", name: "Classic", headsImage: "/coins/plainh.png", tailsImage: "/coins/plaint.png" }
+index-9354e69d.js:192:87046
+🖼️ Loading coin images for 0xdd6377919ef1ad4babbead667efe3f6607558628, coinData: 
+Object { id: "plain", type: "default", name: "Classic", headsImage: "/coins/plainh.png", tailsImage: "/coins/plaint.png" }
+index-9354e69d.js:192:86122
+🖼️ Coin images already loaded for 0xdd6377919ef1ad4babbead667efe3f6607558628 index-9354e69d.js:192:86203
+✅ All player coin images loaded index-9354e69d.js:192:87207
+
+​
+

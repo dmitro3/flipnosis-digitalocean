@@ -1795,6 +1795,18 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       // Save to database WITH obstacles
       await dbService.createBattleRoyaleGame(gameData)
 
+      // Add creator as participant if they want to play
+      if (creator_participates) {
+        const playerData = {
+          player_address: creator.toLowerCase(),
+          slot_number: 1,
+          entry_paid: false, // Creator doesn't pay to join their own game
+          entry_amount: 0
+        }
+        await dbService.addBattleRoyalePlayer(gameId, playerData)
+        console.log(`✅ Creator ${creator} added as participant`)
+      }
+
       console.log(`✅ 3D Physics Battle Royale game created: ${gameId} with ${physicsGame?.obstacles?.length || 0} obstacles`)
       
       res.json({
