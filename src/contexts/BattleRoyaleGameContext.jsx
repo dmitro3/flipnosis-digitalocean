@@ -257,18 +257,16 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
   // ===== PLAYER ACTIONS =====
   const makeChoice = useCallback((choice) => {
     if (!gameId || !address || !gameState) return false
-
+    const isPhysicsGame = gameState.gameId?.startsWith('physics_')
+    if (isPhysicsGame) {
+      socketService.emit('physics_set_choice', { gameId, address, choice })
+      return true
+    }
     if (gameState.phase !== 'round_active') {
       showToast('Wait for the round to start', 'warning')
       return false
     }
-
-    socketService.emit('battle_royale_player_choice', {
-      gameId,
-      address,
-      choice
-    })
-    
+    socketService.emit('battle_royale_player_choice', { gameId, address, choice })
     console.log(`🎯 Choice made: ${choice}`)
     return true
   }, [gameId, address, gameState, showToast])

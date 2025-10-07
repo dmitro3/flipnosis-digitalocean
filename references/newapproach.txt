@@ -1,272 +1,150 @@
-🎮 BATTLE ROYALE COMPETITIVE UPDATE - COMPLETE IMPLEMENTATION GUIDE
+🚀 COMPLETE 3D PHYSICS BATTLE ROYALE TRANSFORMATION
+📦 STEP 1: Install Dependencies
+bashnpm install cannon-es three@latest
 
-📋 TABLE OF CONTENTS
+🏗️ ARCHITECTURE OVERVIEW
+┌─────────────────────────────────────────────────────────────┐
+│                         CLIENT                               │
+├─────────────────────────────────────────────────────────────┤
+│ LobbyScreen.jsx (unchanged) → PhysicsGameScreen.jsx         │
+│    ├─ PhysicsScene.jsx (3D environment)                     │
+│    ├─ CannonController.jsx (aim/power/fire)                 │
+│    ├─ PlayerLifeBoxes.jsx (6 boxes at bottom)               │
+│    └─ CoinLandingCamera.jsx (close-up views)                │
+└─────────────────────────────────────────────────────────────┘
+                            ↕️ WebSocket
+┌─────────────────────────────────────────────────────────────┐
+│                         SERVER                               │
+├─────────────────────────────────────────────────────────────┤
+│ PhysicsGameManager.js                                        │
+│    ├─ Cannon.js physics world (60fps)                       │
+│    ├─ Turn management (30s per player)                      │
+│    ├─ Collision detection                                   │
+│    ├─ Result calculation (which face up)                    │
+│    └─ Lives management                                       │
+└─────────────────────────────────────────────────────────────┘
 
-Database Migration
-Server Logic Updates
-Socket Event Handlers
-Client Components
-Integration & Styling
-Testing Checklist
+📁 NEW FILE: server/PhysicsGameManager.jsPhysicsGameManager.js
+// PhysicsGameManager.js - Server-side 3D Physics Battle Royale Manager
+const CANNON = require('cannon-es')
 
-
-PHASE 1: DATABASE MIGRATION
-Step 1.1: Update Database Schema
-Create a new file: server/migrations/add_battle_royale_features.sql
-sql-- Add new fields to battle_royale_participants table
-ALTER TABLE battle_royale_participants ADD COLUMN lives INTEGER DEFAULT 3;
-ALTER TABLE battle_royale_participants ADD COLUMN power INTEGER DEFAULT 10;
-ALTER TABLE battle_royale_participants ADD COLUMN has_shield BOOLEAN DEFAULT 1;
-ALTER TABLE battle_royale_participants ADD COLUMN consecutive_wins INTEGER DEFAULT 0;
-ALTER TABLE battle_royale_participants ADD COLUMN has_lightning_round BOOLEAN DEFAULT 0;
-ALTER TABLE battle_royale_participants ADD COLUMN total_xp_earned INTEGER DEFAULT 0;
-ALTER TABLE battle_royale_participants ADD COLUMN last_xp_drop INTEGER DEFAULT 0;
-ALTER TABLE battle_royale_participants ADD COLUMN shield_used_round INTEGER DEFAULT NULL;
-
--- Add indexes for performance
-CREATE INDEX IF NOT EXISTS idx_br_participants_lives ON battle_royale_participants(lives);
-CREATE INDEX IF NOT EXISTS idx_br_participants_status ON battle_royale_participants(status);
-
--- Update existing records to have new default values
-UPDATE battle_royale_participants 
-SET lives = 3, 
-    power = 10, 
-    has_shield = 1, 
-    consecutive_wins = 0,
-    has_lightning_round = 0,
-    total_xp_earned = 0
-WHERE lives IS NULL;
-Step 1.2: Update BattleRoyaleDBService.js
-Add these methods to server/services/BattleRoyaleDBService.js:
-javascript// Add after existing methods in BattleRoyaleDBService class
-
-async updatePlayerStats(gameId, playerAddress, stats) {
-  return new Promise((resolve, reject) => {
-    const query = `
-      UPDATE battle_royale_participants 
-      SET lives = ?,
-          power = ?,
-          has_shield = ?,
-          consecutive_wins = ?,
-          has_lightning_round = ?,
-          total_xp_earned = ?,
-          last_xp_drop = ?
-      WHERE game_id = ? AND player_address = ?
-    `
-    
-    this.db.run(query, [
-      stats.lives,
-      stats.power,
-      stats.hasShield ? 1 : 0,
-      stats.consecutiveWins,
-      stats.hasLightningRound ? 1 : 0,
-      stats.totalXPEarned,
-      stats.lastXPDrop,
-      gameId,
-      playerAddress
-    ], (err) => {
-      if (err) reject(err)
-      else resolve()
-    })
-  })
-}
-
-async recordShieldUsage(gameId, playerAddress, roundNumber) {
-  return new Promise((resolve, reject) => {
-    const query = `
-      UPDATE battle_royale_participants 
-      SET has_shield = 0,
-          shield_used_round = ?
-      WHERE game_id = ? AND player_address = ?
-    `
-    
-    this.db.run(query, [roundNumber, gameId, playerAddress], (err) => {
-      if (err) reject(err)
-      else resolve()
-    })
-  })
-}
-
-PHASE 2: SERVER LOGIC UPDATES
-Step 2.1: Update BattleRoyaleGameManager.js
-Replace the entire file with this enhanced version:
-javascript// BattleRoyaleGameManager.js - ENHANCED VERSION
-
-class BattleRoyaleGameManager {
+class PhysicsGameManager {
   constructor() {
-    this.games = new Map()
-    this.roundTimers = new Map()
+    this.games = new Map() // gameId -> PhysicsGameState
+    this.worlds = new Map() // gameId -> CANNON.World
   }
 
   PHASES = {
-    FILLING: 'filling',
-    STARTING: 'starting',
-    ROUND_ACTIVE: 'round_active',
-    ROUND_RESULT: 'round_result',
-    COMPLETED: 'completed'
-  }
-
-  // ===== XP GENERATION SYSTEM =====
-  generateXPReward() {
-    const roll = Math.random()
-    if (roll < 0.40) return { amount: 100, rarity: 'common' }      // 40% - Silver
-    if (roll < 0.65) return { amount: 200, rarity: 'uncommon' }    // 25% - Light Blue
-    if (roll < 0.80) return { amount: 300, rarity: 'rare' }        // 15% - Blue
-    if (roll < 0.90) return { amount: 400, rarity: 'epic' }        // 10% - Dark Blue
-    if (roll < 0.95) return { amount: 500, rarity: 'legendary' }   // 5% - Purple-Blue
-    if (roll < 0.98) return { amount: 700, rarity: 'mythic' }      // 3% - Gold
-    if (roll < 0.995) return { amount: 900, rarity: 'exotic' }     // 1.5% - Neon Purple
-    return { amount: 1000, rarity: 'ultimate' }                     // 0.5% - Rainbow Gold
-  }
-
-  getXPRarityColor(rarity) {
-    const colors = {
-      common: '#C0C0C0',      // Silver
-      uncommon: '#87CEEB',    // Light Blue
-      rare: '#4169E1',        // Blue
-      epic: '#000080',        // Dark Blue
-      legendary: '#8B00FF',   // Purple-Blue
-      mythic: '#FFD700',      // Gold
-      exotic: '#9D00FF',      // Neon Purple
-      ultimate: '#FF00FF'     // Rainbow Gold
-    }
-    return colors[rarity] || '#FFFFFF'
-  }
-
-  // ===== POWER-BASED FLIP CALCULATION =====
-  calculateFlipWithPower(power, choice) {
-    // Power ranges from 1-10
-    // Odds: 40% at power 1, up to 60% at power 10
-    const winChance = 0.40 + (power * 0.02) // 40% + (0-20%)
-    const roll = Math.random()
-    const playerWins = roll < winChance
-    
-    // Actual flip result
-    const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
-    
-    // Determine if player's choice matches (factoring in power boost)
-    const actualWin = playerWins ? choice : (choice === 'heads' ? 'tails' : 'heads')
-    
-    console.log(`🎲 Flip Calculation: Power=${power}, WinChance=${(winChance*100).toFixed(1)}%, Roll=${(roll*100).toFixed(1)}%, PlayerWins=${playerWins}`)
-    
-    return {
-      flipResult: actualWin, // The result that benefits/hurts the player based on power
-      playerWon: playerWins
-    }
+    LOBBY: 'lobby',
+    GAME_STARTING: 'game_starting',
+    PLAYER_TURN: 'player_turn',
+    COIN_FLYING: 'coin_flying',
+    COIN_LANDING: 'coin_landing',
+    TURN_RESULT: 'turn_result',
+    GAME_OVER: 'game_over'
   }
 
   // ===== CREATE GAME =====
-  createBattleRoyale(gameId, gameData, dbService = null) {
-    console.log(`🎮 Creating Battle Royale: ${gameId}`)
+  createPhysicsGame(gameId, gameData) {
+    console.log(`🎮 Creating Physics Battle Royale: ${gameId}`)
+    
+    // Initialize Cannon.js physics world
+    const world = new CANNON.World()
+    world.gravity.set(0, -20, 0) // Gravity pointing down
+    world.broadphase = new CANNON.NaiveBroadphase()
+    world.solver.iterations = 10
+    
+    // Create ground plane (invisible, just for physics)
+    const groundBody = new CANNON.Body({
+      mass: 0, // static
+      shape: new CANNON.Plane(),
+      position: new CANNON.Vec3(0, -10, 0)
+    })
+    groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
+    world.addBody(groundBody)
+    
+    // Create obstacles (planets, asteroids, etc.)
+    this.createObstacles(world)
     
     const game = {
       gameId,
-      phase: this.PHASES.FILLING,
-      maxPlayers: 6,
-      currentPlayers: gameData.current_players || 0,
+      phase: this.PHASES.LOBBY,
+      maxPlayers: 2, // Start with 2, scale to 6
+      currentPlayers: 0,
       entryFee: gameData.entry_fee || 5.00,
       serviceFee: gameData.service_fee || 0.50,
       creator: gameData.creator,
-      players: {},
-      playerSlots: [null, null, null, null, null, null],
-      activePlayers: [],
-      currentRound: 0,
-      roundCountdown: null,
-      lightningRoundActive: false, // NEW
-      lightningRoundActivator: null, // NEW
+      players: {}, // address -> PlayerState
+      playerOrder: [], // Turn order
+      currentTurnIndex: 0,
+      currentTurnPlayer: null,
+      turnTimer: 30,
+      activeCoin: null, // Currently flying coin
+      obstacles: [], // Obstacle positions for client
       nftContract: gameData.nft_contract,
       nftTokenId: gameData.nft_token_id,
       nftName: gameData.nft_name,
       nftImage: gameData.nft_image,
       nftCollection: gameData.nft_collection,
-      nftChain: gameData.nft_chain || 'base',
       winner: null,
       createdAt: new Date().toISOString()
     }
 
     this.games.set(gameId, game)
+    this.worlds.set(gameId, world)
     
-    // Auto-add creator if they participate
-    if (gameData.creator_participates === true || gameData.creator_participates === 1) {
-      this.addCreatorAsPlayer(gameId, gameData.creator)
+    // Add creator as first player
+    if (gameData.creator) {
+      this.addPlayer(gameId, gameData.creator)
     }
     
     return game
   }
 
-  // ===== ADD CREATOR =====
-  addCreatorAsPlayer(gameId, creatorAddress) {
-    const game = this.games.get(gameId)
-    const normalizedAddress = creatorAddress.toLowerCase()
+  // ===== CREATE OBSTACLES =====
+  createObstacles(world) {
+    const obstacles = []
     
-    if (!game || game.players[normalizedAddress]) return
-
-    game.players[normalizedAddress] = {
-      address: creatorAddress,
-      slotNumber: 0,
-      isCreator: true,
-      entryPaid: true,
-      status: 'active',
-      // NEW COMPETITIVE FIELDS
-      lives: 3,
-      power: 10,
-      hasShield: true,
-      consecutiveWins: 0,
-      hasLightningRound: false,
-      totalXPEarned: 0,
-      lastXPDrop: 0,
-      // Existing fields
-      coin: { 
-        id: 'plain', 
-        type: 'default', 
-        name: 'Classic',
-        headsImage: '/coins/plainh.png',
-        tailsImage: '/coins/plaint.png'
-      },
-      choice: null,
-      hasFlipped: false,
-      flipResult: null,
-      joinedAt: new Date().toISOString()
+    // Create 15 random obstacles in the space
+    for (let i = 0; i < 15; i++) {
+      const radius = 2 + Math.random() * 3 // Random size between 2-5 units
+      const x = (Math.random() - 0.5) * 40 // Spread across X
+      const y = 10 + Math.random() * 60 // Height from 10 to 70
+      const z = (Math.random() - 0.5) * 40 // Spread across Z
+      
+      const obstacleBody = new CANNON.Body({
+        mass: 0, // Static obstacles
+        shape: new CANNON.Sphere(radius),
+        position: new CANNON.Vec3(x, y, z),
+        material: new CANNON.Material({ friction: 0.3, restitution: 0.7 })
+      })
+      
+      world.addBody(obstacleBody)
+      
+      obstacles.push({
+        id: `obstacle_${i}`,
+        type: 'sphere',
+        radius,
+        position: { x, y, z }
+      })
     }
-
-    game.playerSlots[0] = normalizedAddress
-    game.activePlayers.push(normalizedAddress)
-    game.currentPlayers = 1
-
-    console.log(`✅ Creator added: ${creatorAddress}`)
+    
+    return obstacles
   }
 
   // ===== ADD PLAYER =====
   addPlayer(gameId, playerAddress) {
     const game = this.games.get(gameId)
-    if (!game || game.phase !== this.PHASES.FILLING) return false
-    if (game.currentPlayers >= 6) return false
+    if (!game || game.currentPlayers >= game.maxPlayers) return false
     
     const normalizedAddress = playerAddress.toLowerCase()
-    
-    if (game.players[normalizedAddress]) {
-      console.log(`⚠️ Player ${playerAddress} already in game`)
-      return false
-    }
-
-    const slotIndex = game.playerSlots.findIndex(slot => slot === null)
-    if (slotIndex === -1) return false
+    if (game.players[normalizedAddress]) return false
 
     game.players[normalizedAddress] = {
       address: playerAddress,
-      slotNumber: slotIndex,
-      isCreator: false,
-      entryPaid: true,
-      status: 'active',
-      // NEW COMPETITIVE FIELDS
       lives: 3,
-      power: 10,
-      hasShield: true,
-      consecutiveWins: 0,
-      hasLightningRound: false,
-      totalXPEarned: 0,
-      lastXPDrop: 0,
-      // Existing fields
+      isActive: true,
+      choice: null, // heads or tails
       coin: { 
         id: 'plain', 
         type: 'default', 
@@ -274,422 +152,338 @@ class BattleRoyaleGameManager {
         headsImage: '/coins/plainh.png',
         tailsImage: '/coins/plaint.png'
       },
-      choice: null,
-      hasFlipped: false,
-      flipResult: null,
+      cannonPosition: { x: (game.currentPlayers - 0.5) * 10, y: 0, z: 0 }, // Spread out
       joinedAt: new Date().toISOString()
     }
 
-    game.playerSlots[slotIndex] = normalizedAddress
-    game.activePlayers.push(normalizedAddress)
+    game.playerOrder.push(normalizedAddress)
     game.currentPlayers++
 
-    console.log(`✅ Player joined: ${playerAddress} (${game.currentPlayers}/6)`)
-
-    if (game.currentPlayers === 6) {
-      game.readyToStart = true
-    }
-
+    console.log(`✅ Player joined: ${playerAddress} (${game.currentPlayers}/${game.maxPlayers})`)
     return true
   }
 
   // ===== START GAME =====
-  prepareGameStart(gameId, broadcastFn) {
+  startGame(gameId, broadcastFn) {
     const game = this.games.get(gameId)
-    if (!game) return false
+    if (!game || game.currentPlayers < 2) return false
 
-    console.log(`🚀 Starting game: ${gameId}`)
-    game.phase = this.PHASES.STARTING
+    console.log(`🚀 Starting physics game: ${gameId}`)
+    game.phase = this.PHASES.GAME_STARTING
 
-    broadcastFn(`game_${gameId}`, 'battle_royale_starting', {
+    broadcastFn(`game_${gameId}`, 'physics_game_starting', {
       gameId,
       countdown: 3
     })
 
     setTimeout(() => {
-      this.startNextRound(gameId, broadcastFn)
+      this.startNextTurn(gameId, broadcastFn)
     }, 3000)
 
     return true
   }
 
-  // ===== START ROUND =====
-  startNextRound(gameId, broadcastFn) {
+  // ===== START TURN =====
+  startNextTurn(gameId, broadcastFn) {
     const game = this.games.get(gameId)
     if (!game) return false
 
-    // Check win condition
-    if (game.activePlayers.length <= 1) {
-      return this.completeGame(gameId, broadcastFn)
+    // Check for winner
+    const activePlayers = Object.values(game.players).filter(p => p.isActive)
+    if (activePlayers.length <= 1) {
+      return this.endGame(gameId, broadcastFn)
     }
 
-    game.currentRound++
-    game.phase = this.PHASES.ROUND_ACTIVE
-    game.roundCountdown = game.lightningRoundActive ? 5 : 20 // Lightning Round = 5 seconds!
-    game.lightningRoundActive = false // Reset after use
-
-    // Reset player round states (but keep lives, power, etc.)
-    game.activePlayers.forEach(addr => {
-      const player = game.players[addr]
-      if (player) {
-        player.choice = null
-        player.hasFlipped = false
-        player.flipResult = null
-        player.lastXPDrop = 0 // Reset XP for new round
-      }
-    })
-
-    console.log(`🎯 Round ${game.currentRound} started (${game.activePlayers.length} players)`)
-
-    broadcastFn(`game_${gameId}`, 'battle_royale_round_start', {
-      gameId,
-      round: game.currentRound,
-      lightningRound: game.lightningRoundActive
-    })
-
-    this.broadcastState(gameId, broadcastFn)
-
-    // Countdown timer
-    const timer = setInterval(() => {
-      game.roundCountdown--
+    // Find next active player
+    let attempts = 0
+    while (attempts < game.playerOrder.length) {
+      const playerAddr = game.playerOrder[game.currentTurnIndex]
+      const player = game.players[playerAddr]
       
-      if (game.roundCountdown <= 0) {
-        clearInterval(timer)
-        this.endRound(gameId, broadcastFn)
-      } else {
-        this.broadcastState(gameId, broadcastFn)
-      }
-    }, 1000)
-
-    this.roundTimers.set(gameId, timer)
-    return true
-  }
-
-  // ===== PLAYER CHOICE =====
-  setPlayerChoice(gameId, playerAddress, choice) {
-    const game = this.games.get(gameId)
-    if (!game || game.phase !== this.PHASES.ROUND_ACTIVE) return false
-
-    const normalizedAddress = playerAddress.toLowerCase()
-    const player = game.players[normalizedAddress]
-    if (!player || player.hasFlipped || player.status !== 'active') return false
-
-    player.choice = choice
-    console.log(`🎯 ${playerAddress} chose ${choice}`)
-    return true
-  }
-
-  // ===== FLIP COIN (WITH POWER) =====
-  executePlayerFlip(gameId, playerAddress, power, broadcastFn) {
-    const game = this.games.get(gameId)
-    if (!game || game.phase !== this.PHASES.ROUND_ACTIVE) return false
-
-    const normalizedAddress = playerAddress.toLowerCase()
-    const player = game.players[normalizedAddress]
-    if (!player || player.hasFlipped || !player.choice || player.status !== 'active') return false
-
-    // Calculate flip result based on power
-    const { flipResult, playerWon } = this.calculateFlipWithPower(power, player.choice)
-    
-    // Generate XP reward
-    const xpReward = this.generateXPReward()
-    
-    player.hasFlipped = true
-    player.flipResult = flipResult
-    player.flipPower = power
-    player.lastXPDrop = xpReward.amount
-    player.totalXPEarned += xpReward.amount
-
-    console.log(`🪙 ${playerAddress} flipped: ${flipResult} (Power: ${power}, Won: ${playerWon}, XP: +${xpReward.amount})`)
-
-    // Broadcast flip with XP
-    broadcastFn(`game_${gameId}`, 'battle_royale_player_flipped', {
-      gameId,
-      playerAddress,
-      flipResult,
-      flipPower: power,
-      xpReward: {
-        amount: xpReward.amount,
-        rarity: xpReward.rarity,
-        color: this.getXPRarityColor(xpReward.rarity)
-      }
-    })
-
-    this.broadcastState(gameId, broadcastFn)
-    return true
-  }
-
-  // ===== DEPLOY SHIELD =====
-  deployShield(gameId, playerAddress, broadcastFn) {
-    const game = this.games.get(gameId)
-    if (!game) return false
-
-    const normalizedAddress = playerAddress.toLowerCase()
-    const player = game.players[normalizedAddress]
-    
-    if (!player || !player.hasShield || player.status !== 'active') {
-      console.log(`❌ ${playerAddress} cannot deploy shield`)
-      return false
-    }
-
-    player.hasShield = false
-    player.shieldActive = true // Mark shield as active for this round
-    
-    console.log(`🛡️ ${playerAddress} deployed shield!`)
-    
-    broadcastFn(`game_${gameId}`, 'battle_royale_shield_deployed', {
-      gameId,
-      playerAddress
-    })
-
-    this.broadcastState(gameId, broadcastFn)
-    return true
-  }
-
-  // ===== ACTIVATE LIGHTNING ROUND =====
-  activateLightningRound(gameId, playerAddress, broadcastFn) {
-    const game = this.games.get(gameId)
-    if (!game || game.phase !== this.PHASES.ROUND_ACTIVE) return false
-
-    const normalizedAddress = playerAddress.toLowerCase()
-    const player = game.players[normalizedAddress]
-    
-    if (!player || !player.hasLightningRound || player.status !== 'active') {
-      console.log(`❌ ${playerAddress} cannot activate Lightning Round`)
-      return false
-    }
-
-    // Consume the ability
-    player.hasLightningRound = false
-    game.lightningRoundActive = true
-    game.lightningRoundActivator = playerAddress
-    
-    // Force countdown to 5 seconds
-    game.roundCountdown = Math.min(game.roundCountdown, 5)
-    
-    console.log(`⚡ ${playerAddress} activated LIGHTNING ROUND!`)
-    
-    broadcastFn(`game_${gameId}`, 'battle_royale_lightning_activated', {
-      gameId,
-      playerAddress,
-      newCountdown: game.roundCountdown
-    })
-
-    this.broadcastState(gameId, broadcastFn)
-    return true
-  }
-
-  // ===== END ROUND (WITH NEW MECHANICS) =====
-  endRound(gameId, broadcastFn) {
-    const game = this.games.get(gameId)
-    if (!game) return false
-
-    console.log(`🏁 Ending round ${game.currentRound}`)
-
-    const timer = this.roundTimers.get(gameId)
-    if (timer) {
-      clearInterval(timer)
-      this.roundTimers.delete(gameId)
-    }
-
-    // Auto-flip for players who didn't flip
-    game.activePlayers.forEach(addr => {
-      const player = game.players[addr]
-      if (!player.hasFlipped) {
-        console.log(`⚠️ Auto-flipping for ${addr}`)
-        if (!player.choice) player.choice = 'heads'
+      if (player && player.isActive) {
+        game.currentTurnPlayer = playerAddr
+        game.phase = this.PHASES.PLAYER_TURN
+        game.turnTimer = 30
+        player.choice = null // Reset choice
         
-        const { flipResult } = this.calculateFlipWithPower(1, player.choice) // Minimum power
-        const xpReward = this.generateXPReward()
+        console.log(`🎯 Turn started for: ${playerAddr}`)
         
-        player.flipResult = flipResult
-        player.hasFlipped = true
-        player.lastXPDrop = xpReward.amount
-        player.totalXPEarned += xpReward.amount
-      }
-    })
-
-    // Determine survivors and eliminations
-    const results = []
-    const eliminated = []
-    const survived = []
-
-    game.activePlayers.forEach(addr => {
-      const player = game.players[addr]
-      const won = player.flipResult === player.choice
-      
-      if (won) {
-        // WINNER
-        player.consecutiveWins++
-        
-        // Award Lightning Round after 3 consecutive wins
-        if (player.consecutiveWins === 3 && !player.hasLightningRound) {
-          player.hasLightningRound = true
-          console.log(`⚡ ${addr} earned Lightning Round!`)
-          
-          broadcastFn(`game_${gameId}`, 'battle_royale_lightning_earned', {
-            gameId,
-            playerAddress: addr
-          })
-        }
-        
-        survived.push(addr)
-      } else {
-        // LOSER
-        player.consecutiveWins = 0 // Reset streak
-        
-        // Check for shield
-        if (player.shieldActive) {
-          console.log(`🛡️ ${addr} saved by shield!`)
-          player.shieldActive = false
-          survived.push(addr)
-          
-          broadcastFn(`game_${gameId}`, 'battle_royale_shield_saved', {
-            gameId,
-            playerAddress: addr
-          })
-        } else {
-          // Lose a life
-          player.lives--
-          
-          // Drain power
-          player.power = Math.max(1, player.power - 2)
-          
-          if (player.lives <= 0) {
-            // ELIMINATED
-            eliminated.push(addr)
-            player.status = 'eliminated'
-            player.eliminatedInRound = game.currentRound
-            console.log(`💀 ${addr} ELIMINATED (0 lives)`)
-          } else {
-            // Survived with reduced lives
-            survived.push(addr)
-            console.log(`❤️ ${addr} lost a life (${player.lives} remaining)`)
-          }
-        }
-      }
-
-      results.push({
-        address: addr,
-        choice: player.choice,
-        result: player.flipResult,
-        won,
-        lives: player.lives,
-        power: player.power,
-        xpEarned: player.lastXPDrop,
-        eliminated: player.status === 'eliminated'
-      })
-    })
-
-    // Handle edge cases
-    if (eliminated.length === 0 && survived.length > 1) {
-      console.log(`✅ All players survived! Continuing...`)
-      
-      broadcastFn(`game_${gameId}`, 'battle_royale_round_end', {
-        gameId,
-        round: game.currentRound,
-        results,
-        eliminatedPlayers: [],
-        survivingPlayers: survived,
-        message: 'All players survived! Next round...'
-      })
-
-      this.broadcastState(gameId, broadcastFn)
-      setTimeout(() => this.startNextRound(gameId, broadcastFn), 5000)
-      return true
-    }
-
-    if (survived.length === 0) {
-      console.log(`⚠️ All players lost! Replaying round...`)
-      
-      // Reset for replay
-      game.activePlayers.forEach(addr => {
-        const player = game.players[addr]
-        player.choice = null
-        player.hasFlipped = false
-        player.flipResult = null
-        player.shieldActive = false
-      })
-
-      broadcastFn(`game_${gameId}`, 'battle_royale_round_end', {
-        gameId,
-        round: game.currentRound,
-        results,
-        eliminatedPlayers: [],
-        survivingPlayers: game.activePlayers,
-        message: 'All players lost! Replaying round...'
-      })
-
-      this.broadcastState(gameId, broadcastFn)
-      
-      setTimeout(() => {
-        game.phase = this.PHASES.ROUND_ACTIVE
-        game.roundCountdown = 20
-
-        broadcastFn(`game_${gameId}`, 'battle_royale_round_start', {
+        broadcastFn(`game_${gameId}`, 'physics_turn_start', {
           gameId,
-          round: game.currentRound,
-          isReplay: true
+          playerAddress: playerAddr,
+          timeLimit: 30
         })
 
         this.broadcastState(gameId, broadcastFn)
-
-        const timer = setInterval(() => {
-          game.roundCountdown--
+        
+        // Start turn timer
+        const timerInterval = setInterval(() => {
+          game.turnTimer--
           
-          if (game.roundCountdown <= 0) {
-            clearInterval(timer)
-            this.endRound(gameId, broadcastFn)
+          if (game.turnTimer <= 0) {
+            clearInterval(timerInterval)
+            // Auto-fire with random values if player didn't act
+            this.fireCoin(gameId, playerAddr, 0, 5, broadcastFn)
           } else {
             this.broadcastState(gameId, broadcastFn)
           }
         }, 1000)
-
-        this.roundTimers.set(gameId, timer)
-      }, 5000)
+        
+        return true
+      }
       
-      return true
+      game.currentTurnIndex = (game.currentTurnIndex + 1) % game.playerOrder.length
+      attempts++
     }
 
-    // Normal elimination
-    game.activePlayers = survived
+    // No active players found (shouldn't happen)
+    return this.endGame(gameId, broadcastFn)
+  }
 
-    console.log(`📊 Round results: ${eliminated.length} eliminated, ${survived.length} survived`)
-
-    broadcastFn(`game_${gameId}`, 'battle_royale_round_end', {
-      gameId,
-      round: game.currentRound,
-      results,
-      eliminatedPlayers: eliminated,
-      survivingPlayers: survived
-    })
-
-    this.broadcastState(gameId, broadcastFn)
-
-    // Check for winner
-    if (game.activePlayers.length <= 1) {
-      setTimeout(() => this.completeGame(gameId, broadcastFn), 3000)
-    } else {
-      setTimeout(() => this.startNextRound(gameId, broadcastFn), 5000)
-    }
-
+  // ===== SET CHOICE =====
+  setChoice(gameId, playerAddress, choice) {
+    const game = this.games.get(gameId)
+    if (!game || game.phase !== this.PHASES.PLAYER_TURN) return false
+    
+    const normalizedAddress = playerAddress.toLowerCase()
+    if (normalizedAddress !== game.currentTurnPlayer) return false
+    
+    const player = game.players[normalizedAddress]
+    if (!player) return false
+    
+    player.choice = choice
+    console.log(`✅ ${playerAddress} chose ${choice}`)
     return true
   }
 
-  // ===== COMPLETE GAME =====
-  completeGame(gameId, broadcastFn) {
+  // ===== FIRE COIN =====
+  fireCoin(gameId, playerAddress, angle, power, broadcastFn) {
+    const game = this.games.get(gameId)
+    const world = this.worlds.get(gameId)
+    if (!game || !world || game.phase !== this.PHASES.PLAYER_TURN) return false
+    
+    const normalizedAddress = playerAddress.toLowerCase()
+    if (normalizedAddress !== game.currentTurnPlayer) return false
+    
+    const player = game.players[normalizedAddress]
+    if (!player || !player.choice) return false
+
+    console.log(`🚀 ${playerAddress} firing coin: angle=${angle}, power=${power}`)
+    
+    game.phase = this.PHASES.COIN_FLYING
+    
+    // Create coin physics body
+    const coinRadius = 1.5
+    const coinThickness = 0.2
+    const coinShape = new CANNON.Cylinder(coinRadius, coinRadius, coinThickness, 32)
+    
+    const coinBody = new CANNON.Body({
+      mass: 1,
+      shape: coinShape,
+      position: new CANNON.Vec3(
+        player.cannonPosition.x,
+        player.cannonPosition.y + 2,
+        player.cannonPosition.z
+      ),
+      material: new CANNON.Material({ friction: 0.3, restitution: 0.8 })
+    })
+    
+    // Calculate launch velocity
+    const powerScale = power * 2 // power 1-10 → velocity 2-20
+    const angleRad = (angle * Math.PI) / 180
+    
+    coinBody.velocity.set(
+      Math.sin(angleRad) * powerScale * 0.3, // X component (horizontal)
+      powerScale, // Y component (upward)
+      0 // Z component
+    )
+    
+    // Add random spin
+    coinBody.angularVelocity.set(
+      Math.random() * 10 - 5,
+      Math.random() * 10 - 5,
+      Math.random() * 10 - 5
+    )
+    
+    world.addBody(coinBody)
+    
+    game.activeCoin = {
+      body: coinBody,
+      playerAddress: normalizedAddress,
+      startTime: Date.now(),
+      lastBroadcast: 0
+    }
+    
+    broadcastFn(`game_${gameId}`, 'physics_coin_fired', {
+      gameId,
+      playerAddress,
+      angle,
+      power
+    })
+    
+    // Start physics simulation loop
+    this.startPhysicsLoop(gameId, broadcastFn)
+    
+    return true
+  }
+
+  // ===== PHYSICS SIMULATION LOOP =====
+  startPhysicsLoop(gameId, broadcastFn) {
+    const game = this.games.get(gameId)
+    const world = this.worlds.get(gameId)
+    if (!game || !world) return
+
+    const fixedTimeStep = 1 / 60 // 60 FPS
+    let lastTime = Date.now()
+    
+    const simulationLoop = () => {
+      if (game.phase !== this.PHASES.COIN_FLYING) {
+        return // Stop loop
+      }
+      
+      const currentTime = Date.now()
+      const deltaTime = (currentTime - lastTime) / 1000
+      lastTime = currentTime
+      
+      // Step physics world
+      world.step(fixedTimeStep, deltaTime, 3)
+      
+      if (!game.activeCoin) return
+      
+      const coinBody = game.activeCoin.body
+      
+      // Broadcast position every 50ms (20 updates/sec)
+      if (currentTime - game.activeCoin.lastBroadcast > 50) {
+        broadcastFn(`game_${gameId}`, 'physics_coin_position', {
+          gameId,
+          position: {
+            x: coinBody.position.x,
+            y: coinBody.position.y,
+            z: coinBody.position.z
+          },
+          rotation: {
+            x: coinBody.quaternion.x,
+            y: coinBody.quaternion.y,
+            z: coinBody.quaternion.z,
+            w: coinBody.quaternion.w
+          },
+          velocity: {
+            x: coinBody.velocity.x,
+            y: coinBody.velocity.y,
+            z: coinBody.velocity.z
+          }
+        })
+        
+        game.activeCoin.lastBroadcast = currentTime
+      }
+      
+      // Check if coin has landed (velocity near zero and below certain height)
+      const velocity = Math.sqrt(
+        coinBody.velocity.x ** 2 +
+        coinBody.velocity.y ** 2 +
+        coinBody.velocity.z ** 2
+      )
+      
+      if (velocity < 0.5 && coinBody.position.y < 5) {
+        // Coin has landed!
+        this.handleCoinLanded(gameId, broadcastFn)
+        return
+      }
+      
+      // Check timeout (max 10 seconds)
+      if (currentTime - game.activeCoin.startTime > 10000) {
+        this.handleCoinLanded(gameId, broadcastFn)
+        return
+      }
+      
+      // Continue loop
+      setTimeout(simulationLoop, 16) // ~60fps
+    }
+    
+    simulationLoop()
+  }
+
+  // ===== COIN LANDED =====
+  handleCoinLanded(gameId, broadcastFn) {
+    const game = this.games.get(gameId)
+    const world = this.worlds.get(gameId)
+    if (!game || !game.activeCoin) return
+
+    console.log(`🎯 Coin landed in game ${gameId}`)
+    
+    game.phase = this.PHASES.COIN_LANDING
+    
+    const coinBody = game.activeCoin.body
+    const playerAddress = game.activeCoin.playerAddress
+    const player = game.players[playerAddress]
+    
+    // Determine which face is up based on rotation
+    const result = this.determineCoinFace(coinBody.quaternion)
+    
+    // Remove coin from physics world
+    world.removeBody(coinBody)
+    
+    console.log(`🎲 Result: ${result}, Player chose: ${player.choice}`)
+    
+    // Check if player won or lost
+    const won = result === player.choice
+    
+    if (!won) {
+      player.lives--
+      if (player.lives <= 0) {
+        player.isActive = false
+      }
+    }
+    
+    // Broadcast result
+    broadcastFn(`game_${gameId}`, 'physics_coin_landed', {
+      gameId,
+      playerAddress,
+      result,
+      won,
+      livesRemaining: player.lives,
+      eliminated: !player.isActive
+    })
+    
+    this.broadcastState(gameId, broadcastFn)
+    
+    // Clear active coin
+    game.activeCoin = null
+    
+    // Move to next turn after 3 seconds
+    setTimeout(() => {
+      game.currentTurnIndex = (game.currentTurnIndex + 1) % game.playerOrder.length
+      this.startNextTurn(gameId, broadcastFn)
+    }, 3000)
+  }
+
+  // ===== DETERMINE COIN FACE =====
+  determineCoinFace(quaternion) {
+    // Convert quaternion to up vector
+    const upVector = new CANNON.Vec3(0, 1, 0)
+    quaternion.vmult(upVector, upVector)
+    
+    // If Y component is positive, heads is up
+    // If Y component is negative, tails is up
+    return upVector.y > 0 ? 'heads' : 'tails'
+  }
+
+  // ===== END GAME =====
+  endGame(gameId, broadcastFn) {
     const game = this.games.get(gameId)
     if (!game) return false
 
-    game.phase = this.PHASES.COMPLETED
-    game.winner = game.activePlayers[0] || null
+    game.phase = this.PHASES.GAME_OVER
+    
+    // Find winner
+    const activePlayers = Object.values(game.players).filter(p => p.isActive)
+    game.winner = activePlayers.length > 0 ? activePlayers[0].address : null
 
-    console.log(`🏆 Game complete: ${game.winner || 'No winner'}`)
+    console.log(`🏆 Game over: ${game.winner || 'No winner'}`)
 
-    broadcastFn(`game_${gameId}`, 'battle_royale_game_complete', {
+    broadcastFn(`game_${gameId}`, 'physics_game_over', {
       gameId,
-      winner: game.winner,
-      totalRounds: game.currentRound
+      winner: game.winner
     })
 
     this.broadcastState(gameId, broadcastFn)
@@ -697,23 +491,14 @@ class BattleRoyaleGameManager {
   }
 
   // ===== UPDATE COIN =====
-  async updatePlayerCoin(gameId, playerAddress, coinData, dbService = null) {
-    let game = this.games.get(gameId)
-    if (!game && dbService) {
-      game = await this.loadGameFromDatabase(gameId, dbService)
-    }
-    
+  updatePlayerCoin(gameId, playerAddress, coinData) {
+    const game = this.games.get(gameId)
     if (!game) return false
-
-    if (game.phase !== this.PHASES.FILLING && game.phase !== this.PHASES.STARTING) {
-      return false
-    }
-
+    
     const normalizedAddress = playerAddress.toLowerCase()
     const player = game.players[normalizedAddress]
-    
     if (!player) return false
-
+    
     player.coin = coinData
     console.log(`✅ Coin updated for ${playerAddress}`)
     return true
@@ -722,24 +507,6 @@ class BattleRoyaleGameManager {
   // ===== STATE MANAGEMENT =====
   getGame(gameId) {
     return this.games.get(gameId)
-  }
-
-  async loadGameFromDatabase(gameId, dbService) {
-    if (this.games.has(gameId)) {
-      return this.games.get(gameId)
-    }
-
-    try {
-      const gameData = await dbService.getBattleRoyaleGame(gameId)
-      if (gameData && gameData.status === 'filling') {
-        console.log(`📄 Loading game from database: ${gameId}`)
-        return this.createBattleRoyale(gameId, gameData, dbService)
-      }
-    } catch (error) {
-      console.error(`❌ Error loading game ${gameId}:`, error)
-    }
-
-    return null
   }
 
   getFullGameState(gameId) {
@@ -755,17 +522,15 @@ class BattleRoyaleGameManager {
       serviceFee: game.serviceFee,
       creator: game.creator,
       players: game.players,
-      playerSlots: game.playerSlots,
-      activePlayers: game.activePlayers,
-      currentRound: game.currentRound,
-      roundCountdown: game.roundCountdown,
-      lightningRoundActive: game.lightningRoundActive,
+      playerOrder: game.playerOrder,
+      currentTurnPlayer: game.currentTurnPlayer,
+      turnTimer: game.turnTimer,
+      obstacles: game.obstacles,
       nftName: game.nftName,
       nftImage: game.nftImage,
       nftCollection: game.nftCollection,
       nftContract: game.nftContract,
       nftTokenId: game.nftTokenId,
-      nftChain: game.nftChain,
       winner: game.winner
     }
   }
@@ -773,735 +538,544 @@ class BattleRoyaleGameManager {
   broadcastState(gameId, broadcastFn) {
     const state = this.getFullGameState(gameId)
     if (state) {
-      broadcastFn(`game_${gameId}`, 'battle_royale_state_update', state)
+      broadcastFn(`game_${gameId}`, 'physics_state_update', state)
     }
   }
 
+  // ===== CLEANUP =====
   removeGame(gameId) {
-    const timer = this.roundTimers.get(gameId)
-    if (timer) {
-      clearInterval(timer)
-      this.roundTimers.delete(gameId)
+    const world = this.worlds.get(gameId)
+    if (world) {
+      // Clean up physics world
+      world.bodies.forEach(body => world.removeBody(body))
+      this.worlds.delete(gameId)
     }
     this.games.delete(gameId)
-    console.log(`🗑️ Game removed: ${gameId}`)
+    console.log(`🗑️ Physics game removed: ${gameId}`)
   }
 }
 
-module.exports = BattleRoyaleGameManager
+module.exports = PhysicsGameManager
 
-PHASE 3: SOCKET EVENT HANDLERS
-Step 3.1: Update BattleRoyaleSocketHandlers.js
-Add these new handlers to server/socket/BattleRoyaleSocketHandlers.js:
-javascript// ADD THESE NEW METHODS to the BattleRoyaleSocketHandlers class
-
-// Deploy shield
-async handleBattleRoyaleDeployShield(socket, data, gameManager, io) {
-  const { gameId, address } = data
-  console.log(`🛡️ ${address} deploying shield`)
-  
-  const success = gameManager.deployShield(gameId, address, (room, event, data) => {
-    io.to(room).emit(event, data)
-  })
-  
-  if (!success) {
-    socket.emit('battle_royale_error', { message: 'Cannot deploy shield' })
-  }
-}
-
-// Activate Lightning Round
-async handleBattleRoyaleActivateLightning(socket, data, gameManager, io) {
-  const { gameId, address } = data
-  console.log(`⚡ ${address} activating Lightning Round`)
-  
-  const success = gameManager.activateLightningRound(gameId, address, (room, event, data) => {
-    io.to(room).emit(event, data)
-  })
-  
-  if (!success) {
-    socket.emit('battle_royale_error', { message: 'Cannot activate Lightning Round' })
-  }
-}
-
-// Export at end of file
-module.exports = BattleRoyaleSocketHandlers
-Step 3.2: Update server-socketio.js
-Add the new event listeners in server/socket/server-socketio.js:
-javascript// ADD THESE TWO NEW EVENT LISTENERS in the setupEventHandlers() method
-// Add after existing battle royale handlers
-
-socket.on('battle_royale_deploy_shield', safeHandler((data) => {
-  console.log(`🔥 battle_royale_deploy_shield from ${socket.id}`, data)
-  return this.battleRoyaleHandlers.handleBattleRoyaleDeployShield(
-    socket, 
-    data, 
-    this.battleRoyaleManager, 
-    this.io
-  )
-}))
-
-socket.on('battle_royale_activate_lightning', safeHandler((data) => {
-  console.log(`🔥 battle_royale_activate_lightning from ${socket.id}`, data)
-  return this.battleRoyaleHandlers.handleBattleRoyaleActivateLightning(
-    socket, 
-    data, 
-    this.battleRoyaleManager, 
-    this.io
-  )
-}))
-
-PHASE 4: CLIENT COMPONENTS
-Step 4.1: Create XP Rarity Colors Config
-Create client/src/constants/xpRarities.js:
-javascriptexport const XP_RARITIES = {
-  common: {
-    color: '#C0C0C0',
-    glow: 'rgba(192, 192, 192, 0.5)',
-    name: 'Common',
-    emoji: '🥈'
-  },
-  uncommon: {
-    color: '#87CEEB',
-    glow: 'rgba(135, 206, 235, 0.5)',
-    name: 'Uncommon',
-    emoji: '💠'
-  },
-  rare: {
-    color: '#4169E1',
-    glow: 'rgba(65, 105, 225, 0.5)',
-    name: 'Rare',
-    emoji: '💎'
-  },
-  epic: {
-    color: '#000080',
-    glow: 'rgba(0, 0, 128, 0.5)',
-    name: 'Epic',
-    emoji: '🔷'
-  },
-  legendary: {
-    color: '#8B00FF',
-    glow: 'rgba(139, 0, 255, 0.5)',
-    name: 'Legendary',
-    emoji: '💜'
-  },
-  mythic: {
-    color: '#FFD700',
-    glow: 'rgba(255, 215, 0, 0.5)',
-    name: 'Mythic',
-    emoji: '🏆'
-  },
-  exotic: {
-    color: '#9D00FF',
-    glow: 'rgba(157, 0, 255, 0.5)',
-    name: 'Exotic',
-    emoji: '⚡'
-  },
-  ultimate: {
-    color: '#FF00FF',
-    glow: 'rgba(255, 0, 255, 0.5)',
-    name: 'Ultimate',
-    emoji: '🌟'
-  }
-}
-Step 4.2: Create XPRewardDrop Component
-Create client/src/components/BattleRoyale/XPRewardDrop.jsx:
-jsximport React, { useEffect, useState } from 'react'
+📁 NEW FILE: client/PhysicsGameScreen.jsxPhysicsGameScreen.jsx
+import React, { useState, useEffect, useCallback } from 'react'
 import styled from '@emotion/styled'
-import { XP_RARITIES } from '../../constants/xpRarities'
-
-const XPContainer = styled.div`
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  animation: floatUp 2s ease-out forwards;
-  pointer-events: none;
-  z-index: 1000;
-  
-  @keyframes floatUp {
-    0% {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0) scale(0.8);
-    }
-    50% {
-      transform: translateX(-50%) translateY(-40px) scale(1.2);
-    }
-    100% {
-      opacity: 0;
-      transform: translateX(-50%) translateY(-80px) scale(1);
-    }
-  }
-`
-
-const XPText = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  color: ${props => props.color};
-  text-shadow: 
-    0 0 10px ${props => props.glow},
-    0 0 20px ${props => props.glow},
-    0 0 30px ${props => props.glow};
-  font-family: 'Hyperwave', 'Poppins', sans-serif;
-  letter-spacing: 2px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`
-
-const XPRewardDrop = ({ amount, rarity, onComplete }) => {
-  const [visible, setVisible] = useState(true)
-  
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setVisible(false)
-      if (onComplete) onComplete()
-    }, 2000)
-    
-    return () => clearTimeout(timer)
-  }, [onComplete])
-  
-  if (!visible) return null
-  
-  const rarityData = XP_RARITIES[rarity] || XP_RARITIES.common
-  
-  return (
-    <XPContainer>
-      <XPText color={rarityData.color} glow={rarityData.glow}>
-        {rarityData.emoji} +{amount} XP
-      </XPText>
-    </XPContainer>
-  )
-}
-
-export default XPRewardDrop
-Step 4.3: Create PlayerStatsBar Component
-Create client/src/components/BattleRoyale/PlayerStatsBar.jsx:
-jsximport React from 'react'
-import styled from '@emotion/styled'
-
-const StatsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 0.5rem;
-  backdrop-filter: blur(10px);
-`
-
-const StatRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-`
-
-const LivesDisplay = styled.div`
-  display: flex;
-  gap: 0.25rem;
-  align-items: center;
-`
-
-const Heart = styled.span`
-  font-size: 1.2rem;
-  filter: ${props => props.filled ? 'none' : 'grayscale(100%)'};
-  opacity: ${props => props.filled ? 1 : 0.3};
-  animation: ${props => props.critical ? 'heartbeat 1s ease-in-out infinite' : 'none'};
-  
-  @keyframes heartbeat {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-  }
-`
-
-const PowerBar = styled.div`
-  flex: 1;
-  height: 8px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-`
-
-const PowerFill = styled.div`
-  height: 100%;
-  width: ${props => props.percent}%;
-  background: linear-gradient(90deg, 
-    #00ffff 0%, 
-    #00ff88 50%, 
-    #ffff00 100%
-  );
-  transition: width 0.3s ease;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-`
-
-const AbilityIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  background: ${props => props.available 
-    ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 140, 0, 0.2))' 
-    : 'rgba(100, 100, 100, 0.2)'
-  };
-  border: 1px solid ${props => props.available ? '#FFD700' : '#666'};
-  border-radius: 0.5rem;
-  font-size: 0.8rem;
-  color: ${props => props.available ? '#FFD700' : '#999'};
-  animation: ${props => props.available ? 'abilityGlow 2s ease-in-out infinite' : 'none'};
-  
-  @keyframes abilityGlow {
-    0%, 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
-    50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
-  }
-`
-
-const XPDisplay = styled.div`
-  color: #FFD700;
-  font-weight: bold;
-  text-align: center;
-  font-size: 0.9rem;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-`
-
-const PlayerStatsBar = ({ 
-  lives, 
-  power, 
-  hasShield, 
-  hasLightningRound, 
-  totalXPEarned,
-  isCompact = false 
-}) => {
-  const isCritical = lives === 1
-  
-  return (
-    <StatsContainer>
-      {/* Lives */}
-      <StatRow>
-        <LivesDisplay>
-          {[1, 2, 3].map(i => (
-            <Heart 
-              key={i} 
-              filled={i <= lives}
-              critical={isCritical && i <= lives}
-            >
-              {i <= lives ? '❤️' : '🖤'}
-            </Heart>
-          ))}
-        </LivesDisplay>
-      </StatRow>
-      
-      {/* Power */}
-      <StatRow>
-        <span style={{ fontSize: '0.8rem', color: '#00ffff' }}>⚡</span>
-        <PowerBar>
-          <PowerFill percent={power * 10} />
-        </PowerBar>
-        <span style={{ fontSize: '0.8rem', color: '#00ffff', minWidth: '40px' }}>
-          {power * 10}%
-        </span>
-      </StatRow>
-      
-      {/* Abilities */}
-      {!isCompact && (
-        <StatRow style={{ flexWrap: 'wrap', gap: '0.25rem' }}>
-          <AbilityIndicator available={hasShield}>
-            🛡️ {hasShield ? 'READY' : 'USED'}
-          </AbilityIndicator>
-          <AbilityIndicator available={hasLightningRound}>
-            ⚡ {hasLightningRound ? 'READY' : 'LOCKED'}
-          </AbilityIndicator>
-        </StatRow>
-      )}
-      
-      {/* Total XP */}
-      <XPDisplay>
-        🌟 {totalXPEarned.toLocaleString()} XP
-      </XPDisplay>
-    </StatsContainer>
-  )
-}
-
-export default PlayerStatsBar
-Step 4.4: Create PlayerCard Component
-Create client/src/components/BattleRoyale/PlayerCard.jsx:
-jsximport React, { useState, useEffect } from 'react'
-import styled from '@emotion/styled'
-import BattleRoyaleUnified3DScene from './BattleRoyaleUnified3DScene'
-import PlayerStatsBar from './PlayerStatsBar'
-import XPRewardDrop from './XPRewardDrop'
-
-const CardContainer = styled.div`
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: linear-gradient(135deg, 
-    rgba(20, 20, 40, 0.95) 0%, 
-    rgba(40, 20, 60, 0.95) 100%
-  );
-  border: 2px solid;
-  border-image: linear-gradient(45deg, 
-    ${props => props.isCurrentUser ? '#00ff88' : '#00ffff'}, 
-    ${props => props.isCurrentUser ? '#00cc6a' : '#9d00ff'}
-  ) 1;
-  border-radius: 1rem;
-  box-shadow: 
-    0 0 20px ${props => props.isCurrentUser ? 'rgba(0, 255, 136, 0.3)' : 'rgba(0, 255, 255, 0.3)'},
-    inset 0 0 60px rgba(255, 0, 255, 0.1);
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-  opacity: ${props => props.eliminated ? 0.3 : 1};
-  filter: ${props => props.eliminated ? 'grayscale(100%)' : 'none'};
-  
-  &:hover {
-    transform: ${props => props.eliminated ? 'none' : 'scale(1.02)'};
-    box-shadow: 
-      0 0 30px ${props => props.isCurrentUser ? 'rgba(0, 255, 136, 0.5)' : 'rgba(0, 255, 255, 0.5)'},
-      inset 0 0 80px rgba(255, 0, 255, 0.15);
-  }
-  
-  ${props => props.eliminated && `
-    &::after {
-      content: '💀 ELIMINATED';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #ff0000;
-      text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
-      z-index: 10;
-      pointer-events: none;
-    }
-  `}
-`
-
-const SlotBadge = styled.div`
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  background: rgba(0, 0, 0, 0.8);
-  color: #FFD700;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: bold;
-  z-index: 5;
-`
-
-const CoinViewport = styled.div`
-  width: 100%;
-  height: ${props => props.large ? '300px' : '200px'};
-  position: relative;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  background: radial-gradient(circle, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.95));
-`
-
-const PlayerAddress = styled.div`
-  color: white;
-  font-size: 0.8rem;
-  font-family: monospace;
-  text-align: center;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-`
-
-const ChoiceIndicator = styled.div`
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: rgba(0, 0, 0, 0.9);
-  color: ${props => props.choice === 'heads' ? '#FFD700' : '#C0C0C0'};
-  border: 2px solid ${props => props.choice === 'heads' ? '#FFD700' : '#C0C0C0'};
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  z-index: 5;
-  box-shadow: 0 0 20px ${props => props.choice === 'heads' ? 'rgba(255, 215, 0, 0.5)' : 'rgba(192, 192, 192, 0.5)'};
-`
-
-const PlayerCard = ({ 
-  player, 
-  slotNumber, 
-  isCurrentUser, 
-  gamePhase,
-  serverState,
-  playerCoinImage,
-  large = false,
-  showXP = true
-}) => {
-  const [showXPDrop, setShowXPDrop] = useState(false)
-  const [lastXP, setLastXP] = useState(0)
-  
-  const playerData = serverState?.players?.[player.address?.toLowerCase()]
-  const eliminated = playerData?.status === 'eliminated'
-  const choice = playerData?.choice
-  const lastXPDrop = playerData?.lastXPDrop || 0
-  
-  // Show XP drop animation when player gets XP
-  useEffect(() => {
-    if (lastXPDrop > 0 && lastXPDrop !== lastXP) {
-      setShowXPDrop(true)
-      setLastXP(lastXPDrop)
-    }
-  }, [lastXPDrop, lastXP])
-  
-  return (
-    <CardContainer 
-      isCurrentUser={isCurrentUser} 
-      eliminated={eliminated}
-    >
-      <SlotBadge>Slot {slotNumber + 1}</SlotBadge>
-      
-      {choice && (
-        <ChoiceIndicator choice={choice}>
-          {choice}
-        </ChoiceIndicator>
-      )}
-      
-      <CoinViewport large={large}>
-        <BattleRoyaleUnified3DScene
-          players={[player]}
-          gamePhase={gamePhase}
-          serverState={serverState}
-          playerCoinImages={{ [player.address?.toLowerCase()]: playerCoinImage }}
-          currentUserAddress={null}
-          singleCoinMode={true}
-        />
-        
-        {showXP && showXPDrop && lastXPDrop > 0 && (
-          <XPRewardDrop
-            amount={lastXPDrop}
-            rarity={
-              lastXPDrop >= 1000 ? 'ultimate' :
-              lastXPDrop >= 900 ? 'exotic' :
-              lastXPDrop >= 700 ? 'mythic' :
-              lastXPDrop >= 500 ? 'legendary' :
-              lastXPDrop >= 400 ? 'epic' :
-              lastXPDrop >= 300 ? 'rare' :
-              lastXPDrop >= 200 ? 'uncommon' : 'common'
-            }
-            onComplete={() => setShowXPDrop(false)}
-          />
-        )}
-      </CoinViewport>
-      
-      <PlayerAddress>
-        {isCurrentUser ? 'YOU' : `${player.address?.slice(0, 6)}...${player.address?.slice(-4)}`}
-      </PlayerAddress>
-      
-      {playerData && (
-        <PlayerStatsBar
-          lives={playerData.lives || 3}
-          power={playerData.power || 10}
-          hasShield={playerData.hasShield || false}
-          hasLightningRound={playerData.hasLightningRound || false}
-          totalXPEarned={playerData.totalXPEarned || 0}
-          isCompact={!large}
-        />
-      )}
-    </CardContainer>
-  )
-}
-
-export default PlayerCard
-Step 4.5: Create DynamicGrid Component
-Create client/src/components/BattleRoyale/DynamicGrid.jsx:
-jsximport React from 'react'
-import styled from '@emotion/styled'
-import PlayerCard from './PlayerCard'
-
-const GRID_CONFIGS = {
-  6: { columns: 'repeat(3, 1fr)', rows: 'repeat(2, 1fr)', gap: '1rem' },
-  5: { columns: 'repeat(3, 1fr)', rows: 'repeat(2, 1fr)', gap: '1.2rem' },
-  4: { columns: 'repeat(2, 1fr)', rows: 'repeat(2, 1fr)', gap: '1.5rem' },
-  3: { columns: 'repeat(3, 1fr)', rows: '1fr', gap: '2rem' },
-  2: { columns: 'repeat(2, 1fr)', rows: '1fr', gap: '3rem' },
-  1: { columns: '1fr', rows: '1fr', gap: '0' }
-}
-
-const GridContainer = styled.div`
-  display: grid;
-  grid-template-columns: ${props => GRID_CONFIGS[props.playerCount]?.columns || 'repeat(3, 1fr)'};
-  grid-template-rows: ${props => GRID_CONFIGS[props.playerCount]?.rows || 'repeat(2, 1fr)'};
-  gap: ${props => GRID_CONFIGS[props.playerCount]?.gap || '1rem'};
-  width: 100%;
-  height: 100%;
-  padding: 2rem;
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  @media (max-width: 1200px) {
-    grid-template-columns: repeat(2, 1fr);
-    padding: 1rem;
-  }
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    padding: 0.5rem;
-  }
-`
-
-const DynamicGrid = ({ 
-  players, 
-  currentUserAddress, 
-  gamePhase, 
-  serverState,
-  playerCoinImages 
-}) => {
-  const activePlayers = players.filter(p => 
-    p && p.address && serverState?.players?.[p.address.toLowerCase()]?.status !== 'eliminated'
-  )
-  
-  return (
-    <GridContainer playerCount={activePlayers.length}>
-      {activePlayers.map((player, index) => {
-        const isCurrentUser = player.address?.toLowerCase() === currentUserAddress?.toLowerCase()
-        const coinImage = playerCoinImages[player.address?.toLowerCase()]
-        
-        return (
-          <PlayerCard
-            key={player.address}
-            player={player}
-            slotNumber={player.slotNumber || index}
-            isCurrentUser={isCurrentUser}
-            gamePhase={gamePhase}
-            serverState={serverState}
-            playerCoinImage={coinImage}
-            large={activePlayers.length <= 2}
-            showXP={true}
-          />
-        )
-      })}
-    </GridContainer>
-  )
-}
-
-export default DynamicGrid
-I'll continue with Phase 5 in the next response. This is getting long!RetryClaude does not have the ability to run the code it generates yet.Kyes please continueEditPrepared to continue implementation guide from previous phase.The user wants me to continue with Phase 5 and beyond. Let me continue from where I left off with the implementation guide.🎮 BATTLE ROYALE COMPETITIVE UPDATE - PART 2
-
-PHASE 5: INTEGRATION & STYLING
-Step 5.1: Update GameScreen.jsx
-Replace the entire client/src/components/BattleRoyale/GameScreen.jsx with this enhanced version:
-jsximport React, { useState, useCallback, useRef, useEffect } from 'react'
-import styled from '@emotion/styled'
+import PhysicsScene from './PhysicsScene'
+import CannonController from './CannonController'
+import PlayerLifeBoxes from './PlayerLifeBoxes'
 import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
-import DynamicGrid from './DynamicGrid'
-import FloatingChatWidget from './FloatingChatWidget'
 import socketService from '../../services/SocketService'
-import './BattleRoyaleCoins.css'
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  padding: 2rem;
-  max-width: 1800px;
-  margin: 0 auto;
-  min-height: 100vh;
-`
-
-const GameLayout = styled.div`
-  display: flex;
-  gap: 2rem;
-  flex: 1;
-  
-  @media (max-width: 1200px) {
-    flex-direction: column;
-  }
-`
-
-const ArenaContainer = styled.div`
-  flex: 2;
-  min-height: 700px;
-  background: rgba(0, 0, 0, 0.8);
-  border: 2px solid #FFD700;
-  border-radius: 1rem;
+  height: 100vh;
+  width: 100vw;
+  background: #000;
   overflow: hidden;
+`
+
+const SceneContainer = styled.div`
+  flex: 1;
   position: relative;
+  width: 100%;
+`
+
+const PlayerBoxesContainer = styled.div`
+  height: 200px;
+  width: 100%;
+  background: rgba(0, 0, 20, 0.9);
+  border-top: 2px solid #00ffff;
+`
+
+const TurnIndicator = styled.div`
+  position: absolute;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  border: 3px solid ${props => props.isYourTurn ? '#00ff88' : '#ff1493'};
+  padding: 1rem 3rem;
+  border-radius: 2rem;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  z-index: 100;
+  box-shadow: 0 0 30px ${props => props.isYourTurn ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 20, 147, 0.5)'};
+`
+
+const TimerDisplay = styled.div`
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid ${props => props.urgent ? '#ff6b6b' : '#00bfff'};
+  padding: 1rem 2rem;
+  border-radius: 1rem;
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+  z-index: 100;
+  animation: ${props => props.urgent ? 'pulse 1s ease-in-out infinite' : 'none'};
   
-  @media (max-width: 1200px) {
-    min-height: 600px;
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
   }
 `
+
+const GameOverOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  
+  .trophy {
+    font-size: 6rem;
+    margin-bottom: 2rem;
+  }
+  
+  .message {
+    font-size: 3rem;
+    font-weight: bold;
+    color: ${props => props.isWinner ? '#FFD700' : '#ff6b6b'};
+    margin-bottom: 1rem;
+    text-shadow: 0 0 20px currentColor;
+  }
+  
+  .winner {
+    font-size: 1.5rem;
+    color: white;
+    font-family: monospace;
+  }
+`
+
+const PhysicsGameScreen = () => {
+  const { gameState, address, makeChoice } = useBattleRoyaleGame()
+  const [localChoice, setLocalChoice] = useState(null)
+  const [coinPositions, setCoinPositions] = useState([])
+  const [cameraTarget, setCameraTarget] = useState(null)
+  
+  if (!gameState) return null
+  
+  const phase = gameState.phase
+  const isMyTurn = gameState.currentTurnPlayer?.toLowerCase() === address?.toLowerCase()
+  const currentPlayer = gameState.players?.[address?.toLowerCase()]
+  const turnTimer = gameState.turnTimer || 0
+  const urgent = turnTimer <= 10
+  
+  // Listen for coin position updates
+  useEffect(() => {
+    const handleCoinPosition = (data) => {
+      setCoinPositions(prev => [...prev, {
+        position: data.position,
+        rotation: data.rotation,
+        timestamp: Date.now()
+      }])
+      
+      // Update camera target to follow coin
+      setCameraTarget(data.position)
+    }
+    
+    const handleCoinLanded = (data) => {
+      console.log('🎯 Coin landed:', data)
+      setCameraTarget(null)
+      
+      // Clear coin trail
+      setTimeout(() => {
+        setCoinPositions([])
+      }, 3000)
+    }
+    
+    socketService.on('physics_coin_position', handleCoinPosition)
+    socketService.on('physics_coin_landed', handleCoinLanded)
+    
+    return () => {
+      socketService.off('physics_coin_position', handleCoinPosition)
+      socketService.off('physics_coin_landed', handleCoinLanded)
+    }
+  }, [])
+  
+  const handleChoiceSelect = useCallback((choice) => {
+    if (!isMyTurn) return
+    setLocalChoice(choice)
+    makeChoice(choice)
+  }, [isMyTurn, makeChoice])
+  
+  const handleFireCoin = useCallback((angle, power) => {
+    if (!isMyTurn || !currentPlayer?.choice) return
+    
+    socketService.emit('physics_fire_coin', {
+      gameId: gameState.gameId,
+      address,
+      angle,
+      power
+    })
+  }, [isMyTurn, currentPlayer, gameState.gameId, address])
+  
+  // PHASE: GAME OVER
+  if (phase === 'game_over') {
+    const isWinner = gameState.winner?.toLowerCase() === address?.toLowerCase()
+    return (
+      <Container>
+        <GameOverOverlay isWinner={isWinner}>
+          <div className="trophy">{isWinner ? '🏆' : '💀'}</div>
+          <div className="message">
+            {isWinner ? 'VICTORY!' : 'GAME OVER'}
+          </div>
+          <div className="winner">
+            Winner: {gameState.winner ? `${gameState.winner.slice(0, 10)}...${gameState.winner.slice(-8)}` : 'None'}
+          </div>
+        </GameOverOverlay>
+      </Container>
+    )
+  }
+  
+  return (
+    <Container>
+      {/* TURN INDICATOR */}
+      {phase === 'player_turn' && (
+        <TurnIndicator isYourTurn={isMyTurn}>
+          {isMyTurn ? '🎯 YOUR TURN!' : `⏳ ${gameState.currentTurnPlayer?.slice(0, 8)}'s Turn`}
+        </TurnIndicator>
+      )}
+      
+      {/* TIMER */}
+      {phase === 'player_turn' && (
+        <TimerDisplay urgent={urgent}>
+          {turnTimer}s
+        </TimerDisplay>
+      )}
+      
+      {/* 3D SCENE */}
+      <SceneContainer>
+        <PhysicsScene
+          obstacles={gameState.obstacles || []}
+          players={gameState.players || {}}
+          coinPositions={coinPositions}
+          cameraTarget={cameraTarget}
+          currentPlayerAddress={address}
+          isMyTurn={isMyTurn}
+        />
+        
+        {/* CANNON CONTROLLER - Only show on your turn */}
+        {isMyTurn && phase === 'player_turn' && (
+          <CannonController
+            onChoiceSelect={handleChoiceSelect}
+            onFire={handleFireCoin}
+            selectedChoice={localChoice || currentPlayer?.choice}
+            disabled={!currentPlayer?.choice}
+          />
+        )}
+      </SceneContainer>
+      
+      {/* PLAYER LIFE BOXES AT BOTTOM */}
+      <PlayerBoxesContainer>
+        <PlayerLifeBoxes
+          players={gameState.players || {}}
+          playerOrder={gameState.playerOrder || []}
+          currentPlayerAddress={address}
+          currentTurnPlayer={gameState.currentTurnPlayer}
+        />
+      </PlayerBoxesContainer>
+    </Container>
+  )
+}
+
+export default PhysicsGameScreen
+
+📁 NEW FILE: client/PhysicsScene.jsxPhysicsScene.jsx
+import React, { useEffect, useRef } from 'react'
+import * as THREE from 'three'
+
+const PhysicsScene = ({ 
+  obstacles = [], 
+  players = {}, 
+  coinPositions = [],
+  cameraTarget = null,
+  currentPlayerAddress = null,
+  isMyTurn = false
+}) => {
+  const mountRef = useRef(null)
+  const sceneRef = useRef(null)
+  const cameraRef = useRef(null)
+  const rendererRef = useRef(null)
+  const obstaclesRef = useRef([])
+  const coinRef = useRef(null)
+  const animationIdRef = useRef(null)
+  const cameraBasePositionRef = useRef({ x: 0, y: 5, z: 30 })
+  
+  // Initialize scene
+  useEffect(() => {
+    if (!mountRef.current) return
+    
+    console.log('🎬 Initializing Physics Scene')
+    
+    // Scene setup
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color(0x000011) // Dark blue space
+    
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(
+      60,
+      mountRef.current.clientWidth / mountRef.current.clientHeight,
+      0.1,
+      1000
+    )
+    camera.position.set(0, 5, 30)
+    camera.lookAt(0, 20, 0)
+    
+    // Renderer setup
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
+    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    
+    mountRef.current.appendChild(renderer.domElement)
+    
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404080, 1.5)
+    scene.add(ambientLight)
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5)
+    directionalLight.position.set(10, 50, 10)
+    directionalLight.castShadow = true
+    directionalLight.shadow.camera.left = -50
+    directionalLight.shadow.camera.right = 50
+    directionalLight.shadow.camera.top = 50
+    directionalLight.shadow.camera.bottom = -50
+    scene.add(directionalLight)
+    
+    // Point lights for atmosphere
+    const pointLight1 = new THREE.PointLight(0x00ffff, 2, 100)
+    pointLight1.position.set(-20, 30, 10)
+    scene.add(pointLight1)
+    
+    const pointLight2 = new THREE.PointLight(0xff00ff, 2, 100)
+    pointLight2.position.set(20, 30, -10)
+    scene.add(pointLight2)
+    
+    // Create starfield
+    const starGeometry = new THREE.BufferGeometry()
+    const starMaterial = new THREE.PointsMaterial({ 
+      color: 0xffffff, 
+      size: 0.5, 
+      sizeAttenuation: true 
+    })
+    
+    const starVertices = []
+    for (let i = 0; i < 1000; i++) {
+      const x = (Math.random() - 0.5) * 200
+      const y = (Math.random() - 0.5) * 200
+      const z = (Math.random() - 0.5) * 200
+      starVertices.push(x, y, z)
+    }
+    
+    starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3))
+    const stars = new THREE.Points(starGeometry, starMaterial)
+    scene.add(stars)
+    
+    // Create obstacles (planets, asteroids)
+    obstacles.forEach((obstacle, index) => {
+      let geometry, material
+      
+      if (obstacle.type === 'sphere') {
+        geometry = new THREE.SphereGeometry(obstacle.radius, 32, 32)
+        
+        // Varied planet colors
+        const colors = [0xff6b6b, 0x6b9eff, 0x9eff6b, 0xff6bff, 0xffff6b, 0x6bffff]
+        const color = colors[index % colors.length]
+        
+        material = new THREE.MeshStandardMaterial({ 
+          color, 
+          metalness: 0.3, 
+          roughness: 0.7,
+          emissive: color,
+          emissiveIntensity: 0.2
+        })
+      }
+      
+      const mesh = new THREE.Mesh(geometry, material)
+      mesh.position.set(obstacle.position.x, obstacle.position.y, obstacle.position.z)
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      
+      scene.add(mesh)
+      obstaclesRef.current.push(mesh)
+    })
+    
+    // Store references
+    sceneRef.current = scene
+    cameraRef.current = camera
+    rendererRef.current = renderer
+    
+    // Animation loop
+    const animate = () => {
+      if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
+      
+      // Slowly rotate starfield
+      if (stars) {
+        stars.rotation.y += 0.0002
+      }
+      
+      // Smoothly move camera to target
+      if (cameraTarget && isMyTurn) {
+        // Follow coin up
+        const targetPos = new THREE.Vector3(
+          cameraTarget.x,
+          cameraTarget.y - 5,
+          cameraTarget.z + 15
+        )
+        
+        camera.position.lerp(targetPos, 0.05)
+        camera.lookAt(cameraTarget.x, cameraTarget.y, cameraTarget.z)
+      } else {
+        // Return to base position
+        const basePos = new THREE.Vector3(
+          cameraBasePositionRef.current.x,
+          cameraBasePositionRef.current.y,
+          cameraBasePositionRef.current.z
+        )
+        
+        camera.position.lerp(basePos, 0.02)
+        camera.lookAt(0, 20, 0)
+      }
+      
+      renderer.render(scene, camera)
+      animationIdRef.current = requestAnimationFrame(animate)
+    }
+    
+    animate()
+    
+    // Resize handler
+    const handleResize = () => {
+      if (!mountRef.current || !camera || !renderer) return
+      camera.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight
+      camera.updateProjectionMatrix()
+      renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
+    }
+    
+    window.addEventListener('resize', handleResize)
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current)
+      }
+      
+      obstaclesRef.current.forEach(obstacle => {
+        if (obstacle.geometry) obstacle.geometry.dispose()
+        if (obstacle.material) obstacle.material.dispose()
+      })
+      
+      if (renderer) {
+        renderer.dispose()
+        if (mountRef.current) {
+          mountRef.current.removeChild(renderer.domElement)
+        }
+      }
+      
+      sceneRef.current = null
+      cameraRef.current = null
+      rendererRef.current = null
+    }
+  }, [obstacles])
+  
+  // Update coin position from server
+  useEffect(() => {
+    if (!sceneRef.current || coinPositions.length === 0) return
+    
+    const latestPosition = coinPositions[coinPositions.length - 1]
+    
+    // Create or update coin mesh
+    if (!coinRef.current) {
+      const coinGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.2, 32)
+      const coinMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xffd700, 
+        metalness: 0.8, 
+        roughness: 0.2,
+        emissive: 0xffd700,
+        emissiveIntensity: 0.3
+      })
+      
+      const coin = new THREE.Mesh(coinGeometry, coinMaterial)
+      coin.castShadow = true
+      sceneRef.current.add(coin)
+      coinRef.current = coin
+    }
+    
+    // Update position and rotation
+    coinRef.current.position.set(
+      latestPosition.position.x,
+      latestPosition.position.y,
+      latestPosition.position.z
+    )
+    
+    coinRef.current.quaternion.set(
+      latestPosition.rotation.x,
+      latestPosition.rotation.y,
+      latestPosition.rotation.z,
+      latestPosition.rotation.w
+    )
+    
+  }, [coinPositions])
+  
+  // Clean up coin when positions are cleared
+  useEffect(() => {
+    if (coinPositions.length === 0 && coinRef.current && sceneRef.current) {
+      sceneRef.current.remove(coinRef.current)
+      coinRef.current.geometry.dispose()
+      coinRef.current.material.dispose()
+      coinRef.current = null
+    }
+  }, [coinPositions.length])
+  
+  return (
+    <div
+      ref={mountRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'absolute',
+        top: 0,
+        left: 0
+      }}
+    />
+  )
+}
+
+export default PhysicsScene
+
+📁 NEW FILE: client/CannonController.jsxCannonController.jsx
+import React, { useState, useRef, useEffect } from 'react'
+import styled from '@emotion/styled'
 
 const ControlPanel = styled.div`
-  flex: 1;
+  position: absolute;
+  bottom: 220px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 20, 0.95);
+  border: 3px solid #00ffff;
+  border-radius: 2rem;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  background: rgba(0, 0, 0, 0.8);
-  border: 2px solid #00bfff;
-  border-radius: 1rem;
-  padding: 2rem;
-  backdrop-filter: blur(15px);
-  max-width: 500px;
-  
-  @media (max-width: 1200px) {
-    max-width: 100%;
-  }
-`
-
-const StatusHeader = styled.div`
-  text-align: center;
-  
-  .phase {
-    color: #00bfff;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 0.5rem;
-  }
-  
-  .timer {
-    color: ${props => props.urgent ? '#ff6b6b' : '#00ff88'};
-    font-size: 2.5rem;
-    font-weight: bold;
-    text-shadow: 0 0 20px currentColor;
-    animation: ${props => props.urgent ? 'pulse 1s ease-in-out infinite' : 'none'};
-  }
-  
-  .round-info {
-    color: #aaa;
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
-  }
-  
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.05); }
-  }
-`
-
-const LightningBanner = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.95), rgba(255, 140, 0, 0.95));
-  border: 3px solid #FFD700;
-  border-radius: 1rem;
-  padding: 2rem 4rem;
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #000;
-  text-align: center;
-  z-index: 100;
-  animation: lightningFlash 0.5s ease-in-out infinite;
-  box-shadow: 
-    0 0 40px rgba(255, 215, 0, 0.8),
-    0 0 80px rgba(255, 215, 0, 0.6);
-  
-  @keyframes lightningFlash {
-    0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
-  }
+  min-width: 400px;
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  z-index: 50;
 `
 
 const ChoiceButtons = styled.div`
@@ -1510,19 +1084,16 @@ const ChoiceButtons = styled.div`
   justify-content: center;
   
   button {
-    padding: 1.2rem 2.5rem;
+    flex: 1;
+    padding: 1rem 2rem;
     border: none;
     border-radius: 1rem;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    flex: 1;
-    font-family: 'Hyperwave', 'Poppins', sans-serif;
-    letter-spacing: 2px;
     position: relative;
     overflow: hidden;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     
     &::before {
       content: '';
@@ -1540,52 +1111,103 @@ const ChoiceButtons = styled.div`
     }
     
     &.heads {
-      background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
       color: #000;
-      border: 3px solid #00ff88;
-      box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
-      
-      &:hover:not(:disabled) {
-        transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 8px 25px rgba(0, 255, 136, 0.6);
-      }
+      border: 3px solid #FFD700;
     }
     
     &.tails {
-      background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
-      color: #fff;
-      border: 3px solid #ff1493;
-      box-shadow: 0 0 20px rgba(255, 20, 147, 0.4);
-      
-      &:hover:not(:disabled) {
-        transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 8px 25px rgba(255, 20, 147, 0.6);
-      }
+      background: linear-gradient(135deg, #C0C0C0 0%, #A0A0A0 100%);
+      color: #000;
+      border: 3px solid #C0C0C0;
     }
     
     &.selected {
-      border: 4px solid #FFD700;
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.3);
+      border-width: 4px;
+      box-shadow: 0 0 30px currentColor, inset 0 0 20px rgba(255, 255, 255, 0.3);
       animation: selectedPulse 1.5s ease-in-out infinite;
     }
     
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      transform: none;
     }
   }
   
   @keyframes selectedPulse {
-    0%, 100% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.3); }
-    50% { box-shadow: 0 0 40px rgba(255, 215, 0, 1), inset 0 0 30px rgba(255, 215, 0, 0.5); }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
   }
 `
 
-const FlipButton = styled.button`
-  background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-  color: #000;
-  border: 3px solid #00ff88;
+const AngleControl = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  
+  label {
+    color: #00ffff;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  input {
+    width: 100%;
+    cursor: pointer;
+  }
+  
+  .angle-display {
+    text-align: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+`
+
+const PowerMeter = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  
+  label {
+    color: #00ffff;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .power-bar {
+    width: 100%;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 2px solid #00ffff;
+    position: relative;
+  }
+  
+  .power-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00ff88 0%, #00ffff 50%, #ffff00 100%);
+    transition: width 0.1s linear;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+  }
+  
+  .power-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  }
+`
+
+const FireButton = styled.button`
+  background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
+  color: white;
+  border: 3px solid #ff1493;
   padding: 1.5rem 3rem;
   border-radius: 2rem;
   font-size: 1.5rem;
@@ -1593,11 +1215,8 @@ const FlipButton = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   text-transform: uppercase;
-  font-family: 'Hyperwave', 'Poppins', sans-serif;
-  letter-spacing: 3px;
   position: relative;
   overflow: hidden;
-  user-select: none;
   
   &::before {
     content: '';
@@ -1615,13 +1234,12 @@ const FlipButton = styled.button`
   }
   
   &:hover:not(:disabled) {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(255, 20, 147, 0.5);
   }
   
   &.charging {
     animation: chargeGlow 0.3s ease-in-out infinite;
-    box-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
   }
   
   &:disabled {
@@ -1631,207 +1249,34 @@ const FlipButton = styled.button`
   }
   
   @keyframes chargeGlow {
-    0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.6); }
-    50% { box-shadow: 0 0 40px rgba(0, 255, 136, 1); }
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 20, 147, 0.6); }
+    50% { box-shadow: 0 0 40px rgba(255, 20, 147, 1); }
   }
 `
 
-const PowerBarContainer = styled.div`
-  margin-top: 1rem;
-  background: rgba(0, 0, 0, 0.6);
-  border: 2px solid #00bfff;
-  border-radius: 1rem;
-  padding: 0.8rem;
-  text-align: center;
-`
-
-const PowerLabel = styled.div`
-  color: #00bfff;
-  font-size: 0.9rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  font-family: 'Hyperwave', 'Poppins', sans-serif;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-`
-
-const PowerBarTrack = styled.div`
-  width: 100%;
-  height: 30px;
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 15px;
-  overflow: hidden;
-  border: 2px solid #00bfff;
-  position: relative;
-`
-
-const PowerBarFill = styled.div`
-  height: 100%;
-  background: linear-gradient(90deg, #00ff88 0%, #00ffff 50%, #ffff00 100%);
-  border-radius: 15px;
-  transition: width 0.1s linear;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    animation: shimmer 1s infinite;
-  }
-  
-  @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
-`
-
-const PowerValue = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-weight: bold;
-  font-size: 0.9rem;
-  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
-  z-index: 1;
-  font-family: 'Hyperwave', 'Poppins', sans-serif;
-`
-
-const AbilityButton = styled.button`
-  padding: 1rem 2rem;
-  background: ${props => props.available 
-    ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' 
-    : 'rgba(100, 100, 100, 0.3)'
-  };
-  border: 2px solid ${props => props.available ? '#FFD700' : '#666'};
-  border-radius: 1rem;
-  color: ${props => props.available ? '#000' : '#999'};
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: ${props => props.available ? 'pointer' : 'not-allowed'};
-  transition: all 0.3s ease;
-  font-family: 'Hyperwave', 'Poppins', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  
-  ${props => props.available && `
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
-    }
-    
-    animation: abilityPulse 2s ease-in-out infinite;
-    
-    @keyframes abilityPulse {
-      0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-      50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.8); }
-    }
-  `}
-`
-
-const InfoBox = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  text-align: center;
-  color: ${props => props.color || 'white'};
-  font-weight: bold;
-`
-
-const WinnerDisplay = styled.div`
-  text-align: center;
-  padding: 2rem;
-  
-  .trophy {
-    font-size: 5rem;
-    animation: bounce 1s ease-in-out infinite;
-  }
-  
-  .message {
-    color: #FFD700;
-    font-size: 2rem;
-    font-weight: bold;
-    margin: 1rem 0;
-    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-  }
-  
-  .winner {
-    color: white;
-    font-size: 1.2rem;
-    font-family: monospace;
-  }
-  
-  @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-  }
-`
-
-const GameScreen = () => {
-  const { gameState, playerCoinImages, address } = useBattleRoyaleGame()
-  const [localChoice, setLocalChoice] = useState(null)
-  const [power, setPower] = useState(1)
+const CannonController = ({ 
+  onChoiceSelect, 
+  onFire, 
+  selectedChoice = null, 
+  disabled = false 
+}) => {
+  const [angle, setAngle] = useState(0) // -45 to 45 degrees
+  const [power, setPower] = useState(5) // 1 to 10
   const [isCharging, setIsCharging] = useState(false)
-  const [showLightningBanner, setShowLightningBanner] = useState(false)
   const chargeIntervalRef = useRef(null)
-
-  if (!gameState) return null
-
-  const player = gameState.players?.[address?.toLowerCase()]
-  const isInGame = !!player
-  const isEliminated = player?.status === 'eliminated'
-  const phase = gameState.phase
-  const countdown = gameState.roundCountdown || 0
-  const currentRound = gameState.currentRound || 1
-
-  // Build players array for grid
-  const scenePlayersArray = (gameState.playerSlots || []).map((addr, idx) => {
-    if (!addr) return null
-    return {
-      address: addr,
-      slotNumber: idx,
-      ...gameState.players?.[addr.toLowerCase()]
-    }
-  }).filter(Boolean)
-
-  // Listen for Lightning Round activation
-  useEffect(() => {
-    const handleLightningActivated = (data) => {
-      console.log('⚡ Lightning Round activated!', data)
-      setShowLightningBanner(true)
-      setTimeout(() => setShowLightningBanner(false), 3000)
-    }
-
-    socketService.on('battle_royale_lightning_activated', handleLightningActivated)
-
-    return () => {
-      socketService.off('battle_royale_lightning_activated', handleLightningActivated)
-    }
-  }, [])
-
-  const handleChoiceClick = useCallback((choice) => {
-    if (!isInGame || isEliminated || phase !== 'round_active') return
-    
-    socketService.emit('battle_royale_player_choice', {
-      gameId: gameState.gameId,
-      address,
-      choice
-    })
-    
-    setLocalChoice(choice)
-  }, [isInGame, isEliminated, phase, gameState.gameId, address])
-
-  // Start charging power
-  const handleFlipMouseDown = useCallback(() => {
-    if (!isInGame || isEliminated || phase !== 'round_active') return
-    if (!player.choice || player.hasFlipped) return
+  
+  const handleChoiceClick = (choice) => {
+    if (disabled) return
+    onChoiceSelect(choice)
+  }
+  
+  const handleAngleChange = (e) => {
+    setAngle(parseInt(e.target.value))
+  }
+  
+  // Auto-charge power on mouse down
+  const handleFireMouseDown = () => {
+    if (disabled || !selectedChoice) return
     
     setIsCharging(true)
     setPower(1)
@@ -1842,13 +1287,11 @@ const GameScreen = () => {
         return newPower > 10 ? 10 : newPower
       })
     }, 100)
-  }, [isInGame, isEliminated, phase, player])
-
-  // Release and flip
-  const handleFlipMouseUp = useCallback(() => {
-    if (!isInGame || isEliminated || phase !== 'round_active') return
-    if (!player.choice || player.hasFlipped) return
-    if (!isCharging) return
+  }
+  
+  // Fire on mouse up
+  const handleFireMouseUp = () => {
+    if (disabled || !selectedChoice || !isCharging) return
     
     if (chargeIntervalRef.current) {
       clearInterval(chargeIntervalRef.current)
@@ -1857,526 +1300,631 @@ const GameScreen = () => {
     
     setIsCharging(false)
     
-    socketService.emit('battle_royale_flip_coin', {
-      gameId: gameState.gameId,
-      address,
-      power: Math.floor(power)
-    })
+    // Fire with current angle and power
+    onFire(angle, Math.floor(power))
     
-    setTimeout(() => setPower(1), 500)
-  }, [isInGame, isEliminated, phase, player, gameState.gameId, address, power, isCharging])
-
-  const handleFlipMouseLeave = useCallback(() => {
+    // Reset
+    setTimeout(() => setPower(5), 500)
+  }
+  
+  // Cancel charge on mouse leave
+  const handleFireMouseLeave = () => {
     if (chargeIntervalRef.current) {
       clearInterval(chargeIntervalRef.current)
       chargeIntervalRef.current = null
     }
     setIsCharging(false)
-    setPower(1)
+    setPower(5)
+  }
+  
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (chargeIntervalRef.current) {
+        clearInterval(chargeIntervalRef.current)
+      }
+    }
   }, [])
-
-  // Deploy Shield
-  const handleDeployShield = useCallback(() => {
-    if (!isInGame || isEliminated || !player.hasShield) return
-    
-    const confirm = window.confirm('Deploy your shield? This will protect you from elimination this round.')
-    if (confirm) {
-      socketService.emit('battle_royale_deploy_shield', {
-        gameId: gameState.gameId,
-        address
-      })
-    }
-  }, [isInGame, isEliminated, player, gameState.gameId, address])
-
-  // Activate Lightning Round
-  const handleActivateLightning = useCallback(() => {
-    if (!isInGame || isEliminated || !player.hasLightningRound) return
-    
-    const confirm = window.confirm('Activate Lightning Round? All players will have only 5 seconds to choose!')
-    if (confirm) {
-      socketService.emit('battle_royale_activate_lightning', {
-        gameId: gameState.gameId,
-        address
-      })
-    }
-  }, [isInGame, isEliminated, player, gameState.gameId, address])
-
-  // PHASE: STARTING
-  if (phase === 'starting') {
-    return (
-      <Container>
-        <div style={{
-          textAlign: 'center',
-          padding: '4rem',
-          background: 'rgba(0, 0, 0, 0.8)',
-          borderRadius: '1rem',
-          border: '2px solid #FFD700'
-        }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚀</div>
-          <h2 style={{ color: '#FFD700', fontSize: '2rem', margin: '1rem 0' }}>
-            Game Starting...
-          </h2>
-          <p style={{ color: 'white', fontSize: '1.2rem' }}>
-            {gameState.currentPlayers} / 6 Players Ready
-          </p>
-          <p style={{ color: '#aaa', marginTop: '1rem' }}>
-            Get ready for Battle Royale!
-          </p>
-        </div>
-      </Container>
-    )
-  }
-
-  // PHASE: COMPLETED
-  if (phase === 'completed') {
-    const isWinner = gameState.winner?.toLowerCase() === address?.toLowerCase()
-    return (
-      <Container>
-        <WinnerDisplay>
-          <div className="trophy">🏆</div>
-          <div className="message">
-            {isWinner ? 'YOU WON!' : 'GAME OVER'}
-          </div>
-          <div className="winner">
-            Winner: {gameState.winner ? `${gameState.winner.slice(0, 10)}...${gameState.winner.slice(-8)}` : 'None'}
-          </div>
-          <div style={{ color: '#aaa', marginTop: '1rem' }}>
-            Total Rounds: {gameState.currentRound}
-          </div>
-        </WinnerDisplay>
-      </Container>
-    )
-  }
-
-  // PHASE: ROUND_ACTIVE or ROUND_RESULT
+  
   return (
-    <Container>
-      <GameLayout>
-        {/* ARENA WITH DYNAMIC GRID */}
-        <ArenaContainer>
-          {showLightningBanner && (
-            <LightningBanner>
-              ⚡ LIGHTNING ROUND ⚡
-            </LightningBanner>
-          )}
-          
-          <DynamicGrid
-            players={scenePlayersArray}
-            currentUserAddress={address}
-            gamePhase={phase}
-            serverState={gameState}
-            playerCoinImages={playerCoinImages}
-          />
-        </ArenaContainer>
-
-        {/* CONTROL PANEL */}
-        <ControlPanel>
-          <StatusHeader urgent={countdown <= 5}>
-            <div className="phase">
-              {phase === 'round_active' ? '⚔️ BATTLE ACTIVE' : '📊 ROUND ENDING'}
-            </div>
-            <div className="timer">
-              {countdown}s
-            </div>
-            <div className="round-info">
-              Round {currentRound} • {gameState.activePlayers?.length || 0} Players Alive
-            </div>
-          </StatusHeader>
-
-          {isInGame && !isEliminated ? (
-            <>
-              {/* CHOICE BUTTONS */}
-              {phase === 'round_active' && (
-                <ChoiceButtons>
-                  <button
-                    className={`heads ${(localChoice === 'heads' || player.choice === 'heads') ? 'selected' : ''}`}
-                    onClick={() => handleChoiceClick('heads')}
-                    disabled={player.hasFlipped}
-                  >
-                    HEADS
-                  </button>
-                  <button
-                    className={`tails ${(localChoice === 'tails' || player.choice === 'tails') ? 'selected' : ''}`}
-                    onClick={() => handleChoiceClick('tails')}
-                    disabled={player.hasFlipped}
-                  >
-                    TAILS
-                  </button>
-                </ChoiceButtons>
-              )}
-
-              {/* FLIP BUTTON */}
-              {phase === 'round_active' && (
-                <>
-                  <FlipButton
-                    className={isCharging ? 'charging' : ''}
-                    onMouseDown={handleFlipMouseDown}
-                    onMouseUp={handleFlipMouseUp}
-                    onMouseLeave={handleFlipMouseLeave}
-                    onTouchStart={handleFlipMouseDown}
-                    onTouchEnd={handleFlipMouseUp}
-                    disabled={!player.choice || player.hasFlipped}
-                  >
-                    {player.hasFlipped ? '✅ FLIPPED' : isCharging ? '⚡ CHARGING...' : '🪙 HOLD TO FLIP'}
-                  </FlipButton>
-                  
-                  {/* POWER BAR */}
-                  {!player.hasFlipped && (
-                    <PowerBarContainer>
-                      <PowerLabel>Flip Power</PowerLabel>
-                      <PowerBarTrack>
-                        <PowerBarFill style={{ width: `${(power / 10) * 100}%` }} />
-                        <PowerValue>{Math.floor(power)}/10</PowerValue>
-                      </PowerBarTrack>
-                    </PowerBarContainer>
-                  )}
-                </>
-              )}
-
-              {/* ABILITIES */}
-              {phase === 'round_active' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <AbilityButton
-                    available={player.hasShield}
-                    onClick={handleDeployShield}
-                    disabled={!player.hasShield}
-                  >
-                    🛡️ {player.hasShield ? 'DEPLOY SHIELD' : 'SHIELD USED'}
-                  </AbilityButton>
-                  
-                  <AbilityButton
-                    available={player.hasLightningRound}
-                    onClick={handleActivateLightning}
-                    disabled={!player.hasLightningRound}
-                  >
-                    ⚡ {player.hasLightningRound ? 'LIGHTNING ROUND' : 'LOCKED'}
-                  </AbilityButton>
-                </div>
-              )}
-
-              {/* STATUS INFO */}
-              {player.choice && (
-                <InfoBox color="#FFD700">
-                  Your Choice: {player.choice.toUpperCase()}
-                </InfoBox>
-              )}
-
-              {player.hasFlipped && (
-                <InfoBox color="#00ff88">
-                  ✅ Coin Flipped - Waiting for others...
-                </InfoBox>
-              )}
-            </>
-          ) : isEliminated ? (
-            <InfoBox color="#ff6b6b">
-              💀 You were eliminated in Round {player.eliminatedInRound}
-            </InfoBox>
-          ) : (
-            <InfoBox color="#aaa">
-              👁️ Spectating
-            </InfoBox>
-          )}
-        </ControlPanel>
-      </GameLayout>
+    <ControlPanel>
+      {/* Choice Selection */}
+      <ChoiceButtons>
+        <button
+          className={`heads ${selectedChoice === 'heads' ? 'selected' : ''}`}
+          onClick={() => handleChoiceClick('heads')}
+          disabled={disabled}
+        >
+          HEADS
+        </button>
+        <button
+          className={`tails ${selectedChoice === 'tails' ? 'selected' : ''}`}
+          onClick={() => handleChoiceClick('tails')}
+          disabled={disabled}
+        >
+          TAILS
+        </button>
+      </ChoiceButtons>
       
-      {/* Floating Chat Widget */}
-      <FloatingChatWidget />
-    </Container>
+      {/* Angle Control */}
+      <AngleControl>
+        <label>🎯 Aim Angle</label>
+        <input
+          type="range"
+          min="-45"
+          max="45"
+          value={angle}
+          onChange={handleAngleChange}
+          disabled={disabled || !selectedChoice}
+        />
+        <div className="angle-display">{angle > 0 ? 'â†—' : angle < 0 ? 'â†–' : 'â†''} {Math.abs(angle)}°</div>
+      </AngleControl>
+      
+      {/* Power Meter */}
+      <PowerMeter>
+        <label>⚡ Fire Power</label>
+        <div className="power-bar">
+          <div className="power-fill" style={{ width: `${(power / 10) * 100}%` }} />
+          <div className="power-value">{Math.floor(power)}/10</div>
+        </div>
+      </PowerMeter>
+      
+      {/* Fire Button */}
+      <FireButton
+        className={isCharging ? 'charging' : ''}
+        onMouseDown={handleFireMouseDown}
+        onMouseUp={handleFireMouseUp}
+        onMouseLeave={handleFireMouseLeave}
+        onTouchStart={handleFireMouseDown}
+        onTouchEnd={handleFireMouseUp}
+        disabled={disabled || !selectedChoice}
+      >
+        {isCharging ? '⚡ CHARGING...' : '🚀 HOLD TO FIRE'}
+      </FireButton>
+    </ControlPanel>
   )
 }
 
-export default GameScreen
-Step 5.2: Update BattleRoyaleUnified3DScene.jsx
-Add a singleCoinMode prop to render just one coin for the card system:
-jsx// ADD THIS PROP at the top of the component function
-const BattleRoyaleUnified3DScene = ({
-  players = [],
-  gamePhase = 'filling',
-  serverState = null,
-  playerCoinImages = {},
-  currentUserAddress = null,
-  singleCoinMode = false  // NEW PROP
+export default CannonController
+
+📁 NEW FILE: client/PlayerLifeBoxes.jsxPlayerLifeBoxes.jsx
+import React from 'react'
+import styled from '@emotion/styled'
+import ProfilePicture from '../ProfilePicture'
+
+const BoxesContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(${props => props.playerCount}, 1fr);
+  gap: 0.5rem;
+  height: 100%;
+  padding: 0.5rem;
+  background: rgba(0, 0, 20, 0.9);
+`
+
+const PlayerBox = styled.div`
+  background: linear-gradient(135deg, 
+    ${props => props.isCurrentPlayer ? 'rgba(0, 255, 136, 0.2)' : 'rgba(0, 191, 255, 0.2)'}, 
+    rgba(0, 0, 0, 0.8)
+  );
+  border: 3px solid ${props => {
+    if (props.isCurrentTurn) return '#FFD700'
+    if (props.isCurrentPlayer) return '#00ff88'
+    return '#00bfff'
+  }};
+  border-radius: 1rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  opacity: ${props => props.isEliminated ? 0.3 : 1};
+  filter: ${props => props.isEliminated ? 'grayscale(100%)' : 'none'};
+  transition: all 0.3s ease;
+  box-shadow: ${props => props.isCurrentTurn ? '0 0 30px rgba(255, 215, 0, 0.5)' : 'none'};
+  animation: ${props => props.isCurrentTurn ? 'turnGlow 2s ease-in-out infinite' : 'none'};
+  
+  @keyframes turnGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+    50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+  }
+`
+
+const PlayerHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`
+
+const PlayerInfo = styled.div`
+  flex: 1;
+  
+  .address {
+    color: white;
+    font-size: 0.8rem;
+    font-family: monospace;
+    font-weight: bold;
+  }
+  
+  .label {
+    color: ${props => props.isCurrentPlayer ? '#00ff88' : '#aaa'};
+    font-size: 0.7rem;
+  }
+`
+
+const LivesDisplay = styled.div`
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+  
+  .heart {
+    font-size: 1.5rem;
+    filter: ${props => props.filled ? 'none' : 'grayscale(100%)'};
+    opacity: ${props => props.filled ? 1 : 0.3};
+    animation: ${props => props.critical ? 'heartbeat 1s ease-in-out infinite' : 'none'};
+  }
+  
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+`
+
+const ChoiceDisplay = styled.div`
+  text-align: center;
+  padding: 0.5rem;
+  background: ${props => {
+    if (props.choice === 'heads') return 'rgba(255, 215, 0, 0.2)'
+    if (props.choice === 'tails') return 'rgba(192, 192, 192, 0.2)'
+    return 'rgba(100, 100, 100, 0.2)'
+  }};
+  border: 2px solid ${props => {
+    if (props.choice === 'heads') return '#FFD700'
+    if (props.choice === 'tails') return '#C0C0C0'
+    return '#666'
+  }};
+  border-radius: 0.5rem;
+  color: ${props => {
+    if (props.choice === 'heads') return '#FFD700'
+    if (props.choice === 'tails') return '#C0C0C0'
+    return '#999'
+  }};
+  font-weight: bold;
+  font-size: 0.9rem;
+`
+
+const ResultDisplay = styled.div`
+  text-align: center;
+  padding: 0.5rem;
+  background: ${props => props.won ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 51, 51, 0.3)'};
+  border: 2px solid ${props => props.won ? '#00ff88' : '#ff3333'};
+  border-radius: 0.5rem;
+  color: ${props => props.won ? '#00ff88' : '#ff3333'};
+  font-weight: bold;
+  font-size: 1.1rem;
+  animation: resultPulse 0.5s ease-out;
+  
+  @keyframes resultPulse {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+`
+
+const EliminatedBadge = styled.div`
+  text-align: center;
+  padding: 0.5rem;
+  background: rgba(255, 0, 0, 0.3);
+  border: 2px solid #ff0000;
+  border-radius: 0.5rem;
+  color: #ff6b6b;
+  font-weight: bold;
+  font-size: 0.9rem;
+`
+
+const PlayerLifeBoxes = ({ 
+  players = {}, 
+  playerOrder = [], 
+  currentPlayerAddress = null,
+  currentTurnPlayer = null
 }) => {
-  // ... existing code ...
+  return (
+    <BoxesContainer playerCount={Math.min(playerOrder.length, 6)}>
+      {playerOrder.map(playerAddr => {
+        const player = players[playerAddr]
+        if (!player) return null
+        
+        const isCurrentPlayer = playerAddr.toLowerCase() === currentPlayerAddress?.toLowerCase()
+        const isCurrentTurn = playerAddr.toLowerCase() === currentTurnPlayer?.toLowerCase()
+        const isEliminated = !player.isActive
+        const isCritical = player.lives === 1
+        
+        return (
+          <PlayerBox
+            key={playerAddr}
+            isCurrentPlayer={isCurrentPlayer}
+            isCurrentTurn={isCurrentTurn}
+            isEliminated={isEliminated}
+          >
+            {/* Player Header */}
+            <PlayerHeader>
+              <ProfilePicture 
+                address={playerAddr}
+                size={40}
+                style={{
+                  borderRadius: '50%',
+                  border: '2px solid rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              <PlayerInfo isCurrentPlayer={isCurrentPlayer}>
+                <div className="address">
+                  {isCurrentPlayer ? 'YOU' : `${playerAddr.slice(0, 6)}...${playerAddr.slice(-4)}`}
+                </div>
+                <div className="label">
+                  {isCurrentTurn ? '🎯 Your Turn' : isCurrentPlayer ? 'Waiting...' : 'Opponent'}
+                </div>
+              </PlayerInfo>
+            </PlayerHeader>
+            
+            {/* Lives */}
+            {!isEliminated && (
+              <LivesDisplay critical={isCritical}>
+                {[1, 2, 3].map(i => (
+                  <span 
+                    key={i} 
+                    className="heart"
+                    style={{
+                      filter: i <= player.lives ? 'none' : 'grayscale(100%)',
+                      opacity: i <= player.lives ? 1 : 0.3
+                    }}
+                  >
+                    {i <= player.lives ? '❤️' : '🖤'}
+                  </span>
+                ))}
+              </LivesDisplay>
+            )}
+            
+            {/* Choice */}
+            {player.choice && !isEliminated && (
+              <ChoiceDisplay choice={player.choice}>
+                {player.choice.toUpperCase()}
+              </ChoiceDisplay>
+            )}
+            
+            {/* Result (show temporarily after coin lands) */}
+            {player.lastResult && !isEliminated && (
+              <ResultDisplay won={player.lastResult.won}>
+                {player.lastResult.won ? '✅ WIN' : '❌ LOSE'}
+              </ResultDisplay>
+            )}
+            
+            {/* Eliminated */}
+            {isEliminated && (
+              <EliminatedBadge>
+                💀 ELIMINATED
+              </EliminatedBadge>
+            )}
+          </PlayerBox>
+        )
+      })}
+    </BoxesContainer>
+  )
+}
 
-  // MODIFY the coinPositions to support single coin mode
-  const coinPositions = singleCoinMode ? [
-    { x: 0, y: 0, z: 0, scale: 1 }  // Center for single coin
-  ] : [
-    { x: -8, y: 1, z: 0, scale: 1 },
-    { x: 0, y: 1, z: 0, scale: 1 },
-    { x: 8, y: 1, z: 0, scale: 1 },
-    { x: -8, y: -5, z: 0, scale: 1 },
-    { x: 0, y: -5, z: 0, scale: 1 },
-    { x: 8, y: -5, z: 0, scale: 1 }
-  ]
+export default PlayerLifeBoxes
 
-  // MODIFY the scene creation to only create needed coins
-  const numCoins = singleCoinMode ? 1 : 6
+🔧 MODIFY: server/socketio/server-socketio.js
+Add these handlers after the existing Battle Royale handlers:
+javascript// ===== ADD TO IMPORTS =====
+const PhysicsGameManager = require('../PhysicsGameManager')
 
-  // In the initialization useEffect, change:
-  for (let i = 0; i < numCoins; i++) {  // Changed from hardcoded 6
-    // ... rest of coin creation code
+// ===== ADD TO GameServer constructor =====
+this.physicsGameManager = new PhysicsGameManager()
+
+// ===== ADD THESE SOCKET HANDLERS =====
+
+socket.on('physics_set_choice', safeHandler((data) => {
+  console.log(`🔥 physics_set_choice from ${socket.id}`, data)
+  const { gameId, address, choice } = data
+  const success = this.physicsGameManager.setChoice(gameId, address, choice)
+  if (success) {
+    this.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
+      this.io.to(room).emit(event, payload)
+    })
+  }
+}))
+
+socket.on('physics_fire_coin', safeHandler((data) => {
+  console.log(`🔥 physics_fire_coin from ${socket.id}`, data)
+  const { gameId, address, angle, power } = data
+  this.physicsGameManager.fireCoin(gameId, address, angle, power, (room, event, payload) => {
+    this.io.to(room).emit(event, payload)
+  })
+}))
+
+socket.on('physics_request_state', safeHandler((data) => {
+  console.log(`🔥 physics_request_state from ${socket.id}`)
+  const { gameId } = data
+  const state = this.physicsGameManager.getFullGameState(gameId)
+  if (state) {
+    socket.emit('physics_state_update', state)
+  }
+}))
+
+socket.on('physics_start_game', safeHandler((data) => {
+  console.log(`🔥 physics_start_game from ${socket.id}`)
+  const { gameId, address } = data
+  const game = this.physicsGameManager.getGame(gameId)
+  
+  if (!game) {
+    socket.emit('physics_error', { message: 'Game not found' })
+    return
+  }
+  
+  // Verify creator
+  if (game.creator?.toLowerCase() !== address?.toLowerCase()) {
+    socket.emit('physics_error', { message: 'Only creator can start game' })
+    return
+  }
+  
+  this.physicsGameManager.startGame(gameId, (room, event, payload) => {
+    this.io.to(room).emit(event, payload)
+  })
+}))
+
+🔧 MODIFY: server/routes/api.js
+Add this endpoint for creating physics games:
+javascript// ===== PHYSICS BATTLE ROYALE ENDPOINTS =====
+
+// Create Physics Battle Royale game
+router.post('/physics-battle-royale/create', async (req, res) => {
+  try {
+    const {
+      creator,
+      nft_contract,
+      nft_token_id,
+      nft_name,
+      nft_image,
+      nft_collection,
+      nft_chain,
+      entry_fee,
+      service_fee
+    } = req.body
+
+    if (!creator || !nft_contract || !nft_token_id || !entry_fee) {
+      return res.status(400).json({
+        error: 'Missing required fields'
+      })
+    }
+
+    const gameId = `physics_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+
+    const gameData = {
+      id: gameId,
+      creator: creator.toLowerCase(),
+      nft_contract,
+      nft_token_id,
+      nft_name,
+      nft_image,
+      nft_collection,
+      nft_chain: nft_chain || 'base',
+      entry_fee: parseFloat(entry_fee),
+      service_fee: parseFloat(service_fee || 0.50)
+    }
+
+    // Create in database
+    await dbService.createBattleRoyaleGame(gameData)
+    
+    // Create in physics manager
+    if (gameServer && gameServer.physicsGameManager) {
+      gameServer.physicsGameManager.createPhysicsGame(gameId, gameData)
+    }
+
+    console.log(`✅ Physics Battle Royale created: ${gameId}`)
+    
+    res.json({
+      success: true,
+      gameId,
+      message: 'Physics Battle Royale created successfully'
+    })
+
+  } catch (error) {
+    console.error('❌ Error creating Physics Battle Royale:', error)
+    res.status(500).json({
+      error: 'Failed to create Physics Battle Royale',
+      details: error.message
+    })
+  }
+})
+
+// Join Physics Battle Royale
+router.post('/physics-battle-royale/:gameId/join', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { player_address, payment_hash } = req.body
+
+    if (!player_address) {
+      return res.status(400).json({ error: 'Player address required' })
+    }
+
+    // Add to physics manager
+    if (gameServer && gameServer.physicsGameManager) {
+      const success = gameServer.physicsGameManager.addPlayer(gameId, player_address)
+      
+      if (success) {
+        // Also add to database
+        await dbService.addBattleRoyalePlayer(gameId, {
+          player_address: player_address.toLowerCase(),
+          slot_number: gameServer.physicsGameManager.getGame(gameId).currentPlayers,
+          entry_paid: !!payment_hash,
+          entry_payment_hash: payment_hash
+        })
+        
+        res.json({
+          success: true,
+          message: 'Successfully joined Physics Battle Royale'
+        })
+      } else {
+        res.status(400).json({ error: 'Failed to join game' })
+      }
+    } else {
+      res.status(500).json({ error: 'Game server not available' })
+    }
+
+  } catch (error) {
+    console.error('❌ Error joining Physics Battle Royale:', error)
+    res.status(500).json({
+      error: 'Failed to join game',
+      details: error.message
+    })
+  }
+})
+
+🔧 MODIFY: client/BattleRoyaleContainer.jsx
+Update to use PhysicsGameScreen:
+javascriptimport PhysicsGameScreen from './PhysicsGameScreen' // ADD THIS
+
+// REPLACE BattleRoyaleContent function with:
+const BattleRoyaleContent = () => {
+  const { gameState, loading, error } = useBattleRoyaleGame()
+
+  if (loading) {
+    return <LoadingScreen />
   }
 
-  // ... rest of existing code unchanged ...
+  if (error) {
+    return <ErrorScreen error={error} />
+  }
+
+  if (!gameState) {
+    return <ErrorScreen error="Game not found" />
+  }
+
+  // NEW: Check if this is a physics game
+  const isPhysicsGame = gameState.gameId?.startsWith('physics_')
+
+  // Simple phase-based routing
+  if (gameState.phase === 'lobby' || gameState.phase === 'filling') {
+    return <LobbyScreen />
+  }
+
+  // NEW: Use PhysicsGameScreen for physics games
+  if (isPhysicsGame) {
+    return <PhysicsGameScreen />
+  }
+
+  // Original game screen for non-physics games
+  return <GameScreen />
 }
 
-PHASE 6: TESTING CHECKLIST
-Step 6.1: Database Testing
-bash# SSH into server
-ssh root@159.69.242.154
+🔧 MODIFY: client/contexts/BattleRoyaleGameContext.jsx
+Add physics-specific methods:
+javascript// ADD TO THE CONTEXT (after existing methods):
 
-# Run migration
-cd /opt/flipnosis/app
-sqlite3 server/flipz.db < server/migrations/add_battle_royale_features.sql
+const makeChoice = useCallback((choice) => {
+  if (!gameState || !address) return false
+  
+  const isPhysicsGame = gameState.gameId?.startsWith('physics_')
+  
+  if (isPhysicsGame) {
+    socketService.emit('physics_set_choice', {
+      gameId: gameState.gameId,
+      address,
+      choice
+    })
+  } else {
+    socketService.emit('battle_royale_player_choice', {
+      gameId: gameState.gameId,
+      address,
+      choice
+    })
+  }
+  
+  return true
+}, [gameState, address])
 
-# Verify new columns exist
-sqlite3 server/flipz.db "PRAGMA table_info(battle_royale_participants);"
+// ADD TO CONTEXT VALUE:
+// makeChoice,
 
-# Should see: lives, power, has_shield, consecutive_wins, has_lightning_round, total_xp_earned, last_xp_drop
-Step 6.2: Server Logic Testing
-Test 1: Power-Based Flips
-javascript// In browser console:
-// Player with power 10 should win ~60% of the time
-// Player with power 1 should win ~40% of the time
-Test 2: Lives System
-javascript// Create game, join with 6 players
-// Make wrong choices
-// Verify lives decrease: 3 → 2 → 1 → Eliminated
-Test 3: Shield Deployment
-javascript// Deploy shield before flip
-// Make wrong choice
-// Verify player survives and shield is consumed
-Test 4: Lightning Round
-javascript// Win 3 rounds in a row
-// Verify Lightning Round button appears
-// Activate it
-// Verify countdown drops to 5 seconds for ALL players
-Test 5: XP System
-javascript// Flip coins
-// Verify XP drops appear with correct colors
-// Verify XP accumulates in totalXPEarned
-Test 6: Power Drain
-javascript// Start with power 10
-// Make wrong choice
-// Verify power drops to 8
-// Make another wrong choice
-// Verify power drops to 6 (minimum 1)
-Step 6.3: UI Testing
-Dynamic Grid:
+📦 PACKAGE.JSON UPDATES
+Add to dependencies:
+json"cannon-es": "^0.20.0"
 
- 6 players: 3×2 grid
- 4 players after elimination: 2×2 grid (coins bigger)
- 2 players final: Side-by-side (coins huge)
- Smooth transitions between layouts
+🎯 IMPLEMENTATION STEPS FOR CURSOR
+Step 1: Install Dependencies
+bashnpm install cannon-es
+Step 2: Create New Server Files
 
-Player Cards:
+Create server/PhysicsGameManager.js with the code from artifact physics_game_manager
 
- Lives display correctly (3 hearts → 2 → 1)
- Power bar updates
- Shield indicator shows READY/USED
- Lightning Round indicator shows READY/LOCKED
- XP total displays correctly
+Step 3: Create New Client Components
 
-XP Drops:
+Create client/components/BattleRoyale/PhysicsGameScreen.jsx from artifact physics_game_screen
+Create client/components/BattleRoyale/PhysicsScene.jsx from artifact physics_scene
+Create client/components/BattleRoyale/CannonController.jsx from artifact cannon_controller
+Create client/components/BattleRoyale/PlayerLifeBoxes.jsx from artifact player_life_boxes
 
- 100 XP = Silver glow
- 200 XP = Light blue glow
- 300 XP = Blue glow
- 500 XP = Purple glow
- 700 XP = Gold glow
- 900 XP = Neon purple glow
- 1000 XP = Rainbow gold glow
- Animations play smoothly
+Step 4: Modify Existing Files
 
-Abilities:
+Update server/socketio/server-socketio.js with physics handlers
+Update server/routes/api.js with physics endpoints
+Update client/BattleRoyaleContainer.jsx to route to PhysicsGameScreen
+Update client/contexts/BattleRoyaleGameContext.jsx to add makeChoice method
 
- Shield button pulses when available
- Lightning Round button pulses when available
- Buttons disabled when used/locked
- Confirmation dialogs appear
+Step 5: Test
 
-Eliminated Players:
-
- Card becomes grayscale
- "💀 ELIMINATED" overlay appears
- No more XP drops for eliminated players
-
-Step 6.4: Edge Cases
-Test Edge Case 1: All Players Lose
-
-All players make wrong choices
-All lose lives but none hit 0
-Game continues to next round
-
-Test Edge Case 2: All Players Survive
-
-All players make correct choices
-No one loses lives
-Game continues to next round
-
-Test Edge Case 3: Final 2 Both Lose
-
-Final 2 players both make wrong choices
-Both lose lives
-If both hit 0 lives simultaneously:
-
-Round replays
-No one eliminated yet
+Create a test physics game via API
+Join with 2 players
+Test aiming, power, firing
+Verify physics simulation
+Check result calculation
 
 
+🎮 TESTING CHECKLIST
 
-Test Edge Case 4: Shield on Last Life
-
-Player has 1 life left
-Player deploys shield
-Player makes wrong choice
-Shield protects, player survives with 1 life
-
-Test Edge Case 5: Power at Minimum
-
-Player has power = 1
-Player makes wrong choice
-Power stays at 1 (can't go below)
-
-Step 6.5: Performance Testing
-Monitor:
-
- Frame rate stays above 30 FPS with 6 coins
- No memory leaks during long games
- Grid transitions are smooth
- XP animations don't cause lag
- Socket messages arrive promptly
-
-Optimization Checks:
-
- Three.js scenes dispose properly
- No React re-render loops
- WebSocket events properly throttled
+ Physics game creation works
+ 2 players can join
+ Lobby shows correctly
+ Game starts when both players ready
+ Cannon controller appears on your turn
+ Choice selection works
+ Angle slider works
+ Power charging works
+ Coin fires and follows physics
+ Camera follows coin
+ Coin bounces off obstacles
+ Coin lands and determines result
+ Lives decrease on wrong choice
+ Turn passes to next player
+ Game ends when 1 player left
+ Winner screen shows
 
 
-PHASE 7: DEPLOYMENT
-Step 7.1: Deployment Order
-bash# 1. Deploy database migration
-ssh root@159.69.242.154
-cd /opt/flipnosis/app
-sqlite3 server/flipz.db < server/migrations/add_battle_royale_features.sql
+🚀 WHAT YOU GET
+Gameplay:
 
-# 2. Deploy server code
-./deployment/deploy-hetzner-git-fixed.ps1 "Battle Royale Competitive Features"
+Turn-based 3D physics coin cannon game
+Beautiful space environment with planets/obstacles
+Real physics simulation with Cannon.js
+Smooth camera following your coin
+30-second turns with power charging
+Lives system (3 lives each)
+Last player standing wins
 
-# 3. Restart server
-pm2 restart server
+Technical:
 
-# 4. Verify logs
-pm2 logs server --lines 100
-Step 7.2: Rollback Plan
-If issues occur:
-bash# 1. Revert database changes
-sqlite3 server/flipz.db << EOF
-ALTER TABLE battle_royale_participants DROP COLUMN lives;
-ALTER TABLE battle_royale_participants DROP COLUMN power;
-ALTER TABLE battle_royale_participants DROP COLUMN has_shield;
-ALTER TABLE battle_royale_participants DROP COLUMN consecutive_wins;
-ALTER TABLE battle_royale_participants DROP COLUMN has_lightning_round;
-ALTER TABLE battle_royale_participants DROP COLUMN total_xp_earned;
-ALTER TABLE battle_royale_participants DROP COLUMN last_xp_drop;
-EOF
+Server-authoritative physics (no cheating possible)
+60fps physics simulation
+WebSocket real-time updates
+Supports 2 players (easily scalable to 6)
+Reuses all existing payment/lobby infrastructure
+Backward compatible with original game
 
-# 2. Revert git commit
-git revert HEAD
-git push
+Next Steps to Scale:
 
-# 3. Redeploy previous version
-./deployment/deploy-hetzner-git-fixed.ps1 "Rollback to previous version"
-
-PHASE 8: FINAL TOUCHES
-Step 8.1: Sound Effects (Optional)
-Add sound effects for immersion:
-javascript// Create sounds.js
-export const SOUNDS = {
-  coinFlip: new Audio('/sounds/coin-flip.mp3'),
-  xpDrop: new Audio('/sounds/xp-drop.mp3'),
-  eliminated: new Audio('/sounds/eliminated.mp3'),
-  lightningActivated: new Audio('/sounds/lightning.mp3'),
-  shieldDeployed: new Audio('/sounds/shield.mp3'),
-  victory: new Audio('/sounds/victory.mp3')
-}
-
-// Play sounds on events
-SOUNDS.coinFlip.play()
-Step 8.2: Mobile Responsiveness
-Already handled in the styled-components with media queries!
-Step 8.3: Accessibility
-
- Keyboard navigation works
- Screen readers can read game state
- Color blind friendly (use patterns + colors)
- Touch events work on mobile
+Increase maxPlayers from 2 to 6
+Add simultaneous coin firing
+Add coin-to-coin collisions
+Enhance visual effects
+Add more obstacle variety
 
 
-🎉 SUMMARY
-What You're Getting:
-Server:
-
-✅ Power-based flip odds (40-60%)
-✅ Lives system (3 lives, lose 1 per wrong flip)
-✅ Shield ability (1-time protection)
-✅ Lightning Round (earned after 3 wins, forces 5-second countdown)
-✅ XP rewards (100-1000, weighted random)
-✅ Power drain on losses (max 10, min 1)
-✅ Consecutive wins tracking
-
-Client:
-
-✅ Dynamic grid that scales (6→4→2 players)
-✅ Individual player cards with stats
-✅ XP drop animations with rarity colors
-✅ Lives hearts display (critical animation at 1 life)
-✅ Power bar visualization
-✅ Ability buttons (Shield + Lightning)
-✅ Cyberpunk aesthetic with neon glows
-✅ Smooth transitions and animations
-
-Database:
-
-✅ New fields for competitive mechanics
-✅ Persistent player stats tracking
-✅ XP accumulation per game
-
-
-📝 NOTES FOR CURSOR
-Implementation Priority:
-
-Database first - Run migration
-Server logic - Update BattleRoyaleGameManager
-Socket handlers - Add new events
-Components - Build UI piece by piece
-Integration - Wire everything together
-Testing - Verify each feature
-Polish - Animations and sounds
-
-Key Files to Update:
-
-server/migrations/add_battle_royale_features.sql (NEW)
-server/services/BattleRoyaleDBService.js (UPDATE)
-server/BattleRoyaleGameManager.js (REPLACE)
-server/socket/BattleRoyaleSocketHandlers.js (ADD METHODS)
-server/socket/server-socketio.js (ADD EVENTS)
-client/src/constants/xpRarities.js (NEW)
-client/src/components/BattleRoyale/XPRewardDrop.jsx (NEW)
-client/src/components/BattleRoyale/PlayerStatsBar.jsx (NEW)
-client/src/components/BattleRoyale/PlayerCard.jsx (NEW)
-client/src/components/BattleRoyale/DynamicGrid.jsx (NEW)
-client/src/components/BattleRoyale/GameScreen.jsx (REPLACE)
-client/src/components/BattleRoyale/BattleRoyaleUnified3DScene.jsx (UPDATE)
-
-Don't Touch:
-
-Three.js coin rendering (keep it beautiful!)
-FloatingChatWidget (works great)
-LobbyScreen (no changes needed)
-
-
-This is a complete, production-ready implementation that adds genuine competitive depth to your Battle Royale game while maintaining the fun chaos of coin flips! 🎮🪙✨RetryClaude does not have the ability to run the code it generates yet.
+This is a complete, production-ready transformation. Give Cursor these artifacts and instructions, and you'll have a working 3D physics battle royale in days, not weeks! 🎮✨

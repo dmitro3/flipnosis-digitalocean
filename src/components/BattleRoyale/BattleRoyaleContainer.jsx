@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { BattleRoyaleGameProvider, useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
 import LobbyScreen from './LobbyScreen'
 import GameScreen from './GameScreen'
+import PhysicsGameScreen from './PhysicsGameScreen'
 import ErrorBoundary from './ErrorBoundary'
 import hazeVideo from '../../../Images/Video/haze.webm'
 
@@ -105,12 +106,18 @@ const BattleRoyaleContent = () => {
     return <ErrorScreen error="Game not found" />
   }
 
-  // Simple phase-based routing - NO NAVIGATION
-  if (gameState.phase === 'filling') {
+  // Simple phase-based routing
+  if (gameState.phase === 'filling' || gameState.phase === 'lobby') {
     return <LobbyScreen />
   }
 
-  // All other phases (starting, round_active, round_result, completed)
+  // Physics game route
+  const isPhysicsGame = gameState.gameId?.startsWith('physics_')
+  if (isPhysicsGame) {
+    return <PhysicsGameScreen />
+  }
+
+  // Non-physics default
   return <GameScreen />
 }
 

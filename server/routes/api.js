@@ -995,6 +995,86 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     })
   })
 
+  // ===== PHYSICS BATTLE ROYALE ENDPOINTS =====
+  // Create Physics Battle Royale game
+  router.post('/physics-battle-royale/create', async (req, res) => {
+    try {
+      const {
+        creator,
+        nft_contract,
+        nft_token_id,
+        nft_name,
+        nft_image,
+        nft_collection,
+        nft_chain,
+        entry_fee,
+        service_fee
+      } = req.body
+
+      if (!creator || !nft_contract || !nft_token_id || !entry_fee) {
+        return res.status(400).json({ error: 'Missing required fields' })
+      }
+
+      const gameId = `physics_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+
+      const gameData = {
+        id: gameId,
+        creator: creator.toLowerCase(),
+        nft_contract,
+        nft_token_id,
+        nft_name,
+        nft_image,
+        nft_collection,
+        nft_chain: nft_chain || 'base',
+        entry_fee: parseFloat(entry_fee),
+        service_fee: parseFloat(service_fee || 0.50)
+      }
+
+      await dbService.createBattleRoyaleGame(gameData)
+
+      if (gameServer && gameServer.physicsGameManager) {
+        gameServer.physicsGameManager.createPhysicsGame(gameId, gameData)
+      }
+
+      console.log(`✅ Physics Battle Royale created: ${gameId}`)
+      res.json({ success: true, gameId, message: 'Physics Battle Royale created successfully' })
+    } catch (error) {
+      console.error('❌ Error creating Physics Battle Royale:', error)
+      res.status(500).json({ error: 'Failed to create Physics Battle Royale', details: error.message })
+    }
+  })
+
+  // Join Physics Battle Royale
+  router.post('/physics-battle-royale/:gameId/join', async (req, res) => {
+    try {
+      const { gameId } = req.params
+      const { player_address, payment_hash } = req.body
+
+      if (!player_address) {
+        return res.status(400).json({ error: 'Player address required' })
+      }
+
+      if (gameServer && gameServer.physicsGameManager) {
+        const success = gameServer.physicsGameManager.addPlayer(gameId, player_address)
+        if (success) {
+          await dbService.addBattleRoyalePlayer(gameId, {
+            player_address: player_address.toLowerCase(),
+            slot_number: gameServer.physicsGameManager.getGame(gameId).currentPlayers,
+            entry_paid: !!payment_hash,
+            entry_payment_hash: payment_hash
+          })
+          return res.json({ success: true, message: 'Successfully joined Physics Battle Royale' })
+        } else {
+          return res.status(400).json({ error: 'Failed to join game' })
+        }
+      }
+      return res.status(500).json({ error: 'Game server not available' })
+    } catch (error) {
+      console.error('❌ Error joining Physics Battle Royale:', error)
+      res.status(500).json({ error: 'Failed to join game', details: error.message })
+    }
+  })
+
   // Get all games (Battle Royale only - 1v1 games removed)
   router.get('/games', (req, res) => {
     db.all('SELECT * FROM battle_royale_games ORDER BY created_at DESC', (err, games) => {

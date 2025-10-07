@@ -1,5 +1,6 @@
 const socketIO = require('socket.io')
 const BattleRoyaleGameManager = require('../BattleRoyaleGameManager')
+const PhysicsGameManager = require('../PhysicsGameManager')
 const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
 const SocketTracker = require('./SocketTracker')
 
@@ -15,6 +16,7 @@ class GameServer {
     // Initialize managers FIRST
     // this.gameManager = new GameManager() // TODO: Not implemented yet - for 1v1 games
     this.battleRoyaleManager = new BattleRoyaleGameManager()
+    this.physicsGameManager = new PhysicsGameManager()
     
     // Initialize socket tracker for reliable broadcasting
     this.socketTracker = new SocketTracker()
@@ -192,6 +194,52 @@ initialize(server, dbService) {
           this.io, 
           this.dbService
         )
+      }))
+
+      // ===== PHYSICS GAME ACTIONS =====
+      socket.on('physics_set_choice', safeHandler((data) => {
+        console.log(`🔥 physics_set_choice from ${socket.id}`, data)
+        const { gameId, address, choice } = data
+        const success = this.physicsGameManager.setChoice(gameId, address, choice)
+        if (success) {
+          this.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
+            this.io.to(room).emit(event, payload)
+          })
+        }
+      }))
+
+      socket.on('physics_fire_coin', safeHandler((data) => {
+        console.log(`🔥 physics_fire_coin from ${socket.id}`, data)
+        const { gameId, address, angle, power } = data
+        this.physicsGameManager.fireCoin(gameId, address, angle, power, (room, event, payload) => {
+          this.io.to(room).emit(event, payload)
+        })
+      }))
+
+      socket.on('physics_request_state', safeHandler((data) => {
+        console.log(`🔥 physics_request_state from ${socket.id}`)
+        const { gameId } = data
+        const state = this.physicsGameManager.getFullGameState(gameId)
+        if (state) {
+          socket.emit('physics_state_update', state)
+        }
+      }))
+
+      socket.on('physics_start_game', safeHandler((data) => {
+        console.log(`🔥 physics_start_game from ${socket.id}`)
+        const { gameId, address } = data
+        const game = this.physicsGameManager.getGame(gameId)
+        if (!game) {
+          socket.emit('physics_error', { message: 'Game not found' })
+          return
+        }
+        if (game.creator?.toLowerCase() !== address?.toLowerCase()) {
+          socket.emit('physics_error', { message: 'Only creator can start game' })
+          return
+        }
+        this.physicsGameManager.startGame(gameId, (room, event, payload) => {
+          this.io.to(room).emit(event, payload)
+        })
       }))
       
       // Disconnection
