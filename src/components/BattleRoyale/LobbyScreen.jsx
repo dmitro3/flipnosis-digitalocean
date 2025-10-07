@@ -554,7 +554,7 @@ const LobbyScreen = () => {
 
         <PlayerGrid>
           {Array.from({ length: 6 }, (_, i) => {
-            const playerAddr = gameState.playerSlots?.[i]
+            const playerAddr = gameState.playerOrder?.[i] || gameState.playerSlots?.[i]
             const player = playerAddr ? gameState.players?.[playerAddr.toLowerCase()] : null
             const isCurrentUser = playerAddr?.toLowerCase() === address?.toLowerCase()
             const images = playerAddr ? playerCoinImages[playerAddr.toLowerCase()] : null
