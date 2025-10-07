@@ -60,7 +60,7 @@ const PhysicsScene = ({
       
       // Camera tracking - follow highest coin
       if (highestCoin) {
-        const targetPos = new THREE.Vec3(
+        const targetPos = new THREE.Vector3(
           highestCoin.x,
           highestCoin.y - 10,
           highestCoin.z + 20
@@ -69,7 +69,7 @@ const PhysicsScene = ({
         camera.lookAt(highestCoin.x, highestCoin.y, highestCoin.z)
       } else {
         // Return to base position
-        const basePos = new THREE.Vec3(0, 40, 60)
+        const basePos = new THREE.Vector3(0, 40, 60)
         camera.position.lerp(basePos, 0.02)
         camera.lookAt(0, 20, 0)
       }
