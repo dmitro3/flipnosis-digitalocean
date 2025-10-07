@@ -23,15 +23,20 @@ const SceneContainer = styled.div`
 `
 
 const BottomSection = styled.div`
-  height: 220px;
+  height: 280px;
   width: 100%;
   background: rgba(0, 0, 20, 0.95);
   border-top: 3px solid #00ffff;
   display: grid;
-  grid-template-columns: 600px 200px 450px;
+  grid-template-columns: minmax(300px, 1fr) minmax(150px, 200px) minmax(300px, 450px);
   gap: 1rem;
   padding: 1rem;
   align-items: stretch;
+  flex-shrink: 0;
+  
+  @media (max-width: 1400px) {
+    grid-template-columns: 1fr 180px 400px;
+  }
   
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;

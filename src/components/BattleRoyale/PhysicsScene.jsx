@@ -58,6 +58,8 @@ const PhysicsScene = ({
     const animate = () => {
       if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
       
+      const camera = cameraRef.current
+      
       // Camera tracking - follow highest coin (pinball style)
       if (highestCoin) {
         // Camera follows coin vertically, staying behind it
@@ -100,7 +102,7 @@ const PhysicsScene = ({
         }
       })
       
-      renderer.render(scene, camera)
+      rendererRef.current.render(scene, camera)
       animationIdRef.current = requestAnimationFrame(animate)
     }
     
@@ -108,10 +110,10 @@ const PhysicsScene = ({
     
     // Resize handler
     const handleResize = () => {
-      if (!mountRef.current || !camera || !renderer) return
-      camera.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight
-      camera.updateProjectionMatrix()
-      renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
+      if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
+      cameraRef.current.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight
+      cameraRef.current.updateProjectionMatrix()
+      rendererRef.current.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
     }
     
     window.addEventListener('resize', handleResize)
@@ -136,10 +138,10 @@ const PhysicsScene = ({
         }
       })
       
-      if (renderer) {
-        renderer.dispose()
-        if (mountRef.current && renderer.domElement) {
-          mountRef.current.removeChild(renderer.domElement)
+      if (rendererRef.current) {
+        rendererRef.current.dispose()
+        if (mountRef.current && rendererRef.current.domElement) {
+          mountRef.current.removeChild(rendererRef.current.domElement)
         }
       }
       
@@ -147,11 +149,13 @@ const PhysicsScene = ({
       cameraRef.current = null
       rendererRef.current = null
     }
-  }, [])
+  }, [highestCoin])
   
   // Load skybox and obstacle textures
   const loadAssets = async (scene) => {
     console.log('📦 Loading assets...')
+    console.log('📊 Obstacles received:', obstacles)
+    console.log('📊 Number of obstacles:', obstacles?.length || 0)
     
     // Always use starfield - it's more reliable and looks good
     console.log('🌟 Creating vertical space starfield...')
@@ -269,18 +273,52 @@ const PhysicsScene = ({
   const createObstacles = (scene, textures) => {
     if (!obstacles || obstacles.length === 0) {
       console.warn('⚠️ No obstacle data provided')
+      console.warn('⚠️ Creating fallback obstacles for testing...')
+      
+      // Create fallback obstacles for testing
+      for (let i = 0; i < 10; i++) {
+        const geometry = new THREE.SphereGeometry(4 + Math.random() * 3, 64, 64)
+        const material = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+          metalness: 0.5,
+          roughness: 0.5,
+          emissive: new THREE.Color(0x444466),
+          emissiveIntensity: 0.5,
+        })
+        const mesh = new THREE.Mesh(geometry, material)
+        const side = (i % 2 === 0) ? 1 : -1
+        mesh.position.set(side * (15 + Math.random() * 20), 30 + i * 40, (Math.random() - 0.5) * 30)
+        scene.add(mesh)
+        obstaclesRef.current[i] = mesh
+      }
+      console.log('✅ Created 10 fallback colored obstacles')
       return
     }
     
-    console.log(`🪐 Creating ${obstacles.length} obstacles`)
+    console.log(`🪐 Creating ${obstacles.length} obstacles with textures`)
     
     obstacles.forEach((obstacle, index) => {
       const texture = textures[obstacle.textureIndex - 1]
       
       if (!texture) {
-        console.warn(`⚠️ Texture missing for obstacle ${index}`)
+        console.warn(`⚠️ Texture missing for obstacle ${index}, using fallback color`)
+        // Create colored sphere as fallback
+        const geometry = new THREE.SphereGeometry(obstacle.radius, 64, 64)
+        const material = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+          metalness: 0.5,
+          roughness: 0.5,
+          emissive: new THREE.Color(0x444466),
+          emissiveIntensity: 0.5,
+        })
+        const mesh = new THREE.Mesh(geometry, material)
+        mesh.position.set(obstacle.position.x, obstacle.position.y, obstacle.position.z)
+        scene.add(mesh)
+        obstaclesRef.current[index] = mesh
         return
       }
+      
+      console.log(`✅ Creating obstacle ${index} with texture at position:`, obstacle.position)
       
       const geometry = new THREE.SphereGeometry(obstacle.radius, 64, 64)
       
