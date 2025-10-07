@@ -91,12 +91,38 @@ initialize(server, dbService) {
       socket.on('join_battle_royale_room', safeHandler(async (data) => {
         console.log(`📥 join_battle_royale_room from ${socket.id}`, data)
         const { roomId } = data
-        const gameId = roomId.replace('game_', '').replace('physics_', '')
+        const rawId = roomId.replace('game_', '')
+        const isPhysics = rawId.startsWith('physics_') || roomId.includes('physics_')
+        const gameId = rawId
         
-        // Check if this is a physics game
-        if (gameId.startsWith('physics_') || roomId.includes('physics_')) {
+        // Always join socket.io room for broadcasting, including physics games
+        const normalizedRoom = roomId.startsWith('game_') ? roomId : `game_${gameId}`
+        socket.join(normalizedRoom)
+        this.socketData.set(socket.id, { address: data.address, roomId: normalizedRoom })
+        console.log(`✅ ${data.address} joined room ${normalizedRoom}`)
+        
+        // Track socket for reliable broadcasting
+        if (this.socketTracker) {
+          this.socketTracker.addSocketToGame(gameId.replace('physics_', ''), socket.id, data.address)
+        }
+        
+        // Physics games: send current physics state immediately if available
+        if (isPhysics) {
           console.log(`🎮 Physics game room join: ${gameId}`)
-          // Physics games don't need separate room join logic - they use request_battle_royale_state
+          const state = this.physicsGameManager.getFullGameState(gameId)
+          if (state) {
+            socket.emit('physics_state_update', state)
+          } else {
+            // Trigger load via request handler path
+            const gameData = await this.dbService.getBattleRoyaleGame(gameId)
+            if (gameData) {
+              this.physicsGameManager.createPhysicsGame(gameId, gameData)
+              const participants = await this.dbService.getBattleRoyaleParticipants(gameId)
+              for (const p of participants) { this.physicsGameManager.addPlayer(gameId, p.player_address) }
+              const loadedState = this.physicsGameManager.getFullGameState(gameId)
+              if (loadedState) socket.emit('physics_state_update', loadedState)
+            }
+          }
           return
         }
         
@@ -123,8 +149,19 @@ initialize(server, dbService) {
         )
       }))
 
-      socket.on('battle_royale_update_coin', safeHandler((data) => {
+      socket.on('battle_royale_update_coin', safeHandler(async (data) => {
         console.log(`📥 battle_royale_update_coin from ${socket.id}`, data)
+        const { gameId, address, coin } = data || {}
+        if (gameId && (gameId.startsWith('physics_') || `${gameId}`.includes('physics_'))) {
+          // Route to physics game manager and broadcast physics_state_update
+          const success = this.physicsGameManager.updatePlayerCoin(gameId, address, coin)
+          if (success) {
+            this.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
+              this.io.to(room).emit(event, payload)
+            })
+          }
+          return
+        }
         return this.battleRoyaleHandlers.handleBattleRoyaleUpdateCoin(
           socket, 
           data, 
