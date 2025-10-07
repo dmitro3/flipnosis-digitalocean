@@ -1,4 +1,4 @@
-const CANNON = require('cannon')
+const CANNON = require('cannon-es')
 
 class PhysicsGameManager {
   constructor() {
