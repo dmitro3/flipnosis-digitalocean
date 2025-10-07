@@ -17,7 +17,7 @@ class PhysicsGameManager {
   createPhysicsGame(gameId, gameData) {
     console.log(`🎮 Creating Physics Battle Royale: ${gameId}`)
     const world = new CANNON.World()
-    world.gravity.set(0, -20, 0)
+    world.gravity.set(0, -5, 0) // Much lighter gravity for higher flight
     world.broadphase = new CANNON.NaiveBroadphase()
     world.solver.iterations = 10
 
@@ -99,22 +99,22 @@ class PhysicsGameManager {
     for (let i = 0; i < 20; i++) {
       let radius
       if (i < 8) {
-        radius = 1.5 + Math.random() * 1.5
+        radius = 0.8 + Math.random() * 0.8 // Smaller obstacles
       } else if (i < 16) {
-        radius = 3 + Math.random() * 2
+        radius = 1.5 + Math.random() * 1.5
       } else {
-        radius = 5 + Math.random() * 3
+        radius = 2.5 + Math.random() * 1.5
       }
       
       const x = (Math.random() - 0.5) * 50
-      const y = 15 + Math.random() * 70
+      const y = 20 + Math.random() * 180 // Much taller scene (20-200)
       const z = (Math.random() - 0.5) * 50
       
       const obstacleBody = new CANNON.Body({
         mass: 0,
         shape: new CANNON.Sphere(radius),
         position: new CANNON.Vec3(x, y, z),
-        material: new CANNON.Material({ friction: 0.3, restitution: 0.7 })
+        material: new CANNON.Material({ friction: 0.3, restitution: 0.9 }) // High bounce!
       })
       
       world.addBody(obstacleBody)
@@ -245,8 +245,8 @@ class PhysicsGameManager {
     
     player.hasFired = true
 
-    const coinRadius = 1.5
-    const coinThickness = 0.2
+    const coinRadius = 3 // Much bigger coins!
+    const coinThickness = 0.4
     const coinShape = new CANNON.Cylinder(coinRadius, coinRadius, coinThickness, 32)
     const coinBody = new CANNON.Body({
       mass: 1,
@@ -255,7 +255,7 @@ class PhysicsGameManager {
       material: new CANNON.Material({ friction: 0.3, restitution: 0.8 })
     })
 
-    const powerScale = power * 2
+    const powerScale = power * 15 // Much more powerful!
     const angleRad = (angle * Math.PI) / 180
     coinBody.velocity.set(Math.sin(angleRad) * powerScale * 0.3, powerScale, 0)
     coinBody.angularVelocity.set(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5)
@@ -267,10 +267,17 @@ class PhysicsGameManager {
       playerAddress: normalizedAddress,
       startTime: Date.now(),
       lastBroadcast: 0,
-      landed: false
+      landed: false,
+      coinData: player.coin // Include coin skin data
     })
 
-    broadcastFn(`game_${gameId}`, 'physics_coin_fired', { gameId, playerAddress, angle, power })
+    broadcastFn(`game_${gameId}`, 'physics_coin_fired', { 
+      gameId, 
+      playerAddress, 
+      angle, 
+      power,
+      coinData: player.coin 
+    })
 
     // Start physics loop if not already running
     if (!game.physicsLoopRunning) {
@@ -314,7 +321,8 @@ class PhysicsGameManager {
             playerAddress: playerAddr,
             position: { x: coinBody.position.x, y: coinBody.position.y, z: coinBody.position.z },
             rotation: { x: coinBody.quaternion.x, y: coinBody.quaternion.y, z: coinBody.quaternion.z, w: coinBody.quaternion.w },
-            velocity: { x: coinBody.velocity.x, y: coinBody.velocity.y, z: coinBody.velocity.z }
+            velocity: { x: coinBody.velocity.x, y: coinBody.velocity.y, z: coinBody.velocity.z },
+            coinData: coinData.coinData // Include coin skin data
           })
           coinData.lastBroadcast = currentTime
         }
@@ -325,8 +333,8 @@ class PhysicsGameManager {
           this.handleCoinLanded(gameId, playerAddr, broadcastFn)
         }
 
-        // Timeout after 10 seconds
-        if (currentTime - coinData.startTime > 10000) {
+        // Timeout after 20 seconds (longer for higher flight)
+        if (currentTime - coinData.startTime > 20000) {
           this.handleCoinLanded(gameId, playerAddr, broadcastFn)
         }
       })

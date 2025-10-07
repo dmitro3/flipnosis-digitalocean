@@ -23,12 +23,12 @@ const SceneContainer = styled.div`
 `
 
 const BottomSection = styled.div`
-  height: 250px;
+  height: 220px;
   width: 100%;
   background: rgba(0, 0, 20, 0.95);
   border-top: 3px solid #00ffff;
   display: grid;
-  grid-template-columns: 400px 1fr;
+  grid-template-columns: 1fr 450px;
   gap: 1rem;
   padding: 1rem;
   
@@ -141,6 +141,14 @@ const PhysicsGameScreen = () => {
     socketService.emit('physics_fire_coin', { gameId: gameState.gameId, address, angle, power })
   }, [currentPlayer, gameState.gameId, address])
 
+  const handleCoinChange = useCallback((coin) => {
+    socketService.emit('battle_royale_update_coin', {
+      gameId: gameState.gameId,
+      address,
+      coin
+    })
+  }, [gameState.gameId, address])
+
   if (phase === 'game_over') {
     const isWinner = gameState.winner?.toLowerCase() === address?.toLowerCase()
     return (
@@ -176,19 +184,21 @@ const PhysicsGameScreen = () => {
       </SceneContainer>
       
       <BottomSection>
+        <PlayerLifeBoxes 
+          players={gameState.players || {}} 
+          playerOrder={gameState.playerOrder || []} 
+          currentPlayerAddress={address}
+          maxPlayers={gameState.maxPlayers || 6}
+        />
+        
         <CannonController 
           onChoiceSelect={handleChoiceSelect} 
           onFire={handleFireCoin} 
           selectedChoice={localChoice || currentPlayer?.choice} 
           disabled={phase !== 'round_active' || currentPlayer?.hasFired}
           hasFired={currentPlayer?.hasFired}
-        />
-        
-        <PlayerLifeBoxes 
-          players={gameState.players || {}} 
-          playerOrder={gameState.playerOrder || []} 
-          currentPlayerAddress={address}
-          maxPlayers={gameState.maxPlayers || 6}
+          currentCoin={currentPlayer?.coin}
+          onCoinChange={handleCoinChange}
         />
       </BottomSection>
     </Container>

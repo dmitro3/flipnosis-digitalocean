@@ -6,7 +6,7 @@ const BoxesContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(2, 1fr);
-  gap: 0.75rem;
+  gap: 0.5rem;
   height: 100%;
   padding: 0;
 `
@@ -19,18 +19,18 @@ const PlayerBox = styled.div`
     return 'rgba(0, 191, 255, 0.2)'
   }}, rgba(0, 0, 0, 0.8));
   
-  border: 3px solid ${props => { 
+  border: 2px solid ${props => { 
     if (props.isEmpty) return 'rgba(255, 20, 147, 0.3)'
     if (props.isEliminated) return '#ff0000'
     if (props.isCurrentPlayer) return '#00ff88'
     return '#00bfff'
   }};
   
-  border-radius: 1rem;
-  padding: 0.75rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
   position: relative;
   transition: all 0.3s ease;
   
@@ -201,7 +201,7 @@ const PlayerLifeBoxes = ({
               <PlayerHeader>
                 <ProfilePicture 
                   address={slot.playerAddr} 
-                  size={40} 
+                  size={50}
                   style={{ 
                     borderRadius: '50%', 
                     border: '2px solid rgba(255, 0, 0, 0.5)',
@@ -222,7 +222,7 @@ const PlayerLifeBoxes = ({
               <PlayerHeader>
                 <ProfilePicture 
                   address={slot.playerAddr} 
-                  size={40} 
+                  size={50}
                   style={{ 
                     borderRadius: '50%', 
                     border: '2px solid rgba(255, 255, 255, 0.3)' 

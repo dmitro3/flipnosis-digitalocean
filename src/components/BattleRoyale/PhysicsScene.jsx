@@ -17,6 +17,7 @@ const PhysicsScene = ({
   const coinsRef = useRef(new Map()) // Map of playerAddress -> coin mesh
   const animationIdRef = useRef(null)
   const [assetsLoaded, setAssetsLoaded] = useState(false)
+  const [highestCoin, setHighestCoin] = useState(null)
   
   // Initialize scene
   useEffect(() => {
@@ -28,12 +29,12 @@ const PhysicsScene = ({
     scene.background = new THREE.Color(0x000008)
     
     const camera = new THREE.PerspectiveCamera(
-      60,
+      70, // Wider FOV
       mountRef.current.clientWidth / mountRef.current.clientHeight,
       0.1,
-      1000
+      2000 // Further far plane for taller scene
     )
-    camera.position.set(0, 25, 40)
+    camera.position.set(0, 40, 60) // Higher base position
     camera.lookAt(0, 20, 0)
     
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
@@ -56,6 +57,22 @@ const PhysicsScene = ({
     // Animation loop
     const animate = () => {
       if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
+      
+      // Camera tracking - follow highest coin
+      if (highestCoin) {
+        const targetPos = new THREE.Vec3(
+          highestCoin.x,
+          highestCoin.y - 10,
+          highestCoin.z + 20
+        )
+        camera.position.lerp(targetPos, 0.05)
+        camera.lookAt(highestCoin.x, highestCoin.y, highestCoin.z)
+      } else {
+        // Return to base position
+        const basePos = new THREE.Vec3(0, 40, 60)
+        camera.position.lerp(basePos, 0.02)
+        camera.lookAt(0, 20, 0)
+      }
       
       // Slowly rotate obstacles for visual interest
       obstaclesRef.current.forEach((obstacle, index) => {
@@ -289,18 +306,32 @@ const PhysicsScene = ({
   
   // Update coin positions from server (multiple coins)
   useEffect(() => {
-    if (!sceneRef.current || coinPositions.length === 0) return
+    if (!sceneRef.current || coinPositions.length === 0) {
+      setHighestCoin(null)
+      return
+    }
+    
+    let highestY = -Infinity
+    let highestPos = null
     
     coinPositions.forEach((posData, index) => {
       const playerAddr = playerAddresses[index]
       if (!playerAddr) return
       
+      // Track highest coin for camera
+      if (posData.position.y > highestY) {
+        highestY = posData.position.y
+        highestPos = posData.position
+      }
+      
       let coin = coinsRef.current.get(playerAddr)
       
       if (!coin) {
-        // Create new coin for this player
-        const coinGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.3, 32)
-        const coinMaterial = new THREE.MeshStandardMaterial({ 
+        // Create new coin for this player with custom textures
+        const coinGeometry = new THREE.CylinderGeometry(3, 3, 0.6, 32) // Bigger coins!
+        
+        // Create materials for different parts of the coin
+        const sideMaterial = new THREE.MeshStandardMaterial({ 
           color: 0xffd700, 
           metalness: 0.9, 
           roughness: 0.1,
@@ -308,10 +339,44 @@ const PhysicsScene = ({
           emissiveIntensity: 0.5
         })
         
-        coin = new THREE.Mesh(coinGeometry, coinMaterial)
+        // Load coin textures if available
+        const textureLoader = new THREE.TextureLoader()
+        let headsTexture = null
+        let tailsTexture = null
+        
+        if (posData.coinData) {
+          textureLoader.load(posData.coinData.headsImage, (texture) => {
+            headsTexture = texture
+            headsTexture.colorSpace = THREE.SRGBColorSpace
+          })
+          textureLoader.load(posData.coinData.tailsImage, (texture) => {
+            tailsTexture = texture
+            tailsTexture.colorSpace = THREE.SRGBColorSpace
+          })
+        }
+        
+        const headsMaterial = new THREE.MeshStandardMaterial({
+          map: headsTexture,
+          metalness: 0.8,
+          roughness: 0.2
+        })
+        
+        const tailsMaterial = new THREE.MeshStandardMaterial({
+          map: tailsTexture,
+          metalness: 0.8,
+          roughness: 0.2
+        })
+        
+        // Create coin with multiple materials
+        coin = new THREE.Mesh(coinGeometry, [
+          sideMaterial, // Side
+          headsMaterial, // Top (heads)
+          tailsMaterial  // Bottom (tails)
+        ])
         coin.castShadow = true
         
-        const glowGeometry = new THREE.CylinderGeometry(1.7, 1.7, 0.4, 32)
+        // Add glow effect
+        const glowGeometry = new THREE.CylinderGeometry(3.3, 3.3, 0.7, 32)
         const glowMaterial = new THREE.MeshBasicMaterial({
           color: 0xffd700,
           transparent: true,
@@ -338,6 +403,8 @@ const PhysicsScene = ({
         posData.rotation.w
       )
     })
+    
+    setHighestCoin(highestPos)
     
   }, [coinPositions, playerAddresses])
   
