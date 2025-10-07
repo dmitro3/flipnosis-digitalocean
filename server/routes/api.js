@@ -1782,14 +1782,20 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         creator_participates: creator_participates || false
       }
 
-      await dbService.createBattleRoyaleGame(gameData)
-      
-      // Create physics game in manager
+      // Create physics game in manager FIRST (to generate obstacles)
+      let physicsGame = null
       if (gameServer && gameServer.physicsGameManager) {
-        gameServer.physicsGameManager.createPhysicsGame(gameId, gameData)
+        physicsGame = gameServer.physicsGameManager.createPhysicsGame(gameId, gameData)
+        // Add obstacles to game_data for database storage
+        gameData.game_data = {
+          obstacles: physicsGame.obstacles
+        }
       }
 
-      console.log(`✅ 3D Physics Battle Royale game created: ${gameId}`)
+      // Save to database WITH obstacles
+      await dbService.createBattleRoyaleGame(gameData)
+
+      console.log(`✅ 3D Physics Battle Royale game created: ${gameId} with ${physicsGame?.obstacles?.length || 0} obstacles`)
       
       res.json({
         success: true,

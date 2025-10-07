@@ -55,8 +55,36 @@ class PhysicsGameManager {
       createdAt: new Date().toISOString()
     }
 
-    // create obstacles and store
-    game.obstacles = this.createObstacles(world)
+    // Restore obstacles from game_data if available, otherwise create new ones
+    let obstaclesData = null
+    if (gameData.game_data) {
+      try {
+        const parsedGameData = typeof gameData.game_data === 'string' 
+          ? JSON.parse(gameData.game_data) 
+          : gameData.game_data
+        obstaclesData = parsedGameData.obstacles
+      } catch (error) {
+        console.error('❌ Error parsing game_data:', error)
+      }
+    }
+
+    if (obstaclesData && obstaclesData.length > 0) {
+      console.log(`📦 Restoring ${obstaclesData.length} obstacles from database`)
+      game.obstacles = obstaclesData
+      // Recreate physics bodies from obstacle data
+      obstaclesData.forEach(obstacle => {
+        const obstacleBody = new CANNON.Body({
+          mass: 0,
+          shape: new CANNON.Sphere(obstacle.radius),
+          position: new CANNON.Vec3(obstacle.position.x, obstacle.position.y, obstacle.position.z),
+          material: new CANNON.Material({ friction: 0.3, restitution: 0.7 })
+        })
+        world.addBody(obstacleBody)
+      })
+    } else {
+      console.log(`🆕 Creating new obstacles`)
+      game.obstacles = this.createObstacles(world)
+    }
 
     this.games.set(gameId, game)
     this.worlds.set(gameId, world)

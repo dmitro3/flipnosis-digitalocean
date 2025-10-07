@@ -622,9 +622,12 @@ class DatabaseService {
       const sql = `
         INSERT INTO battle_royale_games (
           id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, nft_chain,
-          entry_fee, service_fee, max_players, status, creator_participates, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          entry_fee, service_fee, max_players, status, creator_participates, game_data, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `
+      
+      // Serialize game_data (obstacles, etc.) to JSON
+      const gameDataJson = gameData.game_data ? JSON.stringify(gameData.game_data) : null
       
       this.db.run(sql, [
         gameData.id,
@@ -639,7 +642,8 @@ class DatabaseService {
         gameData.service_fee,
         gameData.max_players || 6,
         'filling',
-        gameData.creator_participates || false
+        gameData.creator_participates || false,
+        gameDataJson
       ], function(err) {
         if (err) {
           console.error('❌ Error creating Battle Royale game:', err)
