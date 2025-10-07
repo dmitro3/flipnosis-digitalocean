@@ -1796,15 +1796,22 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       await dbService.createBattleRoyaleGame(gameData)
 
       // Add creator as participant if they want to play
-      if (creator_participates) {
-        const playerData = {
-          player_address: creator.toLowerCase(),
-          slot_number: 1,
-          entry_paid: false, // Creator doesn't pay to join their own game
-          entry_amount: 0
+      console.log(`🔍 Creator participates check: ${creator_participates}, type: ${typeof creator_participates}`)
+      if (creator_participates === true || creator_participates === 'true') {
+        try {
+          const playerData = {
+            player_address: creator.toLowerCase(),
+            slot_number: 1,
+            entry_paid: false, // Creator doesn't pay to join their own game
+            entry_amount: 0
+          }
+          await dbService.addBattleRoyalePlayer(gameId, playerData)
+          console.log(`✅ Creator ${creator} added as participant to database`)
+        } catch (error) {
+          console.error(`❌ Error adding creator as participant:`, error)
         }
-        await dbService.addBattleRoyalePlayer(gameId, playerData)
-        console.log(`✅ Creator ${creator} added as participant`)
+      } else {
+        console.log(`⚠️ Creator does NOT want to participate (${creator_participates})`)
       }
 
       console.log(`✅ 3D Physics Battle Royale game created: ${gameId} with ${physicsGame?.obstacles?.length || 0} obstacles`)
