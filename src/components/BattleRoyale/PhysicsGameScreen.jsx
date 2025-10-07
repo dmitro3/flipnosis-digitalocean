@@ -28,9 +28,10 @@ const BottomSection = styled.div`
   background: rgba(0, 0, 20, 0.95);
   border-top: 3px solid #00ffff;
   display: grid;
-  grid-template-columns: 1fr 450px;
+  grid-template-columns: 600px 200px 450px;
   gap: 1rem;
   padding: 1rem;
+  align-items: stretch;
   
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
@@ -56,17 +57,16 @@ const RoundIndicator = styled.div`
 `
 
 const TimerDisplay = styled.div`
-  position: absolute;
-  top: 2rem;
-  right: 2rem;
   background: rgba(0, 0, 0, 0.9);
-  border: 2px solid ${props => props.urgent ? '#ff6b6b' : '#00bfff'};
-  padding: 1rem 2rem;
+  border: 3px solid ${props => props.urgent ? '#ff6b6b' : '#00ffff'};
   border-radius: 1rem;
   color: white;
-  font-size: 2rem;
+  font-size: 3rem;
   font-weight: bold;
-  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 40px ${props => props.urgent ? 'rgba(255, 107, 107, 0.6)' : 'rgba(0, 255, 255, 0.6)'};
   animation: ${props => props.urgent ? 'pulse 1s ease-in-out infinite' : 'none'};
   @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
 `
@@ -158,12 +158,9 @@ const PhysicsGameScreen = () => {
   return (
     <Container>
       {phase === 'round_active' && (
-        <>
-          <RoundIndicator>
-            🎯 ROUND {gameState.currentRound} - EVERYONE FIRES!
-          </RoundIndicator>
-          <TimerDisplay urgent={urgent}>{turnTimer}s</TimerDisplay>
-        </>
+        <RoundIndicator>
+          🎯 ROUND {gameState.currentRound} - EVERYONE FIRES!
+        </RoundIndicator>
       )}
       
       <SceneContainer>
@@ -183,6 +180,10 @@ const PhysicsGameScreen = () => {
           currentPlayerAddress={address}
           maxPlayers={gameState.maxPlayers || 6}
         />
+        
+        {phase === 'round_active' && (
+          <TimerDisplay urgent={urgent}>{turnTimer}s</TimerDisplay>
+        )}
         
         <CannonController 
           onChoiceSelect={handleChoiceSelect} 

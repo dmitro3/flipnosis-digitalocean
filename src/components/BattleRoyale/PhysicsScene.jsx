@@ -29,13 +29,13 @@ const PhysicsScene = ({
     scene.background = new THREE.Color(0x000008)
     
     const camera = new THREE.PerspectiveCamera(
-      70, // Wider FOV
+      75, // Wider FOV for better view
       mountRef.current.clientWidth / mountRef.current.clientHeight,
       0.1,
-      2000 // Further far plane for taller scene
+      3000 // Much further far plane for tall vertical scene
     )
-    camera.position.set(0, 40, 60) // Higher base position
-    camera.lookAt(0, 20, 0)
+    camera.position.set(0, 5, 80) // Start lower for pinball effect
+    camera.lookAt(0, 5, 0)
     
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
@@ -58,20 +58,39 @@ const PhysicsScene = ({
     const animate = () => {
       if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
       
-      // Camera tracking - follow highest coin
+      // Camera tracking - follow highest coin (pinball style)
       if (highestCoin) {
+        // Camera follows coin vertically, staying behind it
         const targetPos = new THREE.Vector3(
-          highestCoin.x,
-          highestCoin.y - 10,
-          highestCoin.z + 20
+          0, // Keep camera centered horizontally
+          highestCoin.y + 10, // Slightly above coin
+          80 // Keep distance from scene
         )
-        camera.position.lerp(targetPos, 0.05)
-        camera.lookAt(highestCoin.x, highestCoin.y, highestCoin.z)
+        const lookAtPos = new THREE.Vector3(0, highestCoin.y, 0)
+        
+        camera.position.lerp(targetPos, 0.08) // Smooth following
+        
+        // Smoothly look at the coin's height
+        const currentLookAt = new THREE.Vector3(0, 0, -1)
+        currentLookAt.applyQuaternion(camera.quaternion)
+        const targetLookDir = lookAtPos.clone().sub(camera.position).normalize()
+        currentLookAt.lerp(targetLookDir, 0.08)
+        
+        const lookPoint = camera.position.clone().add(currentLookAt)
+        camera.lookAt(lookPoint)
       } else {
-        // Return to base position
-        const basePos = new THREE.Vector3(0, 40, 60)
-        camera.position.lerp(basePos, 0.02)
-        camera.lookAt(0, 20, 0)
+        // Return to base position (bottom of pinball machine)
+        const basePos = new THREE.Vector3(0, 5, 80)
+        camera.position.lerp(basePos, 0.05)
+        const baseLookAt = new THREE.Vector3(0, 5, 0)
+        
+        const currentLookAt = new THREE.Vector3(0, 0, -1)
+        currentLookAt.applyQuaternion(camera.quaternion)
+        const targetLookDir = baseLookAt.clone().sub(camera.position).normalize()
+        currentLookAt.lerp(targetLookDir, 0.05)
+        
+        const lookPoint = camera.position.clone().add(currentLookAt)
+        camera.lookAt(lookPoint)
       }
       
       // Slowly rotate obstacles for visual interest
@@ -194,28 +213,51 @@ const PhysicsScene = ({
     }
   }
   
-  // Create starfield fallback
+  // Create starfield fallback - vertical space tunnel
   const createStarfield = (scene) => {
     const starGeometry = new THREE.BufferGeometry()
     const starMaterial = new THREE.PointsMaterial({ 
       color: 0xffffff, 
-      size: 0.7, 
+      size: 1.2, 
       sizeAttenuation: true,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.9
     })
     
     const starVertices = []
-    for (let i = 0; i < 2000; i++) {
-      const x = (Math.random() - 0.5) * 400
-      const y = (Math.random() - 0.5) * 400
-      const z = (Math.random() - 0.5) * 400
+    // Create a vertical tunnel of stars - matches obstacle height
+    for (let i = 0; i < 4000; i++) {
+      const x = (Math.random() - 0.5) * 200
+      const y = Math.random() * 600 // Tall vertical spread to match obstacles (0-600)
+      const z = (Math.random() - 0.5) * 200
       starVertices.push(x, y, z)
     }
     
     starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3))
     const stars = new THREE.Points(starGeometry, starMaterial)
     scene.add(stars)
+    
+    // Add some colored nebula clouds
+    const nebulaGeometry = new THREE.BufferGeometry()
+    const nebulaMaterial = new THREE.PointsMaterial({ 
+      color: 0x4466ff, 
+      size: 3, 
+      sizeAttenuation: true,
+      transparent: true,
+      opacity: 0.3
+    })
+    
+    const nebulaVertices = []
+    for (let i = 0; i < 800; i++) {
+      const x = (Math.random() - 0.5) * 150
+      const y = Math.random() * 600 // Match star field height
+      const z = (Math.random() - 0.5) * 150
+      nebulaVertices.push(x, y, z)
+    }
+    
+    nebulaGeometry.setAttribute('position', new THREE.Float32BufferAttribute(nebulaVertices, 3))
+    const nebula = new THREE.Points(nebulaGeometry, nebulaMaterial)
+    scene.add(nebula)
   }
   
   // Create obstacles from loaded textures
@@ -274,31 +316,31 @@ const PhysicsScene = ({
   
   // Setup lighting
   const setupLighting = (scene) => {
-    const ambientLight = new THREE.AmbientLight(0x404080, 2)
+    const ambientLight = new THREE.AmbientLight(0x404080, 2.5)
     scene.add(ambientLight)
     
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
-    directionalLight.position.set(50, 100, 50)
+    directionalLight.position.set(50, 200, 50)
     directionalLight.castShadow = true
     directionalLight.shadow.camera.left = -100
     directionalLight.shadow.camera.right = 100
-    directionalLight.shadow.camera.top = 100
+    directionalLight.shadow.camera.top = 200
     directionalLight.shadow.camera.bottom = -100
     directionalLight.shadow.mapSize.width = 2048
     directionalLight.shadow.mapSize.height = 2048
     scene.add(directionalLight)
     
-    const pointLight1 = new THREE.PointLight(0x00ffff, 3, 150)
-    pointLight1.position.set(-30, 40, 20)
-    scene.add(pointLight1)
-    
-    const pointLight2 = new THREE.PointLight(0xff00ff, 3, 150)
-    pointLight2.position.set(30, 60, -20)
-    scene.add(pointLight2)
-    
-    const pointLight3 = new THREE.PointLight(0xffff00, 2, 100)
-    pointLight3.position.set(0, 80, 0)
-    scene.add(pointLight3)
+    // Add multiple point lights along the vertical path
+    for (let i = 0; i < 8; i++) {
+      const height = i * 70 // Space them out along the tall scene
+      const pointLight1 = new THREE.PointLight(0x00ffff, 2.5, 180)
+      pointLight1.position.set(-30, height, 20)
+      scene.add(pointLight1)
+      
+      const pointLight2 = new THREE.PointLight(0xff00ff, 2.5, 180)
+      pointLight2.position.set(30, height + 35, -20)
+      scene.add(pointLight2)
+    }
     
     const hemisphereLight = new THREE.HemisphereLight(0x4466ff, 0x000000, 1)
     scene.add(hemisphereLight)
@@ -328,7 +370,7 @@ const PhysicsScene = ({
       
       if (!coin) {
         // Create new coin for this player with custom textures
-        const coinGeometry = new THREE.CylinderGeometry(3, 3, 0.6, 32) // Bigger coins!
+        const coinGeometry = new THREE.CylinderGeometry(5, 5, 0.8, 64) // Much bigger coins for visibility!
         
         // Create materials for different parts of the coin
         const sideMaterial = new THREE.MeshStandardMaterial({ 
@@ -376,15 +418,19 @@ const PhysicsScene = ({
         coin.castShadow = true
         
         // Add glow effect
-        const glowGeometry = new THREE.CylinderGeometry(3.3, 3.3, 0.7, 32)
+        const glowGeometry = new THREE.CylinderGeometry(5.5, 5.5, 1, 64)
         const glowMaterial = new THREE.MeshBasicMaterial({
           color: 0xffd700,
           transparent: true,
-          opacity: 0.3,
+          opacity: 0.4,
           side: THREE.BackSide
         })
         const glow = new THREE.Mesh(glowGeometry, glowMaterial)
         coin.add(glow)
+        
+        // Add bright point light to coin for better visibility
+        const coinLight = new THREE.PointLight(0xffd700, 2, 30)
+        coin.add(coinLight)
         
         sceneRef.current.add(coin)
         coinsRef.current.set(playerAddr, coin)

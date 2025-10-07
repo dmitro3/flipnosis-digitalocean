@@ -96,19 +96,33 @@ class PhysicsGameManager {
   createObstacles(world) {
     const obstacles = []
     
+    // Create vertical "pinball machine" style layout
+    // Spread obstacles across tall vertical space (500 units high!)
+    const verticalSections = 10 // Divide vertical space into sections
+    const sectionHeight = 50 // Each section is 50 units tall
+    
     for (let i = 0; i < 20; i++) {
       let radius
-      if (i < 8) {
-        radius = 0.8 + Math.random() * 0.8 // Smaller obstacles
-      } else if (i < 16) {
-        radius = 1.5 + Math.random() * 1.5
+      // Vary sizes for visual interest
+      if (i < 7) {
+        radius = 3 + Math.random() * 2 // Medium-large planets/ships
+      } else if (i < 14) {
+        radius = 4 + Math.random() * 3 // Larger ones
       } else {
-        radius = 2.5 + Math.random() * 1.5
+        radius = 5 + Math.random() * 3 // Biggest ones
       }
       
-      const x = (Math.random() - 0.5) * 50
-      const y = 20 + Math.random() * 180 // Much taller scene (20-200)
-      const z = (Math.random() - 0.5) * 50
+      // Distribute evenly vertically with some randomness
+      const baseHeight = 30 + (i * 25) // Base vertical position, spaced out
+      const heightVariation = (Math.random() - 0.5) * 15 // Add some randomness
+      const y = baseHeight + heightVariation
+      
+      // Horizontal spread - alternate left/right for pinball feel
+      const side = (i % 2 === 0) ? 1 : -1
+      const x = side * (15 + Math.random() * 20) // Alternate sides with variation
+      
+      // Depth variation for 3D effect
+      const z = (Math.random() - 0.5) * 30
       
       const obstacleBody = new CANNON.Body({
         mass: 0,
