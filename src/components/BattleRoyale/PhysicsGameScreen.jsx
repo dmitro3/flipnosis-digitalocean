@@ -141,13 +141,6 @@ const PhysicsGameScreen = () => {
     socketService.emit('physics_fire_coin', { gameId: gameState.gameId, address, angle, power })
   }, [currentPlayer, gameState.gameId, address])
 
-  const handleCoinChange = useCallback((coin) => {
-    socketService.emit('battle_royale_update_coin', {
-      gameId: gameState.gameId,
-      address,
-      coin
-    })
-  }, [gameState.gameId, address])
 
   if (phase === 'game_over') {
     const isWinner = gameState.winner?.toLowerCase() === address?.toLowerCase()
@@ -198,7 +191,6 @@ const PhysicsGameScreen = () => {
           disabled={phase !== 'round_active' || currentPlayer?.hasFired}
           hasFired={currentPlayer?.hasFired}
           currentCoin={currentPlayer?.coin}
-          onCoinChange={handleCoinChange}
         />
       </BottomSection>
     </Container>

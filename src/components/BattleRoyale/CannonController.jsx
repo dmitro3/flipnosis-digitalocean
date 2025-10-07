@@ -1,18 +1,48 @@
 import React, { useState, useRef, useEffect } from 'react'
 import styled from '@emotion/styled'
-import CoinSelector from '../CoinSelector'
 
 const ControlPanel = styled.div`
   background: rgba(0, 0, 40, 0.98);
   border: 3px solid #00ffff;
   border-radius: 1rem;
-  padding: 1.5rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
   height: 100%;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
   backdrop-filter: blur(10px);
+  overflow-y: auto;
+`
+
+const CoinPreview = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(0, 191, 255, 0.1);
+  border: 2px solid #00bfff;
+  border-radius: 0.75rem;
+  
+  img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #FFD700;
+  }
+  
+  .coin-info {
+    flex: 1;
+    .coin-name {
+      color: #00ffff;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    .coin-hint {
+      color: #aaa;
+      font-size: 0.75rem;
+    }
+  }
 `
 
 const ChoiceButtons = styled.div`
@@ -199,65 +229,17 @@ const StatusText = styled.div`
   border-radius: 0.5rem;
 `
 
-const CoinPreview = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background: rgba(0, 0, 0, 0.6);
-  border: 2px solid #00ffff;
-  border-radius: 0.75rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(0, 255, 255, 0.1);
-    border-color: #00ffff;
-  }
-  
-  .coin-image {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid #ffd700;
-  }
-  
-  .coin-info {
-    color: white;
-    font-size: 0.8rem;
-    font-weight: bold;
-  }
-`
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`
-
-const ModalContent = styled.div`
-  background: rgba(0, 0, 40, 0.98);
-  border: 3px solid #00ffff;
-  border-radius: 1rem;
-  padding: 2rem;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow-y: auto;
-`
-
-const CannonController = ({ onChoiceSelect, onFire, selectedChoice = null, disabled = false, hasFired = false, currentCoin = null, onCoinChange = null }) => {
+const CannonController = ({ 
+  onChoiceSelect, 
+  onFire, 
+  selectedChoice = null, 
+  disabled = false, 
+  hasFired = false,
+  currentCoin = null
+}) => {
   const [angle, setAngle] = useState(0)
   const [power, setPower] = useState(5)
   const [isCharging, setIsCharging] = useState(false)
-  const [showCoinSelector, setShowCoinSelector] = useState(false)
   const chargeIntervalRef = useRef(null)
 
   const handleChoiceClick = (choice) => { 
@@ -302,31 +284,22 @@ const CannonController = ({ onChoiceSelect, onFire, selectedChoice = null, disab
 
   useEffect(() => { return () => { stopCharging() } }, [])
 
-  const handleCoinSelect = (coin) => {
-    if (onCoinChange) {
-      onCoinChange(coin)
-    }
-    setShowCoinSelector(false)
-  }
-
   return (
-    <>
-      <ControlPanel>
-        {/* Coin Preview at Top */}
-        {currentCoin && !hasFired && (
-          <CoinPreview onClick={() => setShowCoinSelector(true)}>
-            <img 
-              src={currentCoin.headsImage} 
-              alt={currentCoin.name}
-              className="coin-image"
-            />
-            <div className="coin-info">
-              {currentCoin.name}
-            </div>
-          </CoinPreview>
-        )}
-        
-        <ChoiceButtons>
+    <ControlPanel>
+      <CoinPreview>
+        <img 
+          src={currentCoin?.headsImage || '/coins/plainh.png'} 
+          alt="Current coin" 
+        />
+        <div className="coin-info">
+          <div className="coin-name">{currentCoin?.name || 'Classic'}</div>
+          <div className="coin-hint">
+            {hasFired ? 'Locked until next round' : 'Your coin'}
+          </div>
+        </div>
+      </CoinPreview>
+      
+      <ChoiceButtons>
         <button 
           className={`heads ${selectedChoice === 'heads' ? 'selected' : ''}`} 
           onClick={() => handleChoiceClick('heads')} 
@@ -380,39 +353,8 @@ const CannonController = ({ onChoiceSelect, onFire, selectedChoice = null, disab
         <StatusText hasFired={true}>
           Coin in flight! Waiting for result...
         </StatusText>
-        )}
-      </ControlPanel>
-      
-      {/* Coin Selector Modal */}
-      {showCoinSelector && (
-        <ModalOverlay onClick={() => setShowCoinSelector(false)}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ color: '#00ffff', marginBottom: '1rem', textAlign: 'center' }}>
-              Choose Your Coin
-            </h2>
-            <CoinSelector 
-              onSelect={handleCoinSelect}
-              currentCoin={currentCoin}
-            />
-            <button 
-              onClick={() => setShowCoinSelector(false)}
-              style={{
-                marginTop: '1rem',
-                padding: '0.5rem 1rem',
-                background: '#ff1493',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                width: '100%'
-              }}
-            >
-              Close
-            </button>
-          </ModalContent>
-        </ModalOverlay>
       )}
-    </>
+    </ControlPanel>
   )
 }
 
