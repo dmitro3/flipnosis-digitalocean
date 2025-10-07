@@ -137,8 +137,31 @@ initialize(server, dbService) {
         )
       }))
 
-      socket.on('join_battle_royale', safeHandler((data) => {
+      socket.on('join_battle_royale', safeHandler(async (data) => {
         console.log(`📥 join_battle_royale from ${socket.id}`, data)
+        const { gameId, address } = data || {}
+        if (gameId && (gameId.startsWith('physics_') || `${gameId}`.includes('physics_'))) {
+          // Physics game join via socket: add player to manager, persist, and broadcast
+          const added = this.physicsGameManager.addPlayer(gameId, address)
+          if (added) {
+            try {
+              await this.dbService.addBattleRoyalePlayer(gameId, {
+                player_address: address.toLowerCase(),
+                slot_number: this.physicsGameManager.getGame(gameId).currentPlayers,
+                entry_paid: !!data?.betAmount,
+                entry_payment_hash: data?.payment_hash || null
+              })
+            } catch (e) {
+              console.warn('⚠️ Failed to persist player join (continuing):', e?.message)
+            }
+            this.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
+              this.io.to(room).emit(event, payload)
+            })
+          } else {
+            socket.emit('battle_royale_error', { message: 'Failed to join physics game' })
+          }
+          return
+        }
         return this.battleRoyaleHandlers.handleJoinBattleRoyale(
           socket, 
           data, 
