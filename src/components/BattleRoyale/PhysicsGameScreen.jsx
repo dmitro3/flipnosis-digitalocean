@@ -19,22 +19,32 @@ const SceneContainer = styled.div`
   flex: 1;
   position: relative;
   width: 100%;
+  min-height: 0;
 `
 
-const PlayerBoxesContainer = styled.div`
-  height: 200px;
+const BottomSection = styled.div`
+  height: 250px;
   width: 100%;
-  background: rgba(0, 0, 20, 0.9);
-  border-top: 2px solid #00ffff;
+  background: rgba(0, 0, 20, 0.95);
+  border-top: 3px solid #00ffff;
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 1rem;
+  padding: 1rem;
+  
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
 `
 
-const TurnIndicator = styled.div`
+const RoundIndicator = styled.div`
   position: absolute;
   top: 2rem;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.9);
-  border: 3px solid ${props => props.isYourTurn ? '#00ff88' : '#ff1493'};
+  border: 3px solid #00ffff;
   padding: 1rem 3rem;
   border-radius: 2rem;
   color: white;
@@ -42,7 +52,7 @@ const TurnIndicator = styled.div`
   font-weight: bold;
   text-align: center;
   z-index: 100;
-  box-shadow: 0 0 30px ${props => props.isYourTurn ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 20, 147, 0.5)'};
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
 `
 
 const TimerDisplay = styled.div`
@@ -79,28 +89,41 @@ const GameOverOverlay = styled.div`
 `
 
 const PhysicsGameScreen = () => {
-  const { gameState, address, makeChoice } = useBattleRoyaleGame()
+  const { gameState, address } = useBattleRoyaleGame()
   const [localChoice, setLocalChoice] = useState(null)
-  const [coinPositions, setCoinPositions] = useState([])
-  const [cameraTarget, setCameraTarget] = useState(null)
+  const [coinPositions, setCoinPositions] = useState(new Map()) // Map of playerAddress -> coinPosition
+  
   if (!gameState) return null
+  
   const phase = gameState.phase
-  const isMyTurn = gameState.currentTurnPlayer?.toLowerCase() === address?.toLowerCase()
   const currentPlayer = gameState.players?.[address?.toLowerCase()]
-  const turnTimer = gameState.turnTimer || 0
+  const turnTimer = gameState.roundTimer || 0
   const urgent = turnTimer <= 10
 
   useEffect(() => {
     const handleCoinPosition = (data) => {
-      setCoinPositions(prev => [...prev, { position: data.position, rotation: data.rotation, timestamp: Date.now() }])
-      setCameraTarget(data.position)
+      setCoinPositions(prev => {
+        const newMap = new Map(prev)
+        newMap.set(data.playerAddress, {
+          position: data.position,
+          rotation: data.rotation,
+          timestamp: Date.now()
+        })
+        return newMap
+      })
     }
+    
     const handleCoinLanded = (data) => {
-      setCameraTarget(null)
-      setTimeout(() => { setCoinPositions([]) }, 3000)
+      setCoinPositions(prev => {
+        const newMap = new Map(prev)
+        newMap.delete(data.playerAddress)
+        return newMap
+      })
     }
+    
     socketService.on('physics_coin_position', handleCoinPosition)
     socketService.on('physics_coin_landed', handleCoinLanded)
+    
     return () => {
       socketService.off('physics_coin_position', handleCoinPosition)
       socketService.off('physics_coin_landed', handleCoinLanded)
@@ -108,15 +131,15 @@ const PhysicsGameScreen = () => {
   }, [])
 
   const handleChoiceSelect = useCallback((choice) => {
-    if (!isMyTurn) return
+    if (currentPlayer?.hasFired) return
     setLocalChoice(choice)
-    makeChoice(choice)
-  }, [isMyTurn, makeChoice])
+    socketService.emit('physics_set_choice', { gameId: gameState.gameId, address, choice })
+  }, [currentPlayer, gameState.gameId, address])
 
   const handleFireCoin = useCallback((angle, power) => {
-    if (!isMyTurn || !currentPlayer?.choice) return
+    if (!currentPlayer?.choice || currentPlayer?.hasFired) return
     socketService.emit('physics_fire_coin', { gameId: gameState.gameId, address, angle, power })
-  }, [isMyTurn, currentPlayer, gameState.gameId, address])
+  }, [currentPlayer, gameState.gameId, address])
 
   if (phase === 'game_over') {
     const isWinner = gameState.winner?.toLowerCase() === address?.toLowerCase()
@@ -133,23 +156,43 @@ const PhysicsGameScreen = () => {
 
   return (
     <Container>
-      {phase === 'player_turn' && (
-        <TurnIndicator isYourTurn={isMyTurn}>{isMyTurn ? '🎯 YOUR TURN!' : `⏳ ${gameState.currentTurnPlayer?.slice(0, 8)}'s Turn`}</TurnIndicator>
+      {phase === 'round_active' && (
+        <>
+          <RoundIndicator>
+            🎯 ROUND {gameState.currentRound} - EVERYONE FIRES!
+          </RoundIndicator>
+          <TimerDisplay urgent={urgent}>{turnTimer}s</TimerDisplay>
+        </>
       )}
-      {phase === 'player_turn' && (<TimerDisplay urgent={urgent}>{turnTimer}s</TimerDisplay>)}
+      
       <SceneContainer>
-        <PhysicsScene obstacles={gameState.obstacles || []} players={gameState.players || {}} coinPositions={coinPositions} cameraTarget={cameraTarget} currentPlayerAddress={address} isMyTurn={isMyTurn} />
-        {isMyTurn && phase === 'player_turn' && (
-          <CannonController onChoiceSelect={handleChoiceSelect} onFire={handleFireCoin} selectedChoice={localChoice || currentPlayer?.choice} disabled={!currentPlayer?.choice} />
-        )}
+        <PhysicsScene 
+          obstacles={gameState.obstacles || []} 
+          players={gameState.players || {}} 
+          coinPositions={Array.from(coinPositions.values())}
+          playerAddresses={Array.from(coinPositions.keys())}
+          currentPlayerAddress={address} 
+        />
       </SceneContainer>
-      <PlayerBoxesContainer>
-        <PlayerLifeBoxes players={gameState.players || {}} playerOrder={gameState.playerOrder || []} currentPlayerAddress={address} currentTurnPlayer={gameState.currentTurnPlayer} />
-      </PlayerBoxesContainer>
+      
+      <BottomSection>
+        <CannonController 
+          onChoiceSelect={handleChoiceSelect} 
+          onFire={handleFireCoin} 
+          selectedChoice={localChoice || currentPlayer?.choice} 
+          disabled={phase !== 'round_active' || currentPlayer?.hasFired}
+          hasFired={currentPlayer?.hasFired}
+        />
+        
+        <PlayerLifeBoxes 
+          players={gameState.players || {}} 
+          playerOrder={gameState.playerOrder || []} 
+          currentPlayerAddress={address}
+          maxPlayers={gameState.maxPlayers || 6}
+        />
+      </BottomSection>
     </Container>
   )
 }
 
 export default PhysicsGameScreen
-
-

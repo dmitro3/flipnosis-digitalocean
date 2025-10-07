@@ -4,118 +4,270 @@ import ProfilePicture from '../ProfilePicture'
 
 const BoxesContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(${props => props.playerCount}, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.75rem;
   height: 100%;
-  padding: 0.5rem;
-  background: rgba(0, 0, 20, 0.9);
+  padding: 0;
 `
 
 const PlayerBox = styled.div`
-  background: linear-gradient(135deg, ${props => props.isCurrentPlayer ? 'rgba(0, 255, 136, 0.2)' : 'rgba(0, 191, 255, 0.2)'}, rgba(0, 0, 0, 0.8));
-  border: 3px solid ${props => { if (props.isCurrentTurn) return '#FFD700'; if (props.isCurrentPlayer) return '#00ff88'; return '#00bfff' }};
+  background: linear-gradient(135deg, ${props => {
+    if (props.isEmpty) return 'rgba(255, 20, 147, 0.1)'
+    if (props.isEliminated) return 'rgba(255, 0, 0, 0.2)'
+    if (props.isCurrentPlayer) return 'rgba(0, 255, 136, 0.2)'
+    return 'rgba(0, 191, 255, 0.2)'
+  }}, rgba(0, 0, 0, 0.8));
+  
+  border: 3px solid ${props => { 
+    if (props.isEmpty) return 'rgba(255, 20, 147, 0.3)'
+    if (props.isEliminated) return '#ff0000'
+    if (props.isCurrentPlayer) return '#00ff88'
+    return '#00bfff'
+  }};
+  
   border-radius: 1rem;
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  opacity: ${props => props.isEliminated ? 0.3 : 1};
-  filter: ${props => props.isEliminated ? 'grayscale(100%)' : 'none'};
+  position: relative;
   transition: all 0.3s ease;
-  box-shadow: ${props => props.isCurrentTurn ? '0 0 30px rgba(255, 215, 0, 0.5)' : 'none'};
-  animation: ${props => props.isCurrentTurn ? 'turnGlow 2s ease-in-out infinite' : 'none'};
-  @keyframes turnGlow { 0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); } 50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); } }
+  
+  opacity: ${props => props.isEliminated || props.isEmpty ? 0.5 : 1};
+  filter: ${props => props.isEliminated ? 'grayscale(100%)' : 'none'};
+`
+
+const EmptySlot = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 4rem;
+  color: #ff1493;
+  text-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
+  font-weight: bold;
+  animation: pulseX 2s ease-in-out infinite;
+  
+  @keyframes pulseX {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  }
+`
+
+const EliminatedX = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 5rem;
+  color: #ff1493;
+  text-shadow: 0 0 30px rgba(255, 20, 147, 1);
+  font-weight: bold;
+  z-index: 10;
+  animation: pulseX 2s ease-in-out infinite;
 `
 
 const PlayerHeader = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  position: relative;
+  z-index: 1;
 `
 
 const PlayerInfo = styled.div`
   flex: 1;
-  .address { color: white; font-size: 0.8rem; font-family: monospace; font-weight: bold; }
-  .label { color: ${props => props.isCurrentPlayer ? '#00ff88' : '#aaa'}; font-size: 0.7rem; }
+  .address { 
+    color: white; 
+    font-size: 0.75rem; 
+    font-family: monospace; 
+    font-weight: bold; 
+  }
+  .label { 
+    color: ${props => props.isCurrentPlayer ? '#00ff88' : '#aaa'}; 
+    font-size: 0.65rem; 
+  }
 `
 
 const LivesDisplay = styled.div`
   display: flex;
   gap: 0.25rem;
   justify-content: center;
-  .heart { font-size: 1.5rem; }
+  position: relative;
+  z-index: 1;
+  
+  .heart { 
+    font-size: 1.25rem; 
+  }
 `
 
 const ChoiceDisplay = styled.div`
   text-align: center;
   padding: 0.5rem;
-  background: ${props => { if (props.choice === 'heads') return 'rgba(255, 215, 0, 0.2)'; if (props.choice === 'tails') return 'rgba(192, 192, 192, 0.2)'; return 'rgba(100, 100, 100, 0.2)' }};
-  border: 2px solid ${props => { if (props.choice === 'heads') return '#FFD700'; if (props.choice === 'tails') return '#C0C0C0'; return '#666' }};
+  background: ${props => { 
+    if (props.choice === 'heads') return 'rgba(255, 215, 0, 0.2)'
+    if (props.choice === 'tails') return 'rgba(192, 192, 192, 0.2)'
+    return 'rgba(100, 100, 100, 0.2)' 
+  }};
+  border: 2px solid ${props => { 
+    if (props.choice === 'heads') return '#FFD700'
+    if (props.choice === 'tails') return '#C0C0C0'
+    return '#666' 
+  }};
   border-radius: 0.5rem;
-  color: ${props => { if (props.choice === 'heads') return '#FFD700'; if (props.choice === 'tails') return '#C0C0C0'; return '#999' }};
+  color: ${props => { 
+    if (props.choice === 'heads') return '#FFD700'
+    if (props.choice === 'tails') return '#C0C0C0'
+    return '#999' 
+  }};
   font-weight: bold;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  position: relative;
+  z-index: 1;
 `
 
-const ResultDisplay = styled.div`
+const FiredIndicator = styled.div`
   text-align: center;
   padding: 0.5rem;
-  background: ${props => props.won ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 51, 51, 0.3)'};
-  border: 2px solid ${props => props.won ? '#00ff88' : '#ff3333'};
+  background: rgba(0, 255, 136, 0.3);
+  border: 2px solid #00ff88;
   border-radius: 0.5rem;
-  color: ${props => props.won ? '#00ff88' : '#ff3333'};
+  color: #00ff88;
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 0.8rem;
+  animation: pulse 1s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
 `
 
-const EliminatedBadge = styled.div`
-  text-align: center;
-  padding: 0.5rem;
-  background: rgba(255, 0, 0, 0.3);
-  border: 2px solid #ff0000;
+const SlotNumber = styled.div`
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: #00ffff;
+  padding: 0.25rem 0.5rem;
   border-radius: 0.5rem;
-  color: #ff6b6b;
+  font-size: 0.75rem;
   font-weight: bold;
-  font-size: 0.9rem;
+  z-index: 1;
 `
 
-const PlayerLifeBoxes = ({ players = {}, playerOrder = [], currentPlayerAddress = null, currentTurnPlayer = null }) => {
+const PlayerLifeBoxes = ({ 
+  players = {}, 
+  playerOrder = [], 
+  currentPlayerAddress = null,
+  maxPlayers = 6
+}) => {
+  // Create array of 6 slots
+  const slots = Array.from({ length: maxPlayers }, (_, i) => {
+    const playerAddr = playerOrder[i]
+    const player = playerAddr ? players[playerAddr] : null
+    const isCurrentPlayer = playerAddr?.toLowerCase() === currentPlayerAddress?.toLowerCase()
+    const isEmpty = !player
+    const isEliminated = player && !player.isActive
+    
+    return {
+      slotNumber: i + 1,
+      playerAddr,
+      player,
+      isCurrentPlayer,
+      isEmpty,
+      isEliminated
+    }
+  })
+
   return (
-    <BoxesContainer playerCount={Math.min(playerOrder.length, 6)}>
-      {playerOrder.map(playerAddr => {
-        const player = players[playerAddr]
-        if (!player) return null
-        const isCurrentPlayer = playerAddr.toLowerCase() === currentPlayerAddress?.toLowerCase()
-        const isCurrentTurn = playerAddr.toLowerCase() === currentTurnPlayer?.toLowerCase()
-        const isEliminated = !player.isActive
-        return (
-          <PlayerBox key={playerAddr} isCurrentPlayer={isCurrentPlayer} isCurrentTurn={isCurrentTurn} isEliminated={isEliminated}>
-            <PlayerHeader>
-              <ProfilePicture address={playerAddr} size={40} style={{ borderRadius: '50%', border: '2px solid rgba(255, 255, 255, 0.3)' }} />
-              <PlayerInfo isCurrentPlayer={isCurrentPlayer}>
-                <div className="address">{isCurrentPlayer ? 'YOU' : `${playerAddr.slice(0, 6)}...${playerAddr.slice(-4)}`}</div>
-                <div className="label">{isCurrentTurn ? '🎯 Your Turn' : isCurrentPlayer ? 'Waiting...' : 'Opponent'}</div>
-              </PlayerInfo>
-            </PlayerHeader>
-            {!isEliminated && (
+    <BoxesContainer>
+      {slots.map((slot) => (
+        <PlayerBox 
+          key={slot.slotNumber} 
+          isCurrentPlayer={slot.isCurrentPlayer} 
+          isEmpty={slot.isEmpty}
+          isEliminated={slot.isEliminated}
+        >
+          <SlotNumber>{slot.slotNumber}</SlotNumber>
+          
+          {slot.isEmpty ? (
+            <EmptySlot>✖</EmptySlot>
+          ) : slot.isEliminated ? (
+            <>
+              <PlayerHeader>
+                <ProfilePicture 
+                  address={slot.playerAddr} 
+                  size={40} 
+                  style={{ 
+                    borderRadius: '50%', 
+                    border: '2px solid rgba(255, 0, 0, 0.5)',
+                    opacity: 0.3
+                  }} 
+                />
+                <PlayerInfo isCurrentPlayer={slot.isCurrentPlayer}>
+                  <div className="address">
+                    {slot.isCurrentPlayer ? 'YOU' : `${slot.playerAddr.slice(0, 6)}...${slot.playerAddr.slice(-4)}`}
+                  </div>
+                  <div className="label" style={{ color: '#ff0000' }}>ELIMINATED</div>
+                </PlayerInfo>
+              </PlayerHeader>
+              <EliminatedX>✖</EliminatedX>
+            </>
+          ) : (
+            <>
+              <PlayerHeader>
+                <ProfilePicture 
+                  address={slot.playerAddr} 
+                  size={40} 
+                  style={{ 
+                    borderRadius: '50%', 
+                    border: '2px solid rgba(255, 255, 255, 0.3)' 
+                  }} 
+                />
+                <PlayerInfo isCurrentPlayer={slot.isCurrentPlayer}>
+                  <div className="address">
+                    {slot.isCurrentPlayer ? 'YOU' : `${slot.playerAddr.slice(0, 6)}...${slot.playerAddr.slice(-4)}`}
+                  </div>
+                  <div className="label">
+                    {slot.isCurrentPlayer ? 'Your Turn' : 'Opponent'}
+                  </div>
+                </PlayerInfo>
+              </PlayerHeader>
+              
               <LivesDisplay>
                 {[1, 2, 3].map(i => (
-                  <span key={i} className="heart" style={{ filter: i <= player.lives ? 'none' : 'grayscale(100%)', opacity: i <= player.lives ? 1 : 0.3 }}>
-                    {i <= player.lives ? '❤️' : '🖤'}
+                  <span 
+                    key={i} 
+                    className="heart" 
+                    style={{ 
+                      filter: i <= slot.player.lives ? 'none' : 'grayscale(100%)', 
+                      opacity: i <= slot.player.lives ? 1 : 0.3 
+                    }}
+                  >
+                    {i <= slot.player.lives ? '❤️' : '🖤'}
                   </span>
                 ))}
               </LivesDisplay>
-            )}
-            {player.choice && !isEliminated && (<ChoiceDisplay choice={player.choice}>{player.choice.toUpperCase()}</ChoiceDisplay>)}
-            {player.lastResult && !isEliminated && (<ResultDisplay won={player.lastResult.won}>{player.lastResult.won ? '✅ WIN' : '❌ LOSE'}</ResultDisplay>)}
-            {isEliminated && (<EliminatedBadge>💀 ELIMINATED</EliminatedBadge>)}
-          </PlayerBox>
-        )
-      })}
+              
+              {slot.player.choice && (
+                <ChoiceDisplay choice={slot.player.choice}>
+                  {slot.player.choice.toUpperCase()}
+                </ChoiceDisplay>
+              )}
+              
+              {slot.player.hasFired && (
+                <FiredIndicator>🚀 COIN FIRED!</FiredIndicator>
+              )}
+            </>
+          )}
+        </PlayerBox>
+      ))}
     </BoxesContainer>
   )
 }
 
 export default PlayerLifeBoxes
-
-

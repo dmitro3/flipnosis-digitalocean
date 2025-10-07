@@ -94,3 +94,4 @@ Write-Host "   • User notifications (notifications)" -ForegroundColor White
 Write-Host "   • General messaging (messages)" -ForegroundColor White
 Write-Host ""
 Write-Host "🚀 Your application should now work without database errors!" -ForegroundColor Green
+
