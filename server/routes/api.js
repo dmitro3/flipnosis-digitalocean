@@ -1063,6 +1063,10 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
             entry_paid: !!payment_hash,
             entry_payment_hash: payment_hash
           })
+          // Broadcast updated physics state to room
+          gameServer.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
+            gameServer.io.to(room).emit(event, payload)
+          })
           return res.json({ success: true, message: 'Successfully joined Physics Battle Royale' })
         } else {
           return res.status(400).json({ error: 'Failed to join game' })
@@ -1964,9 +1968,14 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
 
       await dbService.addBattleRoyalePlayer(gameId, playerData)
 
-      // Add player to physics game manager
+      // Add player to physics game manager and broadcast
       if (gameServer && gameServer.physicsGameManager) {
-        gameServer.physicsGameManager.addPlayer(gameId, player_address)
+        const added = gameServer.physicsGameManager.addPlayer(gameId, player_address)
+        if (added) {
+          gameServer.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
+            gameServer.io.to(room).emit(event, payload)
+          })
+        }
       }
 
       // Update game player count
