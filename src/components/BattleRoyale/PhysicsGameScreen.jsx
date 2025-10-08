@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react'
 import styled from '@emotion/styled'
-import PhysicsScene from './PhysicsScene'
-import CannonController from './CannonController'
-import PlayerLifeBoxes from './PlayerLifeBoxes'
+import SimpleCoinTubes from './SimpleCoinTubes'
+import SimplePlayerCards from './SimplePlayerCards'
 import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
 import socketService from '../../services/SocketService'
+import CoinSelector from '../CoinSelector'
 
 const FullScreenContainer = styled.div`
   position: fixed !important;
@@ -17,54 +17,15 @@ const FullScreenContainer = styled.div`
   flex-direction: column;
   overflow: hidden;
   z-index: 9999 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
 `
 
-const GameArea = styled.div`
+const TopArea = styled.div`
   flex: 1;
   position: relative;
-  width: 100vw;
-  height: calc(100vh - 220px);
-  background: #000000;
-  border-bottom: 4px solid #00ffff;
-  box-shadow: 0 4px 30px rgba(0, 255, 255, 0.3);
-  overflow: hidden;
-  
-  > div {
-    width: 100% !important;
-    height: 100% !important;
-  }
-`
-
-const ControlArea = styled.div`
-  height: 220px;
-  width: 100vw;
-  background: rgba(0, 0, 30, 0.98);
-  border-top: 4px solid #00ffff;
-  display: grid;
-  grid-template-columns: 2fr 200px 2fr;
-  gap: 1rem;
-  padding: 1rem;
-  align-items: stretch;
-  box-shadow: 0 -4px 30px rgba(0, 255, 255, 0.2);
-  
-  @media (max-width: 1200px) {
-    grid-template-columns: 1fr 180px 1fr;
-  }
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    height: auto;
-  }
-`
-
-const CenterColumn = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: stretch;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
 `
 
 const RoundIndicator = styled.div`
@@ -74,262 +35,188 @@ const RoundIndicator = styled.div`
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.95);
   border: 4px solid #00ffff;
-  padding: 1.2rem 3rem;
-  border-radius: 2rem;
+  padding: 1rem 2rem;
+  border-radius: 1rem;
   color: white;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: bold;
-  text-align: center;
   z-index: 100;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
-  font-family: 'Hyperwave', monospace;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
   
   .round-text {
     background: linear-gradient(135deg, #00ffff, #00ff88);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    background-clip: text;
   }
 `
 
 const TimerDisplay = styled.div`
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
   background: rgba(0, 0, 0, 0.95);
   border: 4px solid ${props => props.urgent ? '#ff1493' : '#00ffff'};
-  border-radius: 1.5rem;
+  border-radius: 1rem;
+  padding: 1rem 2rem;
   color: white;
   font-size: 2.5rem;
   font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 80px;
-  box-shadow: 0 0 50px ${props => props.urgent ? 'rgba(255, 20, 147, 0.8)' : 'rgba(0, 255, 255, 0.8)'};
+  z-index: 100;
+  box-shadow: 0 0 30px ${props => props.urgent ? 'rgba(255, 20, 147, 0.8)' : 'rgba(0, 255, 255, 0.8)'};
   animation: ${props => props.urgent ? 'pulse 0.8s ease-in-out infinite' : 'none'};
-  font-family: 'Hyperwave', monospace;
   
-  @keyframes pulse { 
-    0%, 100% { transform: scale(1); opacity: 1; } 
-    50% { transform: scale(1.08); opacity: 0.85; } 
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
   }
 `
 
-const CoinSelectButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.8rem;
-  padding: 0.8rem;
-  background: rgba(0, 255, 255, 0.15);
-  border: 3px solid #00ffff;
-  border-radius: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  flex: 1;
-  
-  &:hover:not(:disabled) {
-    background: rgba(0, 255, 255, 0.25);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(0, 255, 255, 0.4);
-  }
-  
-  img {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: 3px solid #FFD700;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-  }
-  
-  .coin-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    
-    .coin-name {
-      color: #00ffff;
-      font-weight: bold;
-      font-size: 1.2rem;
-      font-family: 'Hyperwave', sans-serif;
-      letter-spacing: 1px;
-    }
-    
-    .coin-hint {
-      color: #aaa;
-      font-size: 0.7rem;
-    }
-  }
+const BottomArea = styled.div`
+  height: auto;
+  background: rgba(0, 0, 30, 0.98);
+  border-top: 4px solid #00ffff;
+  padding: 1rem;
 `
 
-const GameOverOverlay = styled.div`
-  position: absolute;
+const Modal = styled.div`
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.97);
+  background: rgba(0, 0, 0, 0.95);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(10px);
+  z-index: 10000;
+`
+
+const ModalContent = styled.div`
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid #FFD700;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+`
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #FFD700;
+  font-size: 2rem;
+  cursor: pointer;
   
-  .trophy { 
-    font-size: 8rem; 
-    margin-bottom: 2rem;
-    animation: bounce 1s ease-in-out infinite;
-  }
-  
-  .message { 
-    font-size: 4rem; 
-    font-weight: bold; 
-    color: ${props => props.isWinner ? '#FFD700' : '#ff6b6b'}; 
-    margin-bottom: 1.5rem; 
-    text-shadow: 0 0 30px currentColor;
-    font-family: 'Hyperwave', monospace;
-    letter-spacing: 3px;
-  }
-  
-  .winner { 
-    font-size: 1.8rem; 
-    color: white; 
-    font-family: monospace;
-    background: rgba(0, 255, 255, 0.2);
-    padding: 1rem 2rem;
-    border-radius: 1rem;
-    border: 2px solid #00ffff;
-  }
-  
-  @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
+  &:hover {
+    color: #ff6b6b;
   }
 `
 
 const PhysicsGameScreen = () => {
-  const { gameState, address } = useBattleRoyaleGame()
-  const [localChoice, setLocalChoice] = useState(null)
-  const [coinPositions, setCoinPositions] = useState(new Map())
-  
+  const { gameState, address, updateCoin } = useBattleRoyaleGame()
+  const [showCoinSelector, setShowCoinSelector] = useState(false)
+  const [selectedPlayerAddr, setSelectedPlayerAddr] = useState(null)
+
   if (!gameState) return null
-  
+
   const phase = gameState.phase
   const currentPlayer = gameState.players?.[address?.toLowerCase()]
   const turnTimer = gameState.roundTimer || 0
   const urgent = turnTimer <= 10
 
-  React.useEffect(() => {
-    const handleCoinPosition = (data) => {
-      setCoinPositions(prev => {
-        const newMap = new Map(prev)
-        newMap.set(data.playerAddress, {
-          position: data.position,
-          rotation: data.rotation,
-          timestamp: Date.now()
-        })
-        return newMap
-      })
+  const handleChoiceSelect = useCallback((choice) => {
+    socketService.emit('physics_set_choice', {
+      gameId: gameState.gameId,
+      address,
+      choice
+    })
+  }, [gameState.gameId, address])
+
+  const handleFlipCoin = useCallback((playerAddr) => {
+    // Trigger the coin animation
+    if (window.flipCoin) {
+      window.flipCoin(playerAddr, 10) // Max power
     }
-    
-    const handleCoinLanded = (data) => {
-      setCoinPositions(prev => {
-        const newMap = new Map(prev)
-        newMap.delete(data.playerAddress)
-        return newMap
-      })
-    }
-    
-    socketService.on('physics_coin_position', handleCoinPosition)
-    socketService.on('physics_coin_landed', handleCoinLanded)
-    
-    return () => {
-      socketService.off('physics_coin_position', handleCoinPosition)
-      socketService.off('physics_coin_landed', handleCoinLanded)
-    }
+
+    socketService.emit('physics_fire_coin', {
+      gameId: gameState.gameId,
+      address: playerAddr,
+      angle: 0,
+      power: 10
+    })
+  }, [gameState.gameId])
+
+  const handleChangeCoin = useCallback((playerAddr) => {
+    setSelectedPlayerAddr(playerAddr)
+    setShowCoinSelector(true)
   }, [])
 
-  const handleChoiceSelect = useCallback((choice) => {
-    if (currentPlayer?.hasFired) return
-    setLocalChoice(choice)
-    socketService.emit('physics_set_choice', { gameId: gameState.gameId, address, choice })
-  }, [currentPlayer, gameState.gameId, address])
+  const handleCoinSelect = useCallback((coinData) => {
+    updateCoin(coinData)
+    setShowCoinSelector(false)
+    setSelectedPlayerAddr(null)
+  }, [updateCoin])
 
-  const handleFireCoin = useCallback((angle, power) => {
-    if (!currentPlayer?.choice || currentPlayer?.hasFired) return
-    socketService.emit('physics_fire_coin', { gameId: gameState.gameId, address, angle, power })
-  }, [currentPlayer, gameState.gameId, address])
-
-  if (phase === 'game_over') {
-    const isWinner = gameState.winner?.toLowerCase() === address?.toLowerCase()
-    return (
-      <FullScreenContainer>
-        <GameOverOverlay isWinner={isWinner}>
-          <div className="trophy">{isWinner ? '🏆' : '💀'}</div>
-          <div className="message">{isWinner ? 'VICTORY!' : 'GAME OVER'}</div>
-          <div className="winner">
-            Winner: {gameState.winner ? `${gameState.winner.slice(0, 10)}...${gameState.winner.slice(-8)}` : 'None'}
-          </div>
-        </GameOverOverlay>
-      </FullScreenContainer>
-    )
-  }
+  const handleCoinLanded = useCallback((playerAddr, result) => {
+    console.log(`Coin landed: ${playerAddr} - ${result}`)
+    // The server will handle the result
+  }, [])
 
   return (
     <FullScreenContainer>
-      {phase === 'round_active' && (
-        <RoundIndicator>
-          <div className="round-text">
-            🎯 ROUND {gameState.currentRound}
-          </div>
-        </RoundIndicator>
-      )}
-      
-      <GameArea>
-        <PhysicsScene 
-          obstacles={gameState.obstacles || []} 
-          players={gameState.players || {}} 
-          coinPositions={Array.from(coinPositions.values())}
-          playerAddresses={Array.from(coinPositions.keys())}
-          currentPlayerAddress={address} 
+      <TopArea>
+        {phase === 'round_active' && (
+          <>
+            <RoundIndicator>
+              <div className="round-text">
+                🎯 ROUND {gameState.currentRound}
+              </div>
+            </RoundIndicator>
+
+            <TimerDisplay urgent={urgent}>
+              {turnTimer}s
+            </TimerDisplay>
+          </>
+        )}
+
+        <SimpleCoinTubes
+          players={gameState.players || {}}
+          playerOrder={gameState.playerOrder || []}
+          onCoinLanded={handleCoinLanded}
         />
-      </GameArea>
-      
-      <ControlArea>
-        <PlayerLifeBoxes 
-          players={gameState.players || {}} 
-          playerOrder={gameState.playerOrder || []} 
+      </TopArea>
+
+      <BottomArea>
+        <SimplePlayerCards
+          players={gameState.players || {}}
+          playerOrder={gameState.playerOrder || []}
           currentPlayerAddress={address}
-          maxPlayers={gameState.maxPlayers || 6}
-        />
-        
-        <CenterColumn>
-          <TimerDisplay urgent={urgent}>
-            {phase === 'round_active' ? `${turnTimer}s` : '⏸'}
-          </TimerDisplay>
-          
-          <CoinSelectButton disabled={true}>
-            <img 
-              src={currentPlayer?.coin?.headsImage || '/coins/plainh.png'} 
-              alt="Current coin" 
-            />
-            <div className="coin-info">
-              <div className="coin-name">{currentPlayer?.coin?.name || 'Classic'}</div>
-              <div className="coin-hint">Your Coin</div>
-            </div>
-          </CoinSelectButton>
-        </CenterColumn>
-        
-        <CannonController 
-          onChoiceSelect={handleChoiceSelect} 
-          onFire={handleFireCoin} 
-          selectedChoice={localChoice || currentPlayer?.choice} 
+          onChoiceSelect={handleChoiceSelect}
+          onFlipCoin={handleFlipCoin}
+          onChangeCoin={handleChangeCoin}
           disabled={phase !== 'round_active' || currentPlayer?.hasFired}
-          hasFired={currentPlayer?.hasFired}
-          currentCoin={currentPlayer?.coin}
         />
-      </ControlArea>
+      </BottomArea>
+
+      {showCoinSelector && (
+        <Modal onClick={() => setShowCoinSelector(false)}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <CloseButton onClick={() => setShowCoinSelector(false)}>×</CloseButton>
+            <h2 style={{ color: '#FFD700', textAlign: 'center', marginBottom: '1rem' }}>
+              Choose Your Coin
+            </h2>
+            <CoinSelector
+              selectedCoin={gameState.players?.[selectedPlayerAddr?.toLowerCase()]?.coin}
+              onCoinSelect={handleCoinSelect}
+              showCustomOption={true}
+            />
+          </ModalContent>
+        </Modal>
+      )}
     </FullScreenContainer>
   )
 }
