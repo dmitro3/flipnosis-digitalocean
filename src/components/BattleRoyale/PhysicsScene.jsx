@@ -30,10 +30,12 @@ const PhysicsScene = ({
     const container = mountRef.current
     
     const initializeRenderer = () => {
-      const width = container.clientWidth || window.innerWidth
-      const height = container.clientHeight || (window.innerHeight - 80 - 280)
+      // Get actual container dimensions
+      const rect = container.getBoundingClientRect()
+      const width = rect.width || container.clientWidth || window.innerWidth
+      const height = rect.height || container.clientHeight || window.innerHeight - 300
       
-      console.log('📐 Scene dimensions:', { width, height })
+      console.log('📐 Scene dimensions:', { width, height, rect })
       
       // Camera positioned to view vertical pinball machine
       const camera = new THREE.PerspectiveCamera(
@@ -54,6 +56,11 @@ const PhysicsScene = ({
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.shadowMap.enabled = true
       renderer.shadowMap.type = THREE.PCFSoftShadowMap
+      
+      // Ensure canvas fills container
+      renderer.domElement.style.width = '100%'
+      renderer.domElement.style.height = '100%'
+      renderer.domElement.style.display = 'block'
       
       container.appendChild(renderer.domElement)
       
@@ -95,8 +102,11 @@ const PhysicsScene = ({
     const handleResize = () => {
       if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
       
-      const newWidth = mountRef.current.clientWidth || window.innerWidth
-      const newHeight = mountRef.current.clientHeight || (window.innerHeight - 80 - 280)
+      const rect = mountRef.current.getBoundingClientRect()
+      const newWidth = rect.width || mountRef.current.clientWidth || window.innerWidth
+      const newHeight = rect.height || mountRef.current.clientHeight || window.innerHeight - 300
+      
+      console.log('🔄 Resize to:', { newWidth, newHeight })
       
       cameraRef.current.aspect = newWidth / newHeight
       cameraRef.current.updateProjectionMatrix()
@@ -369,11 +379,13 @@ const PhysicsScene = ({
     <div
       ref={mountRef}
       style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
         width: '100%',
         height: '100%',
         backgroundColor: '#000000',
-        overflow: 'hidden',
-        position: 'relative'
+        overflow: 'hidden'
       }}
     >
       {!assetsLoaded && (

@@ -268,45 +268,6 @@ const FireButton = styled.button`
   }
 `
 
-const CoinDisplay = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.8rem;
-  padding: 0.6rem;
-  background: rgba(0, 255, 255, 0.1);
-  border: 3px solid #00ffff;
-  border-radius: 0.8rem;
-  z-index: 1;
-  
-  img {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    border: 3px solid #FFD700;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-  }
-  
-  .coin-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    
-    .coin-name {
-      color: #00ffff;
-      font-weight: bold;
-      font-size: 1.3rem;
-      font-family: 'Hyperwave', sans-serif;
-      letter-spacing: 1px;
-    }
-    
-    .coin-hint {
-      color: #aaa;
-      font-size: 0.7rem;
-    }
-  }
-`
-
 const CannonController = ({ 
   onChoiceSelect, 
   onFire, 
@@ -380,17 +341,6 @@ const CannonController = ({
           TAILS
         </button>
       </ChoiceButtons>
-      
-      <CoinDisplay>
-        <img 
-          src={currentCoin?.headsImage || '/coins/plainh.png'} 
-          alt="Current coin" 
-        />
-        <div className="coin-info">
-          <div className="coin-name">{currentCoin?.name || 'Classic'}</div>
-          <div className="coin-hint">Your Coin</div>
-        </div>
-      </CoinDisplay>
       
       <AngleControl>
         <label>🎯 Launch Angle</label>
