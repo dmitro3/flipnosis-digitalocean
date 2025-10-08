@@ -107,28 +107,28 @@ const SimpleCoinTubes = ({
 
   // Create 6 vertical tubes
   const createTubes = (scene) => {
-    const tubeWidth = 120
+    const tubeWidth = 140
     const tubeHeight = 500
-    const spacing = 180
+    const spacing = 320 // Increased spacing to match 1920px width (6 tubes * 320 = 1920)
     const startX = -((spacing * 5) / 2)
 
     for (let i = 0; i < 6; i++) {
       const x = startX + (i * spacing)
 
-      // Tube background (rectangle)
+      // Tube background (rectangle) - Use your backdrop images here
       const tubeGeometry = new THREE.PlaneGeometry(tubeWidth, tubeHeight)
       const tubeMaterial = new THREE.MeshBasicMaterial({
         color: 0x1a1a2e,
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.8,
         side: THREE.DoubleSide
       })
       const tube = new THREE.Mesh(tubeGeometry, tubeMaterial)
       tube.position.set(x, 0, -10)
       scene.add(tube)
 
-      // Tube borders
-      const borderMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 })
+      // Tube borders (glowing cyan like original game)
+      const borderMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 3 })
       const borderGeometry = new THREE.EdgesGeometry(tubeGeometry)
       const border = new THREE.LineSegments(borderGeometry, borderMaterial)
       border.position.set(x, 0, -9)
@@ -154,20 +154,53 @@ const SimpleCoinTubes = ({
       let coinData = coinsRef.current.get(playerAddr)
 
       if (!coinData) {
-        // Create coin
-        const coinGeometry = new THREE.CylinderGeometry(40, 40, 8, 32)
-        const coinMaterial = new THREE.MeshStandardMaterial({
-          color: 0xffd700,
+        // Create beautiful coin like OptimizedGoldCoin
+        const coinRadius = 50 // Bigger coin
+        const coinThickness = 8
+        
+        // Create cylinder for coin body
+        const coinGeometry = new THREE.CylinderGeometry(coinRadius, coinRadius, coinThickness, 64)
+        
+        // Get edge color from material or default to gold
+        const edgeColor = 0xFFD700
+        
+        // Create materials array [side, top (heads), bottom (tails)]
+        const sideMaterial = new THREE.MeshStandardMaterial({
+          color: edgeColor,
           metalness: 0.9,
           roughness: 0.1,
           emissive: 0xaa8800,
           emissiveIntensity: 0.3
         })
-        const coin = new THREE.Mesh(coinGeometry, coinMaterial)
-        coin.rotation.x = Math.PI / 2 // Lay flat
+
+        const coin = new THREE.Mesh(coinGeometry, [
+          sideMaterial, // Side
+          sideMaterial, // Top (will be replaced with texture)
+          sideMaterial  // Bottom (will be replaced with texture)
+        ])
+
+        // CRITICAL: Rotate coin to flip vertically (like a wheel)
+        // Start with coin laying flat, then it will flip on X-axis
+        coin.rotation.z = Math.PI / 2 // Lay flat initially
+        coin.rotation.x = 0 // This will be animated
 
         // Position at bottom of tube
-        coin.position.set(tubeData.x, -(tubeData.tubeHeight / 2) + 60, 0)
+        coin.position.set(tubeData.x, -(tubeData.tubeHeight / 2) + 80, 0)
+
+        // Add glow effect
+        const glowGeometry = new THREE.CylinderGeometry(coinRadius * 1.2, coinRadius * 1.2, coinThickness * 1.2, 32)
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: 0xffd700,
+          transparent: true,
+          opacity: 0.3,
+          side: THREE.BackSide
+        })
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+        coin.add(glow)
+
+        // Add point light for extra shine
+        const coinLight = new THREE.PointLight(0xffd700, 2, 150)
+        coin.add(coinLight)
 
         sceneRef.current.add(coin)
 
@@ -175,8 +208,8 @@ const SimpleCoinTubes = ({
           mesh: coin,
           tubeData,
           isAnimating: false,
-          startY: -(tubeData.tubeHeight / 2) + 60,
-          topY: (tubeData.tubeHeight / 2) - 60
+          startY: -(tubeData.tubeHeight / 2) + 80,
+          topY: (tubeData.tubeHeight / 2) - 80
         }
 
         coinsRef.current.set(playerAddr, coinData)
@@ -186,85 +219,131 @@ const SimpleCoinTubes = ({
       if (player.coin && player.coin.headsImage) {
         const textureLoader = new THREE.TextureLoader()
         
-        const headTexture = textureLoader.load(player.coin.headsImage)
-        const tailTexture = textureLoader.load(player.coin.tailsImage)
+        textureLoader.load(player.coin.headsImage, (headTexture) => {
+          headTexture.colorSpace = THREE.SRGBColorSpace
+          const headMaterial = new THREE.MeshStandardMaterial({
+            map: headTexture,
+            metalness: 0.3,
+            roughness: 0.2,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          })
+          coinData.mesh.material[1] = headMaterial
+          coinData.mesh.material[1].needsUpdate = true
+        })
 
-        const materials = [
-          new THREE.MeshBasicMaterial({ color: 0xffd700 }), // Side
-          new THREE.MeshBasicMaterial({ map: headTexture }), // Top (heads)
-          new THREE.MeshBasicMaterial({ map: tailTexture })  // Bottom (tails)
-        ]
-
-        coinData.mesh.material = materials
+        textureLoader.load(player.coin.tailsImage, (tailTexture) => {
+          tailTexture.colorSpace = THREE.SRGBColorSpace
+          const tailMaterial = new THREE.MeshStandardMaterial({
+            map: tailTexture,
+            metalness: 0.3,
+            roughness: 0.2,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          })
+          coinData.mesh.material[2] = tailMaterial
+          coinData.mesh.material[2].needsUpdate = true
+        })
       }
     })
   }, [players, playerOrder])
 
-  // Animate coin flip
-  const animateCoinFlip = (playerAddr, power) => {
+  // Animate coin flip - vertical rotation like OptimizedGoldCoin
+  const animateCoinFlip = (playerAddr, power, result) => {
     const coinData = coinsRef.current.get(playerAddr)
     if (!coinData || coinData.isAnimating) return
 
     coinData.isAnimating = true
     const coin = coinData.mesh
 
-    // Rise to top
-    const riseSpeed = power * 5
-    let currentY = coin.position.y
-    const targetY = coinData.topY
+    console.log(`🪙 Flipping coin for ${playerAddr} - Result: ${result}`)
 
-    const rise = () => {
-      currentY += riseSpeed
-      coin.position.y = Math.min(currentY, targetY)
-      coin.rotation.z += 0.2
+    // Calculate how many full rotations (minimum 5, add power bonus)
+    const minFlips = 5 + Math.floor(power / 2)
+    const rotationsPerFlip = Math.PI * 2
+    const baseRotation = minFlips * rotationsPerFlip
+    const extraRotation = Math.random() * Math.PI * 2
+    const totalRotation = baseRotation + extraRotation
 
-      if (currentY < targetY) {
-        requestAnimationFrame(rise)
+    // Determine final rotation based on result
+    const isHeads = result === 'heads'
+    const targetRotation = isHeads ? 0 : Math.PI // 0 = heads up, π = tails up
+
+    const startTime = Date.now()
+    const startY = coin.position.y
+    const startRotationX = coin.rotation.x
+    
+    // Rise phase parameters
+    const riseDuration = 800
+    const riseHeight = coinData.topY
+
+    // Fall phase parameters  
+    const fallDuration = 1200
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime
+      
+      if (elapsed < riseDuration) {
+        // RISING PHASE
+        const riseProgress = elapsed / riseDuration
+        const easeOut = 1 - Math.pow(1 - riseProgress, 3)
+        
+        // Move upward
+        coin.position.y = startY + (riseHeight - startY) * easeOut
+        
+        // Fast spinning during rise
+        coin.rotation.x = startRotationX + (totalRotation * easeOut * 0.6)
+        
+        requestAnimationFrame(animate)
+      } else if (elapsed < riseDuration + fallDuration) {
+        // FALLING PHASE
+        const fallProgress = (elapsed - riseDuration) / fallDuration
+        const easeIn = fallProgress * fallProgress
+        
+        // Move downward
+        coin.position.y = riseHeight - (riseHeight - coinData.startY) * easeIn
+        
+        // Continue spinning but slow down, ending on correct face
+        const currentRotations = totalRotation * 0.6 // Amount rotated during rise
+        const remainingRotations = totalRotation * 0.4 // Amount to rotate during fall
+        coin.rotation.x = startRotationX + currentRotations + (remainingRotations * fallProgress)
+        
+        // As we approach landing, force correct orientation
+        if (fallProgress > 0.8) {
+          const landingProgress = (fallProgress - 0.8) / 0.2
+          const currentRot = coin.rotation.x
+          const targetFinal = Math.floor(currentRot / (Math.PI * 2)) * (Math.PI * 2) + targetRotation
+          coin.rotation.x = currentRot + (targetFinal - currentRot) * landingProgress
+        }
+        
+        requestAnimationFrame(animate)
       } else {
-        // Start falling
-        setTimeout(() => fall(), 200)
-      }
-    }
-
-    const fall = () => {
-      const fallSpeed = 8
-      let velocity = 0
-      const gravity = 0.5
-      let rotations = 0
-      const totalRotations = 5 + Math.random() * 3
-
-      const fallAnimation = () => {
-        velocity += gravity
-        currentY -= velocity
-        coin.position.y = Math.max(currentY, coinData.startY)
-
-        // Spin during fall
-        coin.rotation.z += 0.3
-        rotations += 0.3 / (Math.PI * 2)
-
-        if (currentY > coinData.startY) {
-          requestAnimationFrame(fallAnimation)
-        } else {
-          // Landed - determine result
-          const result = (rotations % 1) < 0.5 ? 'heads' : 'tails'
-          coinData.isAnimating = false
-
-          if (onCoinLanded) {
-            onCoinLanded(playerAddr, result)
-          }
+        // LANDED
+        coin.position.y = coinData.startY
+        
+        // Ensure coin is exactly on correct face
+        const finalRotationCycles = Math.floor(coin.rotation.x / (Math.PI * 2))
+        coin.rotation.x = finalRotationCycles * (Math.PI * 2) + targetRotation
+        
+        coinData.isAnimating = false
+        
+        console.log(`✅ Coin landed: ${result} (rotation: ${coin.rotation.x})`)
+        
+        if (onCoinLanded) {
+          onCoinLanded(playerAddr, result)
         }
       }
-
-      fallAnimation()
     }
 
-    rise()
+    animate()
   }
 
-  // Expose flip function
+  // Expose flip function with result parameter
   useEffect(() => {
-    window.flipCoin = animateCoinFlip
-  }, [])
+    window.flipCoin = (playerAddr, power, result) => {
+      animateCoinFlip(playerAddr, power, result)
+    }
+  }, [players, playerOrder])
 
   return (
     <div

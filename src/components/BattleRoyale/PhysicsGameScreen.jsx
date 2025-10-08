@@ -20,12 +20,13 @@ const FullScreenContainer = styled.div`
 `
 
 const TopArea = styled.div`
-  flex: 1;
+  width: 100vw;
+  height: calc(100vh - 280px);
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  background: #000000;
 `
 
 const RoundIndicator = styled.div`
@@ -72,10 +73,14 @@ const TimerDisplay = styled.div`
 `
 
 const BottomArea = styled.div`
-  height: auto;
+  width: 100vw;
+  height: 280px;
   background: rgba(0, 0, 30, 0.98);
   border-top: 4px solid #00ffff;
   padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `
 
 const Modal = styled.div`
@@ -137,9 +142,14 @@ const PhysicsGameScreen = () => {
   }, [gameState.gameId, address])
 
   const handleFlipCoin = useCallback((playerAddr) => {
-    // Trigger the coin animation
+    const player = gameState.players?.[playerAddr.toLowerCase()]
+    if (!player || !player.choice) return
+
+    // Trigger the coin animation with the result
     if (window.flipCoin) {
-      window.flipCoin(playerAddr, 10) // Max power
+      // For now, use random result - server will determine actual result
+      const mockResult = Math.random() < 0.5 ? 'heads' : 'tails'
+      window.flipCoin(playerAddr, 10, mockResult)
     }
 
     socketService.emit('physics_fire_coin', {
@@ -148,7 +158,7 @@ const PhysicsGameScreen = () => {
       angle: 0,
       power: 10
     })
-  }, [gameState.gameId])
+  }, [gameState])
 
   const handleChangeCoin = useCallback((playerAddr) => {
     setSelectedPlayerAddr(playerAddr)

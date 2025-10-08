@@ -4,13 +4,17 @@ import ProfilePicture from '../ProfilePicture'
 
 const CardsContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 1rem;
-  padding: 1rem;
-  width: 100%;
+  grid-template-columns: repeat(6, 320px); /* Match tube spacing exactly */
+  gap: 0;
+  width: 1920px;
+  margin: 0 auto;
+  justify-content: center;
+  align-items: start;
 `
 
 const PlayerCard = styled.div`
+  width: 280px; /* Slightly smaller than 320px for visual padding */
+  margin: 0 20px; /* 20px margin on each side = 280 + 40 = 320px total */
   background: linear-gradient(135deg, ${props => {
     if (props.isEliminated) return 'rgba(255, 0, 0, 0.2)'
     if (props.isCurrentPlayer) return 'rgba(0, 255, 136, 0.2)'
