@@ -65,7 +65,15 @@ const PlayerAddress = styled.div`
 const LivesDisplay = styled.div`
   display: flex;
   gap: 0.5rem;
-  font-size: 1.5rem;
+  align-items: center;
+`
+
+const PotionIcon = styled.img`
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: ${props => props.active ? 'none' : 'grayscale(100%) opacity(0.3)'};
+  transition: all 0.3s ease;
 `
 
 const ChoiceDisplay = styled.div`
@@ -235,9 +243,12 @@ const SimplePlayerCards = ({
 
             <LivesDisplay>
               {[1, 2, 3].map(i => (
-                <span key={i} style={{ opacity: i <= slot.player.lives ? 1 : 0.3 }}>
-                  {i <= slot.player.lives ? '🏆' : '⬛'}
-                </span>
+                <PotionIcon
+                  key={i}
+                  src="/images/potion.webp"
+                  alt="life"
+                  active={i <= slot.player.lives}
+                />
               ))}
             </LivesDisplay>
 

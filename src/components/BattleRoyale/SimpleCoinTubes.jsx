@@ -122,18 +122,27 @@ const SimpleCoinTubes = ({
     for (let i = 0; i < 6; i++) {
       const x = startX + (i * spacing)
 
-      // Glass tube - Beautiful procedural glass material
+      // Glass tube with texture
       const tubeGeometry = new THREE.CylinderGeometry(tubeRadius, tubeRadius, tubeHeight, 32, 1, true)
+      
+      // Load glass texture
+      const textureLoader = new THREE.TextureLoader()
+      const glassTexture = textureLoader.load('/images/tubes/glass.png')
+      glassTexture.wrapS = THREE.RepeatWrapping
+      glassTexture.wrapT = THREE.RepeatWrapping
+      glassTexture.repeat.set(1, 2) // Adjust wrapping
+      
       const glassMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0x88ccff,
+        map: glassTexture,
+        color: 0xffffff,
         transparent: true,
-        opacity: 0.25,
-        transmission: 0.95,
+        opacity: 0.6,
+        transmission: 0.8,
         thickness: 0.5,
-        roughness: 0.05,
+        roughness: 0.1,
         metalness: 0,
         clearcoat: 1.0,
-        clearcoatRoughness: 0.05,
+        clearcoatRoughness: 0.1,
         ior: 1.5,
         side: THREE.DoubleSide
       })
