@@ -122,35 +122,43 @@ const SimpleCoinTubes = ({
     for (let i = 0; i < 6; i++) {
       const x = startX + (i * spacing)
 
-      // Glass tube with texture
+      // Gold tube with see-through front
       const tubeGeometry = new THREE.CylinderGeometry(tubeRadius, tubeRadius, tubeHeight, 32, 1, true)
       
-      // Load glass texture
-      const textureLoader = new THREE.TextureLoader()
-      const glassTexture = textureLoader.load('/images/tubes/glass.png')
-      glassTexture.wrapS = THREE.RepeatWrapping
-      glassTexture.wrapT = THREE.RepeatWrapping
-      glassTexture.repeat.set(1, 2) // Adjust wrapping
+      // Create gold material for the tube
+      const goldMaterial = new THREE.MeshStandardMaterial({
+        color: 0xFFD700, // Gold color
+        metalness: 0.8,
+        roughness: 0.2,
+        emissive: 0x442200,
+        emissiveIntensity: 0.2,
+        side: THREE.BackSide // Only render the back/sides, not the front
+      })
       
-      const glassMaterial = new THREE.MeshPhysicalMaterial({
-        map: glassTexture,
-        color: 0xffffff,
+      const tube = new THREE.Mesh(tubeGeometry, goldMaterial)
+      tube.position.set(x, 0, 0)
+      tube.rotation.x = 0 // Vertical orientation
+      scene.add(tube)
+      
+      // Add transparent front panel (see-through window)
+      const frontPanelGeometry = new THREE.PlaneGeometry(tubeRadius * 2, tubeHeight)
+      const frontPanelMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x88ccff,
         transparent: true,
-        opacity: 0.6,
-        transmission: 0.8,
-        thickness: 0.5,
-        roughness: 0.1,
+        opacity: 0.15,
+        transmission: 0.95,
+        thickness: 0.3,
+        roughness: 0.05,
         metalness: 0,
         clearcoat: 1.0,
-        clearcoatRoughness: 0.1,
+        clearcoatRoughness: 0.05,
         ior: 1.5,
         side: THREE.DoubleSide
       })
       
-      const tube = new THREE.Mesh(tubeGeometry, glassMaterial)
-      tube.position.set(x, 0, 0)
-      tube.rotation.x = 0 // Vertical orientation
-      scene.add(tube)
+      const frontPanel = new THREE.Mesh(frontPanelGeometry, frontPanelMaterial)
+      frontPanel.position.set(x, 0, tubeRadius) // Position at front of tube
+      scene.add(frontPanel)
 
       // Tube rim (top and bottom)
       const rimGeometry = new THREE.TorusGeometry(tubeRadius, 3, 16, 32)

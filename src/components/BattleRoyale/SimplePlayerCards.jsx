@@ -245,7 +245,7 @@ const SimplePlayerCards = ({
               {[1, 2, 3].map(i => (
                 <PotionIcon
                   key={i}
-                  src="/images/potion.webp"
+                  src="/Images/potion.webp"
                   alt="life"
                   active={i <= slot.player.lives}
                 />
