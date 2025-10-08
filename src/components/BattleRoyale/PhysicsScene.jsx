@@ -21,35 +21,36 @@ const PhysicsScene = ({
   useEffect(() => {
     if (!mountRef.current) return
     
-    console.log('🎬 Initializing 2.5D Pinball Scene')
+    console.log('🎬 Initializing 3D Pinball Scene with 2D Physics')
     
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x000000) // Pure black
+    scene.background = new THREE.Color(0x000000)
     
-    const width = mountRef.current.clientWidth || window.innerWidth
-    const height = mountRef.current.clientHeight || window.innerHeight - 300
+    // CRITICAL FIX: Use actual container dimensions
+    const container = mountRef.current
+    const width = container.offsetWidth
+    const height = container.offsetHeight
     
-    // Orthographic camera for true 2D pinball view
-    const aspectRatio = width / height
-    const viewHeight = 300 // View height in world units
-    const viewWidth = viewHeight * aspectRatio
+    console.log('📐 Container dimensions:', { width, height })
     
-    const camera = new THREE.OrthographicCamera(
-      -viewWidth / 2,  // left
-      viewWidth / 2,   // right
-      viewHeight / 2,  // top
-      -viewHeight / 2, // bottom
-      0.1,             // near
-      1000             // far
+    // Perspective camera for 3D depth
+    const camera = new THREE.PerspectiveCamera(
+      60,              // FOV
+      width / height,  // Aspect ratio
+      0.1,
+      2000
     )
-    camera.position.set(0, 250, 100) // Look straight at the playfield
+    camera.position.set(0, 250, 150) // Position to see full playfield
     camera.lookAt(0, 250, 0)
     
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
-    renderer.setSize(width, height)
+    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    renderer.setSize(width, height) // Use actual container size
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.shadowMap.enabled = true
     
-    mountRef.current.appendChild(renderer.domElement)
+    console.log('🖼️ Renderer size:', { width, height })
+    
+    container.appendChild(renderer.domElement)
     
     sceneRef.current = scene
     cameraRef.current = camera
@@ -63,10 +64,11 @@ const PhysicsScene = ({
     const animate = () => {
       if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
       
-      // Slowly rotate obstacles for visual interest
+      // Rotate obstacles for visual interest
       obstaclesRef.current.forEach((obstacle, index) => {
         if (obstacle) {
-          obstacle.rotation.y += 0.001 * (index % 2 === 0 ? 1 : -1)
+          obstacle.rotation.y += 0.002 * (index % 2 === 0 ? 1 : -1)
+          obstacle.rotation.x += 0.001
         }
       })
       
@@ -80,17 +82,13 @@ const PhysicsScene = ({
     const handleResize = () => {
       if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
       
-      const newWidth = mountRef.current.clientWidth
-      const newHeight = mountRef.current.clientHeight
-      const newAspectRatio = newWidth / newHeight
-      const newViewWidth = viewHeight * newAspectRatio
+      const newWidth = mountRef.current.offsetWidth
+      const newHeight = mountRef.current.offsetHeight
       
-      cameraRef.current.left = -newViewWidth / 2
-      cameraRef.current.right = newViewWidth / 2
-      cameraRef.current.top = viewHeight / 2
-      cameraRef.current.bottom = -viewHeight / 2
+      console.log('📐 Resize to:', { newWidth, newHeight })
+      
+      cameraRef.current.aspect = newWidth / newHeight
       cameraRef.current.updateProjectionMatrix()
-      
       rendererRef.current.setSize(newWidth, newHeight)
     }
     
@@ -125,31 +123,36 @@ const PhysicsScene = ({
     }
   }, [])
   
-  // Create simple starfield background
+  // Create starfield
   const createSimpleStarfield = (scene) => {
     const starGeometry = new THREE.BufferGeometry()
     const starMaterial = new THREE.PointsMaterial({ 
       color: 0xffffff, 
-      size: 2, 
-      sizeAttenuation: false // Keep stars same size regardless of distance
+      size: 1.5,
+      transparent: true,
+      opacity: 0.8
     })
     
     const starVertices = []
-    // Create stars in a flat plane behind the playfield
-    for (let i = 0; i < 500; i++) {
-      const x = (Math.random() - 0.5) * 400
-      const y = Math.random() * 600 - 50
-      const z = -50 // All stars at same depth, behind playfield
+    // Create stars scattered in 3D space behind playfield
+    for (let i = 0; i < 1000; i++) {
+      const x = (Math.random() - 0.5) * 600
+      const y = Math.random() * 700 - 50
+      const z = -100 - Math.random() * 200 // Behind the playfield
       starVertices.push(x, y, z)
     }
     
     starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3))
     const stars = new THREE.Points(starGeometry, starMaterial)
     scene.add(stars)
+    
+    console.log('⭐ Added starfield')
   }
   
   // Load obstacle textures
   const loadAssets = async (scene) => {
+    console.log('📦 Loading assets...')
+    
     const textureLoader = new THREE.TextureLoader()
     const loadedTextures = []
     let loadedCount = 0
@@ -182,28 +185,45 @@ const PhysicsScene = ({
     }
   }
   
-  // Create obstacles - all at Z=0 for flat playfield
+  // Create obstacles in 3D space but on Z=0 plane for collision
   const createObstacles = (scene, textures) => {
+    console.log('🪐 Creating obstacles')
+    
     if (!obstacles || obstacles.length === 0) {
-      console.warn('Creating fallback obstacles')
-      
-      // Create fallback obstacles
-      for (let i = 0; i < 15; i++) {
-        const geometry = new THREE.SphereGeometry(4 + Math.random() * 3, 32, 32)
+      // Create well-spaced fallback obstacles
+      for (let i = 0; i < 20; i++) {
+        const radius = 3 + Math.random() * 4
+        const geometry = new THREE.SphereGeometry(radius, 32, 32)
         const material = new THREE.MeshStandardMaterial({
-          color: new THREE.Color(Math.random(), Math.random(), Math.random()),
-          metalness: 0.5,
-          roughness: 0.5,
+          color: new THREE.Color(Math.random() * 0.5 + 0.5, Math.random() * 0.5 + 0.5, 1),
+          metalness: 0.6,
+          roughness: 0.4,
+          emissive: new THREE.Color(0x222244),
+          emissiveIntensity: 0.3
         })
         const mesh = new THREE.Mesh(geometry, material)
         
-        // Pinball layout: alternating left/right
-        const side = (i % 2 === 0) ? 1 : -1
+        // Pinball layout: zigzag pattern
+        const row = Math.floor(i / 4)
+        const col = i % 4
+        const side = (col % 2 === 0) ? 1 : -1
+        
         mesh.position.set(
-          side * (20 + Math.random() * 30), // X: left or right
-          30 + i * 35,                        // Y: vertical spacing
-          0                                   // Z: FLAT PLAYFIELD
+          side * (25 + col * 10),  // X: spread horizontally
+          50 + row * 45,            // Y: vertical spacing
+          (Math.random() - 0.5) * 40 // Z: depth variation for 3D look
         )
+        
+        // Add glow
+        const glowGeometry = new THREE.SphereGeometry(radius * 1.15, 16, 16)
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: 0x4466ff,
+          transparent: true,
+          opacity: 0.2,
+          side: THREE.BackSide
+        })
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+        mesh.add(glow)
         
         scene.add(mesh)
         obstaclesRef.current[i] = mesh
@@ -211,14 +231,15 @@ const PhysicsScene = ({
       return
     }
     
+    // Use provided obstacles
     obstacles.forEach((obstacle, index) => {
       const texture = textures[obstacle.textureIndex - 1]
       const geometry = new THREE.SphereGeometry(obstacle.radius, 32, 32)
       
       const material = texture ? new THREE.MeshStandardMaterial({
         map: texture,
-        metalness: 0.2,
-        roughness: 0.8,
+        metalness: 0.3,
+        roughness: 0.7,
       }) : new THREE.MeshStandardMaterial({
         color: new THREE.Color(Math.random(), Math.random(), Math.random()),
         metalness: 0.5,
@@ -227,11 +248,11 @@ const PhysicsScene = ({
       
       const mesh = new THREE.Mesh(geometry, material)
       
-      // FORCE Z = 0 for flat playfield
+      // Use obstacle positions with depth variation
       mesh.position.set(
         obstacle.position.x,
         obstacle.position.y,
-        0 // Override any Z position
+        obstacle.position.z // Keep Z depth for visuals
       )
       
       scene.add(mesh)
@@ -241,21 +262,26 @@ const PhysicsScene = ({
   
   // Setup lighting
   const setupLighting = (scene) => {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2)
     scene.add(ambientLight)
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5)
-    directionalLight.position.set(0, 200, 50)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+    directionalLight.position.set(50, 300, 100)
+    directionalLight.castShadow = true
     scene.add(directionalLight)
     
-    // Add point lights for atmosphere
-    const pointLight1 = new THREE.PointLight(0x00ffff, 1, 200)
-    pointLight1.position.set(-50, 150, 20)
+    // Point lights for atmosphere
+    const pointLight1 = new THREE.PointLight(0x00ffff, 2, 300)
+    pointLight1.position.set(-50, 200, 50)
     scene.add(pointLight1)
     
-    const pointLight2 = new THREE.PointLight(0xff00ff, 1, 200)
-    pointLight2.position.set(50, 300, 20)
+    const pointLight2 = new THREE.PointLight(0xff00ff, 2, 300)
+    pointLight2.position.set(50, 400, 50)
     scene.add(pointLight2)
+    
+    const pointLight3 = new THREE.PointLight(0xffff00, 1.5, 250)
+    pointLight3.position.set(0, 250, 80)
+    scene.add(pointLight3)
   }
   
   // Update coin positions
@@ -269,7 +295,7 @@ const PhysicsScene = ({
       let coin = coinsRef.current.get(playerAddr)
       
       if (!coin) {
-        // Create coin
+        // Create coin with textures
         const coinGeometry = new THREE.CylinderGeometry(5, 5, 0.8, 32)
         const textureLoader = new THREE.TextureLoader()
         
@@ -277,32 +303,39 @@ const PhysicsScene = ({
           color: 0xffd700, 
           metalness: 0.9, 
           roughness: 0.1,
+          emissive: 0xaa8800,
+          emissiveIntensity: 0.3
         })
         
         coin = new THREE.Mesh(coinGeometry, sideMaterial)
         
-        // Add glow
-        const glowGeometry = new THREE.CylinderGeometry(5.5, 5.5, 1, 32)
+        // Glow effect
+        const glowGeometry = new THREE.CylinderGeometry(5.8, 5.8, 1.2, 32)
         const glowMaterial = new THREE.MeshBasicMaterial({
           color: 0xffd700,
           transparent: true,
-          opacity: 0.4,
+          opacity: 0.5,
+          side: THREE.BackSide
         })
         const glow = new THREE.Mesh(glowGeometry, glowMaterial)
         coin.add(glow)
+        
+        // Point light on coin
+        const coinLight = new THREE.PointLight(0xffd700, 2, 40)
+        coin.add(coinLight)
         
         sceneRef.current.add(coin)
         coinsRef.current.set(playerAddr, coin)
       }
       
-      // Update coin position - CONSTRAIN Z TO 0
+      // Update position - coin stays at Z=0 for physics
       coin.position.set(
         posData.position.x,
         posData.position.y,
-        0 // Force Z = 0 for flat playfield
+        0 // Z=0 for 2D physics
       )
       
-      // Allow rotation for visual flair
+      // Update rotation
       coin.quaternion.set(
         posData.rotation.x,
         posData.rotation.y,
@@ -336,9 +369,12 @@ const PhysicsScene = ({
       style={{
         width: '100%',
         height: '100%',
-        position: 'relative',
-        backgroundColor: '#000000',
-        overflow: 'hidden'
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#000000'
       }}
     >
       {!assetsLoaded && (
@@ -350,7 +386,8 @@ const PhysicsScene = ({
           color: '#00ffff',
           fontSize: '1.5rem',
           fontWeight: 'bold',
-          zIndex: 10
+          zIndex: 10,
+          textShadow: '0 0 20px rgba(0, 255, 255, 0.8)'
         }}>
           Loading Pinball Arena...
         </div>

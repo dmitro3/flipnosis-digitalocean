@@ -115,17 +115,20 @@ class PhysicsGameManager {
       const heightVariation = (Math.random() - 0.5) * 15
       const y = baseHeight + heightVariation
       
-      const side = (i % 2 === 0) ? 1 : -1
-      const x = side * (20 + Math.random() * 30)
+      // Zigzag pinball pattern
+      const row = Math.floor(i / 4)
+      const col = i % 4
+      const side = (col % 2 === 0) ? 1 : -1
+      const x = side * (25 + col * 10)
       
-      // Z = 0 for flat pinball playfield
+      // CRITICAL: Z = 0 for physics collision with coins
       const z = 0
       
       const obstacleBody = new CANNON.Body({
         mass: 0,
         shape: new CANNON.Sphere(radius),
-        position: new CANNON.Vec3(x, y, z),
-        material: new CANNON.Material({ friction: 0.3, restitution: 0.9 }) // High bounce!
+        position: new CANNON.Vec3(x, y, z), // Z = 0
+        material: new CANNON.Material({ friction: 0.3, restitution: 0.9 })
       })
       
       world.addBody(obstacleBody)
@@ -134,7 +137,11 @@ class PhysicsGameManager {
         id: `obstacle_${i}`,
         type: 'sphere',
         radius,
-        position: { x, y, z },
+        position: { 
+          x, 
+          y, 
+          z: (Math.random() - 0.5) * 40 // Visual Z offset for 3D rendering
+        },
         textureIndex: i + 1
       })
     }
