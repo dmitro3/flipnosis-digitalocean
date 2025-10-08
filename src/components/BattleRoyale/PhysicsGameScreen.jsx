@@ -19,7 +19,10 @@ const SceneContainer = styled.div`
   flex: 1;
   position: relative;
   width: 100%;
+  height: 100%;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 `
 
 const BottomSection = styled.div`

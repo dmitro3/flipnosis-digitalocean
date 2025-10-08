@@ -85,6 +85,21 @@ const PhysicsScene = ({
     // Use requestAnimationFrame to ensure DOM layout is complete
     requestAnimationFrame(initializeRenderer)
     
+    // Force resize after a short delay to ensure proper sizing
+    setTimeout(() => {
+      if (rendererRef.current && cameraRef.current) {
+        const container = mountRef.current
+        const width = container.clientWidth || container.offsetWidth || window.innerWidth
+        const height = container.clientHeight || container.offsetHeight || window.innerHeight - 280
+        
+        console.log('🔧 Force resize to:', { width, height })
+        
+        cameraRef.current.aspect = width / height
+        cameraRef.current.updateProjectionMatrix()
+        rendererRef.current.setSize(width, height)
+      }
+    }, 500)
+    
     // Resize handler
     const handleResize = () => {
       if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
@@ -381,7 +396,8 @@ const PhysicsScene = ({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: '#000000'
+        backgroundColor: '#000000',
+        overflow: 'hidden'
       }}
     >
       {!assetsLoaded && (
