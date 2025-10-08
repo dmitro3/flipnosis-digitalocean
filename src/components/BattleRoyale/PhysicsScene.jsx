@@ -22,16 +22,30 @@ const PhysicsScene = ({
   
   // Initialize scene
   useEffect(() => {
-    if (!mountRef.current) return
+    if (!mountRef.current) {
+      console.error('❌ mountRef.current is null!')
+      return
+    }
     
     console.log('🎬 Initializing Physics Scene')
+    console.log('📐 Container dimensions:', {
+      width: mountRef.current.clientWidth,
+      height: mountRef.current.clientHeight,
+      offsetWidth: mountRef.current.offsetWidth,
+      offsetHeight: mountRef.current.offsetHeight
+    })
     
     const scene = new THREE.Scene()
     scene.background = new THREE.Color(0x000020) // Slightly lighter for visibility
     
+    const width = mountRef.current.clientWidth || window.innerWidth
+    const height = mountRef.current.clientHeight || window.innerHeight - 300
+    
+    console.log('🎥 Using dimensions:', { width, height })
+    
     const camera = new THREE.PerspectiveCamera(
       75, // Wider FOV for better view
-      mountRef.current.clientWidth / mountRef.current.clientHeight,
+      width / height,
       0.1,
       3000 // Much further far plane for tall vertical scene
     )
@@ -39,14 +53,20 @@ const PhysicsScene = ({
     camera.lookAt(0, 5, 0)
     
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
-    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
+    renderer.setSize(width, height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.5
     
+    console.log('🖼️ Renderer created:', {
+      domElement: renderer.domElement,
+      size: { width: renderer.domElement.width, height: renderer.domElement.height }
+    })
+    
     mountRef.current.appendChild(renderer.domElement)
+    console.log('✅ Renderer appended to DOM')
     
     sceneRef.current = scene
     cameraRef.current = camera
@@ -55,7 +75,16 @@ const PhysicsScene = ({
     loadAssets(scene)
     setupLighting(scene)
     
+    // Add a test cube to verify rendering works
+    const testGeometry = new THREE.BoxGeometry(10, 10, 10)
+    const testMaterial = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: false })
+    const testCube = new THREE.Mesh(testGeometry, testMaterial)
+    testCube.position.set(0, 20, 0)
+    scene.add(testCube)
+    console.log('🟪 Test cube added at (0, 20, 0) - should be BRIGHT MAGENTA')
+    
     // Animation loop
+    let frameCount = 0
     const animate = () => {
       if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
       
@@ -68,10 +97,27 @@ const PhysicsScene = ({
         }
       })
       
+      // Rotate test cube
+      if (testCube) {
+        testCube.rotation.x += 0.01
+        testCube.rotation.y += 0.01
+      }
+      
       rendererRef.current.render(scene, camera)
+      
+      // Log first few frames to confirm animation is running
+      if (frameCount < 3) {
+        console.log(`🎬 Frame ${frameCount} rendered`, {
+          cameraPos: camera.position,
+          sceneChildren: scene.children.length
+        })
+        frameCount++
+      }
+      
       animationIdRef.current = requestAnimationFrame(animate)
     }
     
+    console.log('▶️ Starting animation loop...')
     animate()
     
     // Resize handler
@@ -121,17 +167,17 @@ const PhysicsScene = ({
   useEffect(() => {
     if (!sceneRef.current || glbLoaded) return
     
-    console.log('🌌 Loading nebula.glb skybox...')
+    console.log('🌌 Loading space.glb skybox...')
     const gltfLoader = new GLTFLoader()
     
     gltfLoader.load(
-      '/images/space/nebula.glb',
+      '/images/space/space.glb',
       (gltf) => {
-        console.log('✅ Nebula GLB loaded successfully')
+        console.log('✅ Space GLB loaded successfully', gltf)
         const nebulaSkybox = gltf.scene
         
-        // Scale it HUGE to surround the entire scene
-        nebulaSkybox.scale.set(500, 500, 500)
+        // Scale it HUGE to surround the entire scene (try different scales)
+        nebulaSkybox.scale.set(1000, 1000, 1000)
         
         // Position at origin
         nebulaSkybox.position.set(0, 0, 0)
@@ -139,10 +185,12 @@ const PhysicsScene = ({
         // Make sure it renders behind everything
         nebulaSkybox.traverse((child) => {
           if (child.isMesh) {
+            console.log('Nebula mesh found:', child.name, child.geometry, child.material)
             child.renderOrder = -1000
-            // If the inside is visible, flip normals or use DoubleSide
+            // Try DoubleSide first to see both sides
             if (child.material) {
-              child.material.side = THREE.BackSide // Render inside of sphere
+              child.material.side = THREE.DoubleSide
+              child.material.depthWrite = false // Don't write to depth buffer
             }
           }
         })
@@ -153,11 +201,13 @@ const PhysicsScene = ({
       },
       (progress) => {
         const percent = (progress.loaded / progress.total) * 100
-        console.log(`🌌 Loading nebula: ${percent.toFixed(1)}%`)
+        console.log(`🌌 Loading skybox: ${percent.toFixed(1)}%`)
       },
       (error) => {
-        console.error('❌ Failed to load nebula.glb:', error)
-        console.log('⚠️ Continuing with procedural starfield only')
+        console.error('❌ Failed to load space.glb:', error)
+        console.log('⚠️ Using procedural starfield as fallback')
+        // Create starfield as fallback if GLB fails
+        createStarfield(sceneRef.current)
         setGlbLoaded(true) // Set to true even on error to prevent retries
       }
     )
@@ -211,9 +261,8 @@ const PhysicsScene = ({
     console.log('📊 Obstacles received:', obstacles)
     console.log('📊 Number of obstacles:', obstacles?.length || 0)
     
-    // Always use starfield as backup/enhancement
-    console.log('🌟 Creating vertical space starfield...')
-    createStarfield(scene)
+    // Don't create starfield - let nebula.glb handle the backdrop
+    // createStarfield(scene) // Removed - using GLB skybox instead
     
     // Load obstacle textures
     const textureLoader = new THREE.TextureLoader()
@@ -376,12 +425,15 @@ const PhysicsScene = ({
       
       const geometry = new THREE.SphereGeometry(obstacle.radius, 64, 64)
       
+      // Make sure texture uses proper color space
+      texture.colorSpace = THREE.SRGBColorSpace
+      
       const material = new THREE.MeshStandardMaterial({
         map: texture,
-        metalness: 0.4,
-        roughness: 0.5,
-        emissive: new THREE.Color(0x333366),
-        emissiveIntensity: 0.4,
+        metalness: 0.2,  // Less metallic for planet-like surface
+        roughness: 0.8,  // More rough for realistic planets
+        emissive: new THREE.Color(0x000000),  // No emission initially
+        emissiveIntensity: 0,
       })
       
       const mesh = new THREE.Mesh(geometry, material)
@@ -393,20 +445,18 @@ const PhysicsScene = ({
       mesh.castShadow = true
       mesh.receiveShadow = true
       
-      // Add glow effect to all obstacles for visibility
-      const glowGeometry = new THREE.SphereGeometry(obstacle.radius * 1.15, 32, 32)
-      const glowMaterial = new THREE.MeshBasicMaterial({
-        color: 0x6688ff,
-        transparent: true,
-        opacity: 0.25,
-        side: THREE.BackSide
-      })
-      const glow = new THREE.Mesh(glowGeometry, glowMaterial)
-      mesh.add(glow)
-      
-      // Add point light to each obstacle for better visibility
-      const obstacleLight = new THREE.PointLight(0x6688ff, 1.5, obstacle.radius * 5)
-      mesh.add(obstacleLight)
+      // Only add subtle glow to larger obstacles
+      if (obstacle.radius > 4) {
+        const glowGeometry = new THREE.SphereGeometry(obstacle.radius * 1.1, 16, 16)
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: 0x4466ff,
+          transparent: true,
+          opacity: 0.15,  // Very subtle
+          side: THREE.BackSide
+        })
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+        mesh.add(glow)
+      }
       
       scene.add(mesh)
       obstaclesRef.current[index] = mesh
@@ -578,9 +628,9 @@ const PhysicsScene = ({
       style={{
         width: '100%',
         height: '100%',
-        position: 'absolute',
-        top: 0,
-        left: 0
+        position: 'relative',
+        backgroundColor: '#000020',
+        overflow: 'hidden'
       }}
     >
       {!assetsLoaded && (
