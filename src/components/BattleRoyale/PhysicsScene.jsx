@@ -30,10 +30,10 @@ const PhysicsScene = ({
     const container = mountRef.current
     
     const initializeRenderer = () => {
-      // Get actual container dimensions - REDUCED SIZE
+      // Get actual container dimensions
       const rect = container.getBoundingClientRect()
-      const width = Math.min(rect.width || container.clientWidth || window.innerWidth, 1920)
-      const height = Math.min(rect.height || container.clientHeight || window.innerHeight - 300, 1080)
+      const width = rect.width || container.clientWidth || window.innerWidth
+      const height = rect.height || container.clientHeight || window.innerHeight - 300
       
       console.log('📐 Scene dimensions:', { width, height, rect })
       
@@ -103,8 +103,8 @@ const PhysicsScene = ({
       if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
       
       const rect = mountRef.current.getBoundingClientRect()
-      const newWidth = Math.min(rect.width || mountRef.current.clientWidth || window.innerWidth, 1920)
-      const newHeight = Math.min(rect.height || mountRef.current.clientHeight || window.innerHeight - 300, 1080)
+      const newWidth = rect.width || mountRef.current.clientWidth || window.innerWidth
+      const newHeight = rect.height || mountRef.current.clientHeight || window.innerHeight - 300
       
       console.log('🔄 Resize to:', { newWidth, newHeight })
       
@@ -144,17 +144,17 @@ const PhysicsScene = ({
     }
   }, [])
   
-  // Create animated starfield background - REDUCED SIZE
+  // Create animated starfield background - EXACT 1920x1080
   const createStarfield = (scene) => {
     const starGeometry = new THREE.BufferGeometry()
     const starVertices = []
     const starSizes = []
     
-    // Create 2000 stars scattered in background - REDUCED AREA
+    // Create 2000 stars scattered in background - EXACT 1920x1080 area
     for (let i = 0; i < 2000; i++) {
-      const x = (Math.random() - 0.5) * 600  // Reduced from 800
-      const y = Math.random() * 400          // Reduced from 600
-      const z = -150 - Math.random() * 200   // Behind playfield
+      const x = (Math.random() - 0.5) * 1920  // Full 1920 width
+      const y = Math.random() * 1080           // Full 1080 height
+      const z = -150 - Math.random() * 200     // Behind playfield
       starVertices.push(x, y, z)
       starSizes.push(Math.random() * 2 + 0.5)
     }
@@ -175,25 +175,35 @@ const PhysicsScene = ({
     starsRef.current = stars
     scene.add(stars)
     
-    console.log('⭐ Added twinkling starfield')
+    console.log('⭐ Added twinkling starfield (1920x1080)')
   }
   
-  // Load obstacles in pinball layout
+  // Load obstacles with proper textures
   const loadObstacles = (scene) => {
-    console.log('🪨 Creating 3D pinball obstacles')
+    console.log('🪨 Creating 3D pinball obstacles with textures')
     
     if (!obstacles || obstacles.length === 0) {
-      // Create 20 obstacles in vertical pinball pattern
+      // Create 20 obstacles in vertical pinball pattern with textures
       for (let i = 0; i < 20; i++) {
         const radius = 8 + Math.random() * 6
         
         // Create textured sphere
         const geometry = new THREE.SphereGeometry(radius, 32, 32)
+        
+        // Load texture for this obstacle
+        const textureLoader = new THREE.TextureLoader()
+        const texturePath = `/images/space/${i + 1}.png`
+        
         const material = new THREE.MeshStandardMaterial({
-          color: new THREE.Color(
-            0.3 + Math.random() * 0.7,
-            0.3 + Math.random() * 0.7,
-            0.8 + Math.random() * 0.2
+          map: textureLoader.load(texturePath, 
+            (texture) => {
+              console.log(`✅ Loaded texture ${i + 1}.png`)
+              texture.colorSpace = THREE.SRGBColorSpace
+            },
+            undefined,
+            (error) => {
+              console.warn(`⚠️ Failed to load texture ${i + 1}.png, using fallback`)
+            }
           ),
           metalness: 0.6,
           roughness: 0.3,
@@ -232,11 +242,24 @@ const PhysicsScene = ({
         obstaclesRef.current[i] = mesh
       }
     } else {
-      // Use provided obstacles
+      // Use provided obstacles with textures
       obstacles.forEach((obstacle, index) => {
         const geometry = new THREE.SphereGeometry(obstacle.radius, 32, 32)
+        
+        const textureLoader = new THREE.TextureLoader()
+        const texturePath = `/images/space/${obstacle.textureIndex || (index + 1)}.png`
+        
         const material = new THREE.MeshStandardMaterial({
-          color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+          map: textureLoader.load(texturePath,
+            (texture) => {
+              console.log(`✅ Loaded obstacle texture ${obstacle.textureIndex || (index + 1)}.png`)
+              texture.colorSpace = THREE.SRGBColorSpace
+            },
+            undefined,
+            (error) => {
+              console.warn(`⚠️ Failed to load obstacle texture, using fallback`)
+            }
+          ),
           metalness: 0.5,
           roughness: 0.4,
         })
