@@ -9,7 +9,7 @@ import socketService from '../../services/SocketService'
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 80px);
   width: 100vw;
   background: #000;
   overflow: hidden;
@@ -19,6 +19,10 @@ const Container = styled.div`
   /* Ensure this container is the zoom target */
   transform-origin: top left;
   touch-action: manipulation;
+  
+  @media (max-width: 768px) {
+    height: calc(100vh - 60px);
+  }
 `
 
 const SceneContainer = styled.div`

@@ -25,13 +25,10 @@ const HeaderContainer = styled.header`
 
   @media (max-width: 768px) {
     padding: 0.75rem 1rem;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    position: relative;
     background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(10px);
-    z-index: 9998;
+    z-index: 100;
   }
 `
 

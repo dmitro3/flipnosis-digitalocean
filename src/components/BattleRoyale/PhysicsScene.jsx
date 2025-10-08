@@ -32,7 +32,7 @@ const PhysicsScene = ({
     const initializeRenderer = () => {
       // Use clientWidth/clientHeight and fallback to window dimensions
       const width = container.clientWidth || container.offsetWidth || window.innerWidth
-      const height = container.clientHeight || container.offsetHeight || window.innerHeight - 280 // Account for bottom section
+      const height = container.clientHeight || container.offsetHeight || (window.innerHeight - 80 - 280) // Account for header and bottom section
       
       console.log('📐 Container dimensions:', { width, height })
       
@@ -90,7 +90,7 @@ const PhysicsScene = ({
       if (rendererRef.current && cameraRef.current) {
         const container = mountRef.current
         const width = container.clientWidth || container.offsetWidth || window.innerWidth
-        const height = container.clientHeight || container.offsetHeight || window.innerHeight - 280
+        const height = container.clientHeight || container.offsetHeight || (window.innerHeight - 80 - 280)
         
         console.log('🔧 Force resize to:', { width, height })
         console.log('🔍 Container bounds:', container.getBoundingClientRect())
@@ -124,8 +124,8 @@ const PhysicsScene = ({
     const handleResize = () => {
       if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
       
-      const newWidth = mountRef.current.clientWidth || mountRef.current.offsetWidth || window.innerWidth
-      const newHeight = mountRef.current.clientHeight || mountRef.current.offsetHeight || window.innerHeight - 280
+        const newWidth = mountRef.current.clientWidth || mountRef.current.offsetWidth || window.innerWidth
+        const newHeight = mountRef.current.clientHeight || mountRef.current.offsetHeight || (window.innerHeight - 80 - 280)
       
       console.log('📐 Resize to:', { newWidth, newHeight })
       
