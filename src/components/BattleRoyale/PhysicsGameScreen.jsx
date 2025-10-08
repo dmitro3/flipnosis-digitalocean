@@ -14,6 +14,11 @@ const Container = styled.div`
   background: #000;
   overflow: hidden;
   position: relative;
+  z-index: 1;
+  
+  /* Ensure this container is the zoom target */
+  transform-origin: top left;
+  touch-action: manipulation;
 `
 
 const SceneContainer = styled.div`

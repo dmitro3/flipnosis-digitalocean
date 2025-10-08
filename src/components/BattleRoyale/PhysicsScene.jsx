@@ -102,6 +102,24 @@ const PhysicsScene = ({
       }
     }, 500)
     
+    // Add ResizeObserver to handle dynamic sizing
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        if (rendererRef.current && cameraRef.current) {
+          const { width, height } = entry.contentRect
+          console.log('📐 ResizeObserver triggered:', { width, height })
+          
+          cameraRef.current.aspect = width / height
+          cameraRef.current.updateProjectionMatrix()
+          rendererRef.current.setSize(width, height)
+        }
+      }
+    })
+    
+    if (mountRef.current) {
+      resizeObserver.observe(mountRef.current)
+    }
+    
     // Resize handler
     const handleResize = () => {
       if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
@@ -121,6 +139,9 @@ const PhysicsScene = ({
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+      }
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current)
       }

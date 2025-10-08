@@ -124,7 +124,6 @@ const BattleRoyaleContainer = () => {
 
   return (
     <ErrorBoundary>
-      <BackgroundVideo />
       <BattleRoyaleGameProvider gameId={gameId}>
         <BattleRoyaleContent />
       </BattleRoyaleGameProvider>
