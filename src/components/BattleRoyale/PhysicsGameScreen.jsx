@@ -5,6 +5,18 @@ import SimplePlayerCards from './SimplePlayerCards'
 import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
 import socketService from '../../services/SocketService'
 import CoinSelector from '../CoinSelector'
+import hazeVideo from '../../../Images/Video/haze.webm'
+
+const BackgroundVideo = styled.video`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  opacity: 0.7;
+`
 
 const FullScreenContainer = styled.div`
   position: fixed;
@@ -204,6 +216,9 @@ const PhysicsGameScreen = () => {
 
   return (
     <FullScreenContainer>
+      <BackgroundVideo autoPlay loop muted playsInline>
+        <source src={hazeVideo} type="video/webm" />
+      </BackgroundVideo>
       <ThreeJSCanvas>
         <SimpleCoinTubes
           players={gameState.players || {}}
