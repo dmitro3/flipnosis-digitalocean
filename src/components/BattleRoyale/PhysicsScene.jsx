@@ -37,16 +37,16 @@ const PhysicsScene = ({
       
       console.log('📐 Scene dimensions:', { width, height, rect })
       
-      // Camera positioned to view vertical pinball machine
+      // Camera positioned to view vertical pinball machine - 3X CLOSER
       const camera = new THREE.PerspectiveCamera(
         50,              // FOV
         width / height,
         0.1,
         2000
       )
-      // Position camera to see full height (0 to 500 units)
-      camera.position.set(0, 250, 400)  // Looking at center of playfield
-      camera.lookAt(0, 250, 0)
+      // Position camera 3x closer to the action
+      camera.position.set(0, 100, 150)  // Much closer (was 250, 400)
+      camera.lookAt(0, 100, 0)          // Look at lower part of scene
       
       const renderer = new THREE.WebGLRenderer({ 
         antialias: true,
@@ -144,16 +144,16 @@ const PhysicsScene = ({
     }
   }, [])
   
-  // Create animated starfield background - MUCH TALLER AND WIDER
+  // Create animated starfield background - 1/3 WIDER AND MUCH TALLER
   const createStarfield = (scene) => {
     const starGeometry = new THREE.BufferGeometry()
     const starVertices = []
     const starSizes = []
     
-    // Create 2000 stars scattered in background - MUCH TALLER SCENE
+    // Create 2000 stars scattered in background - 1/3 WIDER AND MUCH TALLER
     for (let i = 0; i < 2000; i++) {
-      const x = (Math.random() - 0.5) * 2400  // 25% wider than 1920
-      const y = Math.random() * 3000           // MUCH taller - 3x height
+      const x = (Math.random() - 0.5) * 3200  // 1/3 wider than 2400 (2400 * 1.33 = 3200)
+      const y = Math.random() * 5000           // MUCH taller - 5000 units
       const z = -150 - Math.random() * 200     // Behind playfield
       starVertices.push(x, y, z)
       starSizes.push(Math.random() * 2 + 0.5)
@@ -175,7 +175,7 @@ const PhysicsScene = ({
     starsRef.current = stars
     scene.add(stars)
     
-    console.log('⭐ Added twinkling starfield (2400x3000 - MUCH TALLER)')
+    console.log('⭐ Added twinkling starfield (3200x5000 - 1/3 WIDER AND MUCH TALLER)')
   }
   
   // Load obstacles with proper textures - BIGGER ELEMENTS
@@ -219,8 +219,8 @@ const PhysicsScene = ({
         const side = (col % 2 === 0) ? 1 : -1
         
         mesh.position.set(
-          side * (50 + col * 20),      // X: wider spread (was 30+12, now 50+20)
-          100 + row * 120,             // Y: much taller spacing (was 50, now 120)
+          side * (80 + col * 30),      // X: wider spread for 1/3 wider scene
+          50 + row * 200,              // Y: much taller spacing, starting lower
           0                            // Z: locked at 0 for 2D physics
         )
         
@@ -290,32 +290,32 @@ const PhysicsScene = ({
     
     // Main directional light (from above) - ADJUSTED FOR TALLER SCENE
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.2)
-    mainLight.position.set(0, 800, 400)  // Higher up for taller scene
+    mainLight.position.set(0, 1200, 600)  // Higher up for much taller scene
     mainLight.castShadow = true
     mainLight.shadow.mapSize.width = 2048
     mainLight.shadow.mapSize.height = 2048
     mainLight.shadow.camera.near = 0.5
     mainLight.shadow.camera.far = 2000
-    mainLight.shadow.camera.left = -400
-    mainLight.shadow.camera.right = 400
-    mainLight.shadow.camera.top = 400
-    mainLight.shadow.camera.bottom = -400
+    mainLight.shadow.camera.left = -600
+    mainLight.shadow.camera.right = 600
+    mainLight.shadow.camera.top = 600
+    mainLight.shadow.camera.bottom = -600
     scene.add(mainLight)
     
     // Colored accent lights - ADJUSTED FOR TALLER SCENE
-    const accentLight1 = new THREE.PointLight(0x00ffff, 1.5, 600)
-    accentLight1.position.set(-150, 600, 150)
+    const accentLight1 = new THREE.PointLight(0x00ffff, 1.5, 800)
+    accentLight1.position.set(-200, 800, 200)
     scene.add(accentLight1)
     
-    const accentLight2 = new THREE.PointLight(0xff00ff, 1.5, 600)
-    accentLight2.position.set(150, 400, 150)
+    const accentLight2 = new THREE.PointLight(0xff00ff, 1.5, 800)
+    accentLight2.position.set(200, 600, 200)
     scene.add(accentLight2)
     
-    const accentLight3 = new THREE.PointLight(0xffff00, 1.2, 500)
-    accentLight3.position.set(0, 900, 120)
+    const accentLight3 = new THREE.PointLight(0xffff00, 1.2, 700)
+    accentLight3.position.set(0, 1200, 150)
     scene.add(accentLight3)
     
-    console.log('💡 Lighting configured for taller scene')
+    console.log('💡 Lighting configured for much taller scene')
   }
   
   // Update coin positions - BIGGER COINS
