@@ -122,19 +122,19 @@ const SimpleCoinTubes = ({
     for (let i = 0; i < 6; i++) {
       const x = startX + (i * spacing)
 
-      // Glass tube - transparent material
+      // Glass tube - Beautiful procedural glass material
       const tubeGeometry = new THREE.CylinderGeometry(tubeRadius, tubeRadius, tubeHeight, 32, 1, true)
       const glassMaterial = new THREE.MeshPhysicalMaterial({
         color: 0x88ccff,
         transparent: true,
-        opacity: 0.3,
-        roughness: 0.1,
-        metalness: 0.1,
-        transmission: 0.9,
+        opacity: 0.25,
+        transmission: 0.95,
         thickness: 0.5,
-        envMapIntensity: 1,
-        clearcoat: 1,
-        clearcoatRoughness: 0.1,
+        roughness: 0.05,
+        metalness: 0,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.05,
+        ior: 1.5,
         side: THREE.DoubleSide
       })
       
@@ -163,17 +163,23 @@ const SimpleCoinTubes = ({
       bottomRim.rotation.x = Math.PI / 2
       scene.add(bottomRim)
 
-      // Liquid inside tube
+      // Liquid inside tube - Beautiful purple liquid with glow
       const liquidHeight = 150
       const liquidGeometry = new THREE.CylinderGeometry(tubeRadius - 5, tubeRadius - 5, liquidHeight, 32)
-      const liquidMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff1493, // Pink/purple liquid
+      const liquidMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x9945ff, // Purple liquid
         transparent: true,
         opacity: 0.7,
-        metalness: 0.3,
-        roughness: 0.3,
-        emissive: 0xff1493,
-        emissiveIntensity: 0.2
+        transmission: 0.3,
+        thickness: 0.8,
+        roughness: 0.2,
+        metalness: 0.1,
+        emissive: 0x9945ff,
+        emissiveIntensity: 0.5,
+        clearcoat: 0.3,
+        clearcoatRoughness: 0.2,
+        ior: 1.33, // Water-like
+        side: THREE.DoubleSide
       })
       
       const liquid = new THREE.Mesh(liquidGeometry, liquidMaterial)

@@ -25,6 +25,15 @@ class PhysicsGameManager {
       roundTimer: 60,
       players: {}, // address -> { lives, choice, hasFired, coin, isActive, slotNumber }
       playerOrder: [], // Array of addresses in slot order
+      // NFT Data
+      nftContract: gameData.nft_contract,
+      nftTokenId: gameData.nft_token_id,
+      nftName: gameData.nft_name,
+      nftImage: gameData.nft_image,
+      nftCollection: gameData.nft_collection,
+      nftChain: gameData.nft_chain || 'base',
+      entryFee: gameData.entry_fee,
+      serviceFee: gameData.service_fee,
     }
 
     this.games.set(gameId, game)
@@ -252,7 +261,17 @@ class PhysicsGameManager {
       currentRound: game.currentRound,
       roundTimer: game.roundTimer,
       players: game.players,
-      playerOrder: game.playerOrder
+      playerOrder: game.playerOrder,
+      playerSlots: game.playerOrder, // Alias for compatibility
+      // NFT Data
+      nftContract: game.nftContract,
+      nftTokenId: game.nftTokenId,
+      nftName: game.nftName,
+      nftImage: game.nftImage,
+      nftCollection: game.nftCollection,
+      nftChain: game.nftChain,
+      entryFee: game.entryFee,
+      serviceFee: game.serviceFee,
     }
   }
 
