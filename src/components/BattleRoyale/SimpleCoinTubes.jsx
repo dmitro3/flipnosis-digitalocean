@@ -24,7 +24,7 @@ const SimpleCoinTubes = ({
     if (!mountRef.current) return
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x000000)
+    scene.background = null // Transparent to show video background
 
     const container = mountRef.current
     const width = container.clientWidth || window.innerWidth
@@ -41,8 +41,9 @@ const SimpleCoinTubes = ({
 
     const renderer = new THREE.WebGLRenderer({ 
       antialias: true,
-      alpha: false
+      alpha: true // Enable transparency
     })
+    renderer.setClearColor(0x000000, 0) // Transparent background
     renderer.setSize(width, height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
@@ -721,7 +722,7 @@ const SimpleCoinTubes = ({
       style={{
         width: '100%',
         height: '100%',
-        backgroundColor: '#000000'
+        backgroundColor: 'transparent'
       }}
     />
   )
