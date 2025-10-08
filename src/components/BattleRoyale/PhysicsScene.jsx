@@ -26,64 +26,71 @@ const PhysicsScene = ({
     const scene = new THREE.Scene()
     scene.background = new THREE.Color(0x000000)
     
-    // CRITICAL FIX: Use actual container dimensions
     const container = mountRef.current
-    const width = container.offsetWidth
-    const height = container.offsetHeight
     
-    console.log('📐 Container dimensions:', { width, height })
-    
-    // Perspective camera for 3D depth
-    const camera = new THREE.PerspectiveCamera(
-      60,              // FOV
-      width / height,  // Aspect ratio
-      0.1,
-      2000
-    )
-    camera.position.set(0, 250, 150) // Position to see full playfield
-    camera.lookAt(0, 250, 0)
-    
-    const renderer = new THREE.WebGLRenderer({ antialias: true })
-    renderer.setSize(width, height) // Use actual container size
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.shadowMap.enabled = true
-    
-    console.log('🖼️ Renderer size:', { width, height })
-    
-    container.appendChild(renderer.domElement)
-    
-    sceneRef.current = scene
-    cameraRef.current = camera
-    rendererRef.current = renderer
-    
-    createSimpleStarfield(scene)
-    loadAssets(scene)
-    setupLighting(scene)
-    
-    // Animation loop
-    const animate = () => {
-      if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
+    // Wait for next frame to ensure container has proper dimensions
+    const initializeRenderer = () => {
+      // Use clientWidth/clientHeight and fallback to window dimensions
+      const width = container.clientWidth || container.offsetWidth || window.innerWidth
+      const height = container.clientHeight || container.offsetHeight || window.innerHeight - 280 // Account for bottom section
       
-      // Rotate obstacles for visual interest
-      obstaclesRef.current.forEach((obstacle, index) => {
-        if (obstacle) {
-          obstacle.rotation.y += 0.002 * (index % 2 === 0 ? 1 : -1)
-          obstacle.rotation.x += 0.001
-        }
-      })
+      console.log('📐 Container dimensions:', { width, height })
       
-      rendererRef.current.render(sceneRef.current, cameraRef.current)
-      animationIdRef.current = requestAnimationFrame(animate)
+      // Perspective camera for 3D depth
+      const camera = new THREE.PerspectiveCamera(
+        60,              // FOV
+        width / height,  // Aspect ratio
+        0.1,
+        2000
+      )
+      camera.position.set(0, 250, 150) // Position to see full playfield
+      camera.lookAt(0, 250, 0)
+      
+      const renderer = new THREE.WebGLRenderer({ antialias: true })
+      renderer.setSize(width, height) // Use actual container size
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      renderer.shadowMap.enabled = true
+      
+      console.log('🖼️ Renderer size:', { width, height })
+      
+      container.appendChild(renderer.domElement)
+      
+      sceneRef.current = scene
+      cameraRef.current = camera
+      rendererRef.current = renderer
+      
+      createSimpleStarfield(scene)
+      loadAssets(scene)
+      setupLighting(scene)
+      
+      // Animation loop
+      const animate = () => {
+        if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
+        
+        // Rotate obstacles for visual interest
+        obstaclesRef.current.forEach((obstacle, index) => {
+          if (obstacle) {
+            obstacle.rotation.y += 0.002 * (index % 2 === 0 ? 1 : -1)
+            obstacle.rotation.x += 0.001
+          }
+        })
+        
+        rendererRef.current.render(sceneRef.current, cameraRef.current)
+        animationIdRef.current = requestAnimationFrame(animate)
+      }
+      
+      animate()
     }
     
-    animate()
+    // Use requestAnimationFrame to ensure DOM layout is complete
+    requestAnimationFrame(initializeRenderer)
     
     // Resize handler
     const handleResize = () => {
       if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
       
-      const newWidth = mountRef.current.offsetWidth
-      const newHeight = mountRef.current.offsetHeight
+      const newWidth = mountRef.current.clientWidth || mountRef.current.offsetWidth || window.innerWidth
+      const newHeight = mountRef.current.clientHeight || mountRef.current.offsetHeight || window.innerHeight - 280
       
       console.log('📐 Resize to:', { newWidth, newHeight })
       
