@@ -103,26 +103,23 @@ class PhysicsGameManager {
     
     for (let i = 0; i < 20; i++) {
       let radius
-      // Vary sizes for visual interest
       if (i < 7) {
-        radius = 3 + Math.random() * 2 // Medium-large planets/ships
+        radius = 3 + Math.random() * 2
       } else if (i < 14) {
-        radius = 4 + Math.random() * 3 // Larger ones
+        radius = 4 + Math.random() * 3
       } else {
-        radius = 5 + Math.random() * 3 // Biggest ones
+        radius = 5 + Math.random() * 3
       }
       
-      // Distribute evenly vertically with some randomness
-      const baseHeight = 30 + (i * 25) // Base vertical position, spaced out
-      const heightVariation = (Math.random() - 0.5) * 15 // Add some randomness
+      const baseHeight = 30 + (i * 25)
+      const heightVariation = (Math.random() - 0.5) * 15
       const y = baseHeight + heightVariation
       
-      // Horizontal spread - alternate left/right for pinball feel
       const side = (i % 2 === 0) ? 1 : -1
-      const x = side * (15 + Math.random() * 20) // Alternate sides with variation
+      const x = side * (20 + Math.random() * 30)
       
-      // Depth variation for 3D effect
-      const z = (Math.random() - 0.5) * 30
+      // Z = 0 for flat pinball playfield
+      const z = 0
       
       const obstacleBody = new CANNON.Body({
         mass: 0,
@@ -269,10 +266,19 @@ class PhysicsGameManager {
       material: new CANNON.Material({ friction: 0.3, restitution: 0.8 })
     })
 
-    const powerScale = power * 15 // Much more powerful!
+    // NEW CODE - 2D PINBALL PHYSICS:
+    const powerScale = power * 12
     const angleRad = (angle * Math.PI) / 180
-    coinBody.velocity.set(Math.sin(angleRad) * powerScale * 0.3, powerScale, 0)
-    coinBody.angularVelocity.set(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5)
+    
+    // Launch coin upward with horizontal angle
+    coinBody.velocity.set(
+      Math.sin(angleRad) * powerScale * 0.4, // X velocity (left/right)
+      powerScale,                              // Y velocity (upward)
+      0                                        // Z velocity (NO DEPTH)
+    )
+    
+    // Spin only on Y axis for visual effect (like a real coin flip)
+    coinBody.angularVelocity.set(0, Math.random() * 15 - 7.5, 0)
     
     world.addBody(coinBody)
 
@@ -322,6 +328,18 @@ class PhysicsGameManager {
       lastTime = currentTime
 
       world.step(fixedTimeStep, deltaTime, 3)
+
+      // === CONSTRAIN Z-AXIS FOR 2D PINBALL ===
+      game.activeCoins.forEach((coinData) => {
+        const coinBody = coinData.body
+        // Lock Z position to 0
+        coinBody.position.z = 0
+        // Lock Z velocity to 0
+        coinBody.velocity.z = 0
+        // Lock X and Z angular velocity (only allow Y-axis spin)
+        coinBody.angularVelocity.x = 0
+        coinBody.angularVelocity.z = 0
+      })
 
       // Broadcast all active coin positions
       game.activeCoins.forEach((coinData, playerAddr) => {
