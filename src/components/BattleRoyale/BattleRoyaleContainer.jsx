@@ -106,7 +106,7 @@ const BattleRoyaleContent = () => {
   }
 
   // Simple phase-based routing
-  if (gameState.phase === 'filling' || gameState.phase === 'lobby') {
+  if (gameState.phase === 'filling' || gameState.phase === 'lobby' || gameState.phase === 'waiting') {
     return <LobbyScreen />
   }
 
