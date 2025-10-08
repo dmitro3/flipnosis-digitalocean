@@ -2,219 +2,60 @@ import React, { useState, useRef, useEffect } from 'react'
 import styled from '@emotion/styled'
 
 const ControlPanel = styled.div`
-  background: rgba(0, 0, 40, 0.98);
-  border: 3px solid #00ffff;
-  border-radius: 1rem;
-  padding: 0.75rem;
+  background: linear-gradient(135deg, rgba(0, 0, 50, 0.98), rgba(0, 0, 30, 0.98));
+  border: 4px solid #00ffff;
+  border-radius: 1.2rem;
+  padding: 0.8rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.6rem;
   height: 100%;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
+  box-shadow: 0 0 50px rgba(0, 255, 255, 0.4), inset 0 0 30px rgba(0, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   overflow: hidden;
-`
-
-const CoinButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.6rem;
-  background: rgba(0, 191, 255, 0.1);
-  border: 3px solid #00bfff;
-  border-radius: 0.6rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  flex: 1;
+  position: relative;
   
-  img {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    border: 2px solid #FFD700;
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(0, 255, 255, 0.05) 0%, transparent 70%);
+    animation: rotate 10s linear infinite;
   }
   
-  .coin-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    .coin-name {
-      color: #00ffff;
-      font-weight: bold;
-      font-size: 1.4rem;
-      font-family: 'Hyperwave', sans-serif;
-      letter-spacing: 1px;
-    }
-    .coin-hint {
-      color: #aaa;
-      font-size: 0.65rem;
-    }
-  }
-  
-  &:hover:not(:disabled) {
-    background: rgba(0, 191, 255, 0.2);
-    transform: translateY(-2px);
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 `
 
 const ChoiceButtons = styled.div`
   display: flex;
-  gap: 0.4rem;
+  gap: 0.6rem;
   justify-content: center;
+  z-index: 1;
   
   button { 
     flex: 1; 
-    padding: 0.6rem; 
+    padding: 0.8rem; 
     border: none; 
-    border-radius: 0.6rem; 
-    font-size: 1.4rem; 
+    border-radius: 0.8rem; 
+    font-size: 1.6rem; 
     font-weight: bold; 
     cursor: pointer; 
     transition: all 0.3s ease; 
     position: relative; 
     overflow: hidden;
     font-family: 'Hyperwave', sans-serif;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   }
   
   button::before { 
-    content: ''; 
-    position: absolute; 
-    top: 0; 
-    left: -100%; 
-    width: 100%; 
-    height: 100%; 
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent); 
-    transition: left 0.5s; 
-  }
-  
-  button:hover:not(:disabled)::before { left: 100%; }
-  
-  .heads { 
-    background: linear-gradient(135deg, #00FF41 0%, #00FF88 100%); 
-    color: #000; 
-    border: 3px solid #00FF41; 
-  }
-  
-  .tails { 
-    background: linear-gradient(135deg, #FF1493 0%, #FF69B4 100%); 
-    color: #fff; 
-    border: 3px solid #FF1493; 
-  }
-  
-  .selected { 
-    border-width: 4px; 
-    box-shadow: 0 0 30px currentColor, inset 0 0 20px rgba(255, 255, 255, 0.3); 
-    animation: selectedPulse 1.5s ease-in-out infinite; 
-  }
-  
-  button:disabled { 
-    opacity: 0.5; 
-    cursor: not-allowed; 
-  }
-  
-  @keyframes selectedPulse { 
-    0%, 100% { transform: scale(1); } 
-    50% { transform: scale(1.05); } 
-  }
-`
-
-const AngleControl = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  
-  label { 
-    color: #00ffff; 
-    font-weight: bold; 
-    text-align: center; 
-    font-size: 0.75rem;
-  }
-  
-  input { 
-    width: 100%; 
-    cursor: pointer; 
-  }
-  
-  .angle-display { 
-    text-align: center; 
-    color: white; 
-    font-size: 1rem; 
-    font-weight: bold; 
-  }
-`
-
-const PowerMeter = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  
-  label { 
-    color: #00ffff; 
-    font-weight: bold; 
-    text-align: center; 
-    font-size: 0.75rem;
-  }
-  
-  .power-bar { 
-    width: 100%; 
-    height: 30px; 
-    background: rgba(0, 0, 0, 0.8); 
-    border-radius: 20px; 
-    overflow: hidden; 
-    border: 2px solid #00ffff; 
-    position: relative; 
-  }
-  
-  .power-fill { 
-    height: 100%; 
-    background: linear-gradient(90deg, #00ff88 0%, #00ffff 50%, #ffff00 100%); 
-    transition: width 0.1s linear; 
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); 
-  }
-  
-  .power-value { 
-    position: absolute; 
-    top: 50%; 
-    left: 50%; 
-    transform: translate(-50%, -50%); 
-    color: white; 
-    font-weight: bold; 
-    font-size: 0.9rem; 
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.8); 
-  }
-`
-
-const BottomRow = styled.div`
-  display: flex;
-  gap: 0.4rem;
-  align-items: stretch;
-`
-
-const FireButton = styled.button`
-  background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
-  color: white;
-  border: 3px solid #ff1493;
-  padding: 0.6rem 1rem;
-  border-radius: 0.6rem;
-  font-size: 1.4rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  position: relative;
-  overflow: hidden;
-  flex: 1;
-  font-family: 'Hyperwave', sans-serif;
-  letter-spacing: 1px;
-  
-  &::before { 
     content: ''; 
     position: absolute; 
     top: 0; 
@@ -225,15 +66,194 @@ const FireButton = styled.button`
     transition: left 0.5s; 
   }
   
+  button:hover:not(:disabled)::before { left: 100%; }
+  
+  .heads { 
+    background: linear-gradient(135deg, #00FF41 0%, #00FF88 100%); 
+    color: #000; 
+    border: 4px solid #00FF41; 
+  }
+  
+  .tails { 
+    background: linear-gradient(135deg, #FF1493 0%, #FF69B4 100%); 
+    color: #fff; 
+    border: 4px solid #FF1493; 
+  }
+  
+  .selected { 
+    border-width: 5px; 
+    box-shadow: 0 0 40px currentColor, inset 0 0 30px rgba(255, 255, 255, 0.3); 
+    animation: selectedPulse 1.5s ease-in-out infinite; 
+    transform: scale(1.05);
+  }
+  
+  button:disabled { 
+    opacity: 0.5; 
+    cursor: not-allowed; 
+  }
+  
+  @keyframes selectedPulse { 
+    0%, 100% { transform: scale(1.05); } 
+    50% { transform: scale(1.1); } 
+  }
+`
+
+const AngleControl = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  z-index: 1;
+  
+  label { 
+    color: #00ffff; 
+    font-weight: bold; 
+    text-align: center; 
+    font-size: 0.9rem;
+    font-family: 'Hyperwave', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  input { 
+    width: 100%; 
+    cursor: pointer;
+    height: 8px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.5);
+    outline: none;
+    
+    &::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00ffff, #00ff88);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+      transition: all 0.3s ease;
+    }
+    
+    &::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 1);
+    }
+  }
+  
+  .angle-display { 
+    text-align: center; 
+    color: white; 
+    font-size: 1.3rem; 
+    font-weight: bold;
+    font-family: 'Hyperwave', monospace;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+  }
+`
+
+const PowerMeter = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  z-index: 1;
+  
+  label { 
+    color: #00ffff; 
+    font-weight: bold; 
+    text-align: center; 
+    font-size: 0.9rem;
+    font-family: 'Hyperwave', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .power-bar { 
+    width: 100%; 
+    height: 35px; 
+    background: rgba(0, 0, 0, 0.8); 
+    border-radius: 25px; 
+    overflow: hidden; 
+    border: 3px solid #00ffff; 
+    position: relative; 
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.5);
+  }
+  
+  .power-fill { 
+    height: 100%; 
+    background: linear-gradient(90deg, 
+      #00ff88 0%, 
+      #00ffff 30%, 
+      #ffff00 60%, 
+      #ff8800 80%, 
+      #ff0000 100%
+    ); 
+    transition: width 0.05s linear; 
+    box-shadow: 0 0 30px rgba(0, 255, 255, 1);
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+    }
+  }
+  
+  .power-value { 
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    color: white; 
+    font-weight: bold; 
+    font-size: 1.1rem; 
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
+    font-family: 'Hyperwave', monospace;
+  }
+`
+
+const FireButton = styled.button`
+  background: linear-gradient(135deg, #ff1493 0%, #ff69b4 50%, #ff1493 100%);
+  color: white;
+  border: 4px solid #ff1493;
+  padding: 1rem 1.5rem;
+  border-radius: 1rem;
+  font-size: 1.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  font-family: 'Hyperwave', sans-serif;
+  letter-spacing: 3px;
+  box-shadow: 0 6px 25px rgba(255, 20, 147, 0.4);
+  z-index: 1;
+  
+  &::before { 
+    content: ''; 
+    position: absolute; 
+    top: 0; 
+    left: -100%; 
+    width: 100%; 
+    height: 100%; 
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent); 
+    transition: left 0.6s; 
+  }
+  
   &:hover:not(:disabled)::before { left: 100%; }
   
   &:hover:not(:disabled) { 
-    transform: translateY(-2px); 
-    box-shadow: 0 10px 30px rgba(255, 20, 147, 0.5); 
+    transform: translateY(-3px) scale(1.02); 
+    box-shadow: 0 10px 40px rgba(255, 20, 147, 0.7); 
+    border-color: #ff69b4;
   }
   
   &.charging { 
-    animation: chargeGlow 0.3s ease-in-out infinite; 
+    animation: chargeGlow 0.3s ease-in-out infinite;
+    transform: scale(0.98);
   }
   
   &:disabled { 
@@ -243,19 +263,48 @@ const FireButton = styled.button`
   }
   
   @keyframes chargeGlow { 
-    0%, 100% { box-shadow: 0 0 20px rgba(255, 20, 147, 0.6); } 
-    50% { box-shadow: 0 0 40px rgba(255, 20, 147, 1); } 
+    0%, 100% { box-shadow: 0 0 30px rgba(255, 20, 147, 0.8); } 
+    50% { box-shadow: 0 0 60px rgba(255, 20, 147, 1); } 
   }
 `
 
-const StatusText = styled.div`
-  text-align: center;
-  color: ${props => props.hasFired ? '#00ff88' : '#ffff00'};
-  font-weight: bold;
-  font-size: 0.75rem;
-  padding: 0.35rem;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 0.5rem;
+const CoinDisplay = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 0.6rem;
+  background: rgba(0, 255, 255, 0.1);
+  border: 3px solid #00ffff;
+  border-radius: 0.8rem;
+  z-index: 1;
+  
+  img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: 3px solid #FFD700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  }
+  
+  .coin-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    
+    .coin-name {
+      color: #00ffff;
+      font-weight: bold;
+      font-size: 1.3rem;
+      font-family: 'Hyperwave', sans-serif;
+      letter-spacing: 1px;
+    }
+    
+    .coin-hint {
+      color: #aaa;
+      font-size: 0.7rem;
+    }
+  }
 `
 
 const CannonController = ({ 
@@ -315,7 +364,6 @@ const CannonController = ({
 
   return (
     <ControlPanel>
-      {/* Top Row - Heads/Tails buttons with bigger text */}
       <ChoiceButtons>
         <button 
           className={`heads ${selectedChoice === 'heads' ? 'selected' : ''}`} 
@@ -333,34 +381,19 @@ const CannonController = ({
         </button>
       </ChoiceButtons>
       
-      {/* Bottom Row - Coin selector and Fire button side by side */}
-      <BottomRow>
-        <CoinButton disabled={disabled || hasFired}>
-          <img 
-            src={currentCoin?.headsImage || '/coins/plainh.png'} 
-            alt="Current coin" 
-          />
-          <div className="coin-info">
-            <div className="coin-name">{currentCoin?.name || 'Classic'}</div>
-            <div className="coin-hint">Your coin</div>
-          </div>
-        </CoinButton>
-        
-        <FireButton 
-          className={isCharging ? 'charging' : ''} 
-          onMouseDown={handleFireMouseDown} 
-          onMouseUp={handleFireMouseUp} 
-          onMouseLeave={handleFireMouseLeave} 
-          onTouchStart={handleFireMouseDown} 
-          onTouchEnd={handleFireMouseUp} 
-          disabled={disabled || !selectedChoice || hasFired}
-        >
-          {hasFired ? '✅ FIRED!' : (isCharging ? '⚡ CHARGE' : '🚀 FLIP')}
-        </FireButton>
-      </BottomRow>
+      <CoinDisplay>
+        <img 
+          src={currentCoin?.headsImage || '/coins/plainh.png'} 
+          alt="Current coin" 
+        />
+        <div className="coin-info">
+          <div className="coin-name">{currentCoin?.name || 'Classic'}</div>
+          <div className="coin-hint">Your Coin</div>
+        </div>
+      </CoinDisplay>
       
       <AngleControl>
-        <label>🎯 Aim Angle</label>
+        <label>🎯 Launch Angle</label>
         <input 
           type="range" 
           min="-45" 
@@ -373,18 +406,24 @@ const CannonController = ({
       </AngleControl>
       
       <PowerMeter>
-        <label>⚡ Fire Power</label>
+        <label>⚡ Power Charge</label>
         <div className="power-bar">
           <div className="power-fill" style={{ width: `${(power / 10) * 100}%` }} />
           <div className="power-value">{Math.floor(power)}/10</div>
         </div>
       </PowerMeter>
       
-      {hasFired && (
-        <StatusText hasFired={true}>
-          Coin in flight! Waiting for result...
-        </StatusText>
-      )}
+      <FireButton 
+        className={isCharging ? 'charging' : ''} 
+        onMouseDown={handleFireMouseDown} 
+        onMouseUp={handleFireMouseUp} 
+        onMouseLeave={handleFireMouseLeave} 
+        onTouchStart={handleFireMouseDown} 
+        onTouchEnd={handleFireMouseUp} 
+        disabled={disabled || !selectedChoice || hasFired}
+      >
+        {hasFired ? '✅ FIRED!' : (isCharging ? '⚡ CHARGE' : '🚀 FIRE')}
+      </FireButton>
     </ControlPanel>
   )
 }

@@ -15,16 +15,19 @@ class PhysicsGameManager {
   }
 
   createPhysicsGame(gameId, gameData) {
-    console.log(`🎮 Creating Physics Battle Royale: ${gameId}`)
+    console.log(`🎮 Creating 3D Pinball Physics Game: ${gameId}`)
+    
+    // Create 2D physics world (Z-axis locked)
     const world = new CANNON.World()
-    world.gravity.set(0, -5, 0) // Much lighter gravity for higher flight
+    world.gravity.set(0, -8, 0) // Reduced gravity for pinball feel
     world.broadphase = new CANNON.NaiveBroadphase()
-    world.solver.iterations = 10
+    world.solver.iterations = 15
 
+    // Ground plane (invisible, for catching coins)
     const groundBody = new CANNON.Body({
       mass: 0,
       shape: new CANNON.Plane(),
-      position: new CANNON.Vec3(0, -10, 0)
+      position: new CANNON.Vec3(0, -5, 0)
     })
     groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
     world.addBody(groundBody)
@@ -42,7 +45,7 @@ class PhysicsGameManager {
       currentRound: 0,
       roundTimer: 30,
       roundStartTime: null,
-      activeCoins: new Map(), // Multiple coins flying simultaneously
+      activeCoins: new Map(),
       obstacles: [],
       nftContract: gameData.nft_contract,
       nftTokenId: gameData.nft_token_id,
@@ -53,7 +56,7 @@ class PhysicsGameManager {
       createdAt: new Date().toISOString()
     }
 
-    // Restore or create obstacles
+    // Create or restore obstacles
     let obstaclesData = null
     if (gameData.game_data) {
       try {
@@ -67,20 +70,20 @@ class PhysicsGameManager {
     }
 
     if (obstaclesData && obstaclesData.length > 0) {
-      console.log(`📦 Restoring ${obstaclesData.length} obstacles from database`)
+      console.log(`📦 Restoring ${obstaclesData.length} obstacles`)
       game.obstacles = obstaclesData
       obstaclesData.forEach(obstacle => {
         const obstacleBody = new CANNON.Body({
           mass: 0,
           shape: new CANNON.Sphere(obstacle.radius),
-          position: new CANNON.Vec3(obstacle.position.x, obstacle.position.y, obstacle.position.z),
-          material: new CANNON.Material({ friction: 0.3, restitution: 0.7 })
+          position: new CANNON.Vec3(obstacle.position.x, obstacle.position.y, 0), // Z=0
+          material: new CANNON.Material({ friction: 0.3, restitution: 0.85 })
         })
         world.addBody(obstacleBody)
       })
     } else {
-      console.log(`🆕 Creating new obstacles`)
-      game.obstacles = this.createObstacles(world)
+      console.log(`🆕 Creating new pinball obstacles`)
+      game.obstacles = this.createPinballObstacles(world)
     }
 
     this.games.set(gameId, game)
@@ -93,42 +96,40 @@ class PhysicsGameManager {
     return game
   }
 
-  createObstacles(world) {
+  createPinballObstacles(world) {
     const obstacles = []
     
-    // Create vertical "pinball machine" style layout
-    // Spread obstacles across tall vertical space (500 units high!)
-    const verticalSections = 10 // Divide vertical space into sections
-    const sectionHeight = 50 // Each section is 50 units tall
-    
+    // Create 20 obstacles in vertical pinball pattern
     for (let i = 0; i < 20; i++) {
       let radius
+      // Varying sizes for visual interest
       if (i < 7) {
-        radius = 3 + Math.random() * 2
+        radius = 6 + Math.random() * 3
       } else if (i < 14) {
-        radius = 4 + Math.random() * 3
+        radius = 8 + Math.random() * 4
       } else {
-        radius = 5 + Math.random() * 3
+        radius = 10 + Math.random() * 4
       }
       
-      const baseHeight = 30 + (i * 25)
-      const heightVariation = (Math.random() - 0.5) * 15
+      // Vertical spacing for pinball layout
+      const baseHeight = 80 + (i * 45)
+      const heightVariation = (Math.random() - 0.5) * 20
       const y = baseHeight + heightVariation
       
-      // Zigzag pinball pattern
+      // Zigzag horizontal pattern
       const row = Math.floor(i / 4)
       const col = i % 4
       const side = (col % 2 === 0) ? 1 : -1
-      const x = side * (25 + col * 10)
+      const x = side * (30 + col * 12)
       
-      // CRITICAL: Z = 0 for physics collision with coins
+      // CRITICAL: Z=0 for 2D physics
       const z = 0
       
       const obstacleBody = new CANNON.Body({
         mass: 0,
         shape: new CANNON.Sphere(radius),
-        position: new CANNON.Vec3(x, y, z), // Z = 0
-        material: new CANNON.Material({ friction: 0.3, restitution: 0.9 })
+        position: new CANNON.Vec3(x, y, z),
+        material: new CANNON.Material({ friction: 0.3, restitution: 0.85 })
       })
       
       world.addBody(obstacleBody)
@@ -137,15 +138,12 @@ class PhysicsGameManager {
         id: `obstacle_${i}`,
         type: 'sphere',
         radius,
-        position: { 
-          x, 
-          y, 
-          z: (Math.random() - 0.5) * 40 // Visual Z offset for 3D rendering
-        },
+        position: { x, y, z: (Math.random() - 0.5) * 40 }, // Visual Z for 3D rendering
         textureIndex: i + 1
       })
     }
     
+    console.log(`✅ Created ${obstacles.length} pinball obstacles`)
     return obstacles
   }
 
@@ -156,7 +154,7 @@ class PhysicsGameManager {
     const normalizedAddress = playerAddress.toLowerCase()
     if (game.players[normalizedAddress]) return false
 
-    // Position players in a circle
+    // Position players at bottom (launch positions)
     const angle = (game.currentPlayers / game.maxPlayers) * Math.PI * 2
     const radius = 15
     const x = Math.cos(angle) * radius
@@ -168,8 +166,14 @@ class PhysicsGameManager {
       isActive: true,
       choice: null,
       hasFired: false,
-      coin: { id: 'plain', type: 'default', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png' },
-      cannonPosition: { x, y: 0, z },
+      coin: { 
+        id: 'plain', 
+        type: 'default', 
+        name: 'Classic', 
+        headsImage: '/coins/plainh.png', 
+        tailsImage: '/coins/plaint.png' 
+      },
+      cannonPosition: { x, y: 10, z: 0 }, // Start at bottom, Z=0
       joinedAt: new Date().toISOString()
     }
     game.playerOrder.push(normalizedAddress)
@@ -181,7 +185,7 @@ class PhysicsGameManager {
   startGame(gameId, broadcastFn) {
     const game = this.games.get(gameId)
     if (!game || game.currentPlayers < 2) return false
-    console.log(`🚀 Starting physics game: ${gameId}`)
+    console.log(`🚀 Starting pinball game: ${gameId}`)
     game.phase = this.PHASES.GAME_STARTING
     broadcastFn(`game_${gameId}`, 'physics_game_starting', { gameId, countdown: 3 })
     setTimeout(() => { this.startRound(gameId, broadcastFn) }, 3000)
@@ -203,7 +207,6 @@ class PhysicsGameManager {
     game.roundStartTime = Date.now()
     game.activeCoins.clear()
 
-    // Reset player states for new round
     game.playerOrder.forEach(addr => {
       const player = game.players[addr]
       if (player && player.isActive) {
@@ -212,7 +215,7 @@ class PhysicsGameManager {
       }
     })
 
-    console.log(`🎯 Round ${game.currentRound} started - ALL PLAYERS GO SIMULTANEOUSLY`)
+    console.log(`🎯 Round ${game.currentRound} - ALL FIRE!`)
 
     broadcastFn(`game_${gameId}`, 'physics_round_start', {
       gameId,
@@ -222,7 +225,6 @@ class PhysicsGameManager {
 
     this.broadcastState(gameId, broadcastFn)
 
-    // Round timer
     const timerInterval = setInterval(() => {
       game.roundTimer--
       
@@ -259,33 +261,33 @@ class PhysicsGameManager {
     const player = game.players[normalizedAddress]
     if (!player || !player.isActive || player.hasFired || !player.choice) return false
 
-    console.log(`🚀 ${playerAddress} firing coin: angle=${angle}, power=${power}`)
+    console.log(`🚀 ${playerAddress} firing: angle=${angle}°, power=${power}`)
     
     player.hasFired = true
 
-    const coinRadius = 3 // Much bigger coins!
-    const coinThickness = 0.4
+    // Create coin physics body
+    const coinRadius = 5
+    const coinThickness = 0.8
     const coinShape = new CANNON.Cylinder(coinRadius, coinRadius, coinThickness, 32)
     const coinBody = new CANNON.Body({
       mass: 1,
       shape: coinShape,
-      position: new CANNON.Vec3(player.cannonPosition.x, player.cannonPosition.y + 2, player.cannonPosition.z),
-      material: new CANNON.Material({ friction: 0.3, restitution: 0.8 })
+      position: new CANNON.Vec3(player.cannonPosition.x, 10, 0), // Start at bottom, Z=0
+      material: new CANNON.Material({ friction: 0.2, restitution: 0.75 })
     })
 
-    // NEW CODE - 2D PINBALL PHYSICS:
-    const powerScale = power * 12
+    // PINBALL LAUNCH PHYSICS - 2D ONLY (Z locked)
+    const powerScale = power * 15 // Strong upward launch
     const angleRad = (angle * Math.PI) / 180
     
-    // Launch coin upward with horizontal angle
     coinBody.velocity.set(
-      Math.sin(angleRad) * powerScale * 0.4, // X velocity (left/right)
-      powerScale,                              // Y velocity (upward)
-      0                                        // Z velocity (NO DEPTH)
+      Math.sin(angleRad) * powerScale * 0.5, // X velocity (horizontal aim)
+      powerScale,                              // Y velocity (strong upward)
+      0                                        // Z velocity LOCKED at 0
     )
     
-    // Spin only on Y axis for visual effect (like a real coin flip)
-    coinBody.angularVelocity.set(0, Math.random() * 15 - 7.5, 0)
+    // Spin on Y-axis only (coin flip spin)
+    coinBody.angularVelocity.set(0, Math.random() * 20 - 10, 0)
     
     world.addBody(coinBody)
 
@@ -295,7 +297,7 @@ class PhysicsGameManager {
       startTime: Date.now(),
       lastBroadcast: 0,
       landed: false,
-      coinData: player.coin // Include coin skin data
+      coinData: player.coin
     })
 
     broadcastFn(`game_${gameId}`, 'physics_coin_fired', { 
@@ -306,7 +308,6 @@ class PhysicsGameManager {
       coinData: player.coin 
     })
 
-    // Start physics loop if not already running
     if (!game.physicsLoopRunning) {
       this.startPhysicsLoop(gameId, broadcastFn)
     }
@@ -336,19 +337,22 @@ class PhysicsGameManager {
 
       world.step(fixedTimeStep, deltaTime, 3)
 
-      // === CONSTRAIN Z-AXIS FOR 2D PINBALL ===
+      // === CRITICAL: LOCK Z-AXIS FOR 2D PINBALL ===
       game.activeCoins.forEach((coinData) => {
         const coinBody = coinData.body
-        // Lock Z position to 0
+        
+        // Force Z position to 0 (2D physics plane)
         coinBody.position.z = 0
-        // Lock Z velocity to 0
+        
+        // Force Z velocity to 0 (no depth movement)
         coinBody.velocity.z = 0
-        // Lock X and Z angular velocity (only allow Y-axis spin)
+        
+        // Lock X and Z rotation (only Y-axis spin allowed)
         coinBody.angularVelocity.x = 0
         coinBody.angularVelocity.z = 0
       })
 
-      // Broadcast all active coin positions
+      // Broadcast positions
       game.activeCoins.forEach((coinData, playerAddr) => {
         if (coinData.landed) return
 
@@ -358,22 +362,35 @@ class PhysicsGameManager {
           broadcastFn(`game_${gameId}`, 'physics_coin_position', {
             gameId,
             playerAddress: playerAddr,
-            position: { x: coinBody.position.x, y: coinBody.position.y, z: coinBody.position.z },
-            rotation: { x: coinBody.quaternion.x, y: coinBody.quaternion.y, z: coinBody.quaternion.z, w: coinBody.quaternion.w },
-            velocity: { x: coinBody.velocity.x, y: coinBody.velocity.y, z: coinBody.velocity.z },
-            coinData: coinData.coinData // Include coin skin data
+            position: { 
+              x: coinBody.position.x, 
+              y: coinBody.position.y, 
+              z: 0 // Always 0 for client
+            },
+            rotation: { 
+              x: coinBody.quaternion.x, 
+              y: coinBody.quaternion.y, 
+              z: coinBody.quaternion.z, 
+              w: coinBody.quaternion.w 
+            },
+            velocity: { 
+              x: coinBody.velocity.x, 
+              y: coinBody.velocity.y, 
+              z: 0 
+            },
+            coinData: coinData.coinData
           })
           coinData.lastBroadcast = currentTime
         }
 
-        // Check if coin has landed
-        const velocity = Math.sqrt(coinBody.velocity.x ** 2 + coinBody.velocity.y ** 2 + coinBody.velocity.z ** 2)
-        if (velocity < 0.5 && coinBody.position.y < 5) {
+        // Check if landed
+        const velocity = Math.sqrt(coinBody.velocity.x ** 2 + coinBody.velocity.y ** 2)
+        if (velocity < 1.0 && coinBody.position.y < 15) {
           this.handleCoinLanded(gameId, playerAddr, broadcastFn)
         }
 
-        // Timeout after 20 seconds (longer for higher flight)
-        if (currentTime - coinData.startTime > 20000) {
+        // Timeout after 25 seconds
+        if (currentTime - coinData.startTime > 25000) {
           this.handleCoinLanded(gameId, playerAddr, broadcastFn)
         }
       })
@@ -401,7 +418,7 @@ class PhysicsGameManager {
     const result = this.determineCoinFace(coinBody.quaternion)
     const won = result === player.choice
 
-    console.log(`🎲 Result: ${result}, Player chose: ${player.choice}, Won: ${won}`)
+    console.log(`🎲 Result: ${result}, Chose: ${player.choice}, Won: ${won}`)
 
     if (!won) {
       player.lives--
@@ -425,7 +442,6 @@ class PhysicsGameManager {
 
     this.broadcastState(gameId, broadcastFn)
 
-    // Check if all coins have landed
     const allLanded = Array.from(game.activeCoins.values()).every(c => c.landed)
     if (allLanded) {
       this.checkRoundEnd(gameId, broadcastFn)
@@ -443,17 +459,16 @@ class PhysicsGameManager {
       game.timerInterval = null
     }
 
-    // Auto-fire for players who didn't act
+    // Auto-fire stragglers
     game.playerOrder.forEach(addr => {
       const player = game.players[addr]
       if (player.isActive && !player.hasFired) {
         console.log(`⚠️ Auto-firing for ${addr}`)
         if (!player.choice) player.choice = 'heads'
-        this.fireCoin(gameId, addr, 0, 5, broadcastFn)
+        this.fireCoin(gameId, addr, 0, 7, broadcastFn)
       }
     })
 
-    // Wait a bit for auto-fired coins to land
     setTimeout(() => {
       this.checkRoundEnd(gameId, broadcastFn)
     }, 5000)
@@ -465,13 +480,11 @@ class PhysicsGameManager {
 
     const activePlayers = Object.values(game.players).filter(p => p.isActive)
     
-    // Check for tie scenario (all remaining players lost their last life)
     const allDead = activePlayers.length === 0 && game.playerOrder.some(addr => game.players[addr].lives === 0)
     
     if (allDead) {
-      console.log(`⚠️ TIE - All players eliminated! Replaying round...`)
+      console.log(`⚠️ TIE - Replaying round`)
       
-      // Reset lives for tied players
       game.playerOrder.forEach(addr => {
         const player = game.players[addr]
         if (player.lives === 0) {
@@ -482,7 +495,7 @@ class PhysicsGameManager {
 
       broadcastFn(`game_${gameId}`, 'physics_round_tie', {
         gameId,
-        message: 'All players eliminated! Replaying round...'
+        message: 'All eliminated! Replay!'
       })
 
       this.broadcastState(gameId, broadcastFn)
