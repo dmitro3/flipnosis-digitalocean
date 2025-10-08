@@ -13,16 +13,16 @@ const Container = styled.div`
   width: 100vw;
   background: #000;
   overflow: hidden;
+  position: relative;
 `
 
 const SceneContainer = styled.div`
   flex: 1;
   position: relative;
   width: 100%;
-  height: 100%;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  background: #000;
+  z-index: 1;
 `
 
 const BottomSection = styled.div`
@@ -36,6 +36,8 @@ const BottomSection = styled.div`
   padding: 1rem;
   align-items: stretch;
   flex-shrink: 0;
+  z-index: 2;
+  position: relative;
   
   @media (max-width: 1400px) {
     grid-template-columns: 1fr 180px 400px;
