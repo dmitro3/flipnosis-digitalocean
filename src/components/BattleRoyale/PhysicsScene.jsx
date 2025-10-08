@@ -89,6 +89,9 @@ const PhysicsScene = ({
           }
         })
         
+        // CAMERA TRACKING - Follow the highest coin
+        updateCameraTracking()
+        
         rendererRef.current.render(sceneRef.current, cameraRef.current)
         animationIdRef.current = requestAnimationFrame(animate)
       }
@@ -143,6 +146,34 @@ const PhysicsScene = ({
       }
     }
   }, [])
+  
+  // CAMERA TRACKING FUNCTION - Follow the coin
+  const updateCameraTracking = () => {
+    if (!cameraRef.current || coinPositions.length === 0) return
+    
+    // Find the highest coin
+    let highestCoinY = 100 // Default camera Y position
+    let targetCoinX = 0    // Default camera X position
+    
+    coinPositions.forEach((posData) => {
+      if (posData.position.y > highestCoinY) {
+        highestCoinY = posData.position.y
+        targetCoinX = posData.position.x
+      }
+    })
+    
+    // Smooth camera following with interpolation
+    const currentCamera = cameraRef.current
+    const targetY = Math.max(highestCoinY + 50, 100) // Follow 50 units above the coin, minimum 100
+    const targetX = targetCoinX * 0.3 // Slight horizontal following (30% of coin movement)
+    
+    // Smooth interpolation for camera movement
+    currentCamera.position.y += (targetY - currentCamera.position.y) * 0.05
+    currentCamera.position.x += (targetX - currentCamera.position.x) * 0.05
+    
+    // Update lookAt to follow the coin
+    currentCamera.lookAt(targetX, targetY - 50, 0) // Look slightly below the coin
+  }
   
   // Create animated starfield background - 1/3 WIDER AND MUCH TALLER
   const createStarfield = (scene) => {
