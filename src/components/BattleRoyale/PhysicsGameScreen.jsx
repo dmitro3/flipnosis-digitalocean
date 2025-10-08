@@ -7,33 +7,57 @@ import socketService from '../../services/SocketService'
 import CoinSelector from '../CoinSelector'
 
 const FullScreenContainer = styled.div`
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   background: #000000;
-  display: flex !important;
-  flex-direction: column;
   overflow: hidden;
-  z-index: 9999 !important;
 `
 
-const TopArea = styled.div`
-  width: 100vw;
-  height: calc(100vh - 280px);
-  position: relative;
+const ThreeJSCanvas = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+`
+
+const UIOverlay = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 280px;
+  z-index: 10;
+  pointer-events: none;
+  
+  > * {
+    pointer-events: auto;
+  }
+`
+
+const TopUIOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  z-index: 10;
+  pointer-events: none;
+  padding: 2rem;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000000;
+  justify-content: space-between;
+  align-items: flex-start;
+  
+  > * {
+    pointer-events: auto;
+  }
 `
 
 const RoundIndicator = styled.div`
-  position: absolute;
-  top: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.95);
   border: 4px solid #00ffff;
   padding: 1rem 2rem;
@@ -41,7 +65,6 @@ const RoundIndicator = styled.div`
   color: white;
   font-size: 1.5rem;
   font-weight: bold;
-  z-index: 100;
   box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
   
   .round-text {
@@ -52,9 +75,6 @@ const RoundIndicator = styled.div`
 `
 
 const TimerDisplay = styled.div`
-  position: absolute;
-  top: 2rem;
-  right: 2rem;
   background: rgba(0, 0, 0, 0.95);
   border: 4px solid ${props => props.urgent ? '#ff1493' : '#00ffff'};
   border-radius: 1rem;
@@ -62,7 +82,6 @@ const TimerDisplay = styled.div`
   color: white;
   font-size: 2.5rem;
   font-weight: bold;
-  z-index: 100;
   box-shadow: 0 0 30px ${props => props.urgent ? 'rgba(255, 20, 147, 0.8)' : 'rgba(0, 255, 255, 0.8)'};
   animation: ${props => props.urgent ? 'pulse 0.8s ease-in-out infinite' : 'none'};
   
@@ -70,17 +89,6 @@ const TimerDisplay = styled.div`
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
   }
-`
-
-const BottomArea = styled.div`
-  width: 100vw;
-  height: 280px;
-  background: rgba(0, 0, 30, 0.98);
-  border-top: 4px solid #00ffff;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 `
 
 const Modal = styled.div`
@@ -125,6 +133,7 @@ const PhysicsGameScreen = () => {
   const { gameState, address, updateCoin } = useBattleRoyaleGame()
   const [showCoinSelector, setShowCoinSelector] = useState(false)
   const [selectedPlayerAddr, setSelectedPlayerAddr] = useState(null)
+  const [powerLevel, setPowerLevel] = useState(0)
 
   if (!gameState) return null
 
@@ -141,7 +150,7 @@ const PhysicsGameScreen = () => {
     })
   }, [gameState.gameId, address])
 
-  const handleFlipCoin = useCallback((playerAddr) => {
+  const handleFlipCoin = useCallback((playerAddr, power) => {
     const player = gameState.players?.[playerAddr.toLowerCase()]
     if (!player || !player.choice) return
 
@@ -149,14 +158,14 @@ const PhysicsGameScreen = () => {
     if (window.flipCoin) {
       // For now, use random result - server will determine actual result
       const mockResult = Math.random() < 0.5 ? 'heads' : 'tails'
-      window.flipCoin(playerAddr, 10, mockResult)
+      window.flipCoin(playerAddr, power, mockResult)
     }
 
     socketService.emit('physics_fire_coin', {
       gameId: gameState.gameId,
       address: playerAddr,
       angle: 0,
-      power: 10
+      power: power
     })
   }, [gameState])
 
@@ -176,31 +185,49 @@ const PhysicsGameScreen = () => {
     // The server will handle the result
   }, [])
 
+  const handlePowerStart = useCallback((playerAddr) => {
+    if (window.startTubeHeating) {
+      window.startTubeHeating(playerAddr)
+    }
+  }, [])
+
+  const handlePowerEnd = useCallback((playerAddr, power) => {
+    if (window.shatterTube) {
+      window.shatterTube(playerAddr)
+    }
+    handleFlipCoin(playerAddr, power)
+  }, [handleFlipCoin])
+
+  const handlePowerChange = useCallback((power) => {
+    setPowerLevel(power)
+  }, [])
+
   return (
     <FullScreenContainer>
-      <TopArea>
-        {phase === 'round_active' && (
-          <>
-            <RoundIndicator>
-              <div className="round-text">
-                🎯 ROUND {gameState.currentRound}
-              </div>
-            </RoundIndicator>
-
-            <TimerDisplay urgent={urgent}>
-              {turnTimer}s
-            </TimerDisplay>
-          </>
-        )}
-
+      <ThreeJSCanvas>
         <SimpleCoinTubes
           players={gameState.players || {}}
           playerOrder={gameState.playerOrder || []}
           onCoinLanded={handleCoinLanded}
+          onPowerChange={handlePowerChange}
         />
-      </TopArea>
+      </ThreeJSCanvas>
 
-      <BottomArea>
+      {phase === 'round_active' && (
+        <TopUIOverlay>
+          <RoundIndicator>
+            <div className="round-text">
+              🎯 ROUND {gameState.currentRound}
+            </div>
+          </RoundIndicator>
+
+          <TimerDisplay urgent={urgent}>
+            {turnTimer}s
+          </TimerDisplay>
+        </TopUIOverlay>
+      )}
+
+      <UIOverlay>
         <SimplePlayerCards
           players={gameState.players || {}}
           playerOrder={gameState.playerOrder || []}
@@ -208,9 +235,11 @@ const PhysicsGameScreen = () => {
           onChoiceSelect={handleChoiceSelect}
           onFlipCoin={handleFlipCoin}
           onChangeCoin={handleChangeCoin}
+          onPowerStart={handlePowerStart}
+          onPowerEnd={handlePowerEnd}
           disabled={phase !== 'round_active' || currentPlayer?.hasFired}
         />
-      </BottomArea>
+      </UIOverlay>
 
       {showCoinSelector && (
         <Modal onClick={() => setShowCoinSelector(false)}>

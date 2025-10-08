@@ -124,6 +124,29 @@ const ChangeCoinButton = styled.button`
   }
 `
 
+const PowerMeter = styled.div`
+  width: 100%;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  border: 2px solid #00ffff;
+  overflow: hidden;
+  position: relative;
+`
+
+const PowerFill = styled.div`
+  height: 100%;
+  background: linear-gradient(90deg, 
+    #00ff88 0%, 
+    #00ffff 30%, 
+    #ffff00 60%, 
+    #ff8800 80%, 
+    #ff0000 100%
+  );
+  transition: width 0.05s linear;
+  box-shadow: 0 0 10px currentColor;
+`
+
 const SimplePlayerCards = ({
   players = {},
   playerOrder = [],
@@ -131,8 +154,38 @@ const SimplePlayerCards = ({
   onChoiceSelect,
   onFlipCoin,
   onChangeCoin,
+  onPowerStart,
+  onPowerEnd,
   disabled = false
 }) => {
+  const [powerLevel, setPowerLevel] = React.useState(0)
+  const powerIntervalRef = React.useRef(null)
+
+  const startPowerUp = (playerAddr) => {
+    if (onPowerStart) onPowerStart(playerAddr)
+    
+    setPowerLevel(0)
+    powerIntervalRef.current = setInterval(() => {
+      setPowerLevel(prev => {
+        if (prev >= 100) {
+          stopPowerUp(playerAddr)
+          return 100
+        }
+        return prev + 2
+      })
+    }, 50)
+  }
+
+  const stopPowerUp = (playerAddr) => {
+    if (powerIntervalRef.current) {
+      clearInterval(powerIntervalRef.current)
+      powerIntervalRef.current = null
+    }
+    
+    const finalPower = powerLevel
+    if (onPowerEnd) onPowerEnd(playerAddr, finalPower)
+    setPowerLevel(0)
+  }
   const slots = Array.from({ length: 6 }, (_, i) => {
     const playerAddr = playerOrder[i]
     const player = playerAddr ? players[playerAddr.toLowerCase()] : null
@@ -214,12 +267,28 @@ const SimplePlayerCards = ({
                     </FlipButton>
                   </div>
                 ) : !slot.player.hasFired ? (
-                  <FlipButton
-                    onClick={() => onFlipCoin(slot.playerAddr)}
-                    disabled={disabled}
-                  >
-                    🚀 Flip Coin
-                  </FlipButton>
+                  <>
+                    <PowerMeter>
+                      <PowerFill style={{ width: `${powerLevel}%` }} />
+                    </PowerMeter>
+                    <FlipButton
+                      onMouseDown={() => {
+                        startPowerUp(slot.playerAddr)
+                      }}
+                      onMouseUp={() => {
+                        stopPowerUp(slot.playerAddr)
+                      }}
+                      onTouchStart={() => {
+                        startPowerUp(slot.playerAddr)
+                      }}
+                      onTouchEnd={() => {
+                        stopPowerUp(slot.playerAddr)
+                      }}
+                      disabled={disabled}
+                    >
+                      🚀 HOLD TO POWER
+                    </FlipButton>
+                  </>
                 ) : (
                   <FlipButton disabled>
                     ✅ Flipped!
