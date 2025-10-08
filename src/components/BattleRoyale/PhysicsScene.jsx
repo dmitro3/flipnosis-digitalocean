@@ -30,10 +30,10 @@ const PhysicsScene = ({
     const container = mountRef.current
     
     const initializeRenderer = () => {
-      // Get actual container dimensions
+      // Get actual container dimensions - REDUCED SIZE
       const rect = container.getBoundingClientRect()
-      const width = rect.width || container.clientWidth || window.innerWidth
-      const height = rect.height || container.clientHeight || window.innerHeight - 300
+      const width = Math.min(rect.width || container.clientWidth || window.innerWidth, 1920)
+      const height = Math.min(rect.height || container.clientHeight || window.innerHeight - 300, 1080)
       
       console.log('📐 Scene dimensions:', { width, height, rect })
       
@@ -103,8 +103,8 @@ const PhysicsScene = ({
       if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
       
       const rect = mountRef.current.getBoundingClientRect()
-      const newWidth = rect.width || mountRef.current.clientWidth || window.innerWidth
-      const newHeight = rect.height || mountRef.current.clientHeight || window.innerHeight - 300
+      const newWidth = Math.min(rect.width || mountRef.current.clientWidth || window.innerWidth, 1920)
+      const newHeight = Math.min(rect.height || mountRef.current.clientHeight || window.innerHeight - 300, 1080)
       
       console.log('🔄 Resize to:', { newWidth, newHeight })
       
@@ -144,17 +144,17 @@ const PhysicsScene = ({
     }
   }, [])
   
-  // Create animated starfield background
+  // Create animated starfield background - REDUCED SIZE
   const createStarfield = (scene) => {
     const starGeometry = new THREE.BufferGeometry()
     const starVertices = []
     const starSizes = []
     
-    // Create 2000 stars scattered in background
+    // Create 2000 stars scattered in background - REDUCED AREA
     for (let i = 0; i < 2000; i++) {
-      const x = (Math.random() - 0.5) * 800
-      const y = Math.random() * 600
-      const z = -150 - Math.random() * 200 // Behind playfield
+      const x = (Math.random() - 0.5) * 600  // Reduced from 800
+      const y = Math.random() * 400          // Reduced from 600
+      const z = -150 - Math.random() * 200   // Behind playfield
       starVertices.push(x, y, z)
       starSizes.push(Math.random() * 2 + 0.5)
     }

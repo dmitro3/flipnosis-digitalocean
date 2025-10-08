@@ -7,26 +7,31 @@ import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
 import socketService from '../../services/SocketService'
 
 const FullScreenContainer = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
   background: #000000;
-  display: flex;
-  flex-direction: column;
+  display: block !important;
   overflow: hidden;
-  z-index: 1;
+  z-index: 9999 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
 `
 
 const GameArea = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
   background: #000000;
   overflow: hidden;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
   
   > div {
     width: 100% !important;
@@ -35,7 +40,7 @@ const GameArea = styled.div`
 `
 
 const ControlArea = styled.div`
-  display: none;
+  display: none !important;
 `
 
 const RoundIndicator = styled.div`
