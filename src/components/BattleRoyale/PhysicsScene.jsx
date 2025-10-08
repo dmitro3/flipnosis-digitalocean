@@ -144,16 +144,16 @@ const PhysicsScene = ({
     }
   }, [])
   
-  // Create animated starfield background - EXACT 1920x1080
+  // Create animated starfield background - MUCH TALLER AND WIDER
   const createStarfield = (scene) => {
     const starGeometry = new THREE.BufferGeometry()
     const starVertices = []
     const starSizes = []
     
-    // Create 2000 stars scattered in background - EXACT 1920x1080 area
+    // Create 2000 stars scattered in background - MUCH TALLER SCENE
     for (let i = 0; i < 2000; i++) {
-      const x = (Math.random() - 0.5) * 1920  // Full 1920 width
-      const y = Math.random() * 1080           // Full 1080 height
+      const x = (Math.random() - 0.5) * 2400  // 25% wider than 1920
+      const y = Math.random() * 3000           // MUCH taller - 3x height
       const z = -150 - Math.random() * 200     // Behind playfield
       starVertices.push(x, y, z)
       starSizes.push(Math.random() * 2 + 0.5)
@@ -175,17 +175,17 @@ const PhysicsScene = ({
     starsRef.current = stars
     scene.add(stars)
     
-    console.log('⭐ Added twinkling starfield (1920x1080)')
+    console.log('⭐ Added twinkling starfield (2400x3000 - MUCH TALLER)')
   }
   
-  // Load obstacles with proper textures
+  // Load obstacles with proper textures - BIGGER ELEMENTS
   const loadObstacles = (scene) => {
-    console.log('🪨 Creating 3D pinball obstacles with textures')
+    console.log('🪨 Creating 3D pinball obstacles with textures - BIGGER')
     
     if (!obstacles || obstacles.length === 0) {
-      // Create 20 obstacles in vertical pinball pattern with textures
+      // Create 20 obstacles in vertical pinball pattern with textures - BIGGER
       for (let i = 0; i < 20; i++) {
-        const radius = 8 + Math.random() * 6
+        const radius = 15 + Math.random() * 10  // MUCH BIGGER (was 8-14, now 15-25)
         
         // Create textured sphere
         const geometry = new THREE.SphereGeometry(radius, 32, 32)
@@ -213,21 +213,21 @@ const PhysicsScene = ({
         
         const mesh = new THREE.Mesh(geometry, material)
         
-        // Vertical zigzag pattern (pinball bumpers)
+        // Vertical zigzag pattern (pinball bumpers) - SPREAD OVER TALLER AREA
         const row = Math.floor(i / 4)
         const col = i % 4
         const side = (col % 2 === 0) ? 1 : -1
         
         mesh.position.set(
-          side * (30 + col * 12),     // X: horizontal spread
-          80 + row * 50,               // Y: vertical spacing (20 obstacles over 500 units)
+          side * (50 + col * 20),      // X: wider spread (was 30+12, now 50+20)
+          100 + row * 120,             // Y: much taller spacing (was 50, now 120)
           0                            // Z: locked at 0 for 2D physics
         )
         
         mesh.castShadow = true
         mesh.receiveShadow = true
         
-        // Add glow effect
+        // Add glow effect - BIGGER
         const glowGeometry = new THREE.SphereGeometry(radius * 1.2, 16, 16)
         const glowMaterial = new THREE.MeshBasicMaterial({
           color: 0x4466ff,
@@ -242,9 +242,9 @@ const PhysicsScene = ({
         obstaclesRef.current[i] = mesh
       }
     } else {
-      // Use provided obstacles with textures
+      // Use provided obstacles with textures - BIGGER
       obstacles.forEach((obstacle, index) => {
-        const geometry = new THREE.SphereGeometry(obstacle.radius, 32, 32)
+        const geometry = new THREE.SphereGeometry(obstacle.radius * 2, 32, 32)  // 2x bigger
         
         const textureLoader = new THREE.TextureLoader()
         const texturePath = `/images/space/${obstacle.textureIndex || (index + 1)}.png`
@@ -267,7 +267,7 @@ const PhysicsScene = ({
         const mesh = new THREE.Mesh(geometry, material)
         mesh.position.set(
           obstacle.position.x,
-          obstacle.position.y,
+          obstacle.position.y * 2,  // 2x taller spacing
           0 // Force Z=0 for 2D physics
         )
         
@@ -288,37 +288,37 @@ const PhysicsScene = ({
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
     scene.add(ambientLight)
     
-    // Main directional light (from above)
+    // Main directional light (from above) - ADJUSTED FOR TALLER SCENE
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.2)
-    mainLight.position.set(0, 400, 200)
+    mainLight.position.set(0, 800, 400)  // Higher up for taller scene
     mainLight.castShadow = true
     mainLight.shadow.mapSize.width = 2048
     mainLight.shadow.mapSize.height = 2048
     mainLight.shadow.camera.near = 0.5
-    mainLight.shadow.camera.far = 1000
-    mainLight.shadow.camera.left = -200
-    mainLight.shadow.camera.right = 200
-    mainLight.shadow.camera.top = 200
-    mainLight.shadow.camera.bottom = -200
+    mainLight.shadow.camera.far = 2000
+    mainLight.shadow.camera.left = -400
+    mainLight.shadow.camera.right = 400
+    mainLight.shadow.camera.top = 400
+    mainLight.shadow.camera.bottom = -400
     scene.add(mainLight)
     
-    // Colored accent lights
-    const accentLight1 = new THREE.PointLight(0x00ffff, 1.5, 400)
-    accentLight1.position.set(-100, 300, 100)
+    // Colored accent lights - ADJUSTED FOR TALLER SCENE
+    const accentLight1 = new THREE.PointLight(0x00ffff, 1.5, 600)
+    accentLight1.position.set(-150, 600, 150)
     scene.add(accentLight1)
     
-    const accentLight2 = new THREE.PointLight(0xff00ff, 1.5, 400)
-    accentLight2.position.set(100, 200, 100)
+    const accentLight2 = new THREE.PointLight(0xff00ff, 1.5, 600)
+    accentLight2.position.set(150, 400, 150)
     scene.add(accentLight2)
     
-    const accentLight3 = new THREE.PointLight(0xffff00, 1.2, 350)
-    accentLight3.position.set(0, 450, 80)
+    const accentLight3 = new THREE.PointLight(0xffff00, 1.2, 500)
+    accentLight3.position.set(0, 900, 120)
     scene.add(accentLight3)
     
-    console.log('💡 Lighting configured')
+    console.log('💡 Lighting configured for taller scene')
   }
   
-  // Update coin positions
+  // Update coin positions - BIGGER COINS
   useEffect(() => {
     if (!sceneRef.current || coinPositions.length === 0) return
     
@@ -329,8 +329,8 @@ const PhysicsScene = ({
       let coin = coinsRef.current.get(playerAddr)
       
       if (!coin) {
-        // Create beautiful 3D coin
-        const coinGeometry = new THREE.CylinderGeometry(5, 5, 0.8, 32)
+        // Create beautiful 3D coin - BIGGER
+        const coinGeometry = new THREE.CylinderGeometry(8, 8, 1.5, 32)  // Bigger (was 5, now 8)
         
         const sideMaterial = new THREE.MeshStandardMaterial({ 
           color: 0xffd700, 
@@ -344,8 +344,8 @@ const PhysicsScene = ({
         coin.castShadow = true
         coin.receiveShadow = true
         
-        // Glow effect
-        const glowGeometry = new THREE.CylinderGeometry(6, 6, 1.2, 32)
+        // Glow effect - BIGGER
+        const glowGeometry = new THREE.CylinderGeometry(10, 10, 2, 32)  // Bigger (was 6, now 10)
         const glowMaterial = new THREE.MeshBasicMaterial({
           color: 0xffd700,
           transparent: true,
@@ -355,8 +355,8 @@ const PhysicsScene = ({
         const glow = new THREE.Mesh(glowGeometry, glowMaterial)
         coin.add(glow)
         
-        // Point light on coin
-        const coinLight = new THREE.PointLight(0xffd700, 3, 50)
+        // Point light on coin - BIGGER
+        const coinLight = new THREE.PointLight(0xffd700, 3, 80)  // Bigger range (was 50, now 80)
         coin.add(coinLight)
         
         sceneRef.current.add(coin)
