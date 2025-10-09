@@ -34,7 +34,7 @@ const SimpleCoinTubes = ({
     if (!mountRef.current) return
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x000000)
+    scene.background = null // Transparent to show video background
 
     const container = mountRef.current
     const width = container.clientWidth || window.innerWidth
@@ -50,8 +50,9 @@ const SimpleCoinTubes = ({
 
     const renderer = new THREE.WebGLRenderer({ 
       antialias: true,
-      alpha: false
+      alpha: true // Enable transparency for video background
     })
+    renderer.setClearColor(0x000000, 0) // Transparent background
     renderer.setSize(width, height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
@@ -63,6 +64,7 @@ const SimpleCoinTubes = ({
 
     // Create 6 tubes
     createArcadeTubes(scene)
+    console.log('🎮 Created arcade tubes with enhanced visuals')
 
     // Lighting setup for that glow
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
@@ -142,6 +144,8 @@ const SimpleCoinTubes = ({
     const spacing = 320
     const startX = -((spacing * 5) / 2)
 
+    console.log('🎨 Creating tubes with colors:', COLORS)
+
     for (let i = 0; i < 6; i++) {
       const x = startX + (i * spacing)
 
@@ -165,11 +169,11 @@ const SimpleCoinTubes = ({
       scene.add(tube)
 
       // Cyan rim glow - TOP (matching image)
-      const rimGeometry = new THREE.TorusGeometry(tubeRadius + 2, 4, 16, 32)
+      const rimGeometry = new THREE.TorusGeometry(tubeRadius + 2, 6, 16, 32)
       const rimMaterial = new THREE.MeshStandardMaterial({
         color: COLORS.glassRim,
         emissive: COLORS.glassRim,
-        emissiveIntensity: 1.5,
+        emissiveIntensity: 2.5,
         metalness: 0.8,
         roughness: 0.2
       })
@@ -212,23 +216,26 @@ const SimpleCoinTubes = ({
       const liquidMaterial = new THREE.MeshStandardMaterial({
         color: COLORS.liquidBase,
         transparent: true,
-        opacity: 0.85,
-        metalness: 0.2,
-        roughness: 0.3,
+        opacity: 0.95,
+        metalness: 0.3,
+        roughness: 0.2,
         emissive: COLORS.liquidGlow,
-        emissiveIntensity: 0.4
+        emissiveIntensity: 0.8
       })
       
       const liquid = new THREE.Mesh(liquidGeometry, liquidMaterial)
       liquid.position.set(x, -(tubeHeight / 2) + (liquidHeight / 2), 0)
+      liquid.renderOrder = 1 // Ensure liquid renders in front
       scene.add(liquid)
+      
+      console.log(`Tube ${i}: Created purple liquid at y=${liquid.position.y}, color=#8b1a8b`)
 
       // Liquid surface glow (pink/orange gradient at top)
       const surfaceGeometry = new THREE.CircleGeometry(tubeRadius - 3, 32)
       const surfaceMaterial = new THREE.MeshBasicMaterial({
         color: COLORS.liquidTop,
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.9,
         side: THREE.DoubleSide
       })
       const surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial)
@@ -237,7 +244,7 @@ const SimpleCoinTubes = ({
       scene.add(surface)
 
       // Add point light at liquid surface for that glow effect
-      const liquidLight = new THREE.PointLight(COLORS.liquidTop, 1.5, 150)
+      const liquidLight = new THREE.PointLight(COLORS.liquidTop, 2.5, 200)
       liquidLight.position.set(x, -(tubeHeight / 2) + liquidHeight, 0)
       scene.add(liquidLight)
 
@@ -272,6 +279,8 @@ const SimpleCoinTubes = ({
       liquidMeshesRef.current.set(i, liquid)
       tubeStatesRef.current.set(i, 'intact')
     }
+    
+    console.log(`✨ Created ${tubesRef.current.length} arcade tubes with cyan rims and purple liquid`)
   }
 
   // Create bubble system (pink floating particles like in image)
@@ -833,7 +842,7 @@ const SimpleCoinTubes = ({
       style={{
         width: '100%',
         height: '100%',
-        backgroundColor: '#000000'
+        backgroundColor: 'transparent'
       }}
     />
   )
