@@ -36,28 +36,27 @@ const SimpleCoinTubes = ({
   useEffect(() => {
     if (!mountRef.current) return
 
-    console.log('🎮 Initializing 3D scene...')
+    console.log('🎮 Initializing scene with better layout...')
 
     const scene = new THREE.Scene()
     scene.background = new THREE.Color(0x000000)
-    scene.fog = new THREE.Fog(0x000000, 800, 2000) // Add depth fog
 
     const container = mountRef.current
     const width = container.clientWidth || window.innerWidth
     const height = container.clientHeight || window.innerHeight
 
-    // PERSPECTIVE CAMERA - gives 3D depth!
+    // HYBRID CAMERA - Slight perspective but still shows everything
     const camera = new THREE.PerspectiveCamera(
-      45, // FOV
-      width / height, // aspect
-      1, // near
-      3000 // far
+      35, // Narrower FOV = less distortion
+      width / height,
+      1,
+      3000
     )
-    // Position camera at an angle for better view
-    camera.position.set(0, 400, 1200)
-    camera.lookAt(0, -100, 0)
+    // Position for slight 3D effect but not too steep
+    camera.position.set(0, 200, 1000)
+    camera.lookAt(0, 0, 0)
     
-    console.log('📷 Perspective camera created')
+    console.log('📷 Camera positioned for optimal view')
 
     const renderer = new THREE.WebGLRenderer({ 
       antialias: true,
@@ -66,22 +65,20 @@ const SimpleCoinTubes = ({
     renderer.setSize(width, height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.toneMapping = THREE.ReinhardToneMapping
-    renderer.toneMappingExposure = 1.8
-    renderer.shadowMap.enabled = true
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.toneMappingExposure = 2.0 // Brighter
 
     container.appendChild(renderer.domElement)
 
-    // Post-processing with bloom
+    // Post-processing
     const composer = new EffectComposer(renderer)
     const renderPass = new RenderPass(scene, camera)
     composer.addPass(renderPass)
     
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(width, height),
-      2.0,  // strength - MORE GLOW
-      0.6,  // radius
-      0.3   // threshold - lower = more things glow
+      2.5,  // Strong glow
+      0.5,
+      0.2
     )
     composer.addPass(bloomPass)
     
@@ -90,74 +87,67 @@ const SimpleCoinTubes = ({
     cameraRef.current = camera
     rendererRef.current = renderer
 
-    // LIGHTING - Arcade style
-    const ambientLight = new THREE.AmbientLight(0x404040, 1.0)
+    // LIGHTING - Bright and clear
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2)
     scene.add(ambientLight)
 
-    // Main top light
-    const topLight = new THREE.DirectionalLight(0xffffff, 1.5)
-    topLight.position.set(0, 800, 500)
-    topLight.castShadow = true
+    const topLight = new THREE.DirectionalLight(0xffffff, 2.0)
+    topLight.position.set(0, 500, 300)
     scene.add(topLight)
 
-    // Colored accent lights for arcade feel
-    const leftNeon = new THREE.PointLight(0x00ffff, 3, 1500)
-    leftNeon.position.set(-1000, 300, 400)
-    scene.add(leftNeon)
+    const leftLight = new THREE.PointLight(0x00ffff, 4, 1200)
+    leftLight.position.set(-800, 200, 300)
+    scene.add(leftLight)
 
-    const rightNeon = new THREE.PointLight(0xff1493, 3, 1500)
-    rightNeon.position.set(1000, 300, 400)
-    scene.add(rightNeon)
+    const rightLight = new THREE.PointLight(0xff1493, 4, 1200)
+    rightLight.position.set(800, 200, 300)
+    scene.add(rightLight)
 
-    // GROUND PLANE - neon grid (optional but looks cool)
-    const gridHelper = new THREE.GridHelper(3000, 50, 0x00ffff, 0x004444)
-    gridHelper.position.y = -300
-    scene.add(gridHelper)
-
-    // CREATE TUBES - with proper materials
+    // TUBE LAYOUT - Match card spacing exactly
     const tubeRadius = 70
-    const tubeHeight = 500
+    const tubeHeight = 450
     const numTubes = 6
-    const spacing = 300
-    const startX = -((spacing * (numTubes - 1)) / 2)
-
-    console.log('🧪 Creating tubes...')
+    
+    // Calculate spacing to fill viewport width nicely
+    const viewportPadding = 0.15 // 15% padding on sides
+    const availableWidth = width * (1 - viewportPadding * 2)
+    const spacing = availableWidth / (numTubes - 1) // Space between centers
+    const startX = -(availableWidth / 2)
+    
+    console.log(`📐 Layout: width=${width}, spacing=${spacing.toFixed(0)}`)
 
     for (let i = 0; i < numTubes; i++) {
       const x = startX + (i * spacing)
       
-      // GLASS TUBE - highly transparent with refraction
+      // GLASS TUBE - More visible, less transparent
       const tubeGeometry = new THREE.CylinderGeometry(
         tubeRadius, tubeRadius, tubeHeight, 32, 1, true
       )
       const glassMaterial = new THREE.MeshPhysicalMaterial({
         color: 0x88ccff,
         transparent: true,
-        opacity: 0.15, // Very transparent
-        roughness: 0.0,
-        metalness: 0.0,
-        transmission: 0.95, // High transmission = see-through
-        thickness: 1.0,
+        opacity: 0.35, // More visible than before
+        roughness: 0.05,
+        metalness: 0.1,
+        transmission: 0.7, // Less transparent
+        thickness: 0.8,
         clearcoat: 1.0,
-        clearcoatRoughness: 0.0,
-        side: THREE.DoubleSide,
-        envMapIntensity: 1.0
+        clearcoatRoughness: 0.05,
+        side: THREE.DoubleSide
       })
       
       const tube = new THREE.Mesh(tubeGeometry, glassMaterial)
       tube.position.set(x, 0, 0)
-      tube.castShadow = true
-      tube.receiveShadow = true
       scene.add(tube)
 
-      // GLOWING RIMS - top and bottom
-      const rimGeometry = new THREE.TorusGeometry(tubeRadius + 3, 6, 16, 64)
+      // BRIGHT CYAN RIMS
+      const rimGeometry = new THREE.TorusGeometry(tubeRadius + 4, 7, 16, 64)
       const rimMaterial = new THREE.MeshStandardMaterial({
         color: COLORS.glassRim,
         emissive: COLORS.glassRim,
-        emissiveIntensity: 4.0, // BRIGHT GLOW
+        emissiveIntensity: 5.0, // Very bright
         metalness: 0.9,
-        roughness: 0.1
+        roughness: 0.05
       })
       
       const topRim = new THREE.Mesh(rimGeometry, rimMaterial)
@@ -169,87 +159,76 @@ const SimpleCoinTubes = ({
       bottomRim.position.y = -tubeHeight / 2
       scene.add(bottomRim)
 
-      // LIQUID - bright, glowing, with gradient effect
-      const liquidHeight = 250
+      // LIQUID - HIGHLY VISIBLE
+      const liquidHeight = 220
       const liquidGeometry = new THREE.CylinderGeometry(
         tubeRadius - 5, tubeRadius - 5, liquidHeight, 32
       )
       
-      // Create vertex colors for gradient (purple at bottom, pink at top)
-      const colors = []
-      const positions = liquidGeometry.attributes.position
-      for (let j = 0; j < positions.count; j++) {
-        const y = positions.getY(j)
-        const t = (y + liquidHeight / 2) / liquidHeight // 0 at bottom, 1 at top
-        
-        // Interpolate from purple to pink
-        const r = 0.54 + t * 0.46 // 0.54 -> 1.0
-        const g = 0.0 + t * 0.08  // 0.0 -> 0.08
-        const b = 0.77 + t * 0.19 // 0.77 -> 0.96
-        
-        colors.push(r, g, b)
-      }
-      liquidGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
-      
       const liquidMaterial = new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.95,
-        metalness: 0.4,
-        roughness: 0.2,
+        color: COLORS.liquidBase,
+        transparent: false, // OPAQUE
+        metalness: 0.3,
+        roughness: 0.3,
         emissive: COLORS.liquidBase,
-        emissiveIntensity: 1.5,
-        side: THREE.DoubleSide
+        emissiveIntensity: 2.0, // BRIGHT GLOW
       })
       
       const liquid = new THREE.Mesh(liquidGeometry, liquidMaterial)
       const liquidY = -(tubeHeight / 2) + (liquidHeight / 2)
       liquid.position.set(x, liquidY, 0)
-      liquid.castShadow = true
       scene.add(liquid)
 
-      // LIQUID SURFACE - bright disc
+      // LIQUID SURFACE - Bright pink disc
       const surfaceGeometry = new THREE.CircleGeometry(tubeRadius - 5, 64)
       const surfaceMaterial = new THREE.MeshBasicMaterial({
         color: COLORS.liquidTop,
-        transparent: true,
-        opacity: 0.9,
+        transparent: false,
         side: THREE.DoubleSide
       })
       const surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial)
-      surface.position.set(x, liquidY + (liquidHeight / 2), 0)
+      surface.position.set(x, liquidY + (liquidHeight / 2) + 1, 0)
       surface.rotation.x = Math.PI / 2
       scene.add(surface)
 
-      // LIQUID LIGHT - point light at surface
-      const liquidLight = new THREE.PointLight(COLORS.liquidTop, 5, 300)
+      // BRIGHT LIQUID LIGHT
+      const liquidLight = new THREE.PointLight(COLORS.liquidTop, 6, 300)
       liquidLight.position.set(x, liquidY + (liquidHeight / 2), 0)
       scene.add(liquidLight)
 
-      // SPOTLIGHT from above (no helper)
-      const spotlight = new THREE.SpotLight(0xffffff, 3, 600, Math.PI / 5, 0.3, 2)
-      spotlight.position.set(x, tubeHeight / 2 + 300, 150)
+      // SPOTLIGHT from above
+      const spotlight = new THREE.SpotLight(0xffffff, 4, 600, Math.PI / 6, 0.3, 2)
+      spotlight.position.set(x, tubeHeight / 2 + 250, 100)
       spotlight.target.position.set(x, 0, 0)
-      spotlight.castShadow = true
       scene.add(spotlight)
       scene.add(spotlight.target)
 
-      // PLATFORM BASE
+      // PLATFORM BASE - Dark with cyan glow
       const platformGeometry = new THREE.CylinderGeometry(
-        tubeRadius + 20, tubeRadius + 20, 15, 32
+        tubeRadius + 18, tubeRadius + 18, 12, 32
       )
       const platformMaterial = new THREE.MeshStandardMaterial({
-        color: 0x111111,
+        color: 0x0a0a0a,
         metalness: 0.9,
         roughness: 0.2,
         emissive: 0x00ffff,
-        emissiveIntensity: 0.2
+        emissiveIntensity: 0.4
       })
       const platform = new THREE.Mesh(platformGeometry, platformMaterial)
-      platform.position.set(x, -(tubeHeight / 2) - 30, 0)
-      platform.castShadow = true
-      platform.receiveShadow = true
+      platform.position.set(x, -(tubeHeight / 2) - 28, 0)
       scene.add(platform)
+
+      // Platform glow ring
+      const glowRingGeometry = new THREE.TorusGeometry(tubeRadius + 18, 2, 16, 64)
+      const glowRingMaterial = new THREE.MeshBasicMaterial({
+        color: COLORS.glassRim,
+        transparent: true,
+        opacity: 0.8
+      })
+      const glowRing = new THREE.Mesh(glowRingGeometry, glowRingMaterial)
+      glowRing.position.set(x, -(tubeHeight / 2) - 28, 0)
+      glowRing.rotation.x = Math.PI / 2
+      scene.add(glowRing)
 
       tubesRef.current[i] = { 
         x, 
@@ -263,21 +242,20 @@ const SimpleCoinTubes = ({
         liquidLight,
         spotlight,
         platform,
+        glowRing,
         liquidBaseHeight: liquidHeight,
         liquidBaseY: liquidY
       }
 
       liquidMeshesRef.current.set(i, liquid)
       
-      console.log(`✅ Tube ${i + 1} created at x=${x}`)
+      console.log(`✅ Tube ${i + 1} at x=${x.toFixed(0)}`)
     }
 
     setDebugInfo({
       tubesCreated: 6,
       rendering: false
     })
-
-    console.log('🎬 Starting animation...')
 
     // ANIMATION LOOP
     let frameCount = 0
@@ -286,23 +264,26 @@ const SimpleCoinTubes = ({
 
       frameCount++
 
-      // Subtle camera sway for dynamic feel
-      if (cameraRef.current) {
-        const t = frameCount * 0.001
-        cameraRef.current.position.x = Math.sin(t * 0.5) * 50
-        cameraRef.current.lookAt(0, -100, 0)
-      }
-
-      // Animate liquid surfaces (wave effect)
+      // Animate liquid surfaces
       tubesRef.current.forEach((tubeData, i) => {
         if (tubeData.surface) {
-          const offset = i * 0.5
-          tubeData.surface.rotation.z = Math.sin(frameCount * 0.02 + offset) * 0.1
+          const offset = i * 0.3
+          tubeData.surface.rotation.z = Math.sin(frameCount * 0.015 + offset) * 0.08
+          tubeData.surface.scale.set(
+            1 + Math.sin(frameCount * 0.02 + offset) * 0.03,
+            1 + Math.sin(frameCount * 0.02 + offset) * 0.03,
+            1
+          )
         }
         
-        // Pulse liquid glow
+        // Pulse liquid light
         if (tubeData.liquidLight) {
-          tubeData.liquidLight.intensity = 5 + Math.sin(frameCount * 0.03 + i) * 1
+          tubeData.liquidLight.intensity = 6 + Math.sin(frameCount * 0.025 + i * 0.5) * 1.5
+        }
+        
+        // Pulse glow rings
+        if (tubeData.glowRing) {
+          tubeData.glowRing.material.opacity = 0.6 + Math.sin(frameCount * 0.03 + i * 0.4) * 0.3
         }
       })
 
@@ -317,7 +298,6 @@ const SimpleCoinTubes = ({
       
       if (frameCount === 60) {
         setDebugInfo(prev => ({ ...prev, rendering: true }))
-        console.log('✅ Rendering confirmed')
       }
 
       animationIdRef.current = requestAnimationFrame(animate)
@@ -337,6 +317,8 @@ const SimpleCoinTubes = ({
       
       rendererRef.current.setSize(newWidth, newHeight)
       composerRef.current.setSize(newWidth, newHeight)
+      
+      console.log(`📐 Resized: ${newWidth}x${newHeight}`)
     }
 
     window.addEventListener('resize', handleResize)
@@ -356,7 +338,7 @@ const SimpleCoinTubes = ({
     }
   }, [])
 
-  // Simplified coin creation
+  // COIN CREATION + FLIPPING
   useEffect(() => {
     if (!sceneRef.current) return
 
@@ -372,7 +354,7 @@ const SimpleCoinTubes = ({
       let coinData = coinsRef.current.get(playerAddr)
 
       if (!coinData) {
-        const coinRadius = 50
+        const coinRadius = 45
         const coinThickness = 10
         
         const coinGeometry = new THREE.CylinderGeometry(coinRadius, coinRadius, coinThickness, 64)
@@ -382,33 +364,32 @@ const SimpleCoinTubes = ({
           metalness: 0.95,
           roughness: 0.05,
           emissive: COLORS.coinGold,
-          emissiveIntensity: 0.5
+          emissiveIntensity: 0.6
         })
 
         const coin = new THREE.Mesh(coinGeometry, [
           coinMaterial,
-          coinMaterial,
-          coinMaterial
+          coinMaterial.clone(),
+          coinMaterial.clone()
         ])
 
         coin.rotation.z = Math.PI / 2
-        coin.position.set(tubeData.x, -(tubeData.tubeHeight / 2) + 100, 0)
-        coin.castShadow = true
+        coin.position.set(tubeData.x, -(tubeData.tubeHeight / 2) + 90, 0)
 
         // Coin glow
         const glowGeometry = new THREE.CylinderGeometry(
-          coinRadius * 1.3, coinRadius * 1.3, coinThickness * 1.2, 32
+          coinRadius * 1.4, coinRadius * 1.4, coinThickness * 1.3, 32
         )
         const glowMaterial = new THREE.MeshBasicMaterial({
           color: COLORS.coinGold,
           transparent: true,
-          opacity: 0.4,
+          opacity: 0.5,
           side: THREE.BackSide
         })
         const glow = new THREE.Mesh(glowGeometry, glowMaterial)
         coin.add(glow)
 
-        const coinLight = new THREE.PointLight(COLORS.coinGold, 4, 250)
+        const coinLight = new THREE.PointLight(COLORS.coinGold, 5, 250)
         coin.add(coinLight)
 
         sceneRef.current.add(coin)
@@ -416,13 +397,15 @@ const SimpleCoinTubes = ({
         coinData = {
           mesh: coin,
           tubeData,
-          isAnimating: false
+          isAnimating: false,
+          startY: -(tubeData.tubeHeight / 2) + 90,
+          topY: (tubeData.tubeHeight / 2) - 80
         }
 
         coinsRef.current.set(playerAddr, coinData)
       }
 
-      // Load custom textures if available
+      // Load custom textures
       if (player.coin?.headsImage) {
         const textureLoader = new THREE.TextureLoader()
         
@@ -432,7 +415,7 @@ const SimpleCoinTubes = ({
             map: texture,
             metalness: 0.5,
             roughness: 0.1,
-            emissive: 0x222222,
+            emissive: 0x333333,
             emissiveIntensity: 0.3
           })
           coinData.mesh.material[1] = material
@@ -444,7 +427,7 @@ const SimpleCoinTubes = ({
             map: texture,
             metalness: 0.5,
             roughness: 0.1,
-            emissive: 0x222222,
+            emissive: 0x333333,
             emissiveIntensity: 0.3
           })
           coinData.mesh.material[2] = material
@@ -453,18 +436,96 @@ const SimpleCoinTubes = ({
     })
   }, [players, playerOrder])
 
-  // Expose functions (simplified for now)
-  window.startTubeHeating = (playerAddr) => {
-    console.log('🔥 Heating:', playerAddr)
+  // COIN FLIP ANIMATION - RESTORED
+  const animateCoinFlip = (playerAddr, power, result) => {
+    const coinData = coinsRef.current.get(playerAddr)
+    if (!coinData || coinData.isAnimating) return
+
+    console.log(`🪙 Flipping coin for ${playerAddr}: ${result}`)
+    coinData.isAnimating = true
+    const coin = coinData.mesh
+
+    const minFlips = 5 + Math.floor(power / 2)
+    const rotationsPerFlip = Math.PI * 2
+    const totalRotation = minFlips * rotationsPerFlip + Math.random() * Math.PI
+
+    const isHeads = result === 'heads'
+    const targetRotation = isHeads ? 0 : Math.PI
+
+    const startTime = Date.now()
+    const startY = coin.position.y
+    const startRotationX = coin.rotation.x
+    
+    const riseDuration = 900
+    const riseHeight = coinData.topY
+    const fallDuration = 1300
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime
+      
+      if (elapsed < riseDuration) {
+        // RISE
+        const progress = elapsed / riseDuration
+        const easeOut = 1 - Math.pow(1 - progress, 3)
+        
+        coin.position.y = startY + (riseHeight - startY) * easeOut
+        coin.rotation.x = startRotationX + (totalRotation * easeOut * 0.6)
+        
+        requestAnimationFrame(animate)
+      } else if (elapsed < riseDuration + fallDuration) {
+        // FALL
+        const progress = (elapsed - riseDuration) / fallDuration
+        const easeIn = progress * progress
+        
+        coin.position.y = riseHeight - (riseHeight - coinData.startY) * easeIn
+        
+        const currentRotations = totalRotation * 0.6
+        const remainingRotations = totalRotation * 0.4
+        coin.rotation.x = startRotationX + currentRotations + (remainingRotations * progress)
+        
+        // Lock to result in final 20%
+        if (progress > 0.8) {
+          const landingProgress = (progress - 0.8) / 0.2
+          const currentRot = coin.rotation.x
+          const targetFinal = Math.floor(currentRot / (Math.PI * 2)) * (Math.PI * 2) + targetRotation
+          coin.rotation.x = currentRot + (targetFinal - currentRot) * landingProgress
+        }
+        
+        requestAnimationFrame(animate)
+      } else {
+        // LANDED
+        coin.position.y = coinData.startY
+        const finalCycles = Math.floor(coin.rotation.x / (Math.PI * 2))
+        coin.rotation.x = finalCycles * (Math.PI * 2) + targetRotation
+        
+        coinData.isAnimating = false
+        console.log(`✅ Coin landed: ${result}`)
+        
+        if (onCoinLanded) {
+          onCoinLanded(playerAddr, result)
+        }
+      }
+    }
+
+    animate()
   }
 
-  window.shatterTube = (playerAddr) => {
-    console.log('💥 Shatter:', playerAddr)
-  }
+  // Expose functions
+  useEffect(() => {
+    window.flipCoin = (playerAddr, power, result) => {
+      animateCoinFlip(playerAddr, power, result)
+    }
+    
+    window.startTubeHeating = (playerAddr) => {
+      console.log('🔥 Heating:', playerAddr)
+      // TODO: Add heating animation
+    }
 
-  window.flipCoin = (playerAddr, power, result) => {
-    console.log('🪙 Flip:', playerAddr, result)
-  }
+    window.shatterTube = (playerAddr) => {
+      console.log('💥 Shatter:', playerAddr)
+      // TODO: Add shatter animation
+    }
+  }, [players, playerOrder])
 
   return (
     <>
@@ -477,7 +538,7 @@ const SimpleCoinTubes = ({
         }}
       />
       
-      {/* MINIMAL DEBUG */}
+      {/* Minimal debug */}
       <div style={{
         position: 'absolute',
         top: '10px',
