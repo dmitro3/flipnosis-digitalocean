@@ -6,7 +6,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import './GlassTubeGame.css'
 
-const GlassTubeGame = () => {
+const GlassTubeGame = ({ gameId }) => {
   const containerRef = useRef(null)
   const sceneRef = useRef(null)
   const cameraRef = useRef(null)
@@ -144,7 +144,7 @@ const GlassTubeGame = () => {
 
     console.log('✅ Clean scene initialized with 4 tubes')
 
-  }, [])
+  }, []) // No dependencies to prevent infinite loops
 
   // Create a glass tube
   const createGlassTube = (x, color, index) => {
@@ -426,19 +426,23 @@ const GlassTubeGame = () => {
     cssRenderer.render(sceneRef.current, camera)
 
     animationIdRef.current = requestAnimationFrame(animate)
-  }, [tubes, coins])
+  }, []) // Remove dependencies to prevent infinite loops
 
   // Initialize scene when component mounts
   useEffect(() => {
-    initializeScene()
-    animate()
+    try {
+      initializeScene()
+      animate()
+    } catch (error) {
+      console.error('Error initializing tube game:', error)
+    }
 
     return () => {
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current)
       }
     }
-  }, [initializeScene, animate])
+  }, []) // Remove dependencies to prevent infinite loops
 
   // Handle window resize
   useEffect(() => {

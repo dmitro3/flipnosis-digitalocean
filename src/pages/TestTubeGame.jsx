@@ -1,5 +1,5 @@
 import React from 'react'
-import { TubeGamePage } from '../components/tubes'
+import { GlassTubeGame } from '../components/tubes'
 
 const TestTubeGame = () => {
   // Use a mock game ID for testing
@@ -7,7 +7,7 @@ const TestTubeGame = () => {
   
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <TubeGamePage gameId={mockGameId} />
+      <GlassTubeGame gameId={mockGameId} />
     </div>
   )
 }

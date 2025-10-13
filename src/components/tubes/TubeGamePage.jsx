@@ -1,6 +1,7 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
 import GlassTubeGame from './GlassTubeGame'
+import TubeGameErrorBoundary from './TubeGameErrorBoundary'
 
 const TubeGamePage = () => {
   const { gameId } = useParams()
@@ -33,9 +34,11 @@ const TubeGamePage = () => {
   }
 
   return (
-    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <GlassTubeGame />
-    </div>
+    <TubeGameErrorBoundary>
+      <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
+        <GlassTubeGame gameId={gameId} />
+      </div>
+    </TubeGameErrorBoundary>
   )
 }
 
