@@ -92,12 +92,7 @@ async function initializeServices() {
   console.log('✅ Database service initialized')
   
   // Initialize blockchain service
-  const blockchainService = new BlockchainService({
-    contractAddress: CONTRACT_ADDRESS,
-    privateKey: CONTRACT_OWNER_KEY,
-    rpcUrl: RPC_URL
-  })
-  await blockchainService.initialize()
+  const blockchainService = new BlockchainService(RPC_URL, CONTRACT_ADDRESS, CONTRACT_OWNER_KEY)
   console.log('✅ Blockchain service initialized')
   
   // Initialize cleanup service
