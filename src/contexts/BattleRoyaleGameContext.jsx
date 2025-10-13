@@ -194,7 +194,7 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
     if (data.players) {
       loadAllPlayerImages(data.players)
     }
-  }, [loadAllPlayerImages])
+  }, []) // Remove loadAllPlayerImages from deps to prevent infinite loop
 
   const handlePhysicsTurnStart = useCallback((data) => {
     console.log('🎯 Turn started for:', data.playerAddress)

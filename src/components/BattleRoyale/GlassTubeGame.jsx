@@ -55,7 +55,11 @@ const GlassTubeGame = () => {
   const initializeScene = useCallback(() => {
     if (!containerRef.current || !gameState) return
 
-    console.log('🎮 Initializing 4-Player Glass Tube Game with real data')
+    console.log('🎮 Initializing 4-Player Glass Tube Game with real data', {
+      phase: gameState.phase,
+      players: gameState.currentPlayers,
+      playerOrder: gameState.playerOrder
+    })
 
     // Clear existing content
     if (containerRef.current.firstChild) {
@@ -603,7 +607,14 @@ const GlassTubeGame = () => {
 
   // Initialize scene when gameState is ready
   useEffect(() => {
-    if (gameState && gameState.phase === 'playing') {
+    console.log('🎮 GlassTubeGame useEffect triggered', {
+      hasGameState: !!gameState,
+      phase: gameState?.phase,
+      shouldInitialize: gameState && (gameState.phase === 'playing' || gameState.phase === 'round_active')
+    })
+    
+    if (gameState && (gameState.phase === 'playing' || gameState.phase === 'round_active')) {
+      console.log('🎮 Starting GlassTubeGame initialization and animation')
       initializeScene()
       animate()
     }
@@ -732,7 +743,7 @@ const GlassTubeGame = () => {
     )
   }
 
-  if (!gameState || gameState.phase !== 'playing') {
+  if (!gameState || (gameState.phase !== 'playing' && gameState.phase !== 'round_active')) {
     return <div className="loading-screen">Loading Glass Tube Game...</div>
   }
 

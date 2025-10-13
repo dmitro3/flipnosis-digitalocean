@@ -189,8 +189,8 @@ class PhysicsGameManager {
       if (game.roundTimer > 0) {
         game.roundTimer--
         
-        // Broadcast timer update every second
-        if (broadcast && game.roundTimer % 1 === 0) {
+        // Broadcast timer update only every 5 seconds to reduce spam
+        if (broadcast && game.roundTimer % 5 === 0) {
           this.broadcastState(gameId, broadcast)
         }
       } else {
