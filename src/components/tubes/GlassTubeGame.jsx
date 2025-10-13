@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
@@ -16,12 +16,9 @@ const GlassTubeGame = ({ gameId }) => {
   const animationIdRef = useRef(null)
   const frameCountRef = useRef(0)
   
-  // Game state
-  const [tubes, setTubes] = useState([])
-  const [coins, setCoins] = useState([])
-  const [cards, setCards] = useState([])
-  const [currentPlayer, setCurrentPlayer] = useState(0)
+  // Game state - simplified
   const [gamePhase, setGamePhase] = useState('waiting') // waiting, playing, ended
+  const [currentPlayer, setCurrentPlayer] = useState(0)
   const [roundTimer, setRoundTimer] = useState(60)
   const [currentRound, setCurrentRound] = useState(1)
 
@@ -34,11 +31,11 @@ const GlassTubeGame = ({ gameId }) => {
     glass: 0x88ccff
   }
 
-  // Initialize the 3D scene
-  const initializeScene = useCallback(() => {
+  // Initialize the 3D scene - simplified
+  const initializeScene = () => {
     if (!containerRef.current) return
 
-    console.log('🎮 Initializing clean Glass Tube Game - v2.0')
+    console.log('🎮 Initializing clean Glass Tube Game - v2.1')
 
     // Clear existing content
     if (containerRef.current.firstChild) {
@@ -138,13 +135,13 @@ const GlassTubeGame = ({ gameId }) => {
       cardsArray.push(card)
     })
 
-    setTubes(tubesArray)
-    setCoins(coinsArray)
-    setCards(cardsArray)
+    // Store in refs instead of state to avoid re-renders
+    sceneRef.current.tubes = tubesArray
+    sceneRef.current.coins = coinsArray
+    sceneRef.current.cards = cardsArray
 
     console.log('✅ Clean scene initialized with 4 tubes')
-
-  }, []) // No dependencies to prevent infinite loops
+  }
 
   // Create a glass tube
   const createGlassTube = (x, color, index) => {
@@ -287,6 +284,8 @@ const GlassTubeGame = ({ gameId }) => {
     setGamePhase('playing')
     
     // Start the flip animation for current player
+    const tubes = sceneRef.current?.tubes || []
+    const coins = sceneRef.current?.coins || []
     if (tubes[currentPlayer]) {
       startFlipAnimation(tubes[currentPlayer], coins[currentPlayer], 50)
     }
@@ -314,13 +313,14 @@ const GlassTubeGame = ({ gameId }) => {
     }
   }
 
-  // Animation loop
-  const animate = useCallback(() => {
+  // Animation loop - simplified
+  const animate = () => {
     if (!sceneRef.current || !cameraRef.current) return
 
     const frameCount = frameCountRef.current++
     
     // Animate tubes
+    const tubes = sceneRef.current.tubes || []
     tubes.forEach((tube, i) => {
       // Animate liquid foam effects
       if (tube.foamIntensity > 0 && !tube.isShattered) {
@@ -350,6 +350,7 @@ const GlassTubeGame = ({ gameId }) => {
     })
     
     // Animate coins
+    const coins = sceneRef.current.coins || []
     coins.forEach((coin, i) => {
       const tube = tubes[i]
       
@@ -426,7 +427,7 @@ const GlassTubeGame = ({ gameId }) => {
     cssRenderer.render(sceneRef.current, camera)
 
     animationIdRef.current = requestAnimationFrame(animate)
-  }, []) // Remove dependencies to prevent infinite loops
+  }
 
   // Initialize scene when component mounts
   useEffect(() => {
@@ -442,7 +443,7 @@ const GlassTubeGame = ({ gameId }) => {
         cancelAnimationFrame(animationIdRef.current)
       }
     }
-  }, []) // Remove dependencies to prevent infinite loops
+  }, []) // Empty dependency array
 
   // Handle window resize
   useEffect(() => {
@@ -478,7 +479,7 @@ const GlassTubeGame = ({ gameId }) => {
     return () => {
       delete window.handleChoice
     }
-  }, [handleChoice])
+  }, [])
 
   return (
     <div className="glass-tube-game-container">
