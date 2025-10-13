@@ -11,6 +11,8 @@ import ErrorBoundary from "./components/BattleRoyale/ErrorBoundary";
 import TestGame from "./pages/TestGame";
 import TestGameStandalone from "./pages/TestGameStandalone";
 import TestGlassTubeGame from "./pages/TestGlassTubeGame";
+import TestTubeGame from "./pages/TestTubeGame";
+import { TubeGamePage } from "./components/tubes";
 
 export const router = createBrowserRouter([
   {
@@ -69,6 +71,14 @@ export const router = createBrowserRouter([
       {
         path: "test-glass-tube",
         element: <TestGlassTubeGame />,
+      },
+      {
+        path: "test-tube-game",
+        element: <TestTubeGame />,
+      },
+      {
+        path: "tube-game/:gameId",
+        element: <TubeGamePage />,
       },
     ],
   },

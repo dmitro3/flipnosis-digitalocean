@@ -1,8 +1,7 @@
-import React from 'react'
-import { useParams } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { BattleRoyaleGameProvider, useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
 import LobbyScreen from './LobbyScreen'
-import GlassTubeGame from './GlassTubeGame'
 import ErrorBoundary from './ErrorBoundary'
 import hazeVideo from '../../../Images/Video/haze.webm'
 
@@ -92,6 +91,8 @@ const ErrorScreen = ({ error }) => (
 // Inner component that uses the context
 const BattleRoyaleContent = () => {
   const { gameState, loading, error } = useBattleRoyaleGame()
+  const { gameId } = useParams()
+  const navigate = useNavigate()
 
   if (loading) {
     return <LoadingScreen />
@@ -110,8 +111,16 @@ const BattleRoyaleContent = () => {
     return <LobbyScreen />
   }
 
-  // All Battle Royale games now use Glass Tube Game
-  return <GlassTubeGame />
+  // When game becomes active, redirect to the clean tube game
+  useEffect(() => {
+    if (gameState.phase === 'round_active' || gameState.phase === 'playing') {
+      console.log('🎮 Game started, redirecting to clean tube game')
+      navigate(`/tube-game/${gameId}`)
+    }
+  }, [gameState.phase, gameId, navigate])
+
+  // Show loading while redirecting
+  return <LoadingScreen />
 }
 
 // Main container component

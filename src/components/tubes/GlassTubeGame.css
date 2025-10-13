@@ -1,0 +1,298 @@
+/* Clean Glass Tube Game Styles */
+.glass-tube-game-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Orbitron', sans-serif;
+  background: url('/Images/Background/game room2.png') no-repeat center center fixed;
+  background-size: cover;
+  pointer-events: none;
+}
+
+.threejs-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+.threejs-container canvas {
+  pointer-events: auto;
+}
+
+/* Player Card Styling */
+.player-card {
+  width: 320px;
+  background: rgba(10, 15, 35, 0.95);
+  border: 3px solid #00ffff;
+  border-radius: 16px;
+  padding: 15px 20px;
+  font-family: 'Orbitron', sans-serif;
+  color: white;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+  pointer-events: auto;
+}
+
+.card-header {
+  margin-bottom: 15px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.player-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid #00ffff;
+  flex-shrink: 0;
+}
+
+.player-info {
+  flex: 1;
+  text-align: right;
+}
+
+.player-name {
+  font-size: 22px;
+  font-weight: bold;
+  color: #00ffff;
+  margin-bottom: 5px;
+}
+
+.player-address {
+  font-size: 16px;
+  color: #ffffff;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: bold;
+}
+
+.lives-container {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 15px 0;
+}
+
+.life {
+  opacity: 0.3;
+  filter: grayscale(100%) brightness(0.5);
+  transition: all 0.3s ease;
+}
+
+.life.active {
+  opacity: 1;
+  filter: none;
+}
+
+.life img {
+  width: 30px;
+  height: 30px;
+}
+
+.choice-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.choice-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: 2px solid #00ffff;
+  background: rgba(0, 255, 255, 0.1);
+  color: #00ffff;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: bold;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.choice-btn:hover {
+  background: rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.choice-btn.heads {
+  border-color: #00ffff;
+  color: #00ffff;
+}
+
+.choice-btn.tails {
+  border-color: #ff1493;
+  color: #ff1493;
+}
+
+.choice-btn.heads:hover {
+  background: rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+.choice-btn.tails:hover {
+  background: rgba(255, 20, 147, 0.2);
+  box-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+}
+
+/* Top UI Overlay */
+.top-ui-overlay {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 40px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.round-indicator {
+  background: rgba(10, 15, 35, 0.9);
+  border: 2px solid #00ffff;
+  border-radius: 12px;
+  padding: 12px 24px;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.round-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #00ffff;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.timer-display {
+  background: rgba(10, 15, 35, 0.9);
+  border: 2px solid #ff1493;
+  border-radius: 12px;
+  padding: 12px 24px;
+  box-shadow: 0 0 20px rgba(255, 20, 147, 0.3);
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff1493;
+  font-family: 'Orbitron', sans-serif;
+}
+
+/* Game Status */
+.game-status {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 15, 35, 0.9);
+  border: 2px solid #FFD700;
+  border-radius: 12px;
+  padding: 15px 30px;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  font-size: 20px;
+  font-weight: bold;
+  color: #FFD700;
+  font-family: 'Orbitron', sans-serif;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Loading Screen */
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: url('/Images/Background/game room2.png') no-repeat center center fixed;
+  background-size: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', sans-serif;
+  color: #00ffff;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .player-card {
+    width: 280px;
+    padding: 12px 16px;
+  }
+  
+  .player-name {
+    font-size: 18px;
+  }
+  
+  .player-address {
+    font-size: 14px;
+  }
+  
+  .choice-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  .top-ui-overlay {
+    gap: 20px;
+  }
+  
+  .round-text,
+  .timer-display {
+    font-size: 16px;
+    padding: 10px 20px;
+  }
+  
+  .game-status {
+    font-size: 18px;
+    padding: 12px 24px;
+  }
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.fade-out {
+  animation: fadeOut 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-20px); }
+}
+
+/* Pulse animation for active elements */
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.6); }
+  100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
+}
+
+/* Glow effects */
+.glow-cyan {
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+}
+
+.glow-pink {
+  box-shadow: 0 0 30px rgba(255, 20, 147, 0.5);
+}
+
+.glow-gold {
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+}
