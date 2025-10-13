@@ -38,7 +38,7 @@ const GlassTubeGame = ({ gameId }) => {
   const initializeScene = useCallback(() => {
     if (!containerRef.current) return
 
-    console.log('🎮 Initializing clean Glass Tube Game')
+    console.log('🎮 Initializing clean Glass Tube Game - v2.0')
 
     // Clear existing content
     if (containerRef.current.firstChild) {
