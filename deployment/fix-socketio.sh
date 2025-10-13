@@ -1,3 +1,13 @@
+#!/bin/bash
+# Fix Socket.io WebSocket Connection Issues
+
+echo "🔧 Fixing Socket.io WebSocket Connection..."
+echo ""
+
+SSH_HOST="root@159.69.242.154"
+
+# Create the correct nginx configuration
+cat > nginx-socketio-fixed.conf << 'EOF'
 # Nginx configuration for Socket.io WebSocket support
 server {
     listen 80;
@@ -70,3 +80,46 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 }
+EOF
+
+echo "📤 Uploading nginx configuration to server..."
+scp nginx-socketio-fixed.conf ${SSH_HOST}:/etc/nginx/sites-available/flipnosis.fun
+
+echo "🔗 Creating symbolic link..."
+ssh $SSH_HOST "ln -sf /etc/nginx/sites-available/flipnosis.fun /etc/nginx/sites-enabled/flipnosis.fun"
+
+echo "✅ Testing nginx configuration..."
+if ssh $SSH_HOST "nginx -t"; then
+    echo "✅ Nginx configuration is valid!"
+    
+    echo "🔄 Reloading nginx..."
+    ssh $SSH_HOST "systemctl reload nginx"
+    
+    echo "📊 Checking nginx status..."
+    ssh $SSH_HOST "systemctl status nginx | head -n 10"
+    
+    echo "🔄 Restarting Node.js server..."
+    ssh $SSH_HOST "pm2 restart flipnosis"
+    
+    sleep 3
+    
+    echo "📊 Checking server logs..."
+    ssh $SSH_HOST "pm2 logs flipnosis --nostream --lines 20"
+    
+    echo ""
+    echo "✅ Fix applied successfully!"
+    echo ""
+    echo "🧪 Test the connection by:"
+    echo "   1. Opening: https://flipnosis.fun"
+    echo "   2. Opening browser console (F12)"
+    echo "   3. Look for: '✅ Socket.io connected'"
+else
+    echo "❌ Nginx configuration has errors!"
+fi
+
+# Cleanup
+rm -f nginx-socketio-fixed.conf
+
+echo ""
+echo "Done!"
+
