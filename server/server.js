@@ -11,7 +11,7 @@ const { initializeSocketIO } = require('./handlers/server-socketio')
 const { DatabaseService } = require('./services/database')
 const { BlockchainService } = require('./services/blockchain')
 const CleanupService = require('./services/cleanupService')
-const { errorHandler, notFoundHandler } = require('./middleware/error-handler')
+// const { errorHandler, notFoundHandler } = require('./middleware/error-handler') // Temporarily disabled
 
 console.log('🚀 Starting CryptoFlipz Server...')
 console.log('📍 Working directory:', process.cwd())
@@ -47,10 +47,6 @@ app.use(cors({
 
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
-
-// Add error handling middleware
-app.use(notFoundHandler)
-app.use(errorHandler)
 
 // ===== STATIC FILES =====
 const distPath = path.join(__dirname, '..', 'dist')

@@ -3,7 +3,7 @@ const BattleRoyaleGameManager = require('../BattleRoyaleGameManager')
 const PhysicsGameManager = require('../PhysicsGameManager')
 const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
 const SocketTracker = require('./SocketTracker')
-const FlipService = require('../services/FlipService')
+// const FlipService = require('../services/FlipService') // Temporarily disabled for debugging
 
 // ===== CLEAN SERVER ARCHITECTURE =====
 
@@ -18,7 +18,8 @@ class GameServer {
     // this.gameManager = new GameManager() // TODO: Not implemented yet - for 1v1 games
     this.battleRoyaleManager = new BattleRoyaleGameManager()
     this.physicsGameManager = new PhysicsGameManager()
-    this.flipService = new FlipService()
+    // this.flipService = new FlipService() // Temporarily disabled for debugging
+    this.flipService = null // Placeholder
     
     // Initialize socket tracker for reliable broadcasting
     this.socketTracker = new SocketTracker()
@@ -292,7 +293,8 @@ initialize(server, dbService) {
       }))
 
       // ===== GLASS TUBE GAME FLIP HANDLERS =====
-      
+      // Temporarily disabled for debugging
+      /*
       socket.on('request_coin_flip', safeHandler(async (flipRequest) => {
         console.log(`🪙 request_coin_flip from ${socket.id}`, flipRequest)
         try {
@@ -352,6 +354,7 @@ initialize(server, dbService) {
           })
         }
       }))
+      */
 
       socket.on('battle_royale_start_early', safeHandler((data) => {
         console.log(`📥 battle_royale_start_early from ${socket.id}`, data)
