@@ -13,6 +13,7 @@ import TestGameStandalone from "./pages/TestGameStandalone";
 import TestGlassTubeGame from "./pages/TestGlassTubeGame";
 import TestTubeGame from "./pages/TestTubeGame";
 import { TubeGamePage } from "./components/tubes";
+import { FlipTubeGamePage } from "./components/fliptubes";
 
 export const router = createBrowserRouter([
   {
@@ -79,6 +80,10 @@ export const router = createBrowserRouter([
       {
         path: "tube-game/:gameId",
         element: <TubeGamePage />,
+      },
+      {
+        path: "flip-tube-game/:gameId",
+        element: <FlipTubeGamePage />,
       },
     ],
   },
