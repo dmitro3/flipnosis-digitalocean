@@ -347,7 +347,7 @@ const CreateBattle = () => {
       setStepStatus({ create: true, approve: false, deposit: false })
       
       // Calculate pricing based on creator participation
-      const totalPlayers = creatorParticipates ? 6 : 6 // 6 players total
+      const totalPlayers = creatorParticipates ? 4 : 4 // 4 players total
       const entryFeePerPlayer = parseFloat(nftPrice) / totalPlayers
       
       // Validate and sanitize data before sending
@@ -418,7 +418,7 @@ const CreateBattle = () => {
       setCurrentStep(3)
       setStepStatus({ create: true, approve: true, deposit: true })
       
-      showSuccess('🏆 Battle Royale created successfully! Waiting for 6 players to join.')
+      showSuccess('🏆 Battle Royale created successfully! Waiting for 4 players to join.')
       navigate(`/battle-royale/${battleRoyaleResult.gameId}`)
       
     } catch (error) {
@@ -605,7 +605,7 @@ const CreateBattle = () => {
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Per Player Entry:</span>
-                      <span>${(parseFloat(nftPrice) / 6).toFixed(2)}</span>
+                      <span>${(parseFloat(nftPrice) / 4).toFixed(2)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Total Entry Pool:</span>
@@ -642,7 +642,7 @@ const CreateBattle = () => {
                 }}>
                   <ul style={{ margin: '0', paddingLeft: '1.5rem', color: theme.colors.textSecondary }}>
                     <li><strong>You receive NFT price minus platform fees and gas fees</strong></li>
-                    <li>6 players compete in elimination rounds</li>
+                    <li>4 players compete in elimination rounds</li>
                     <li>Last player standing wins your NFT</li>
                     <li>{creatorParticipates ? 'You will participate and can win your NFT back' : 'You will not participate - all seats are open for other players'}</li>
                   </ul>

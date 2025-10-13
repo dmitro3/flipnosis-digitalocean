@@ -8,8 +8,16 @@ import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
 import BattleRoyaleContainer from "./components/BattleRoyale/BattleRoyaleContainer";
 import ErrorBoundary from "./components/BattleRoyale/ErrorBoundary";
+import TestGame from "./Pages/TestGame";
+import TestGameStandalone from "./Pages/TestGameStandalone";
+import TestGlassTubeGame from "./pages/TestGlassTubeGame";
 
 export const router = createBrowserRouter([
+  {
+    // Standalone test route (no Layout = no wagmi dependencies)
+    path: "/test-standalone",
+    element: <TestGameStandalone />,
+  },
   {
     path: "/",
     element: <Layout />,
@@ -53,6 +61,14 @@ export const router = createBrowserRouter([
             <BattleRoyaleContainer />
           </ErrorBoundary>
         ),
+      },
+      {
+        path: "test",
+        element: <TestGame />,
+      },
+      {
+        path: "test-glass-tube",
+        element: <TestGlassTubeGame />,
       },
     ],
   },

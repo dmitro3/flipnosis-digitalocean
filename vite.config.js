@@ -49,12 +49,15 @@ export default defineConfig(({ mode }) => {
         zlib: resolve(__dirname, 'node_modules/browserify-zlib'),
         path: resolve(__dirname, 'node_modules/path-browserify'),
         'use-sync-external-store/shim/with-selector': resolve(__dirname, 'node_modules/use-sync-external-store/shim/with-selector.js'),
+        // Fix wagmi's nested use-sync-external-store
+        'wagmi/node_modules/use-sync-external-store/shim/with-selector': resolve(__dirname, 'node_modules/use-sync-external-store/shim/with-selector.js'),
         fs: false,
         net: false,
         tls: false,
         child_process: false,
         canvas: false, // Disable canvas for browser compatibility
       },
+      dedupe: ['use-sync-external-store', 'react', 'react-dom']
     },
     optimizeDeps: {
       include: [
@@ -67,9 +70,12 @@ export default defineConfig(({ mode }) => {
         'eventemitter3',
         'use-sync-external-store',
         'use-sync-external-store/shim',
-        'use-sync-external-store/shim/with-selector'
+        'use-sync-external-store/shim/with-selector',
+        'wagmi',
+        '@wagmi/core',
+        '@rainbow-me/rainbowkit'
       ],
-      exclude: ['@rainbow-me/rainbowkit', '@wagmi/core', 'wagmi', 'canvas'],
+      exclude: ['canvas'],
       esbuildOptions: {
         target: 'esnext'
       }

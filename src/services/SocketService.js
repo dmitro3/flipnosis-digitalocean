@@ -170,6 +170,35 @@ class SocketService {
   getCurrentRoom() {
     return this.currentRoom
   }
+
+  // ===== FLIP SERVICE INTEGRATION =====
+  
+  /**
+   * Request a coin flip with server authority
+   * @param {Object} flipRequest - Flip request data
+   */
+  requestCoinFlip(flipRequest) {
+    console.log('🪙 Requesting coin flip:', flipRequest)
+    this.emit('request_coin_flip', flipRequest)
+  }
+
+  /**
+   * Resolve a flip when coin stops
+   * @param {string} flipId - The flip session ID
+   */
+  resolveFlip(flipId) {
+    console.log('🎯 Resolving flip:', flipId)
+    this.emit('resolve_flip', { flipId })
+  }
+
+  /**
+   * Verify a flip result
+   * @param {string} flipId - The flip session ID
+   */
+  verifyFlip(flipId) {
+    console.log('🔍 Verifying flip:', flipId)
+    this.emit('verify_flip', { flipId })
+  }
 }
 
 // Create singleton instance

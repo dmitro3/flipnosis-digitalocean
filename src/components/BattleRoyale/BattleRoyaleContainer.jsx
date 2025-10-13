@@ -2,7 +2,7 @@ import React from 'react'
 import { useParams } from 'react-router-dom'
 import { BattleRoyaleGameProvider, useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
 import LobbyScreen from './LobbyScreen'
-import PhysicsGameScreen from './PhysicsGameScreen'
+import GlassTubeGame from './GlassTubeGame'
 import ErrorBoundary from './ErrorBoundary'
 import hazeVideo from '../../../Images/Video/haze.webm'
 
@@ -110,8 +110,8 @@ const BattleRoyaleContent = () => {
     return <LobbyScreen />
   }
 
-  // All Battle Royale games now use 3D Physics
-  return <PhysicsGameScreen />
+  // All Battle Royale games now use Glass Tube Game
+  return <GlassTubeGame />
 }
 
 // Main container component

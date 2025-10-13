@@ -330,7 +330,7 @@ const LobbyScreen = () => {
 
   const isCreator = gameState.creator?.toLowerCase() === address?.toLowerCase()
   const userInGame = gameState.playerSlots?.some(addr => addr?.toLowerCase() === address?.toLowerCase())
-  const canJoin = !userInGame && gameState.currentPlayers < 6
+  const canJoin = !userInGame && gameState.currentPlayers < 4
 
   const handleJoinGame = async () => {
     if (!isContractInitialized || !contractService) {
@@ -540,20 +540,20 @@ const LobbyScreen = () => {
         <StatusBar>
           <h2>⏳ Waiting for Players</h2>
           <p style={{ fontSize: '1.2rem', margin: 0 }}>
-            {gameState.currentPlayers} / 6 Players
+            {gameState.currentPlayers} / 4 Players
           </p>
           {isCreator && gameState.currentPlayers >= 2 && (
             <JoinActionButton
               onClick={startGameEarly}
               style={{ marginTop: '1rem', background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
             >
-              🚀 Start Game Early ({gameState.currentPlayers}/6)
+              🚀 Start Game Early ({gameState.currentPlayers}/4)
             </JoinActionButton>
           )}
         </StatusBar>
 
         <PlayerGrid>
-          {Array.from({ length: 6 }, (_, i) => {
+          {Array.from({ length: 4 }, (_, i) => {
             const playerAddr = gameState.playerOrder?.[i] || gameState.playerSlots?.[i]
             const player = playerAddr ? gameState.players?.[playerAddr.toLowerCase()] : null
             const isCurrentUser = playerAddr?.toLowerCase() === address?.toLowerCase()

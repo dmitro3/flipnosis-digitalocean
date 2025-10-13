@@ -4,9 +4,9 @@ import ProfilePicture from '../ProfilePicture'
 
 const CardsContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(6, 320px); /* Match tube spacing exactly */
+  grid-template-columns: repeat(4, 320px); /* Match tube spacing exactly */
   gap: 0;
-  width: 1920px;
+  width: 1280px;
   margin: 0 auto;
   justify-content: center;
   align-items: start;
@@ -194,7 +194,7 @@ const SimplePlayerCards = ({
     if (onPowerEnd) onPowerEnd(playerAddr, finalPower)
     setPowerLevel(0)
   }
-  const slots = Array.from({ length: 6 }, (_, i) => {
+  const slots = Array.from({ length: 4 }, (_, i) => {
     const playerAddr = playerOrder[i]
     const player = playerAddr ? players[playerAddr.toLowerCase()] : null
     const isCurrentPlayer = playerAddr?.toLowerCase() === currentPlayerAddress?.toLowerCase()
@@ -245,7 +245,7 @@ const SimplePlayerCards = ({
               {[1, 2, 3].map(i => (
                 <PotionIcon
                   key={i}
-                  src="/Images/potion.webp"
+                  src="/Images/potionpng.png"
                   alt="life"
                   active={i <= slot.player.lives}
                 />
