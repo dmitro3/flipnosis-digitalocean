@@ -1,9 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as THREE from 'three'
 import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
+import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
+import { useWallet } from '../../contexts/WalletContext'
+import socketService from '../../services/SocketService'
 import './FlipTubeGame.css'
 
 const FlipTubeGame = ({ gameId }) => {
@@ -14,12 +17,21 @@ const FlipTubeGame = ({ gameId }) => {
   const bloomComposerRef = useRef(null)
   const animationIdRef = useRef(null)
   const frameCountRef = useRef(0)
+  const tubesRef = useRef([])
+  const coinsRef = useRef([])
+  const cardsRef = useRef([])
   
-  // Game state - simplified for now
+  // Battle Royale game state
+  const { gameState, playerCoinImages, address, updateCoin } = useBattleRoyaleGame()
+  const { showToast } = useWallet()
+  
+  // Local game state
   const [gamePhase, setGamePhase] = useState('waiting')
   const [currentPlayer, setCurrentPlayer] = useState(0)
   const [roundTimer, setRoundTimer] = useState(60)
   const [currentRound, setCurrentRound] = useState(1)
+  const [eliminatedPlayers, setEliminatedPlayers] = useState([])
+  const [flipResults, setFlipResults] = useState({})
 
   // Color palette
   const COLORS = {
@@ -30,9 +42,21 @@ const FlipTubeGame = ({ gameId }) => {
     glass: 0x88ccff
   }
 
+  // Get active players (not eliminated)
+  const activePlayers = gameState?.playerOrder?.filter(addr => 
+    gameState.players?.[addr.toLowerCase()] && 
+    !eliminatedPlayers.includes(addr.toLowerCase())
+  ) || []
+
   // Initialize the 3D scene - FULL PAGE APPROACH
   const initializeScene = () => {
-    console.log('🎮 Initializing FlipTube Game - Full Page Experience')
+    if (!gameState) return
+
+    console.log('🎮 Initializing FlipTube Game - Full Page Experience with real data', {
+      phase: gameState.phase,
+      players: gameState.currentPlayers,
+      playerOrder: gameState.playerOrder
+    })
 
     // ===== SCENE =====
     const scene = new THREE.Scene()
@@ -108,7 +132,11 @@ const FlipTubeGame = ({ gameId }) => {
     topLight.shadow.camera.bottom = -400
     scene.add(topLight)
 
-    // ===== CREATE 4 GLASS TUBES =====
+    // ===== CREATE GLASS TUBES BASED ON ACTIVE PLAYERS =====
+    tubesRef.current = []
+    coinsRef.current = []
+    cardsRef.current = []
+
     const tubePositions = [
       { x: -600, color: COLORS.cyan },
       { x: -200, color: COLORS.purple },
@@ -119,12 +147,15 @@ const FlipTubeGame = ({ gameId }) => {
     tubePositions.forEach((pos, i) => {
       const tube = createGlassTube(pos.x, pos.color, i)
       scene.add(tube.tube)
+      tubesRef.current.push(tube)
 
       const coin = createCoin(pos.x)
       scene.add(coin)
+      coinsRef.current.push(coin)
 
       const card = createPlayerCard(pos.x, i)
       scene.add(card)
+      cardsRef.current.push(card)
     })
 
     console.log('✅ FlipTube Game initialized - Full page experience ready')
@@ -221,24 +252,33 @@ const FlipTubeGame = ({ gameId }) => {
     cardElement.className = 'player-card'
     cardElement.style.position = 'absolute'
     cardElement.style.transform = 'translate(-50%, -50%)'
-    cardElement.innerHTML = `
-      <div class="card-header">
-        <img src="/images/avatar-placeholder.png" alt="Avatar" class="player-avatar">
-        <div class="player-info">
-          <div class="player-name">Player ${index + 1}</div>
-          <div class="player-address">0xabc...123</div>
+    
+    // Get player data
+    const playerAddr = gameState?.playerOrder?.[index]
+    const player = playerAddr ? gameState.players?.[playerAddr.toLowerCase()] : null
+    const isCurrentPlayer = playerAddr?.toLowerCase() === address?.toLowerCase()
+    const isEliminated = eliminatedPlayers.includes(playerAddr?.toLowerCase())
+
+    if (player) {
+      cardElement.innerHTML = `
+        <div class="card-header">
+          <img src="/images/avatar-placeholder.png" alt="Avatar" class="player-avatar">
+          <div class="player-info">
+            <div class="player-name">${isCurrentPlayer ? 'YOU' : playerAddr.slice(0, 6) + '...' + playerAddr.slice(-4)}</div>
+            <div class="player-address">${playerAddr}</div>
+          </div>
         </div>
-      </div>
-      <div class="lives-container">
-        <img src="/Images/potionpng.png" alt="life" class="life active">
-        <img src="/Images/potionpng.png" alt="life" class="life active">
-        <img src="/Images/potionpng.png" alt="life" class="life active">
-      </div>
-      <div class="choice-buttons">
-        <button class="choice-btn heads">HEADS</button>
-        <button class="choice-btn tails">TAILS</button>
-      </div>
-    `
+        <div class="lives-container">
+          ${[1, 2, 3].map(i => 
+            `<img src="/Images/potionpng.png" alt="life" class="life" style="opacity: ${i <= player.lives ? 1 : 0.3}">`
+          ).join('')}
+        </div>
+        ${player.choice ? `<div class="choice-display">${player.choice.toUpperCase()}</div>` : ''}
+        ${isCurrentPlayer && !isEliminated && !player.choice ? '<div class="choice-buttons"><button class="choice-btn heads">HEADS</button><button class="choice-btn tails">TAILS</button></div>' : ''}
+      `
+    } else {
+      cardElement.innerHTML = '<div class="empty-slot">WAITING...</div>'
+    }
 
     const cardObject = new CSS3DObject(cardElement)
     cardObject.position.set(x, -200, 0)
@@ -251,6 +291,85 @@ const FlipTubeGame = ({ gameId }) => {
     if (!sceneRef.current || !cameraRef.current) return
 
     const frameCount = frameCountRef.current++
+    
+    // Animate tubes
+    tubesRef.current.forEach((tube, i) => {
+      // Animate liquid foam effects
+      if (tube.foamIntensity > 0 && !tube.isShattered) {
+        const powerPercent = tube.power / 100
+        const currentColor = new THREE.Color(tube.color)
+        
+        // Update liquid color based on power
+        currentColor.lerp(new THREE.Color(0xffffff), powerPercent * 0.3)
+        tube.liquid.material.color.copy(currentColor)
+        
+        // Update lighting
+        tube.liquidLight.color.copy(currentColor)
+        tube.liquidLight.intensity = 0.3 + (powerPercent * 15.0)
+      }
+      
+      // Handle flip animation
+      if (tube.isFlipping && !tube.isShattered) {
+        const elapsed = Date.now() - tube.flipStartTime
+        const progress = Math.min(elapsed / tube.flipDuration, 1)
+        
+        if (progress >= 1) {
+          // Flip animation complete
+          tube.isFlipping = false
+          tube.foamIntensity = 0
+        }
+      }
+      
+      // Animate glass shards
+      if (tube.glassShards && tube.glassShards.length > 0) {
+        tube.glassShards.forEach(shard => {
+          shard.userData.lifetime += 0.016
+          
+          // Apply velocity
+          shard.position.x += shard.userData.velocity.x
+          shard.position.y += shard.userData.velocity.y
+          shard.position.z += shard.userData.velocity.z
+          
+          // Apply gravity
+          shard.userData.velocity.y -= 0.3
+          
+          // Rotate
+          shard.rotation.x += shard.userData.rotVelocity.x
+          shard.rotation.y += shard.userData.rotVelocity.y
+          shard.rotation.z += shard.userData.rotVelocity.z
+          
+          // Fade out
+          shard.material.opacity = Math.max(0, 0.8 - (shard.userData.lifetime / 2) * 0.8)
+          
+          // Remove after 2 seconds
+          if (shard.userData.lifetime > 2) {
+            shard.visible = false
+          }
+        })
+      }
+    })
+    
+    // Animate coins
+    coinsRef.current.forEach((coin, i) => {
+      const tube = tubesRef.current[i]
+      
+      if (tube && tube.isFlipping && !tube.isShattered) {
+        const elapsed = Date.now() - tube.flipStartTime
+        const progress = Math.min(elapsed / tube.flipDuration, 1)
+        
+        // Rotate coin during flip
+        const rotationAmount = progress * tube.flipEndRotation.x
+        coin.rotation.x = rotationAmount
+        
+        // Add some wobble
+        const wobble = Math.sin(elapsed * 0.01) * 0.1
+        coin.rotation.z = wobble
+      } else if (tube && !tube.isShattered) {
+        // Reset to center when idle
+        coin.rotation.x = 0
+        coin.rotation.z = 0
+      }
+    })
 
     // Render with bloom
     const camera = cameraRef.current
@@ -271,6 +390,157 @@ const FlipTubeGame = ({ gameId }) => {
 
     animationIdRef.current = requestAnimationFrame(animate)
   }
+
+  // Handle coin flip with server authority
+  const handleFlipRequest = useCallback(async (playerAddr, choice, power) => {
+    try {
+      console.log(`🪙 Starting flip for ${playerAddr}: ${choice} at ${power}% power`)
+      
+      // Request flip from server with commit-reveal
+      const flipRequest = {
+        gameId: gameState.gameId,
+        playerAddress: playerAddr,
+        choice: choice,
+        power: power,
+        coinData: gameState.players[playerAddr.toLowerCase()]?.coin
+      }
+
+      // Start flip animation immediately (client-side)
+      const tubeIndex = activePlayers.indexOf(playerAddr)
+      if (tubeIndex >= 0) {
+        const tube = tubesRef.current[tubeIndex]
+        const coin = coinsRef.current[tubeIndex]
+        
+        // Start the visual flip animation
+        startFlipAnimation(tube, coin, power)
+      }
+
+      // Send to server for authoritative result
+      socketService.emit('request_coin_flip', flipRequest)
+
+    } catch (error) {
+      console.error('Error requesting flip:', error)
+      showToast('Failed to start flip', 'error')
+    }
+  }, [gameState, activePlayers, showToast])
+
+  // Start the visual flip animation
+  const startFlipAnimation = (tube, coin, power) => {
+    tube.isFlipping = true
+    tube.power = power
+    
+    // Add foam/liquid effects during flip
+    tube.foamIntensity = power / 100
+    
+    // Animate coin flip
+    const flipDuration = 2000 + (power * 20) // 2-4 seconds based on power
+    
+    // Create flip animation
+    const startRotation = { x: 0, y: 0, z: 0 }
+    const endRotation = { 
+      x: Math.PI * (10 + power * 0.2), // 10-12 full rotations
+      y: 0, 
+      z: 0 
+    }
+    
+    tube.flipStartTime = Date.now()
+    tube.flipDuration = flipDuration
+    tube.flipStartRotation = startRotation
+    tube.flipEndRotation = endRotation
+  }
+
+  // Handle server flip result
+  const handleFlipResult = useCallback((result) => {
+    console.log('🎯 Server flip result:', result)
+    
+    const { playerAddress, outcome, seed, signature, flipId } = result
+    
+    // Update game state
+    setFlipResults(prev => ({
+      ...prev,
+      [playerAddress.toLowerCase()]: outcome
+    }))
+    
+    // Check if player should be eliminated
+    const player = gameState.players[playerAddress.toLowerCase()]
+    if (player && outcome !== player.choice) {
+      // Player guessed wrong - eliminate them
+      setEliminatedPlayers(prev => [...prev, playerAddress.toLowerCase()])
+      
+      // Shatter their tube
+      const tubeIndex = activePlayers.indexOf(playerAddress)
+      if (tubeIndex >= 0) {
+        shatterTube(tubesRef.current[tubeIndex])
+      }
+    }
+    
+    // Check win condition
+    const remainingPlayers = activePlayers.filter(addr => 
+      !eliminatedPlayers.includes(addr.toLowerCase())
+    )
+    
+    if (remainingPlayers.length === 1) {
+      // Game over - we have a winner!
+      setGamePhase('ended')
+      showToast(`🎉 ${remainingPlayers[0]} wins the game!`, 'success')
+    }
+    
+  }, [gameState, activePlayers, eliminatedPlayers, showToast])
+
+  // Shatter a tube when player is eliminated
+  const shatterTube = (tube) => {
+    tube.isShattered = true
+    
+    // Create glass shards
+    for (let i = 0; i < 20; i++) {
+      const shardGeometry = new THREE.BoxGeometry(
+        5 + Math.random() * 10,
+        5 + Math.random() * 10,
+        2 + Math.random() * 3
+      )
+      const shardMaterial = new THREE.MeshPhysicalMaterial({
+        color: tube.color,
+        transparent: true,
+        opacity: 0.8
+      })
+      
+      const shard = new THREE.Mesh(shardGeometry, shardMaterial)
+      shard.position.copy(tube.tube.position)
+      shard.position.y += (Math.random() - 0.5) * 100
+      
+      // Add random velocity
+      shard.userData = {
+        velocity: new THREE.Vector3(
+          (Math.random() - 0.5) * 20,
+          Math.random() * 10,
+          (Math.random() - 0.5) * 20
+        ),
+        rotVelocity: new THREE.Vector3(
+          Math.random() * 0.5,
+          Math.random() * 0.5,
+          Math.random() * 0.5
+        ),
+        lifetime: 0
+      }
+      
+      tube.glassShards = tube.glassShards || []
+      tube.glassShards.push(shard)
+      sceneRef.current.add(shard)
+    }
+  }
+
+  // Socket event handlers
+  useEffect(() => {
+    const handleFlipResultEvent = (result) => {
+      handleFlipResult(result)
+    }
+
+    socketService.on('coin_flip_result', handleFlipResultEvent)
+
+    return () => {
+      socketService.off('coin_flip_result', handleFlipResultEvent)
+    }
+  }, [handleFlipResult])
 
   // Start the game
   const startGame = () => {
@@ -306,18 +576,27 @@ const FlipTubeGame = ({ gameId }) => {
     }
   }
 
-  // Initialize on mount
+  // Initialize when gameState is ready
   useEffect(() => {
-    initializeScene()
-    animate()
-    
-    // Auto-start game after 2 seconds
-    const startTimer = setTimeout(() => {
-      startGame()
-    }, 2000)
+    if (gameState && (gameState.phase === 'playing' || gameState.phase === 'round_active')) {
+      console.log('🎮 Starting FlipTube Game initialization')
+      initializeScene()
+      animate()
+      
+      // Set game phase based on Battle Royale state
+      setGamePhase('playing')
+      setCurrentRound(gameState.currentRound || 1)
+    }
 
     return cleanup
-  }, [])
+  }, [gameState])
+
+  // Initialize animation loop
+  useEffect(() => {
+    if (sceneRef.current && cameraRef.current) {
+      animate()
+    }
+  }, [sceneRef.current, cameraRef.current])
 
   // Handle window resize
   useEffect(() => {

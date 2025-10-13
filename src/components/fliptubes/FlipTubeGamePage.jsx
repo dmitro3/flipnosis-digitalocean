@@ -1,5 +1,6 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
+import { BattleRoyaleGameProvider } from '../../contexts/BattleRoyaleGameContext'
 import FlipTubeGame from './FlipTubeGame'
 import FlipTubeGameErrorBoundary from './FlipTubeGameErrorBoundary'
 
@@ -35,7 +36,9 @@ const FlipTubeGamePage = () => {
 
   return (
     <FlipTubeGameErrorBoundary>
-      <FlipTubeGame gameId={gameId} />
+      <BattleRoyaleGameProvider gameId={gameId}>
+        <FlipTubeGame gameId={gameId} />
+      </BattleRoyaleGameProvider>
     </FlipTubeGameErrorBoundary>
   )
 }
