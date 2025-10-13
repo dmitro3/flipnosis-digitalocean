@@ -8,8 +8,8 @@ import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
 import BattleRoyaleContainer from "./components/BattleRoyale/BattleRoyaleContainer";
 import ErrorBoundary from "./components/BattleRoyale/ErrorBoundary";
-import TestGame from "./Pages/TestGame";
-import TestGameStandalone from "./Pages/TestGameStandalone";
+import TestGame from "./pages/TestGame";
+import TestGameStandalone from "./pages/TestGameStandalone";
 import TestGlassTubeGame from "./pages/TestGlassTubeGame";
 
 export const router = createBrowserRouter([
