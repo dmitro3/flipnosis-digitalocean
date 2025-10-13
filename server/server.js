@@ -91,14 +91,31 @@ async function initializeServices() {
   await dbService.initialize()
   console.log('✅ Database service initialized')
   
-  // Initialize blockchain service
-  const blockchainService = new BlockchainService(RPC_URL, CONTRACT_ADDRESS, CONTRACT_OWNER_KEY)
-  console.log('✅ Blockchain service initialized')
+  // Initialize blockchain service with error handling
+  let blockchainService
+  try {
+    blockchainService = new BlockchainService(RPC_URL, CONTRACT_ADDRESS, CONTRACT_OWNER_KEY)
+    console.log('✅ Blockchain service initialized')
+  } catch (error) {
+    console.error('❌ Failed to initialize blockchain service:', error)
+    console.error('⚠️ Server will continue but blockchain functionality will be limited')
+    blockchainService = {
+      hasOwnerWallet: () => false,
+      setupEventListeners: () => {}
+    }
+  }
   
-  // Initialize cleanup service
-  const cleanupService = new CleanupService(dbService)
-  cleanupService.start()
-  console.log('✅ Cleanup service started')
+  // Initialize cleanup service with error handling
+  let cleanupService
+  try {
+    cleanupService = new CleanupService(dbService, blockchainService)
+    cleanupService.start()
+    console.log('✅ Cleanup service started')
+  } catch (error) {
+    console.error('❌ Failed to start cleanup service:', error)
+    console.error('⚠️ Server will continue but cleanup functionality will be limited')
+    cleanupService = { start: () => {}, stop: () => {} }
+  }
   
   return { dbService, blockchainService, cleanupService }
 }
