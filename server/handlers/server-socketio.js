@@ -3,6 +3,7 @@ const BattleRoyaleGameManager = require('../BattleRoyaleGameManager')
 const PhysicsGameManager = require('../PhysicsGameManager')
 const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
 const SocketTracker = require('./SocketTracker')
+const FlipService = require('../services/FlipService')
 
 // ===== CLEAN SERVER ARCHITECTURE =====
 
@@ -17,6 +18,7 @@ class GameServer {
     // this.gameManager = new GameManager() // TODO: Not implemented yet - for 1v1 games
     this.battleRoyaleManager = new BattleRoyaleGameManager()
     this.physicsGameManager = new PhysicsGameManager()
+    this.flipService = new FlipService()
     
     // Initialize socket tracker for reliable broadcasting
     this.socketTracker = new SocketTracker()
@@ -287,6 +289,68 @@ initialize(server, dbService) {
           this.battleRoyaleManager,
           this.io
         )
+      }))
+
+      // ===== GLASS TUBE GAME FLIP HANDLERS =====
+      
+      socket.on('request_coin_flip', safeHandler(async (flipRequest) => {
+        console.log(`🪙 request_coin_flip from ${socket.id}`, flipRequest)
+        try {
+          const response = await this.flipService.startFlipSession(flipRequest)
+          socket.emit('flip_session_started', response)
+          console.log(`✅ Flip session started: ${response.flipId}`)
+        } catch (error) {
+          console.error('❌ Error starting flip session:', error)
+          socket.emit('flip_error', { 
+            error: error.message,
+            request: flipRequest 
+          })
+        }
+      }))
+
+      socket.on('resolve_flip', safeHandler(async (resolveRequest) => {
+        console.log(`🎯 resolve_flip from ${socket.id}`, resolveRequest)
+        try {
+          const { flipId } = resolveRequest
+          if (!flipId) {
+            throw new Error('Invalid resolve request: missing flipId')
+          }
+
+          const result = await this.flipService.resolveFlipSession(flipId)
+          
+          // Send result to all players in the game room
+          const gameId = result.gameId || 'unknown'
+          this.io.to(`game_${gameId}`).emit('coin_flip_result', result)
+          
+          console.log(`🎲 Flip resolved: ${flipId} -> ${result.result}`)
+        } catch (error) {
+          console.error('❌ Error resolving flip:', error)
+          socket.emit('flip_error', { 
+            error: error.message,
+            request: resolveRequest 
+          })
+        }
+      }))
+
+      socket.on('verify_flip', safeHandler(async (verifyRequest) => {
+        console.log(`🔍 verify_flip from ${socket.id}`, verifyRequest)
+        try {
+          const { flipId } = verifyRequest
+          if (!flipId) {
+            throw new Error('Invalid verify request: missing flipId')
+          }
+
+          const verification = await this.flipService.verifyFlipResult(flipId)
+          socket.emit('flip_verification', verification)
+          
+          console.log(`✅ Flip verified: ${flipId}`)
+        } catch (error) {
+          console.error('❌ Error verifying flip:', error)
+          socket.emit('flip_error', { 
+            error: error.message,
+            request: verifyRequest 
+          })
+        }
       }))
 
       socket.on('battle_royale_start_early', safeHandler((data) => {
