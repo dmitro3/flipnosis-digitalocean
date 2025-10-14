@@ -191,10 +191,24 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
     console.log('🎮 Physics state update:', data)
     setGameState(data)
     setLoading(false)
+
+    // Fallback hard redirect for active phase to ensure transport (e.g., Player 2)
+    try {
+      if (data?.phase === 'round_active' || data?.phase === 'playing') {
+        const id = data?.gameId || gameId
+        if (id) {
+          console.log('🚀 Physics active phase detected - hard redirecting to test-tubes.html')
+          window.location.href = `/test-tubes.html?gameId=${id}`
+        }
+      }
+    } catch (e) {
+      console.warn('Redirect attempt failed:', e)
+    }
+
     if (data.players) {
       loadAllPlayerImages(data.players)
     }
-  }, []) // Remove loadAllPlayerImages from deps to prevent infinite loop
+  }, [gameId, loadAllPlayerImages])
 
   const handlePhysicsTurnStart = useCallback((data) => {
     console.log('🎯 Turn started for:', data.playerAddress)
