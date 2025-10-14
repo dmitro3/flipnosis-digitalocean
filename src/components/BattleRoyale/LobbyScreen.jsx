@@ -577,8 +577,8 @@ const LobbyScreen = () => {
                 {player ? (
                   <>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
-                      <div style={{ width: '70px', height: '70px', borderRadius: '10px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)' }}>
-                        <ProfilePicture address={playerAddr} size={70} fallbackEmoji="😊" />
+                      <div style={{ width: '140px', height: '140px', borderRadius: '10px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)' }}>
+                        <ProfilePicture address={playerAddr} size={140} fallbackEmoji="😊" />
                       </div>
                       <div style={{ color: '#00ffff', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center' }}>
                         {player?.username || player?.name || `Player ${i + 1}`}

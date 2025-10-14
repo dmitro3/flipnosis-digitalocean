@@ -1055,7 +1055,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       }
 
       if (gameServer && gameServer.physicsGameManager) {
-        const success = gameServer.physicsGameManager.addPlayer(gameId, player_address)
+        const success = await gameServer.physicsGameManager.addPlayer(gameId, player_address, dbService)
         if (success) {
           await dbService.addBattleRoyalePlayer(gameId, {
             player_address: player_address.toLowerCase(),
@@ -1814,7 +1814,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
 
           // Also reflect creator in physics game manager for lobby state
           if (gameServer && gameServer.physicsGameManager) {
-            const added = gameServer.physicsGameManager.addPlayer(gameId, creator)
+            const added = await gameServer.physicsGameManager.addPlayer(gameId, creator, dbService)
             if (added) {
               gameServer.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
                 gameServer.io.to(room).emit(event, payload)
@@ -1981,7 +1981,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
 
       // Add player to physics game manager and broadcast
       if (gameServer && gameServer.physicsGameManager) {
-        const added = gameServer.physicsGameManager.addPlayer(gameId, player_address)
+        const added = await gameServer.physicsGameManager.addPlayer(gameId, player_address, dbService)
         if (added) {
           gameServer.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
             gameServer.io.to(room).emit(event, payload)

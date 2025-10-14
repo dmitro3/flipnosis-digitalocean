@@ -41,7 +41,7 @@ class PhysicsGameManager {
   }
 
   // Add a player to the game
-  addPlayer(gameId, address) {
+  async addPlayer(gameId, address, dbService = null) {
     const game = this.games.get(gameId)
     if (!game) {
       console.warn(`❌ Game ${gameId} not found`)
@@ -56,6 +56,7 @@ class PhysicsGameManager {
     const normalizedAddress = address.toLowerCase()
     
     if (!game.players[normalizedAddress]) {
+      // Initialize player with basic game data
       game.players[normalizedAddress] = {
         lives: 3,
         choice: null,
@@ -64,6 +65,28 @@ class PhysicsGameManager {
         isActive: true,
         slotNumber: game.currentPlayers
       }
+
+      // Fetch and add profile data if database service is available
+      if (dbService) {
+        try {
+          const profile = await dbService.getProfileByAddress(address)
+          if (profile) {
+            game.players[normalizedAddress] = {
+              ...game.players[normalizedAddress],
+              username: profile.username,
+              name: profile.name,
+              avatar: profile.avatar || profile.profile_picture,
+              isCreator: address.toLowerCase() === game.creator.toLowerCase()
+            }
+            console.log(`✅ Player ${address} profile loaded: ${profile.username || profile.name || 'No name'}`)
+          } else {
+            console.log(`⚠️ No profile found for ${address}`)
+          }
+        } catch (error) {
+          console.error(`❌ Error fetching profile for ${address}:`, error)
+        }
+      }
+
       game.playerOrder.push(address) // Keep original case for display
       game.currentPlayers++
       

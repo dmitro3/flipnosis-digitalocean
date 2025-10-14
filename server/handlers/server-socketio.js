@@ -121,7 +121,7 @@ initialize(server, dbService) {
             if (gameData) {
               this.physicsGameManager.createPhysicsGame(gameId, gameData)
               const participants = await this.dbService.getBattleRoyaleParticipants(gameId)
-              for (const p of participants) { this.physicsGameManager.addPlayer(gameId, p.player_address) }
+              for (const p of participants) { await this.physicsGameManager.addPlayer(gameId, p.player_address, this.dbService) }
               const loadedState = this.physicsGameManager.getFullGameState(gameId)
               if (loadedState) socket.emit('physics_state_update', loadedState)
             }
@@ -145,7 +145,7 @@ initialize(server, dbService) {
         const { gameId, address } = data || {}
         if (gameId && (gameId.startsWith('physics_') || `${gameId}`.includes('physics_'))) {
           // Physics game join via socket: add player to manager, persist, and broadcast
-          const added = this.physicsGameManager.addPlayer(gameId, address)
+          const added = await this.physicsGameManager.addPlayer(gameId, address, this.dbService)
           if (added) {
             try {
               await this.dbService.addBattleRoyalePlayer(gameId, {
@@ -226,7 +226,7 @@ initialize(server, dbService) {
               // Load existing players
               const participants = await this.dbService.getBattleRoyaleParticipants(gameId)
               for (const participant of participants) {
-                this.physicsGameManager.addPlayer(gameId, participant.player_address)
+                await this.physicsGameManager.addPlayer(gameId, participant.player_address, this.dbService)
               }
             }
           }

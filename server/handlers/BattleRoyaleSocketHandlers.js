@@ -95,7 +95,7 @@ class BattleRoyaleSocketHandlers {
     console.log(`📡 Room now has ${io.sockets.adapter.rooms.get(roomId)?.size || 0} sockets`)
     
     // Add player to game
-    const success = gameManager.addPlayer(gameId, address)
+    const success = await gameManager.addPlayer(gameId, address, dbService)
     if (success) {
       // Get updated state
       const state = gameManager.getFullGameState(gameId)
