@@ -1,30 +1,34 @@
 /**
- * Simplified Physics Game Manager - No CANNON.js
- * Handles game logic without complex physics simulation
- * The 3D visualization is now just simple vertical tube animations
+ * Enhanced Physics Game Manager - Server-Side Authority
+ * Handles game logic with server-side physics simulation using CANNON.js
+ * All game decisions are made server-side for fair gameplay
  */
+
+const ServerPhysicsEngine = require('./ServerPhysicsEngine')
 
 class PhysicsGameManager {
   constructor() {
     this.games = new Map() // gameId -> gameState
     this.timers = new Map() // gameId -> intervalId
+    this.physicsEngine = new ServerPhysicsEngine() // Server-side physics
   }
 
   // Create a new physics game
   createPhysicsGame(gameId, gameData) {
-    console.log(`🎮 Creating simplified physics game: ${gameId}`)
+    console.log(`🎮 Creating server-side physics game: ${gameId}`)
     
     const game = {
       gameId,
       creator: gameData.creator_address || gameData.creator,
       betAmount: gameData.bet_amount,
-      maxPlayers: gameData.max_players || 6,
+      maxPlayers: gameData.max_players || 4, // Test tubes game is 4 players max
       currentPlayers: 0,
       phase: 'waiting', // waiting, round_active, game_over
       currentRound: 0,
       roundTimer: 60,
       players: {}, // address -> { lives, choice, hasFired, coin, isActive, slotNumber }
       playerOrder: [], // Array of addresses in slot order
+      playerSlots: [], // Array of 4 slots (0-3) for test tubes
       // NFT Data
       nftContract: gameData.nft_contract,
       nftTokenId: gameData.nft_token_id,
@@ -34,9 +38,17 @@ class PhysicsGameManager {
       nftChain: gameData.nft_chain || 'base',
       entryFee: gameData.entry_fee,
       serviceFee: gameData.service_fee,
+      // Physics state
+      physicsInitialized: false,
+      material: 'glass' // Default material
     }
 
     this.games.set(gameId, game)
+    
+    // Initialize physics for this game
+    this.physicsEngine.initializeGamePhysics(gameId, gameData)
+    game.physicsInitialized = true
+    
     return game
   }
 
@@ -56,6 +68,20 @@ class PhysicsGameManager {
     const normalizedAddress = address.toLowerCase()
     
     if (!game.players[normalizedAddress]) {
+      // Find available slot (0-3 for test tubes)
+      let slotNumber = -1
+      for (let i = 0; i < 4; i++) {
+        if (!game.playerSlots[i]) {
+          slotNumber = i
+          break
+        }
+      }
+      
+      if (slotNumber === -1) {
+        console.warn(`❌ No available slots in game ${gameId}`)
+        return false
+      }
+      
       // Initialize player with basic game data
       game.players[normalizedAddress] = {
         lives: 3,
@@ -63,8 +89,11 @@ class PhysicsGameManager {
         hasFired: false,
         coin: null,
         isActive: true,
-        slotNumber: game.currentPlayers
+        slotNumber: slotNumber
       }
+      
+      // Assign to slot
+      game.playerSlots[slotNumber] = address
 
       // Fetch and add profile data if database service is available
       if (dbService) {
@@ -90,7 +119,7 @@ class PhysicsGameManager {
       game.playerOrder.push(address) // Keep original case for display
       game.currentPlayers++
       
-      console.log(`✅ Player ${address} added to game ${gameId} (${game.currentPlayers}/${game.maxPlayers})`)
+      console.log(`✅ Player ${address} added to game ${gameId} in slot ${slotNumber} (${game.currentPlayers}/${game.maxPlayers})`)
       return true
     }
 
@@ -156,26 +185,93 @@ class PhysicsGameManager {
     return false
   }
 
-  // Fire coin (simplified - no physics, just outcomes)
-  fireCoin(gameId, address, angle, power, broadcast) {
+  // Server-side coin flip with physics simulation
+  serverFlipCoin(gameId, address, choice, power, angle = 0, broadcast) {
     const game = this.games.get(gameId)
-    if (!game || game.phase !== 'round_active') return
+    if (!game || game.phase !== 'round_active') {
+      console.warn(`❌ Game ${gameId} not in active round`)
+      return false
+    }
 
     const normalizedAddress = address.toLowerCase()
     const player = game.players[normalizedAddress]
     
-    if (!player || !player.isActive || player.hasFired || !player.choice) {
+    if (!player || !player.isActive || player.hasFired) {
       console.warn(`❌ Player ${address} cannot fire in game ${gameId}`)
-      return
+      return false
+    }
+
+    if (!player.choice) {
+      console.warn(`❌ Player ${address} has no choice set in game ${gameId}`)
+      return false
+    }
+
+    if (choice && choice !== player.choice) {
+      console.warn(`❌ Player ${address} choice mismatch: ${choice} vs ${player.choice}`)
+      return false
     }
 
     player.hasFired = true
 
-    // Simplified outcome - random flip
-    const result = Math.random() < 0.5 ? 'heads' : 'tails'
+    // Run server-side physics simulation
+    const simulationResult = this.physicsEngine.simulateCoinFlip(
+      gameId, 
+      player.slotNumber, 
+      player.choice, 
+      power, 
+      angle
+    )
+
+    if (!simulationResult) {
+      console.warn(`❌ Physics simulation failed for player ${address}`)
+      return false
+    }
+
+    console.log(`🎲 Server-side coin flip initiated for ${address}: power=${power}, choice=${player.choice}`)
+
+    // Broadcast the flip start to all clients
+    if (broadcast) {
+      const room = `game_${gameId}`
+      broadcast(room, 'physics_coin_flip_start', {
+        gameId: gameId,
+        playerAddress: address,
+        playerSlot: player.slotNumber,
+        power: power,
+        angle: angle,
+        choice: player.choice,
+        duration: simulationResult.duration
+      })
+    }
+
+    // Schedule result processing after simulation completes
+    setTimeout(() => {
+      this.processCoinFlipResult(gameId, address, broadcast)
+    }, simulationResult.duration + 100) // Small buffer
+
+    return true
+  }
+
+  // Process coin flip result after physics simulation
+  processCoinFlipResult(gameId, address, broadcast) {
+    const game = this.games.get(gameId)
+    if (!game) return
+
+    const normalizedAddress = address.toLowerCase()
+    const player = game.players[normalizedAddress]
+    
+    if (!player) return
+
+    // Get result from physics engine
+    const physicsState = this.physicsEngine.getPhysicsState(gameId)
+    if (!physicsState) return
+
+    const coinState = physicsState.coinStates[player.slotNumber]
+    if (!coinState || !coinState.result) return
+
+    const result = coinState.result
     const won = result === player.choice
 
-    console.log(`🎲 Player ${address} flipped ${result} (chose ${player.choice}) - ${won ? 'WON' : 'LOST'}`)
+    console.log(`🎲 Player ${address} result: ${result} (chose ${player.choice}) - ${won ? 'WON' : 'LOST'}`)
 
     // Update lives
     if (!won) {
@@ -184,6 +280,20 @@ class PhysicsGameManager {
         player.isActive = false
         console.log(`💀 Player ${address} eliminated from game ${gameId}`)
       }
+    }
+
+    // Broadcast result to all clients
+    if (broadcast) {
+      const room = `game_${gameId}`
+      broadcast(room, 'physics_coin_result', {
+        gameId: gameId,
+        playerAddress: address,
+        playerSlot: player.slotNumber,
+        result: result,
+        won: won,
+        lives: player.lives,
+        isActive: player.isActive
+      })
     }
 
     // Check if round is over (all active players have fired)
@@ -196,6 +306,12 @@ class PhysicsGameManager {
     } else if (broadcast) {
       this.broadcastState(gameId, broadcast)
     }
+  }
+
+  // Fire coin (legacy method - now redirects to server-side)
+  fireCoin(gameId, address, angle, power, broadcast) {
+    console.log(`🔄 Redirecting fireCoin to server-side simulation`)
+    return this.serverFlipCoin(gameId, address, null, power, angle, broadcast)
   }
 
   // Start round timer
@@ -236,23 +352,30 @@ class PhysicsGameManager {
       this.timers.delete(gameId)
     }
 
-    // Reset for next round
-    Object.values(game.players).forEach(player => {
-      if (player.isActive) {
-        player.choice = null
-        player.hasFired = false
-      }
-    })
-
     // Check if game is over
     const activePlayers = Object.values(game.players).filter(p => p.isActive)
     
     if (activePlayers.length <= 1) {
       // Game over
       game.phase = 'game_over'
-      console.log(`🏆 Game ${gameId} ended - Winner: ${activePlayers[0] ? Object.keys(game.players).find(k => game.players[k] === activePlayers[0]) : 'None'}`)
+      const winner = activePlayers[0] ? Object.keys(game.players).find(k => game.players[k] === activePlayers[0]) : null
+      console.log(`🏆 Game ${gameId} ended - Winner: ${winner || 'None'}`)
+      
+      // Cleanup physics
+      this.physicsEngine.cleanupGamePhysics(gameId)
     } else {
-      // Next round
+      // Next round - reset physics and player states
+      this.physicsEngine.resetGameForNewRound(gameId)
+      this.physicsEngine.updateGamePhase(gameId, 'round_active')
+      
+      // Reset player states
+      Object.values(game.players).forEach(player => {
+        if (player.isActive) {
+          player.choice = null
+          player.hasFired = false
+        }
+      })
+      
       game.currentRound++
       game.roundTimer = 60
       this.startRoundTimer(gameId, broadcast)
@@ -274,6 +397,9 @@ class PhysicsGameManager {
     const game = this.games.get(gameId)
     if (!game) return null
 
+    // Get physics state if available
+    const physicsState = this.physicsEngine.getPhysicsState(gameId)
+
     return {
       gameId: game.gameId,
       creator: game.creator,
@@ -285,7 +411,7 @@ class PhysicsGameManager {
       roundTimer: game.roundTimer,
       players: game.players,
       playerOrder: game.playerOrder,
-      playerSlots: game.playerOrder, // Alias for compatibility
+      playerSlots: game.playerSlots, // Use actual slot array
       // NFT Data
       nftContract: game.nftContract,
       nftTokenId: game.nftTokenId,
@@ -295,6 +421,10 @@ class PhysicsGameManager {
       nftChain: game.nftChain,
       entryFee: game.entryFee,
       serviceFee: game.serviceFee,
+      // Physics Data
+      physicsInitialized: game.physicsInitialized,
+      material: game.material,
+      coinStates: physicsState ? physicsState.coinStates : null
     }
   }
 
@@ -313,8 +443,26 @@ class PhysicsGameManager {
       clearInterval(this.timers.get(gameId))
       this.timers.delete(gameId)
     }
+    
+    // Cleanup physics
+    this.physicsEngine.cleanupGamePhysics(gameId)
+    
     this.games.delete(gameId)
     console.log(`🧹 Game ${gameId} removed`)
+  }
+
+  // Update material for game
+  updateGameMaterial(gameId, materialName) {
+    const game = this.games.get(gameId)
+    if (!game) return false
+    
+    const success = this.physicsEngine.updateGameMaterial(gameId, materialName)
+    if (success) {
+      game.material = materialName
+      console.log(`💎 Game ${gameId} material updated to ${materialName}`)
+    }
+    
+    return success
   }
 }
 

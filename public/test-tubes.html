@@ -237,6 +237,9 @@
       }
     }
   </script>
+  
+  <!-- Socket.io for server-side physics -->
+  <script src="/socket.io/socket.io.js"></script>
 
   <script type="module">
     import * as THREE from 'three';
@@ -281,6 +284,256 @@
       document.title = `Glass Tube Game • ${gameIdParam}`;
     }
     info.textContent = '🎮 Initializing 4-Player Glass Tube Game...';
+
+    // ===== SOCKET.IO CONNECTION =====
+    let socket = null;
+    let gameState = null;
+    let playerSlot = -1;
+    let isServerSideMode = true; // Enable server-side physics
+    
+    // Initialize socket connection
+    function initializeSocket() {
+      if (typeof io === 'undefined') {
+        console.error('❌ Socket.io not loaded');
+        return;
+      }
+      
+      socket = io();
+      
+      socket.on('connect', () => {
+        console.log('✅ Connected to server');
+        
+        // Join physics room
+        if (gameIdParam && walletParam) {
+          socket.emit('physics_join_room', {
+            roomId: `game_${gameIdParam}`,
+            address: walletParam
+          });
+        }
+      });
+      
+      socket.on('disconnect', () => {
+        console.log('❌ Disconnected from server');
+      });
+      
+      // Server-side physics events
+      socket.on('physics_state_update', (state) => {
+        console.log('📊 Received physics state update:', state);
+        gameState = state;
+        updateClientFromServerState(state);
+      });
+      
+      socket.on('physics_coin_flip_start', (data) => {
+        console.log('🪙 Coin flip started:', data);
+        startClientCoinFlipAnimation(data);
+      });
+      
+      socket.on('physics_coin_result', (data) => {
+        console.log('🎲 Coin flip result:', data);
+        showCoinFlipResult(data);
+      });
+      
+      socket.on('physics_power_charging', (data) => {
+        console.log('⚡ Power charging:', data);
+        updatePowerChargingVisual(data);
+      });
+      
+      socket.on('physics_coin_angle_update', (data) => {
+        console.log('🎯 Coin angle update:', data);
+        updateCoinAngleVisual(data);
+      });
+      
+      socket.on('physics_error', (error) => {
+        console.error('❌ Physics error:', error);
+        alert(`Game Error: ${error.message}`);
+      });
+    }
+    
+    // Update client state from server
+    function updateClientFromServerState(state) {
+      if (!state) return;
+      
+      // Update game phase
+      if (state.phase === 'round_active') {
+        startTimer();
+      } else if (state.phase === 'game_over') {
+        stopTimer();
+        gameOver = true;
+      }
+      
+      // Update player data
+      if (state.players && walletParam) {
+        const normalizedAddress = walletParam.toLowerCase();
+        const player = state.players[normalizedAddress];
+        if (player) {
+          playerSlot = player.slotNumber;
+          console.log(`🎮 Player slot: ${playerSlot}`);
+        }
+      }
+      
+      // Update timer
+      if (state.roundTimer !== undefined) {
+        timeRemaining = state.roundTimer;
+        updateTimerDisplay();
+      }
+      
+      // Update round
+      if (state.currentRound !== undefined) {
+        currentRound = state.currentRound;
+        updateRoundDisplay();
+      }
+      
+      // Update coin states from server physics
+      if (state.coinStates) {
+        updateCoinStatesFromServer(state.coinStates);
+      }
+    }
+    
+    // Update coin states from server physics
+    function updateCoinStatesFromServer(coinStates) {
+      coinStates.forEach((coinState, index) => {
+        if (coinState && coinState.position) {
+          const coin = coins[index];
+          if (coin) {
+            // Update coin position from server
+            coin.position.set(coinState.position.x, coinState.position.y, coinState.position.z);
+            
+            // Update coin rotation from server
+            if (coinState.rotation) {
+              coin.quaternion.set(
+                coinState.rotation.x,
+                coinState.rotation.y,
+                coinState.rotation.z,
+                coinState.rotation.w
+              );
+            }
+            
+            // Update flip state
+            if (coinState.isFlipping) {
+              tubes[index].isFlipping = true;
+            } else {
+              tubes[index].isFlipping = false;
+            }
+          }
+        }
+      });
+    }
+    
+    // Start client coin flip animation (visual only)
+    function startClientCoinFlipAnimation(data) {
+      if (data.playerSlot >= 0 && data.playerSlot < 4) {
+        const tube = tubes[data.playerSlot];
+        const coin = coins[data.playerSlot];
+        
+        if (tube && coin) {
+          tube.isFlipping = true;
+          
+          // Start visual animation based on server data
+          animateCoinFlip(data.playerSlot, data.power, data.duration);
+        }
+      }
+    }
+    
+    // Show coin flip result
+    function showCoinFlipResult(data) {
+      if (data.playerSlot >= 0 && data.playerSlot < 4) {
+        const tube = tubes[data.playerSlot];
+        
+        if (tube) {
+          tube.isFlipping = false;
+          
+          // Show result
+          showResult(data.playerSlot, data.won, data.result);
+          
+          // Update lives if it's our player
+          if (data.playerAddress.toLowerCase() === walletParam.toLowerCase()) {
+            updateLivesDisplay(data.playerSlot);
+          }
+        }
+      }
+    }
+    
+    // Update power charging visual
+    function updatePowerChargingVisual(data) {
+      if (data.playerSlot >= 0 && data.playerSlot < 4) {
+        const tube = tubes[data.playerSlot];
+        if (tube) {
+          tube.power = data.power;
+          // Visual updates will be handled in the animation loop
+        }
+      }
+    }
+    
+    // Update coin angle visual
+    function updateCoinAngleVisual(data) {
+      if (data.playerSlot >= 0 && data.playerSlot < 4) {
+        const coin = coins[data.playerSlot];
+        if (coin) {
+          // Update coin rotation based on angle
+          const angleRad = (data.angle * Math.PI) / 180;
+          coin.rotation.z = angleRad;
+        }
+      }
+    }
+    
+    // Initialize socket connection
+    initializeSocket();
+
+    // ===== MISSING HELPER FUNCTIONS =====
+    
+    // Update round display
+    function updateRoundDisplay() {
+      const roundElement = document.getElementById('round-number');
+      if (roundElement) {
+        roundElement.textContent = currentRound;
+      }
+    }
+    
+    // Animate coin flip (visual only - for server-side physics)
+    function animateCoinFlip(playerSlot, power, duration) {
+      const tube = tubes[playerSlot];
+      const coin = coins[playerSlot];
+      
+      if (!tube || !coin) return;
+      
+      // Visual animation only - no game logic
+      const powerPercent = power / 100;
+      const material = tube.selectedMaterial || coinMaterials[2]; // Default to glass
+      const speedMult = material.speedMultiplier;
+      const durationMult = material.durationMultiplier;
+      
+      const flipDuration = duration || (2000 + (powerPercent * 6000)) * durationMult;
+      const basePowerSpeed = Math.max(0.08, 0.05 + (powerPercent * 0.25));
+      const flipSpeed = basePowerSpeed * speedMult;
+      
+      console.log(`🎬 Starting visual coin flip for slot ${playerSlot}: duration=${flipDuration}ms, speed=${flipSpeed}`);
+      
+      const startTime = Date.now();
+      
+      const animateFlip = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / flipDuration, 1);
+        
+        if (progress < 0.7) {
+          // Fast spinning phase (first 70%)
+          coin.rotation.x += flipSpeed;
+        } else {
+          // Deceleration phase (last 30%)
+          const decelProgress = (progress - 0.7) / 0.3;
+          const currentSpeed = flipSpeed * (1 - decelProgress);
+          coin.rotation.x += currentSpeed;
+        }
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateFlip);
+        } else {
+          // Animation complete - server will send actual result
+          console.log(`🎬 Visual flip animation complete for slot ${playerSlot}`);
+        }
+      };
+      
+      animateFlip();
+    }
 
     // ===== AUDIO SYSTEM =====
     let isMuted = false;
@@ -1214,10 +1467,26 @@
           // Minimum 5% power to prevent instant flips
           if (finalPower >= 5) {
             shatterGlass(i, finalPower);
-            // Get player choice from the card
-            const playerChoice = players[i].choice;
-            // Start coin flip animation based on power
-            flipCoinWithPower(i, finalPower, playerChoice);
+            
+            // Server-side physics: Send flip request to server
+            if (isServerSideMode && socket && gameIdParam && walletParam) {
+              // Get player choice from the card
+              const playerChoice = players[i].choice;
+              
+              // Send flip request to server
+              socket.emit('physics_flip_coin', {
+                gameId: gameIdParam,
+                address: walletParam,
+                power: finalPower,
+                angle: 0 // Default angle for now
+              });
+              
+              console.log(`🪙 Sent flip request to server: power=${finalPower}, choice=${playerChoice}`);
+            } else {
+              // Fallback to local physics (for testing)
+              const playerChoice = players[i].choice;
+              flipCoinWithPower(i, finalPower, playerChoice);
+            }
             
             // Disable button after use
             powerButton.disabled = true;
@@ -1242,10 +1511,26 @@
             // Minimum 5% power to prevent instant flips
             if (finalPower >= 5) {
               shatterGlass(i, finalPower);
-              // Get player choice from the card
-              const playerChoice = players[i].choice;
-              // Start coin flip animation based on power
-              flipCoinWithPower(i, finalPower, playerChoice);
+              
+              // Server-side physics: Send flip request to server
+              if (isServerSideMode && socket && gameIdParam && walletParam) {
+                // Get player choice from the card
+                const playerChoice = players[i].choice;
+                
+                // Send flip request to server
+                socket.emit('physics_flip_coin', {
+                  gameId: gameIdParam,
+                  address: walletParam,
+                  power: finalPower,
+                  angle: 0 // Default angle for now
+                });
+                
+                console.log(`🪙 Sent flip request to server (mouseleave): power=${finalPower}, choice=${playerChoice}`);
+              } else {
+                // Fallback to local physics (for testing)
+                const playerChoice = players[i].choice;
+                flipCoinWithPower(i, finalPower, playerChoice);
+              }
               
               // Disable button after use
               powerButton.disabled = true;
@@ -1277,6 +1562,16 @@
             const choice = btn.textContent.toLowerCase();
             players[i].choice = choice;
             console.log(`Player ${i + 1} selected: ${choice}`);
+            
+            // Send choice to server
+            if (isServerSideMode && socket && gameIdParam && walletParam) {
+              socket.emit('physics_set_choice', {
+                gameId: gameIdParam,
+                address: walletParam,
+                choice: choice
+              });
+              console.log(`🎯 Sent choice to server: ${choice}`);
+            }
             
             // Replace buttons with choice badge
             const choiceButtonContainer = cardElement.querySelector('.choice-buttons');
@@ -2621,6 +2916,16 @@
                 const choice = btn.textContent.toLowerCase();
                 players[i].choice = choice;
                 
+                // Send choice to server
+                if (isServerSideMode && socket && gameIdParam && walletParam) {
+                  socket.emit('physics_set_choice', {
+                    gameId: gameIdParam,
+                    address: walletParam,
+                    choice: choice
+                  });
+                  console.log(`🎯 Sent choice to server (replay): ${choice}`);
+                }
+                
                 // Replace buttons with choice badge
                 const choiceButtonContainer = tube.cardElement.querySelector('.choice-buttons');
                 if (choiceButtonContainer) {
@@ -2951,6 +3256,16 @@
                 const choice = btn.textContent.toLowerCase();
                 players[i].choice = choice;
                 console.log(`Player ${i + 1} selected: ${choice}`);
+                
+                // Send choice to server
+                if (isServerSideMode && socket && gameIdParam && walletParam) {
+                  socket.emit('physics_set_choice', {
+                    gameId: gameIdParam,
+                    address: walletParam,
+                    choice: choice
+                  });
+                  console.log(`🎯 Sent choice to server (next round): ${choice}`);
+                }
                 
                 // Replace buttons with choice badge
                 const choiceButtonContainer = tube.cardElement.querySelector('.choice-buttons');

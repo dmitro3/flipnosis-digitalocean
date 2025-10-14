@@ -27,7 +27,9 @@ class GameServer {
     // Then instantiate handlers (FIXED: They are classes, not modules)
     // this.oneVOneHandlers = require('./1v1SocketHandlers') // TODO: Not implemented yet
     const BattleRoyaleSocketHandlersClass = require('./BattleRoyaleSocketHandlers')
+    const PhysicsSocketHandlersClass = require('./PhysicsSocketHandlers')
     this.battleRoyaleHandlers = new BattleRoyaleSocketHandlersClass()
+    this.physicsHandlers = new PhysicsSocketHandlersClass()
     
     this.socketData = new Map() // socketId -> { address, gameId, roomId, role }
     this.userSockets = new Map() // address -> socketId
@@ -36,6 +38,8 @@ class GameServer {
     console.log('✅ SocketService: Managers initialized:', {
       battleRoyaleManager: !!this.battleRoyaleManager,
       battleRoyaleHandlers: !!this.battleRoyaleHandlers,
+      physicsGameManager: !!this.physicsGameManager,
+      physicsHandlers: !!this.physicsHandlers,
       socketTracker: !!this.socketTracker
     })
   }
@@ -385,36 +389,142 @@ initialize(server, dbService) {
       }))
 
       // ===== PHYSICS GAME ACTIONS =====
-      socket.on('physics_set_choice', safeHandler((data) => {
-        console.log(`🔥 physics_set_choice from ${socket.id}`, data)
-        const { gameId, address, choice } = data
-        const success = this.physicsGameManager.setChoice(gameId, address, choice)
-        if (success) {
-          this.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
-            this.io.to(room).emit(event, payload)
-          })
-        }
+      socket.on('physics_join_room', safeHandler((data) => {
+        console.log(`🔥 physics_join_room from ${socket.id}`, data)
+        return this.physicsHandlers.handleJoinPhysicsRoom(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io,
+          this.dbService,
+          this.socketTracker
+        )
       }))
 
+      socket.on('physics_request_state', safeHandler((data) => {
+        console.log(`🔥 physics_request_state from ${socket.id}`, data)
+        return this.physicsHandlers.handleRequestPhysicsState(
+          socket, 
+          data, 
+          this.physicsGameManager,
+          this.dbService
+        )
+      }))
+
+      socket.on('physics_join', safeHandler((data) => {
+        console.log(`🔥 physics_join from ${socket.id}`, data)
+        return this.physicsHandlers.handleJoinPhysics(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io,
+          this.dbService,
+          this.socketTracker
+        )
+      }))
+
+      socket.on('physics_set_choice', safeHandler((data) => {
+        console.log(`🔥 physics_set_choice from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsSetChoice(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      socket.on('physics_flip_coin', safeHandler((data) => {
+        console.log(`🔥 physics_flip_coin from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsFlipCoin(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      socket.on('physics_update_coin', safeHandler((data) => {
+        console.log(`🔥 physics_update_coin from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsUpdateCoin(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io,
+          this.dbService,
+          this.socketTracker
+        )
+      }))
+
+      socket.on('physics_start_early', safeHandler((data) => {
+        console.log(`🔥 physics_start_early from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsStartEarly(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io,
+          this.dbService
+        )
+      }))
+
+      socket.on('physics_spectate', safeHandler((data) => {
+        console.log(`🔥 physics_spectate from ${socket.id}`, data)
+        return this.physicsHandlers.handleSpectatePhysics(
+          socket, 
+          data, 
+          this.physicsGameManager
+        )
+      }))
+
+      socket.on('physics_update_material', safeHandler((data) => {
+        console.log(`🔥 physics_update_material from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsUpdateMaterial(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      socket.on('physics_request_update', safeHandler((data) => {
+        console.log(`🔥 physics_request_update from ${socket.id}`, data)
+        return this.physicsHandlers.handleRequestPhysicsUpdate(
+          socket, 
+          data, 
+          this.physicsGameManager
+        )
+      }))
+
+      socket.on('physics_charge_power', safeHandler((data) => {
+        console.log(`🔥 physics_charge_power from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsChargePower(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      socket.on('physics_update_coin_angle', safeHandler((data) => {
+        console.log(`🔥 physics_update_coin_angle from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsUpdateCoinAngle(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      // Legacy physics events for compatibility
       socket.on('physics_fire_coin', safeHandler((data) => {
-        console.log(`🔥 physics_fire_coin from ${socket.id}`, data)
+        console.log(`🔥 physics_fire_coin (legacy) from ${socket.id}`, data)
         const { gameId, address, angle, power } = data
         this.physicsGameManager.fireCoin(gameId, address, angle, power, (room, event, payload) => {
           this.io.to(room).emit(event, payload)
         })
       }))
 
-      socket.on('physics_request_state', safeHandler((data) => {
-        console.log(`🔥 physics_request_state from ${socket.id}`)
-        const { gameId } = data
-        const state = this.physicsGameManager.getFullGameState(gameId)
-        if (state) {
-          socket.emit('physics_state_update', state)
-        }
-      }))
-
       socket.on('physics_start_game', safeHandler((data) => {
-        console.log(`🔥 physics_start_game from ${socket.id}`)
+        console.log(`🔥 physics_start_game (legacy) from ${socket.id}`)
         const { gameId, address } = data
         const game = this.physicsGameManager.getGame(gameId)
         if (!game) {
