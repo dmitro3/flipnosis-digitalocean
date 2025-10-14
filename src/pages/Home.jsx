@@ -1337,34 +1337,24 @@ const Home = () => {
                       }}>
                         <Button 
                           onClick={() => {
-                            // Safety check for valid ID
                             if (!selectedFlip.id || selectedFlip.id === 'null') {
-                              console.error('⚠️ Cannot navigate: Invalid flip ID:', selectedFlip.id)
+                              console.error('⚠️ Cannot navigate: Invalid flip ID:', selectedFlip?.id)
                               showError('Invalid game ID. Please refresh the page.')
                               return
                             }
-                            
-                            // Handle battle royale games
+                            // Battle Royale flow: go to lobby unless game is started
                             if (selectedFlip.isBattleRoyale) {
-                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
-                            } else if (selectedFlip.type === 'listing') {
-                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
-                            } else if (selectedFlip.status === 'completed') {
-                              // Handle completed game view
-                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
-                            } else if (selectedFlip.status === 'active') {
-                              // Handle active game view
-                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
-                            } else if (selectedFlip.status === 'joined') {
-                              // Handle joined game view
-                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
-                            } else if (selectedFlip.status === 'waiting') {
-                              // Handle waiting games - go to unified game page
-                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
-                            } else {
-                              // Handle other statuses
-                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
+                              const status = (selectedFlip.status || '').toLowerCase()
+                              const isLobby = status === 'filling' || status === 'waiting' || status === 'pending' || status === 'joined'
+                              if (isLobby) {
+                                navigate(`/battle-royale/${selectedFlip.id}`)
+                              } else {
+                                window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
+                              }
+                              return
                             }
+                            // Non-BR: keep current behavior (send to HTML game)
+                            window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
                           }}
                           style={{
                             flex: 2,

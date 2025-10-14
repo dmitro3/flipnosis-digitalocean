@@ -1811,6 +1811,17 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           }
           await dbService.addBattleRoyalePlayer(gameId, playerData)
           console.log(`✅ Creator ${creator} added as participant to database`)
+
+          // Also reflect creator in physics game manager for lobby state
+          if (gameServer && gameServer.physicsGameManager) {
+            const added = gameServer.physicsGameManager.addPlayer(gameId, creator)
+            if (added) {
+              gameServer.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
+                gameServer.io.to(room).emit(event, payload)
+              })
+              console.log(`✅ Creator ${creator} added to physics game manager`)
+            }
+          }
         } catch (error) {
           console.error(`❌ Error adding creator as participant:`, error)
         }

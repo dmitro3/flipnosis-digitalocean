@@ -397,7 +397,19 @@
     
     // ===== ADD BACKGROUND IMAGE AS TEXTURED PLANE (1920x1080) =====
     const bgTextureLoader = new THREE.TextureLoader();
-    bgTextureLoader.load('/Images/Background/game%20room2.png', (bgTexture) => {
+    const bgCandidates = [
+      '/Images/Background/game%20room2.png',
+      '/Images/Background/game%20room2.PNG',
+      '/Images/Background/game room2.png',
+      '/Images/Background/game_room2.png',
+      '/images/background/game%20room2.png',
+    ];
+    function loadBackground(paths, onSuccess, onFail) {
+      if (!paths.length) { onFail && onFail(new Error('No background paths worked')); return; }
+      const path = paths[0];
+      bgTextureLoader.load(path, onSuccess, undefined, () => loadBackground(paths.slice(1), onSuccess, onFail));
+    }
+    loadBackground(bgCandidates, (bgTexture) => {
       // Keep texture in sRGB color space - don't convert
       bgTexture.colorSpace = THREE.SRGBColorSpace;
       bgTexture.minFilter = THREE.LinearFilter;
