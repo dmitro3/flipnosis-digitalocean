@@ -1859,11 +1859,34 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       const participants = await dbService.getBattleRoyaleParticipants(gameId)
       const rounds = await dbService.getBattleRoyaleRounds(gameId)
 
+      // Enrich participants with profile data
+      const enrichedParticipants = await Promise.all(
+        participants.map(async (participant) => {
+          try {
+            const profile = await dbService.getProfileByAddress(participant.player_address)
+            return {
+              ...participant,
+              username: profile?.username || null,
+              name: profile?.name || null,
+              avatar: profile?.avatar || profile?.profile_picture || null
+            }
+          } catch (error) {
+            console.warn(`⚠️ Could not fetch profile for ${participant.player_address}:`, error.message)
+            return {
+              ...participant,
+              username: null,
+              name: null,
+              avatar: null
+            }
+          }
+        })
+      )
+
       res.json({
         success: true,
         game: {
           ...game,
-          participants,
+          participants: enrichedParticipants,
           rounds
         }
       })
