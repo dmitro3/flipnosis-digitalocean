@@ -1674,6 +1674,7 @@
       
       resetRound();
       resetTimer();
+      startTimer();
     }
 
     // Coin selector modal
@@ -3059,6 +3060,110 @@
     console.log('💡 Call resetRound() to start a new round');
     console.log('⏱️ Call startTimer() to begin the countdown');
     
+    // Update player cards with real data after loading
+    function updatePlayerCards() {
+      console.log('🔄 Updating player cards with real data...');
+      tubes.forEach((tube, index) => {
+        const player = players[index];
+        console.log(`🔍 Tube ${index + 1}:`, { hasCardElement: !!tube.cardElement, player: player?.name });
+        if (!tube.cardElement || !player) return;
+        
+        // Determine if this is the current player's card
+        const isCurrentPlayer = player.address && player.address.toLowerCase() === walletParam.toLowerCase();
+        const isSpectator = roleParam === 'spectator';
+        const showButtons = isCurrentPlayer && !isSpectator && !player.isEmpty;
+        
+        // Update player name and address
+        const playerNameElement = tube.cardElement.querySelector('.player-name');
+        const playerAddressElement = tube.cardElement.querySelector('.player-address');
+        const playerAvatarElement = tube.cardElement.querySelector('.player-avatar');
+        
+        console.log(`📝 Updating player ${index + 1}:`, { name: player.name, address: player.address, isEmpty: player.isEmpty });
+        
+        if (playerNameElement) playerNameElement.textContent = player.name;
+        if (playerAddressElement) playerAddressElement.textContent = player.address;
+        if (playerAvatarElement) {
+          playerAvatarElement.src = player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png');
+          playerAvatarElement.alt = player.name;
+        }
+        
+        // Update lives display
+        const lifeElements = tube.cardElement.querySelectorAll('.life');
+        lifeElements.forEach((lifeElement, idx) => {
+          if (idx < player.lives) {
+            lifeElement.classList.add('active');
+          } else {
+            lifeElement.classList.remove('active');
+          }
+        });
+        
+        // Update empty slot overlay
+        const existingOverlay = tube.cardElement.querySelector('.empty-slot-overlay');
+        console.log(`🎯 Player ${index + 1} empty slot logic:`, { isEmpty: player.isEmpty, hasExistingOverlay: !!existingOverlay });
+        
+        if (player.isEmpty) {
+          if (!existingOverlay) {
+            console.log(`➕ Adding pink X overlay to empty slot ${index + 1}`);
+            const overlay = document.createElement('div');
+            overlay.className = 'empty-slot-overlay';
+            overlay.style.cssText = `
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: rgba(255, 20, 147, 0.8);
+              border-radius: 16px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 48px;
+              font-weight: bold;
+              color: white;
+              text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+              z-index: 10;
+            `;
+            overlay.textContent = '✕';
+            tube.cardElement.appendChild(overlay);
+          }
+        } else if (existingOverlay) {
+          console.log(`➖ Removing pink X overlay from player slot ${index + 1}`);
+          existingOverlay.remove();
+        }
+        
+        // Update buttons visibility
+        const actionButtons = tube.cardElement.querySelectorAll('.action-btn');
+        const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
+        const choicePlaceholder = tube.cardElement.querySelector('.choice-placeholder');
+        
+        if (showButtons) {
+          actionButtons.forEach(btn => btn.style.display = 'block');
+          if (choiceButtons) choiceButtons.style.display = 'flex';
+          if (choicePlaceholder) choicePlaceholder.style.display = 'none';
+        } else {
+          actionButtons.forEach(btn => btn.style.display = 'none');
+          if (choiceButtons) choiceButtons.style.display = 'none';
+          if (!choicePlaceholder && !player.choice) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'choice-placeholder';
+            placeholder.style.cssText = `
+              height: 40px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #666;
+              font-size: 14px;
+            `;
+            placeholder.textContent = player.isEmpty ? 'Empty Slot' : 'Choose HEADS or TAILS';
+            const choiceContainer = tube.cardElement.querySelector('.choice-buttons, .choice-badge');
+            if (choiceContainer && !choiceContainer.parentElement.querySelector('.choice-placeholder')) {
+              choiceContainer.parentElement.appendChild(placeholder);
+            }
+          }
+        }
+      });
+    }
+
     // Fetch participants and map to tubes left-to-right
     async function loadParticipants() {
       try {
@@ -3083,6 +3188,10 @@
         // Update initial lives tracking
         roundStartLives = players.map(player => player.lives);
         console.log('📊 Participants mapped:', players);
+        
+        // Update player cards with real data
+        updatePlayerCards();
+        
         // Start timer when players are set
         startTimer();
       } catch (err) {
