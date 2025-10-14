@@ -7,7 +7,7 @@ import { useToast } from '../../contexts/ToastContext'
 import contractService from '../../services/ContractService'
 import socketService from '../../services/SocketService'
 import ProfilePicture from '../ProfilePicture'
-import CoinSelector from '../CoinSelector'
+// Coin selection removed for lobby; show avatar and name only
 import FloatingChatWidget from './FloatingChatWidget'
 
 // Utility function to format entry fee
@@ -321,9 +321,7 @@ const LobbyScreen = () => {
   const { showToast } = useToast()
   
   const [isJoining, setIsJoining] = useState(false)
-  const [showCoinSelector, setShowCoinSelector] = useState(false)
-  const [selectedSlotAddress, setSelectedSlotAddress] = useState(null)
-  const [coinSides, setCoinSides] = useState({})
+  // Simplified lobby: no coin selection
   const [showImageModal, setShowImageModal] = useState(false)
 
   if (!gameState) return null
@@ -379,24 +377,9 @@ const LobbyScreen = () => {
     }
   }
 
-  const handleCoinClick = (playerAddress) => {
-    if (playerAddress?.toLowerCase() === address?.toLowerCase()) {
-      setSelectedSlotAddress(playerAddress)
-      setShowCoinSelector(true)
-    } else {
-      const key = playerAddress?.toLowerCase()
-      setCoinSides(prev => ({
-        ...prev,
-        [key]: prev[key] === 'tailsImage' ? 'headsImage' : 'tailsImage'
-      }))
-    }
-  }
+  // Coin click removed
 
-  const handleCoinSelect = (coinData) => {
-    updateCoin(coinData)
-    setShowCoinSelector(false)
-    setSelectedSlotAddress(null)
-  }
+  // Coin selection removed
 
   const formatAddress = (addr) => {
     if (!addr) return ''
@@ -557,8 +540,7 @@ const LobbyScreen = () => {
             const playerAddr = gameState.playerOrder?.[i] || gameState.playerSlots?.[i]
             const player = playerAddr ? gameState.players?.[playerAddr.toLowerCase()] : null
             const isCurrentUser = playerAddr?.toLowerCase() === address?.toLowerCase()
-            const images = playerAddr ? playerCoinImages[playerAddr.toLowerCase()] : null
-            const side = coinSides[playerAddr?.toLowerCase()] || 'headsImage'
+            const images = null
 
             return (
               <PlayerSlot
@@ -581,36 +563,19 @@ const LobbyScreen = () => {
 
                 {player ? (
                   <>
-                    <CoinDisplay clickable onClick={() => handleCoinClick(playerAddr)}>
-                      {images ? (
-                        <img src={images[side]} alt="coin" />
-                      ) : (
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          width: '100%',
-                          height: '100%',
-                          fontSize: '3rem'
-                        }}>🪙</div>
-                      )}
-                    </CoinDisplay>
-                    
-                    <div style={{ color: 'white', fontSize: '0.7rem', textAlign: 'center' }}>
-                      {formatAddress(playerAddr)}
-                    </div>
-                    
-                    {player.isCreator && (
-                      <div style={{ color: '#FFD700', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                        👑 Creator
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: '100px', height: '100px', borderRadius: '12px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)' }}>
+                        <ProfilePicture address={playerAddr} size={100} fallbackEmoji="😊" />
                       </div>
-                    )}
-                    
-                    {isCurrentUser && (
-                      <CoinChangeButton onClick={() => handleCoinClick(playerAddr)}>
-                        Change Coin
-                      </CoinChangeButton>
-                    )}
+                      <div style={{ color: 'white', fontSize: '0.9rem', fontWeight: 'bold', textAlign: 'center' }}>
+                        {player?.username || player?.name || formatAddress(playerAddr)}
+                      </div>
+                      {player.isCreator && (
+                        <div style={{ color: '#FFD700', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                          👑 Creator
+                        </div>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <div style={{ color: '#FF1493', fontSize: '0.9rem', fontWeight: 'bold', textAlign: 'center' }}>
@@ -629,22 +594,7 @@ const LobbyScreen = () => {
         )}
       </GamePanel>
 
-      {/* COIN SELECTOR MODAL */}
-      {showCoinSelector && (
-        <Modal onClick={() => setShowCoinSelector(false)}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <CloseButton onClick={() => setShowCoinSelector(false)}>×</CloseButton>
-            <h2 style={{ color: '#FFD700', textAlign: 'center', marginBottom: '1rem' }}>
-              Choose Your Coin
-            </h2>
-            <CoinSelector
-              selectedCoin={gameState.players?.[selectedSlotAddress?.toLowerCase()]?.coin}
-              onCoinSelect={handleCoinSelect}
-              showCustomOption={true}
-            />
-          </ModalContent>
-        </Modal>
-      )}
+      {/* Coin selector removed in lobby */}
 
       {/* IMAGE MODAL */}
       {showImageModal && (
