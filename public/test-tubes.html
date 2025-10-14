@@ -391,6 +391,33 @@
       if (state.coinStates) {
         updateCoinStatesFromServer(state.coinStates);
       }
+      
+      // Update coin rotations based on player choices (before flipping)
+      updateCoinRotationsFromPlayerChoices();
+    }
+    
+    // Update coin rotations based on player choices (before flipping)
+    function updateCoinRotationsFromPlayerChoices() {
+      tubes.forEach((tube, i) => {
+        const player = players[i];
+        const coin = coins[i];
+        
+        if (player && !player.isEmpty && coin && !tube.isFlipping && !tube.isShattered) {
+          // Only update rotation if player has made a choice and coin is not flipping
+          if (player.choice === 'heads') {
+            // Show heads face (standing on edge, heads facing camera)
+            coin.rotation.x = Math.PI / 2;
+            coin.rotation.y = Math.PI / 2;
+            coin.rotation.z = 0;
+          } else if (player.choice === 'tails') {
+            // Show tails face (standing on edge, tails facing camera)
+            coin.rotation.x = 3 * Math.PI / 2;
+            coin.rotation.y = Math.PI / 2;
+            coin.rotation.z = 0;
+          }
+          // If no choice made, keep default position (lying flat)
+        }
+      });
     }
     
     // Update coin states from server physics
@@ -498,37 +525,30 @@
           // Update choice buttons visibility
           const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
           const choiceBadge = tube.cardElement.querySelector('.choice-badge');
-          const choicePlaceholder = tube.cardElement.querySelector('div[style*="Choose HEADS or TAILS"]');
           
           if (isCurrentPlayer && !player.choice) {
             // Show choice buttons for current player
             if (choiceBadge) choiceBadge.style.display = 'none';
-            if (choicePlaceholder) choicePlaceholder.style.display = 'none';
             if (choiceButtons) choiceButtons.style.display = 'block';
           } else if (player.choice) {
             // Show choice badge
             if (choiceButtons) choiceButtons.style.display = 'none';
-            if (choicePlaceholder) choicePlaceholder.style.display = 'none';
             if (choiceBadge) choiceBadge.style.display = 'block';
           } else {
-            // Show placeholder for other players
+            // Hide everything for other players
             if (choiceButtons) choiceButtons.style.display = 'none';
             if (choiceBadge) choiceBadge.style.display = 'none';
-            if (choicePlaceholder) choicePlaceholder.style.display = 'block';
           }
           
           // Update action buttons visibility
           const actionButtons = tube.cardElement.querySelectorAll('.action-btn');
-          const actionPlaceholder = tube.cardElement.querySelector('div[style*="Other Player"]');
           
           if (isCurrentPlayer) {
             // Show action buttons for current player
             actionButtons.forEach(btn => btn.style.display = 'block');
-            if (actionPlaceholder) actionPlaceholder.style.display = 'none';
           } else {
-            // Show placeholder for other players
+            // Hide action buttons for other players
             actionButtons.forEach(btn => btn.style.display = 'none');
-            if (actionPlaceholder) actionPlaceholder.style.display = 'block';
           }
           
           console.log(`🎯 Updated buttons for slot ${i}: isCurrentPlayer=${isCurrentPlayer}, hasChoice=${!!player.choice}`);
@@ -1316,8 +1336,8 @@
       ];
       
       const coin = new THREE.Mesh(coinGeometry, coinMaterials);
-      coin.rotation.x = Math.PI / 2; // Standing on edge (90 degrees) - facing camera
-      coin.rotation.y = Math.PI / 2; // Rotated 90 degrees left for proper facing
+      coin.rotation.x = 0; // Lying flat (like reference reset function)
+      coin.rotation.y = Math.PI / 2; // Rotated 90 degrees for proper facing
       coin.rotation.z = 0; // No tilt
       coin.position.set(x, 200, 0); // Centered in tube
       coin.visible = true; // Explicitly set visible
@@ -1417,19 +1437,17 @@
       cardElement.innerHTML = `
         ${emptySlotOverlay}
         <div class="card-header">
-          <img src="${player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png')}" class="player-avatar" alt="${player.name}" style="width: 80px; height: 80px;" />
+          <img src="${player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png')}" class="player-avatar" alt="${player.name}" style="width: 80px; height: 100px;" />
           <div class="player-info">
             <div class="player-name">${player.name}</div>
+            <div class="lives-container" style="display: flex; gap: 8px; margin-top: 8px;">
+              ${Array.from({ length: 3 }, (_, idx) => 
+                `<div class="life ${idx < player.lives ? 'active' : ''}" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: ${idx < player.lives ? '#ff4444' : '#666'};">
+                  ❤️
+                </div>`
+              ).join('')}
+            </div>
           </div>
-        </div>
-        <div class="lives-container">
-          ${Array.from({ length: 3 }, (_, idx) => 
-            `<div class="life ${idx < player.lives ? 'active' : ''}">
-              <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: ${idx < player.lives ? '#ff4444' : '#666'};">
-                ❤️
-              </div>
-            </div>`
-          ).join('')}
         </div>
         ${player.choice ? `
           <div class="choice-badge ${player.choice}" style="display: ${player.choice ? 'block' : 'none'};">
@@ -1440,9 +1458,6 @@
           <button class="choice-btn heads">HEADS</button>
           <button class="choice-btn tails">TAILS</button>
         </div>
-        <div style="height: 40px; display: ${!showButtons && !player.choice ? 'flex' : 'none'}; align-items: center; justify-content: center; color: #666; font-size: 14px;">
-          Choose HEADS or TAILS
-        </div>
         <div style="margin: 15px 0;">
           <div style="height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
             <div class="power-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #00ff00, #39ff14); border-radius: 10px; transition: width 0.1s;"></div>
@@ -1451,9 +1466,6 @@
         </div>
         <button class="action-btn change-coin-btn" data-player="${i}" style="display: ${showButtons ? 'block' : 'none'};">CHANGE COIN</button>
         <button class="action-btn" style="display: ${showButtons ? 'block' : 'none'};">CHARGE POWER</button>
-        <div style="height: 60px; display: ${!showButtons ? 'flex' : 'none'}; align-items: center; justify-content: center; color: #666; font-size: 14px;">
-          ${player.isEmpty ? 'Empty Slot' : 'Other Player'}
-        </div>
       `;
 
       cardElement.style.pointerEvents = 'auto';
@@ -3039,8 +3051,8 @@
           tube.loseLight = null;
         }
         
-        // Reset coin position
-        tube.coin.rotation.x = Math.PI / 2; // Standing on edge (facing camera)
+        // Reset coin position (like reference)
+        tube.coin.rotation.x = 0;
         tube.coin.rotation.y = Math.PI / 2;
         tube.coin.rotation.z = 0;
         
@@ -3578,34 +3590,18 @@
         // Update buttons visibility
         const actionButtons = tube.cardElement.querySelectorAll('.action-btn');
         const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
-        const choicePlaceholder = tube.cardElement.querySelector('.choice-placeholder');
         
         if (showButtons) {
           actionButtons.forEach(btn => btn.style.display = 'block');
           if (choiceButtons) choiceButtons.style.display = 'flex';
-          if (choicePlaceholder) choicePlaceholder.style.display = 'none';
         } else {
           actionButtons.forEach(btn => btn.style.display = 'none');
           if (choiceButtons) choiceButtons.style.display = 'none';
-          if (!choicePlaceholder && !player.choice) {
-            const placeholder = document.createElement('div');
-            placeholder.className = 'choice-placeholder';
-            placeholder.style.cssText = `
-              height: 40px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: #666;
-              font-size: 14px;
-            `;
-            placeholder.textContent = player.isEmpty ? 'Empty Slot' : 'Choose HEADS or TAILS';
-            const choiceContainer = tube.cardElement.querySelector('.choice-buttons, .choice-badge');
-            if (choiceContainer && !choiceContainer.parentElement.querySelector('.choice-placeholder')) {
-              choiceContainer.parentElement.appendChild(placeholder);
-            }
-          }
         }
       });
+      
+      // Update coin rotations based on player choices
+      updateCoinRotationsFromPlayerChoices();
     }
 
     // Fetch participants and map to tubes left-to-right
@@ -3737,6 +3733,11 @@
       // Update player card buttons after all initialization is complete
       if (typeof updatePlayerCardButtons === 'function') {
         updatePlayerCardButtons();
+      }
+      
+      // Update coin rotations based on initial player choices
+      if (typeof updateCoinRotationsFromPlayerChoices === 'function') {
+        updateCoinRotationsFromPlayerChoices();
       }
     }, 1000); // 1 second delay
     
@@ -3887,13 +3888,12 @@
           // Slight rotation vibration
           coin.rotation.z = Math.sin(frameCount * vibSpeed * 0.5) * (vibIntensity / 50);
         } else if (!tube.isShattered && !tube.isFilling) {
-          // Reset to center when idle
+          // Reset to center when idle (like reference)
           const tubeX = tube.tube.position.x;
           coin.position.x = tubeX;
           coin.position.y = 200;
           coin.position.z = 0;
-          coin.rotation.x = Math.PI / 2; // Standing on edge (facing camera)
-          coin.rotation.z = 0;
+          coin.rotation.z = 0; // Only reset Z rotation, keep X and Y as set
         }
       });
       
