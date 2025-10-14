@@ -41,58 +41,65 @@
 
     /* Player Card Styling */
     .player-card {
-      width: 320px;
+      width: 200px;
       background: rgba(10, 15, 35, 0.95);
-      border: 3px solid #00ffff;
-      border-radius: 16px;
-      padding: 15px 20px;
+      border: 2px solid #00ffff;
+      border-radius: 12px;
+      padding: 12px;
       font-family: 'Orbitron', sans-serif;
       color: white;
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
       pointer-events: auto;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
     }
 
     .card-header {
-      margin-bottom: 15px;
+      margin-bottom: 10px;
       display: flex;
-      gap: 12px;
+      flex-direction: column;
       align-items: center;
+      gap: 8px;
     }
 
     .player-avatar {
-      width: 50px;
-      height: 50px;
-      border-radius: 8px;
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
       object-fit: cover;
       border: 2px solid #00ffff;
       flex-shrink: 0;
     }
 
     .player-info {
-      flex: 1;
-      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
     }
 
     .player-name {
-      font-size: 22px;
+      font-size: 16px;
       font-weight: bold;
       color: #00ffff;
-      margin-bottom: 5px;
+      margin: 0;
     }
 
     .player-address {
-      font-size: 16px;
-      color: #ffffff;
+      font-size: 12px;
+      color: #cccccc;
       font-family: 'Orbitron', sans-serif;
-      font-weight: bold;
+      font-weight: normal;
     }
 
     .lives-container {
       display: flex;
       justify-content: center;
-      gap: 12px;
-      margin: 15px 0;
+      gap: 6px;
+      margin: 8px 0;
     }
 
     .life {
@@ -1081,13 +1088,13 @@
           <img src="${player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png')}" class="player-avatar" alt="${player.name}" />
           <div class="player-info">
             <div class="player-name">${player.name}</div>
-            <div class="player-address">${player.address}</div>
+            <div class="player-address">${player.address.slice(0,6)}...${player.address.slice(-4)}</div>
           </div>
         </div>
         <div class="lives-container">
           ${Array.from({ length: 3 }, (_, idx) => 
             `<div class="life ${idx < player.lives ? 'active' : ''}">
-              <img src="/images/potion.png" style="width: 32px; height: 32px; object-fit: contain;" />
+              <img src="/images/potion.png" style="width: 20px; height: 20px; object-fit: contain;" />
             </div>`
           ).join('')}
         </div>
@@ -1265,9 +1272,9 @@
       }
 
       const cssObject = new CSS3DObject(cardElement);
-      // Position cards BELOW the tubes
-      cssObject.position.set(x, 200 - (TUBE_HEIGHT / 2) - 140, 0);
-      cssObject.scale.set(0.6, 0.45, 0.6); // Wider, less tall
+      // Position cards BELOW the tubes in a horizontal line
+      cssObject.position.set(x, 200 - (TUBE_HEIGHT / 2) - 120, 0);
+      cssObject.scale.set(0.4, 0.4, 0.4); // Smaller scale for 4-in-a-row layout
       scene.add(cssObject);
 
       // Auto-apply default selections to fix coin picker gradient issue
@@ -3081,7 +3088,7 @@
         console.log(`📝 Updating player ${index + 1}:`, { name: player.name, address: player.address, isEmpty: player.isEmpty });
         
         if (playerNameElement) playerNameElement.textContent = player.name;
-        if (playerAddressElement) playerAddressElement.textContent = player.address;
+        if (playerAddressElement) playerAddressElement.textContent = player.address ? `${player.address.slice(0,6)}...${player.address.slice(-4)}` : '';
         if (playerAvatarElement) {
           playerAvatarElement.src = player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png');
           playerAvatarElement.alt = player.name;
@@ -3172,18 +3179,31 @@
         if (!res.ok) throw new Error('Failed to load participants');
         const data = await res.json();
         const parts = (data?.game?.participants || []).slice().sort((a,b) => (a.slot_number||0)-(b.slot_number||0));
+        console.log('🔍 Raw participants data:', parts);
+        
         players = [1,2,3,4].map((slot, idx) => {
           const p = parts[idx];
-          if (!p) return { id: idx+1, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true };
-          return {
+          if (!p) {
+            console.log(`📭 Slot ${idx+1}: Empty`);
+            return { id: idx+1, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true };
+          }
+          
+          const playerData = {
             id: idx+1,
-            name: p.username || p.name || (p.player_address ? p.player_address.slice(0,6)+'...'+p.player_address.slice(-4) : `Player ${idx+1}`),
+            name: p.username || p.name || `Player ${idx+1}`,
             lives: 3,
             address: p.player_address || '',
             choice: null,
             avatar: p.avatar || '/images/default-avatar.png',
             isEmpty: false
           };
+          
+          console.log(`👤 Slot ${idx+1}:`, {
+            raw: p,
+            processed: playerData
+          });
+          
+          return playerData;
         });
         // Update initial lives tracking
         roundStartLives = players.map(player => player.lives);
