@@ -198,6 +198,10 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
         const id = data?.gameId || gameId
         if (id) {
           console.log('🚀 Physics active phase detected - hard redirecting to test-tubes.html')
+          // Store wallet address in localStorage for the test-tubes page to use
+          if (address) {
+            localStorage.setItem('walletAddress', address)
+          }
           window.location.href = `/test-tubes.html?gameId=${id}`
         }
       }

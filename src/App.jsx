@@ -130,6 +130,11 @@ function App() {
           
           // Navigate to standalone HTML game
           setTimeout(() => {
+            // Store wallet address in localStorage for the test-tubes page to use
+            const currentAddress = window.ethereum?.selectedAddress || localStorage.getItem('walletAddress')
+            if (currentAddress) {
+              localStorage.setItem('walletAddress', currentAddress)
+            }
             window.location.href = `/test-tubes.html?gameId=${gameId}`
           }, 100)
         }

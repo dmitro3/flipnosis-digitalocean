@@ -115,6 +115,11 @@ const BattleRoyaleContent = () => {
   useEffect(() => {
     if (gameState.phase === 'round_active' || gameState.phase === 'playing') {
       console.log('🎮 Game started, redirecting to standalone HTML game')
+      // Store wallet address in localStorage for the test-tubes page to use
+      const currentAddress = window.ethereum?.selectedAddress || localStorage.getItem('walletAddress')
+      if (currentAddress) {
+        localStorage.setItem('walletAddress', currentAddress)
+      }
       window.location.href = `/test-tubes.html?gameId=${gameId}`
     }
   }, [gameState.phase, gameId, navigate])

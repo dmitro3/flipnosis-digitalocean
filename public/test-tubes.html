@@ -253,9 +253,15 @@
     const gameIdParam = urlParams.get('gameId') || '';
     const roleParam = urlParams.get('role') || 'player';
     const userNameParam = urlParams.get('username') || '';
-    const walletParam = urlParams.get('address') || '';
+    let walletParam = urlParams.get('address') || '';
     const avatarParam = urlParams.get('avatar') || '';
     const tokenParam = urlParams.get('token') || '';
+    
+    // Fallback: Try to get wallet from localStorage if not in URL (for React redirects)
+    if (!walletParam) {
+      walletParam = localStorage.getItem('walletAddress') || '';
+      console.log('🔍 No wallet in URL, trying localStorage:', walletParam);
+    }
 
     if (gameIdParam) {
       document.title = `Glass Tube Game • ${gameIdParam}`;
@@ -394,7 +400,7 @@
     
     // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a1a2e); // Dark blue-grey fallback while texture loads
+    scene.background = null; // Transparent to show CSS background image
     
     // ===== ADD BACKGROUND IMAGE AS TEXTURED PLANE (1920x1080) =====
     const bgTextureLoader = new THREE.TextureLoader();
