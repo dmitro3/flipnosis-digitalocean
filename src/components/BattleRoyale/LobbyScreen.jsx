@@ -317,6 +317,19 @@ const EnlargedImage = styled.img`
 
 const LobbyScreen = () => {
   const { gameState, playerCoinImages, address, updateCoin, startGameEarly } = useBattleRoyaleGame()
+  const handleStartEarly = async () => {
+    try {
+      await startGameEarly()
+      // Hard redirect to avoid any transient React render errors
+      if (gameState?.gameId) {
+        setTimeout(() => {
+          window.location.href = `/test-tubes.html?gameId=${gameState.gameId}`
+        }, 50)
+      }
+    } catch (e) {
+      console.error('Start early error:', e)
+    }
+  }
   const { isContractInitialized } = useWallet()
   const { showToast } = useToast()
   
@@ -527,7 +540,7 @@ const LobbyScreen = () => {
           </p>
           {isCreator && gameState.currentPlayers >= 2 && (
             <JoinActionButton
-              onClick={startGameEarly}
+              onClick={handleStartEarly}
               style={{ marginTop: '1rem', background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
             >
               🚀 Start Game Early ({gameState.currentPlayers}/4)
