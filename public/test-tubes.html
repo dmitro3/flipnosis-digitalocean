@@ -419,7 +419,7 @@
     // ===== ADD BACKGROUND IMAGE AS TEXTURED PLANE (1920x1080) =====
     const bgTextureLoader = new THREE.TextureLoader();
     const bgCandidates = [
-      '/Images/Background/game room2.png'
+      '/images/background/game room2.png'
     ];
     function loadBackground(paths, onSuccess, onFail) {
       if (!paths.length) { onFail && onFail(new Error('No background paths worked')); return; }
@@ -1069,16 +1069,12 @@
       const cardElement = document.createElement('div');
       cardElement.className = 'player-card';
       
-      // Determine if this is the current player's card
-      const isCurrentPlayer = player.address && player.address.toLowerCase() === walletParam.toLowerCase();
-      const isSpectator = roleParam === 'spectator';
-      const showButtons = isCurrentPlayer && !isSpectator && !player.isEmpty;
+      // TEMPORARILY REMOVED: Button blocking logic for debugging
+      // Show buttons for ALL players to debug visibility issues
+      const showButtons = !player.isEmpty;
       
-      console.log(`🎯 Initial Player ${i + 1} button logic:`, {
+      console.log(`🎯 Initial Player ${i + 1} button logic (DEBUGGING MODE):`, {
         playerAddress: player.address,
-        walletParam: walletParam,
-        isCurrentPlayer: isCurrentPlayer,
-        isSpectator: isSpectator,
         isEmpty: player.isEmpty,
         showButtons: showButtons
       });
@@ -3102,16 +3098,12 @@
         console.log(`🔍 Tube ${index + 1}:`, { hasCardElement: !!tube.cardElement, player: player?.name });
         if (!tube.cardElement || !player) return;
         
-        // Determine if this is the current player's card
-        const isCurrentPlayer = player.address && player.address.toLowerCase() === walletParam.toLowerCase();
-        const isSpectator = roleParam === 'spectator';
-        const showButtons = isCurrentPlayer && !isSpectator && !player.isEmpty;
+        // TEMPORARILY REMOVED: Button blocking logic for debugging
+        // Show buttons for ALL players to debug visibility issues
+        const showButtons = !player.isEmpty;
         
-        console.log(`🎯 Player ${index + 1} button logic:`, {
+        console.log(`🎯 Player ${index + 1} button logic (DEBUGGING MODE):`, {
           playerAddress: player.address,
-          walletParam: walletParam,
-          isCurrentPlayer: isCurrentPlayer,
-          isSpectator: isSpectator,
           isEmpty: player.isEmpty,
           showButtons: showButtons
         });
