@@ -19,7 +19,7 @@
     
     body {
       font-family: 'Orbitron', sans-serif;
-      background: url('/Images/Background/game room2.png') no-repeat center center fixed;
+      background: url('../Images/Background/game room2.png') no-repeat center center fixed;
       background-size: cover;
       overflow: hidden;
       margin: 0;
@@ -32,7 +32,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      pointer-events: auto; /* Enable interactions for CSS3D/UI elements */
+      pointer-events: none; /* Allow clicks to pass through to video if needed */
     }
     
     #container canvas {
@@ -50,7 +50,6 @@
       color: white;
       box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
       pointer-events: auto;
-      position: relative;
     }
 
     .card-header {
@@ -224,7 +223,7 @@
 <body>
   <div id="container"></div>
   <div id="info">
-    🎮 Glass Tube Game Test<br>
+    ðŸŽ® Glass Tube Game Test<br>
     Loading Three.js...
   </div>
 
@@ -247,40 +246,7 @@
     import * as CANNON from 'cannon-es';
 
     const info = document.getElementById('info');
-
-    // ===== URL PARAMS =====
-    const urlParams = new URLSearchParams(window.location.search);
-    const gameIdParam = urlParams.get('gameId') || '';
-    const roleParam = urlParams.get('role') || 'player';
-    const userNameParam = urlParams.get('username') || '';
-    let walletParam = urlParams.get('address') || '';
-    const avatarParam = urlParams.get('avatar') || '';
-    const tokenParam = urlParams.get('token') || '';
-    
-    // Fallback: Try to get wallet from localStorage if not in URL (for React redirects)
-    if (!walletParam) {
-      walletParam = localStorage.getItem('walletAddress') || '';
-      console.log('🔍 No wallet in URL, trying localStorage:', walletParam);
-      
-      // Additional fallback: try to get from window.ethereum
-      if (!walletParam && window.ethereum?.selectedAddress) {
-        walletParam = window.ethereum.selectedAddress;
-        console.log('🔍 Got wallet from window.ethereum:', walletParam);
-      }
-      
-      // Debug: show all available wallet sources
-      console.log('🔍 Wallet detection debug:', {
-        urlParam: urlParams.get('address'),
-        localStorage: localStorage.getItem('walletAddress'),
-        ethereum: window.ethereum?.selectedAddress,
-        final: walletParam
-      });
-    }
-
-    if (gameIdParam) {
-      document.title = `Glass Tube Game • ${gameIdParam}`;
-    }
-    info.textContent = '🎮 Initializing 4-Player Glass Tube Game...';
+    info.textContent = 'ðŸŽ® Initializing 4-Player Glass Tube Game...';
 
     // ===== AUDIO SYSTEM =====
     let isMuted = false;
@@ -310,7 +276,7 @@
     // Function to toggle mute
     function toggleMute() {
       isMuted = !isMuted;
-      console.log(`🔊 Sound ${isMuted ? 'MUTED' : 'UNMUTED'}`);
+      console.log(`ðŸ”Š Sound ${isMuted ? 'MUTED' : 'UNMUTED'}`);
       
       // Mute/unmute all audio elements
       glassBreakSound.muted = isMuted;
@@ -328,11 +294,11 @@
       glass: 0x88ccff
     };
 
-    let players = [
-      { id: 1, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true },
-      { id: 2, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true },
-      { id: 3, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true },
-      { id: 4, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true }
+    const players = [
+      { id: 1, name: 'Alice', lives: 3, address: '0xabc...123', choice: null },
+      { id: 2, name: 'Bob', lives: 3, address: '0xdef...456', choice: null },
+      { id: 3, name: 'Charlie', lives: 3, address: '0xghi...789', choice: null },
+      { id: 4, name: 'Diana', lives: 3, address: '0xjkl...012', choice: null }
     ];
 
     // Coin options - MUST be defined before tubes are created
@@ -342,7 +308,7 @@
       { id: 'trump', name: 'Trump', headsImage: '/coins/trumpheads.webp', tailsImage: '/coins/trumptails.webp' },
       { id: 'mario', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png' },
       { id: 'jestress', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png' },
-      { id: 'dragon', name: '龙', headsImage: '/coins/dragonh.png', tailsImage: '/coins/dragont.png' },
+      { id: 'dragon', name: 'é¾™', headsImage: '/coins/dragonh.png', tailsImage: '/coins/dragont.png' },
       { id: 'stinger', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png' },
       { id: 'manga', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png' },
       { id: 'pharaoh', name: 'Pharaoh', headsImage: '/coins/pharaohh.png', tailsImage: '/coins/pharaoht.png' },
@@ -414,11 +380,44 @@
     
     // Scene
     const scene = new THREE.Scene();
-    scene.background = null; // Transparent to show CSS background image
+    scene.background = new THREE.Color(0x1a1a2e); // Dark blue-grey fallback while texture loads
     
-    // ===== BACKGROUND HANDLED BY CSS =====
-    // Let the CSS background image show through by keeping scene transparent
-    console.log('🖼️ Using CSS background image - Three.js scene is transparent');
+    // ===== ADD BACKGROUND IMAGE AS TEXTURED PLANE (1920x1080) =====
+    const bgTextureLoader = new THREE.TextureLoader();
+    bgTextureLoader.load('../Images/Background/game room2.png', (bgTexture) => {
+      // Keep texture in sRGB color space - don't convert
+      bgTexture.colorSpace = THREE.SRGBColorSpace;
+      bgTexture.minFilter = THREE.LinearFilter;
+      bgTexture.magFilter = THREE.LinearFilter;
+      
+      // Calculate correct plane size based on camera FOV and distance
+      // Camera: FOV=30Â°, position z=1400, background z=-500
+      const distanceFromCamera = 1400 - (-500); // 1900 units
+      const vFOV = camera.fov * Math.PI / 180; // Convert to radians
+      const planeHeight = 2 * Math.tan(vFOV / 2) * distanceFromCamera;
+      const planeWidth = planeHeight * camera.aspect; // Match screen aspect ratio
+      
+      // Create plane with calculated dimensions
+      const bgGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+      const bgMaterial = new THREE.MeshBasicMaterial({
+        map: bgTexture,
+        side: THREE.FrontSide,
+        depthWrite: false, // Don't write to depth buffer
+        depthTest: false, // Always render behind
+        toneMapped: false, // CRITICAL: Don't apply tone mapping to background!
+        fog: false, // Not affected by fog
+        color: 0xcccccc // Slightly darkened (80% brightness) - adjust this if needed
+      });
+      const bgPlane = new THREE.Mesh(bgGeometry, bgMaterial);
+      bgPlane.position.set(0, 150, -500); // Behind the tubes
+      bgPlane.renderOrder = -1; // Render first (behind everything)
+      bgPlane.layers.set(0); // Layer 0 - main scene
+      scene.add(bgPlane);
+      scene.background = null; // Remove fallback color now that we have the texture
+      console.log(`ðŸ–¼ï¸ Background image loaded! Size: ${planeWidth.toFixed(0)}x${planeHeight.toFixed(0)} at distance ${distanceFromCamera}`);
+    }, undefined, (error) => {
+      console.error('âŒ Failed to load background image:', error);
+    });
 
     // Camera - FLATTER VIEW
     const width = window.innerWidth;
@@ -428,7 +427,7 @@
     camera.lookAt(0, 150, 0); // Look at raised tubes
     camera.layers.enable(0); // Default layer - tubes, coins, etc.
     camera.layers.enable(1); // Bloom layer - pearls and plasma
-    console.log('📷 Camera positioned for shorter tubes with dual-layer support');
+    console.log('ðŸ“· Camera positioned for shorter tubes with dual-layer support');
 
     // WebGL Renderer
     const webglRenderer = new THREE.WebGLRenderer({ 
@@ -442,7 +441,7 @@
     webglRenderer.toneMapping = THREE.ACESFilmicToneMapping; // Filmic tone mapping for vibrant colors
     webglRenderer.toneMappingExposure = 1.0; // Neutral exposure - don't brighten anything
     webglRenderer.outputColorSpace = THREE.SRGBColorSpace; // Proper color space
-    console.log('🎨 WebGL Renderer initialized with transparency');
+    console.log('ðŸŽ¨ WebGL Renderer initialized with transparency');
     document.getElementById('container').appendChild(webglRenderer.domElement);
 
     // ===== SELECTIVE BLOOM SETUP - Layer 1 (pearls) only! =====
@@ -478,7 +477,7 @@
     
     bloomComposer.renderToScreen = false; // Keep result in render target!
     
-    console.log('✨ Selective bloom composer created for layer 1 (pearls)!');
+    console.log('âœ¨ Selective bloom composer created for layer 1 (pearls)!');
     
     // ===== ADDITIVE BLEND SHADER - Composites bloomed pearls on top =====
     const AdditiveBlendShader = {
@@ -506,52 +505,15 @@
       `
     };
     
-    console.log('🎨 Additive blend shader created for compositing!');
+    console.log('ðŸŽ¨ Additive blend shader created for compositing!');
 
     // CSS3D Renderer
     const cssRenderer = new CSS3DRenderer();
     cssRenderer.setSize(width, height);
     cssRenderer.domElement.style.position = 'absolute';
     cssRenderer.domElement.style.top = '0';
-    cssRenderer.domElement.style.pointerEvents = 'auto';
+    cssRenderer.domElement.style.pointerEvents = 'none';
     document.getElementById('container').appendChild(cssRenderer.domElement);
-
-    // ===== LEAVE GAME BUTTON =====
-    const leaveBtn = document.createElement('button');
-    leaveBtn.textContent = 'Leave Game';
-    leaveBtn.style.cssText = `
-      position: fixed;
-      top: 16px;
-      left: 16px;
-      z-index: 10001;
-      padding: 10px 14px;
-      font-family: 'Orbitron', sans-serif;
-      font-weight: 700;
-      font-size: 12px;
-      letter-spacing: 1px;
-      color: #fff;
-      background: linear-gradient(135deg, #ff4444, #cc0000);
-      border: 2px solid #ff4444;
-      border-radius: 10px;
-      cursor: pointer;
-      pointer-events: auto;
-      box-shadow: 0 0 15px rgba(255, 68, 68, 0.5);
-    `;
-    leaveBtn.addEventListener('mouseenter', () => {
-      leaveBtn.style.transform = 'translateY(-2px)';
-      leaveBtn.style.boxShadow = '0 8px 18px rgba(255, 68, 68, 0.6)';
-    });
-    leaveBtn.addEventListener('mouseleave', () => {
-      leaveBtn.style.transform = 'translateY(0)';
-      leaveBtn.style.boxShadow = '0 0 15px rgba(255, 68, 68, 0.5)';
-    });
-    leaveBtn.onclick = () => {
-      const confirmLeave = confirm('Leave game? You may forfeit if the match is active.');
-      if (!confirmLeave) return;
-      const lobbyUrl = gameIdParam ? `/battle-royale/${gameIdParam}` : '/';
-      window.location.href = lobbyUrl;
-    };
-    document.body.appendChild(leaveBtn);
 
     // Lighting - Very low ambient to protect background from any indirect brightening
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); // Minimal ambient
@@ -599,7 +561,7 @@
     brassDisplacementMap.wrapT = THREE.RepeatWrapping;
     brassDisplacementMap.repeat.set(2, 2);
 
-    console.log('🎨 Brass metallic textures loaded');
+    console.log('ðŸŽ¨ Brass metallic textures loaded');
 
     // ===== CREATE SHARED ALPHA MAP FOR GLASS CUTOUT (ONE FOR ALL TUBES) =====
     const tubeAlphaCanvas = document.createElement('canvas');
@@ -647,7 +609,7 @@
     physicsWorld.defaultContactMaterial.friction = 0.1;
     physicsWorld.defaultContactMaterial.restitution = 0.3;
 
-    console.log('⚙️ Physics world created with gravity');
+    console.log('âš™ï¸ Physics world created with gravity');
 
     const tubes = [];
     const coins = [];
@@ -672,7 +634,7 @@
       });
       const tube = new THREE.Mesh(tubeGeometry, glassMaterial);
       tube.position.set(x, 200, 0); // Move tubes higher up
-      tube.rotation.y = Math.PI; // Rotate 180° so cutout faces camera
+      tube.rotation.y = Math.PI; // Rotate 180Â° so cutout faces camera
       scene.add(tube);
 
       // ===== CHROME BACKING PANEL - Creates contrast with background image =====
@@ -782,7 +744,7 @@
       }
       
       physicsWorld.addBody(glassBody);
-      console.log(`⚙️ Sealed physics container created for tube ${i + 1}`);
+      console.log(`âš™ï¸ Sealed physics container created for tube ${i + 1}`);
 
       // Create PEARL particles (glowing pink balls inside the tube)
       const liquidParticles = [];
@@ -1027,37 +989,9 @@
       // Player card (CSS3D)
       const cardElement = document.createElement('div');
       cardElement.className = 'player-card';
-      
-      // Determine if this is the current player's card
-      const isCurrentPlayer = player.address && player.address.toLowerCase() === walletParam.toLowerCase();
-      const isSpectator = roleParam === 'spectator';
-      const showButtons = isCurrentPlayer && !isSpectator && !player.isEmpty;
-      
-      // Create empty slot overlay for empty players
-      const emptySlotOverlay = player.isEmpty ? `
-        <div class="empty-slot-overlay" style="
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(255, 20, 147, 0.8);
-          border-radius: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 48px;
-          font-weight: bold;
-          color: white;
-          text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-          z-index: 10;
-        ">✕</div>
-      ` : '';
-      
       cardElement.innerHTML = `
-        ${emptySlotOverlay}
         <div class="card-header">
-          <img src="${player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png')}" class="player-avatar" alt="${player.name}" />
+          <img src="/Images/potionpng.png" class="player-avatar" alt="${player.name}" />
           <div class="player-info">
             <div class="player-name">${player.name}</div>
             <div class="player-address">${player.address}</div>
@@ -1066,9 +1000,7 @@
         <div class="lives-container">
           ${Array.from({ length: 3 }, (_, idx) => 
             `<div class="life ${idx < player.lives ? 'active' : ''}">
-              <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: ${idx < player.lives ? '#ff4444' : '#666'};">
-                ❤️
-              </div>
+              <img src="/Images/potionpng.png" style="width: 32px; height: 32px; object-fit: contain;" />
             </div>`
           ).join('')}
         </div>
@@ -1076,95 +1008,109 @@
           <div class="choice-badge ${player.choice}">
             ${player.choice.toUpperCase()}
           </div>
-        ` : (showButtons ? `
+        ` : `
           <div class="choice-buttons">
             <button class="choice-btn heads">HEADS</button>
             <button class="choice-btn tails">TAILS</button>
           </div>
-        ` : `
-          <div style="height: 40px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 14px;">
-            Choose HEADS or TAILS
-          </div>
-        `)}
+        `}
         <div style="margin: 15px 0;">
           <div style="height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
             <div class="power-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #00ff00, #39ff14); border-radius: 10px; transition: width 0.1s;"></div>
           </div>
           <div class="power-text" style="color: #00ff00; font-size: 14px; text-align: center;">POWER: 0%</div>
         </div>
-        ${showButtons ? `
-          <button class="action-btn change-coin-btn" data-player="${i}">CHANGE COIN</button>
-          <button class="action-btn">CHARGE POWER</button>
-        ` : `
-          <div style="height: 60px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 14px;">
-            ${player.isEmpty ? 'Empty Slot' : 'Other Player'}
-          </div>
-        `}
+        <button class="action-btn change-coin-btn" data-player="${i}">CHANGE COIN</button>
+        <button class="action-btn">CHARGE POWER</button>
       `;
 
       cardElement.style.pointerEvents = 'auto';
       
-      // Add change coin button handler (only for current player)
+      // Add change coin button handler
       const changeCoinButton = cardElement.querySelector('.change-coin-btn');
-      if (changeCoinButton && showButtons) {
-        changeCoinButton.style.pointerEvents = 'auto';
-        changeCoinButton.addEventListener('click', (e) => {
-          e.stopPropagation();
-          console.log(`🎨 Change coin for player ${i + 1}`);
-          showCoinSelector(i);
-        });
-      }
+      changeCoinButton.style.pointerEvents = 'auto';
+      changeCoinButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        console.log(`ðŸŽ¨ Change coin for player ${i + 1}`);
+        showCoinSelector(i);
+      });
 
-      // Add power charge button handler (HOLD TO CHARGE) - only for current player
+      // Add power charge button handler (HOLD TO CHARGE)
       const flipButtons = cardElement.querySelectorAll('.action-btn');
       const powerButton = flipButtons[1]; // The second action button
       const powerBar = cardElement.querySelector('.power-bar');
+      const powerText = cardElement.querySelector('.power-text');
+      powerButton.style.pointerEvents = 'auto';
       
-      if (powerButton && showButtons) {
-        const powerText = cardElement.querySelector('.power-text');
-        powerButton.style.pointerEvents = 'auto';
+      let isCharging = false;
+      
+      powerButton.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
         
-        let isCharging = false;
+        // Prevent charging if player has no lives
+        if (players[i].lives <= 0) {
+          console.log(`âŒ Player ${i + 1} has no lives - cannot flip coin`);
+          return;
+        }
         
-        powerButton.addEventListener('mousedown', (e) => {
-          e.stopPropagation();
-          
-          // Prevent charging if player has no lives
-          if (players[i].lives <= 0) {
-            console.log(`❌ Player ${i + 1} has no lives - cannot flip coin`);
-            return;
-          }
-          
-          // Prevent charging if player hasn't chosen heads or tails
-          if (!players[i].choice) {
-            showChoiceRequiredMessage(i);
-            console.log(`❌ Player ${i + 1} must choose heads or tails first!`);
-            return;
-          }
-          
-          // Prevent charging if already used this round
-          if (tubes[i].hasUsedPower) return;
-          
-          console.log(`⚡ Charging power for tube ${i + 1}`);
-          isCharging = true;
-          tubes[i].isFilling = true;
-          tubes[i].power = 0;
-          
-          // Play power charging sound
-          playSound(powerChargeSound);
-        });
+        // Prevent charging if player hasn't chosen heads or tails
+        if (!players[i].choice) {
+          showChoiceRequiredMessage(i);
+          console.log(`âŒ Player ${i + 1} must choose heads or tails first!`);
+          return;
+        }
         
-        powerButton.addEventListener('mouseup', (e) => {
-          e.stopPropagation();
+        // Prevent charging if already used this round
+        if (tubes[i].hasUsedPower) return;
+        
+        console.log(`âš¡ Charging power for tube ${i + 1}`);
+        isCharging = true;
+        tubes[i].isFilling = true;
+        tubes[i].power = 0;
+        
+        // Play power charging sound
+        playSound(powerChargeSound);
+      });
+      
+      powerButton.addEventListener('mouseup', (e) => {
+        e.stopPropagation();
+        const finalPower = tubes[i].power;
+        console.log(`âš¡ Power released at ${finalPower.toFixed(0)}%`);
+        isCharging = false;
+        tubes[i].isFilling = false;
+        
+        // Stop power charging sound
+        stopSound(powerChargeSound);
+        
+        // Shatter glass at ANY power level (spray scales with power)
+        // Minimum 5% power to prevent instant flips
+        if (finalPower >= 5) {
+          shatterGlass(i, finalPower);
+          // Get player choice from the card
+          const playerChoice = players[i].choice;
+          // Start coin flip animation based on power
+          flipCoinWithPower(i, finalPower, playerChoice);
+          
+          // Disable button after use
+          powerButton.disabled = true;
+          powerButton.style.opacity = '0.5';
+          powerButton.style.cursor = 'not-allowed';
+          powerButton.style.background = '#cccccc';
+          powerButton.style.color = '#666666';
+          powerButton.style.borderColor = '#999999';
+          tubes[i].hasUsedPower = true;
+        }
+      });
+      
+      powerButton.addEventListener('mouseleave', (e) => {
+        if (isCharging) {
           const finalPower = tubes[i].power;
-          console.log(`⚡ Power released at ${finalPower.toFixed(0)}%`);
-          isCharging = false;
-          tubes[i].isFilling = false;
+          console.log(`âš¡ Power released at ${finalPower.toFixed(0)}%`);
           
           // Stop power charging sound
           stopSound(powerChargeSound);
           
-          // Shatter glass at ANY power level (spray scales with power)
+          // Shatter glass at ANY power level
           // Minimum 5% power to prevent instant flips
           if (finalPower >= 5) {
             shatterGlass(i, finalPower);
@@ -1182,68 +1128,39 @@
             powerButton.style.borderColor = '#999999';
             tubes[i].hasUsedPower = true;
           }
-        });
-        
-        powerButton.addEventListener('mouseleave', (e) => {
-          if (isCharging) {
-            const finalPower = tubes[i].power;
-            console.log(`⚡ Power released at ${finalPower.toFixed(0)}%`);
-            
-            // Stop power charging sound
-            stopSound(powerChargeSound);
-            
-            // Shatter glass at ANY power level
-            // Minimum 5% power to prevent instant flips
-            if (finalPower >= 5) {
-              shatterGlass(i, finalPower);
-              // Get player choice from the card
-              const playerChoice = players[i].choice;
-              // Start coin flip animation based on power
-              flipCoinWithPower(i, finalPower, playerChoice);
-              
-              // Disable button after use
-              powerButton.disabled = true;
-              powerButton.style.opacity = '0.5';
-              powerButton.style.cursor = 'not-allowed';
-              powerButton.style.background = '#cccccc';
-              powerButton.style.color = '#666666';
-              powerButton.style.borderColor = '#999999';
-              tubes[i].hasUsedPower = true;
-            }
+        }
+        isCharging = false;
+        tubes[i].isFilling = false;
+      });
+      
+      // Add choice button handlers
+      const choiceButtons = cardElement.querySelectorAll('.choice-btn');
+      choiceButtons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          
+          // Don't allow choices if player has no lives
+          if (players[i].lives <= 0) {
+            console.log(`âŒ Player ${i + 1} has no lives - cannot make choice`);
+            return;
           }
-          isCharging = false;
-          tubes[i].isFilling = false;
+          
+          const choice = btn.textContent.toLowerCase();
+          players[i].choice = choice;
+          console.log(`Player ${i + 1} selected: ${choice}`);
+          
+          // Replace buttons with choice badge
+          const choiceButtonContainer = cardElement.querySelector('.choice-buttons');
+          if (choiceButtonContainer) {
+            choiceButtonContainer.outerHTML = `
+              <div class="choice-badge ${choice}">
+                ${choice.toUpperCase()}
+              </div>
+            `;
+          }
         });
-        
-        // Add choice button handlers (only for current player)
-        const choiceButtons = cardElement.querySelectorAll('.choice-btn');
-        choiceButtons.forEach(btn => {
-          btn.style.pointerEvents = 'auto';
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            // Don't allow choices if player has no lives
-            if (players[i].lives <= 0) {
-              console.log(`❌ Player ${i + 1} has no lives - cannot make choice`);
-              return;
-            }
-            
-            const choice = btn.textContent.toLowerCase();
-            players[i].choice = choice;
-            console.log(`Player ${i + 1} selected: ${choice}`);
-            
-            // Replace buttons with choice badge
-            const choiceButtonContainer = cardElement.querySelector('.choice-buttons');
-            if (choiceButtonContainer) {
-              choiceButtonContainer.outerHTML = `
-                <div class="choice-badge ${choice}">
-                  ${choice.toUpperCase()}
-                </div>
-              `;
-            }
-          });
-        });
-      }
+      });
 
       const cssObject = new CSS3DObject(cardElement);
       // Position cards BELOW the tubes
@@ -1275,7 +1192,7 @@
           coin.material[2].needsUpdate = true;
           coin.visible = true;
           
-          console.log(`✅ Applied default ${defaultCoin.name} textures to ${player.name}'s coin`);
+          console.log(`âœ… Applied default ${defaultCoin.name} textures to ${player.name}'s coin`);
         });
       });
       
@@ -1286,7 +1203,7 @@
       coin.material[0].emissiveIntensity = 0.3;
       coin.material[0].needsUpdate = true;
       
-      console.log(`✅ Applied default ${defaultCoin.name} with ${defaultMaterial.name} material to ${player.name}'s coin`);
+      console.log(`âœ… Applied default ${defaultCoin.name} with ${defaultMaterial.name} material to ${player.name}'s coin`);
 
       tubes.push({ 
         tube, backing, topRim, bottomRim, liquid, liquidLight, spotlight, platform, coin,
@@ -1315,7 +1232,7 @@
     }
 
     // ===== APPLY DEFAULT COIN SELECTIONS ON GAME START =====
-    console.log('🎮 Game started - applying default coin selections to all players...');
+    console.log('ðŸŽ® Game started - applying default coin selections to all players...');
     
     tubes.forEach((tube, tubeIndex) => {
       const player = players[tubeIndex];
@@ -1349,7 +1266,7 @@
           tube.coin.material[2].uniforms.map.value = tailsTex;
           tube.coin.material[2].needsUpdate = true;
           
-          console.log(`✅ Applied default ${defaultCoin.name} with ${defaultMaterial.name} material to ${player.name}'s coin`);
+          console.log(`âœ… Applied default ${defaultCoin.name} with ${defaultMaterial.name} material to ${player.name}'s coin`);
         });
       });
     });
@@ -1424,7 +1341,7 @@
           text-transform: uppercase;
           letter-spacing: 1px;
           box-shadow: 0 0 15px rgba(157, 0, 255, 0.4);
-        ">🔊 MUTE</button>
+        ">ðŸ”Š MUTE</button>
         
         <!-- Chat Button -->
         <button id="chat-btn" style="
@@ -1441,7 +1358,7 @@
           text-transform: uppercase;
           letter-spacing: 1px;
           box-shadow: 0 0 15px rgba(157, 0, 255, 0.4);
-        ">💬 CHAT</button>
+        ">ðŸ’¬ CHAT</button>
       </div>
     `;
     
@@ -1476,100 +1393,26 @@
       
       // Update button text and style
       if (muted) {
-        muteBtn.textContent = '🔇 UNMUTE';
+        muteBtn.textContent = 'ðŸ”‡ UNMUTE';
         muteBtn.style.background = 'linear-gradient(135deg, #666666, #888888)';
         muteBtn.style.borderColor = '#666666';
       } else {
-        muteBtn.textContent = '🔊 MUTE';
+        muteBtn.textContent = 'ðŸ”Š MUTE';
         muteBtn.style.background = 'linear-gradient(135deg, #9d00ff, #c44aff)';
         muteBtn.style.borderColor = '#9d00ff';
       }
     });
 
-    chatBtn.addEventListener('click', async (e) => {
+    chatBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!gameIdParam) {
-        alert('Chat unavailable: missing gameId');
-        return;
-      }
-      // Build overlay
-      const overlay = document.createElement('div');
-      overlay.style.cssText = `
-        position: fixed;
-        right: 20px;
-        bottom: 20px;
-        width: 320px;
-        height: 420px;
-        background: rgba(10, 15, 35, 0.98);
-        border: 2px solid #9d00ff;
-        border-radius: 12px;
-        z-index: 10002;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      `;
-      const header = document.createElement('div');
-      header.style.cssText = `
-        padding: 10px 12px; color: #fff; font-weight: bold;
-        background: linear-gradient(135deg, #9d00ff, #c44aff);
-        display: flex; align-items: center; justify-content: space-between;
-      `;
-      header.innerHTML = `<span>Lobby Chat</span><button style="all: unset; cursor: pointer; font-weight: bold;">✖</button>`;
-      const closeBtn = header.querySelector('button');
-      closeBtn.onclick = () => overlay.remove();
-      const list = document.createElement('div');
-      list.style.cssText = `flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px;`;
-      const inputRow = document.createElement('div');
-      inputRow.style.cssText = `display: flex; gap: 6px; padding: 8px; background: rgba(255,255,255,0.05);`;
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'Type message (read-only for now)';
-      input.disabled = true;
-      input.style.cssText = `flex:1; background: rgba(0,0,0,0.4); border: 1px solid #444; color: #fff; padding: 8px; border-radius: 8px;`;
-      const sendBtn = document.createElement('button');
-      sendBtn.textContent = 'Send';
-      sendBtn.disabled = true;
-      sendBtn.style.cssText = `padding: 8px 10px; color: #000; background: #ccc; border-radius: 8px; border: none; cursor: not-allowed;`;
-      inputRow.appendChild(input);
-      inputRow.appendChild(sendBtn);
-      overlay.appendChild(header);
-      overlay.appendChild(list);
-      overlay.appendChild(inputRow);
-      document.body.appendChild(overlay);
-
-      try {
-        const res = await fetch(`/api/chat/${encodeURIComponent(gameIdParam)}?limit=50`);
-        if (res.ok) {
-          const data = await res.json();
-          const messages = data.messages || [];
-          messages.forEach(m => {
-            const row = document.createElement('div');
-            row.style.cssText = `background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px; color:#fff;`;
-            const name = m.username || (m.address ? m.address.slice(0,6)+'...'+m.address.slice(-4) : 'User');
-            const content = m.message || '';
-            row.innerHTML = `<div style="font-weight:bold; color:#9d00ff;">${name}</div><div style="font-size: 0.9rem;">${content}</div>`;
-            list.appendChild(row);
-          });
-          list.scrollTop = list.scrollHeight;
-        } else {
-          const row = document.createElement('div');
-          row.style.cssText = `padding:8px; color:#fff;`;
-          row.textContent = 'Failed to load chat history';
-          list.appendChild(row);
-        }
-      } catch (err) {
-        const row = document.createElement('div');
-        row.style.cssText = `padding:8px; color:#fff;`;
-        row.textContent = 'Error loading chat history';
-        list.appendChild(row);
-      }
+      console.log('ðŸ’¬ Chat button clicked - add your logic here');
     });
 
     // ===== TIMER FUNCTIONS =====
     function startTimer() {
       if (timerInterval) return; // Already running
       
-      console.log('⏱️ Timer started!');
+      console.log('â±ï¸ Timer started!');
       
       timerInterval = setInterval(() => {
         timeRemaining--;
@@ -1593,7 +1436,7 @@
       stopTimer();
       timeRemaining = 30;
       updateTimerDisplay();
-      console.log('⏱️ Timer reset');
+      console.log('â±ï¸ Timer reset');
     }
 
     function updateTimerDisplay() {
@@ -1610,7 +1453,7 @@
     }
 
     function autoFlipCoins() {
-      console.log('⏱️ TIME\'S UP! Auto-flipping all coins...');
+      console.log('â±ï¸ TIME\'S UP! Auto-flipping all coins...');
       
       // Auto flip all tubes that haven't flipped yet (only for players with lives)
       tubes.forEach((tube, i) => {
@@ -1640,11 +1483,11 @@
         roundNumber.textContent = currentRound;
       }
       
-      console.log(`📊 Starting Round ${currentRound}`);
+      console.log(`ðŸ“Š Starting Round ${currentRound}`);
       
       // Track starting lives for this round
       roundStartLives = players.map(player => player.lives);
-      console.log(`📊 Round ${currentRound} starting lives:`, roundStartLives);
+      console.log(`ðŸ“Š Round ${currentRound} starting lives:`, roundStartLives);
       
       // Reset round state
       allPlayersFlipped = false;
@@ -1655,7 +1498,6 @@
       
       resetRound();
       resetTimer();
-      startTimer();
     }
 
     // Coin selector modal
@@ -1769,10 +1611,10 @@
       if (!selectedMaterial || !selectedMaterial.id || selectedMaterial.id !== 'graphite') {
         selectedMaterial = coinMaterials[0]; // Force to Graphite
         tubes[tubeIndex].selectedMaterial = selectedMaterial; // Update the stored material
-        console.log(`🔧 Forced material reset to: ${selectedMaterial.name}`);
+        console.log(`ðŸ”§ Forced material reset to: ${selectedMaterial.name}`);
       }
       
-      console.log(`🎨 Auto-selecting: Coin="${selectedCoin.name}", Material="${selectedMaterial.name}" (ID: ${selectedMaterial.id})`);
+      console.log(`ðŸŽ¨ Auto-selecting: Coin="${selectedCoin.name}", Material="${selectedMaterial.name}" (ID: ${selectedMaterial.id})`);
       
       // Auto-select the current coin and material in the modal - VISUALLY HIGHLIGHTED
       // Use setTimeout to ensure DOM elements are ready
@@ -1782,9 +1624,9 @@
           currentCoinOption.style.background = 'rgba(255, 215, 0, 0.3)';
           currentCoinOption.style.borderColor = '#FFD700';
           currentCoinOption.style.transform = 'scale(1.05)'; // Make it slightly bigger to show it's selected
-          console.log(`✅ Auto-selected coin: ${selectedCoin.name}`);
+          console.log(`âœ… Auto-selected coin: ${selectedCoin.name}`);
         } else {
-          console.log(`❌ Could not find coin option for ID: ${selectedCoin.id}`);
+          console.log(`âŒ Could not find coin option for ID: ${selectedCoin.id}`);
         }
         
         const currentMaterialOption = content.querySelector(`[data-material-id="${selectedMaterial.id}"]`);
@@ -1792,9 +1634,9 @@
           currentMaterialOption.style.background = 'rgba(255, 215, 0, 0.2)';
           currentMaterialOption.style.borderColor = '#FFD700';
           currentMaterialOption.style.transform = 'scale(1.05)'; // Make it slightly bigger to show it's selected
-          console.log(`✅ Auto-selected material: ${selectedMaterial.name}`);
+          console.log(`âœ… Auto-selected material: ${selectedMaterial.name}`);
         } else {
-          console.log(`❌ Could not find material option for ID: ${selectedMaterial.id}`);
+          console.log(`âŒ Could not find material option for ID: ${selectedMaterial.id}`);
           console.log(`Available material IDs: ${coinMaterials.map(m => m.id).join(', ')}`);
         }
       }, 10); // Small delay to ensure DOM is ready
@@ -1921,7 +1763,7 @@
             tubes[tubeIndex].coin.material[0].emissiveIntensity = 0.3;
             tubes[tubeIndex].coin.material[0].needsUpdate = true;
             
-            console.log(`✅ Applied ${selectedCoin.name} with ${selectedMaterial.name} material to ${players[tubeIndex].name}'s coin`);
+            console.log(`âœ… Applied ${selectedCoin.name} with ${selectedMaterial.name} material to ${players[tubeIndex].name}'s coin`);
           });
         });
         
@@ -1940,7 +1782,7 @@
       if (tube.isShattered) return;
       
       const powerPercent = powerLevel / 100;
-      console.log(`💥 Shattering glass for tube ${tubeIndex + 1} at ${powerLevel.toFixed(0)}% power`);
+      console.log(`ðŸ’¥ Shattering glass for tube ${tubeIndex + 1} at ${powerLevel.toFixed(0)}% power`);
       
       // Stop power charging sound and play glass breaking sound
       stopSound(powerChargeSound);
@@ -2053,7 +1895,7 @@
         );
       });
       
-      console.log(`💥 Glass shattered! ${shardCount} shards + ${tube.liquidParticles.length} liquid particles at ${powerLevel.toFixed(0)}% power`);
+      console.log(`ðŸ’¥ Glass shattered! ${shardCount} shards + ${tube.liquidParticles.length} liquid particles at ${powerLevel.toFixed(0)}% power`);
     }
 
     // ===== FLIP TOKEN REWARD SYSTEM =====
@@ -2089,12 +1931,12 @@
       
       // Only reward if player still has lives
       if (player.lives <= 0) {
-        console.log(`❌ Player ${tubeIndex + 1} has no lives - no FLIP reward`);
+        console.log(`âŒ Player ${tubeIndex + 1} has no lives - no FLIP reward`);
         return;
       }
       
       const reward = getRandomFlipReward();
-      console.log(`💰 Player ${tubeIndex + 1} earned ${reward.amount} FLIP!`);
+      console.log(`ðŸ’° Player ${tubeIndex + 1} earned ${reward.amount} FLIP!`);
       
       // Create floating reward box styled like win/lose boxes
       const rewardBox = document.createElement('div');
@@ -2194,7 +2036,7 @@
       const basePowerSpeed = Math.max(0.08, 0.05 + (powerPercent * 0.25));
       const baseFlipSpeed = basePowerSpeed * speedMult;
       
-      console.log(`🪙 Material: ${material.name} - Speed: ${speedMult}x, Duration: ${durationMult}x`);
+      console.log(`ðŸª™ Material: ${material.name} - Speed: ${speedMult}x, Duration: ${durationMult}x`);
       
       // Random result (50/50 heads or tails)
       const result = Math.random() < 0.5 ? 'heads' : 'tails';
@@ -2202,13 +2044,13 @@
       // Check if player won
       const didWin = playerChoice === result;
       
-      console.log(`🪙 Flipping coin ${tubeIndex + 1} for ${flipDuration.toFixed(0)}ms at speed ${baseFlipSpeed.toFixed(3)} - Result: ${result}, Choice: ${playerChoice}, Won: ${didWin}`);
+      console.log(`ðŸª™ Flipping coin ${tubeIndex + 1} for ${flipDuration.toFixed(0)}ms at speed ${baseFlipSpeed.toFixed(3)} - Result: ${result}, Choice: ${playerChoice}, Won: ${didWin}`);
       
       const startTime = Date.now();
       
       // Calculate target rotation - Standing on edge facing camera
-      // For heads: rotation.x should be at π/2 (standing on edge, heads facing camera)
-      // For tails: rotation.x should be at 3π/2 (standing on edge, tails facing camera)
+      // For heads: rotation.x should be at Ï€/2 (standing on edge, heads facing camera)
+      // For tails: rotation.x should be at 3Ï€/2 (standing on edge, tails facing camera)
       const targetRotationX = result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
       
       tube.isFlipping = true;
@@ -2247,7 +2089,7 @@
           coin.rotation.z = 0;
           
           tube.isFlipping = false;
-          console.log(`✅ Coin ${tubeIndex + 1} landed on ${result} facing camera`);
+          console.log(`âœ… Coin ${tubeIndex + 1} landed on ${result} facing camera`);
           
           // Show result after landing
           showResult(tubeIndex, didWin, result);
@@ -2269,15 +2111,12 @@
       
       // Update each life element based on current lives
       lifeElements.forEach((lifeElement, idx) => {
-        const heartDiv = lifeElement.querySelector('div');
         if (idx < player.lives) {
           // This life should be active
           lifeElement.classList.add('active');
-          if (heartDiv) heartDiv.style.color = '#ff4444'; // Red heart
         } else {
           // This life should be inactive (lost)
           lifeElement.classList.remove('active');
-          if (heartDiv) heartDiv.style.color = '#666'; // Gray heart
         }
       });
       
@@ -2306,7 +2145,7 @@
                 text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
                 font-family: 'Orbitron', sans-serif;
               ">
-                ❌
+                âŒ
               </div>
             </div>
           `;
@@ -2324,10 +2163,10 @@
           powerButton.textContent = 'ELIMINATED';
         }
         
-        console.log(`❌ Player ${tubeIndex + 1} ELIMINATED - showing neon pink X`);
+        console.log(`âŒ Player ${tubeIndex + 1} ELIMINATED - showing neon pink X`);
       }
       
-      console.log(`💊 Updated lives display for player ${tubeIndex + 1}: ${player.lives} lives remaining`);
+      console.log(`ðŸ’Š Updated lives display for player ${tubeIndex + 1}: ${player.lives} lives remaining`);
     }
 
     // ===== SHOW WIN/LOSE RESULT =====
@@ -2352,7 +2191,7 @@
           }
         });
         
-        console.log(`🎉 Player ${tubeIndex + 1} WON! Lives remain: ${player.lives}`);
+        console.log(`ðŸŽ‰ Player ${tubeIndex + 1} WON! Lives remain: ${player.lives}`);
       } else {
         // Red glow for loss
         const loseLight = new THREE.PointLight(0xff0000, 6, 200);
@@ -2363,7 +2202,7 @@
         // Decrease lives when player loses
         if (player.lives > 0) {
           player.lives--;
-          console.log(`💔 Player ${tubeIndex + 1} LOST - Lives remaining: ${player.lives}`);
+          console.log(`ðŸ’” Player ${tubeIndex + 1} LOST - Lives remaining: ${player.lives}`);
           
           // Update lives display in card
           updateLivesDisplay(tubeIndex);
@@ -2392,7 +2231,7 @@
           gap: 10px;
           margin-bottom: 10px;
         ">
-          <img src="/images/potion.png" style="width: 40px; height: 40px; object-fit: contain; ${didWin ? '' : 'filter: grayscale(100%) brightness(0.5);'}" />
+          <img src="/Images/potionpng.png" style="width: 40px; height: 40px; object-fit: contain; ${didWin ? '' : 'filter: grayscale(100%) brightness(0.5);'}" />
           <div style="
             font-size: 30px;
             font-weight: bold;
@@ -2453,11 +2292,11 @@
       // Check if ALL living players have completed their flips (shattered glass means they flipped)
       const allFlipped = tubesWithLives.every(tube => tube.isShattered);
       
-      console.log(`🔍 Checking all players flipped: ${allFlipped ? 'YES' : 'NO'} (${tubesWithLives.filter(t => t.isShattered).length}/${tubesWithLives.length} players done)`);
+      console.log(`ðŸ” Checking all players flipped: ${allFlipped ? 'YES' : 'NO'} (${tubesWithLives.filter(t => t.isShattered).length}/${tubesWithLives.length} players done)`);
       
       if (allFlipped && !allPlayersFlipped) {
         allPlayersFlipped = true;
-        console.log('🎯 ALL living players have completed their flips! Starting 5-second countdown to next round...');
+        console.log('ðŸŽ¯ ALL living players have completed their flips! Starting 5-second countdown to next round...');
         
         // Set timer to check game end after 5 seconds
         if (roundEndTimer) clearTimeout(roundEndTimer);
@@ -2472,7 +2311,7 @@
       if (gameOver) return;
       
       const remainingPlayers = players.filter(player => player.lives > 0);
-      console.log(`🔍 Checking game end... Remaining players: ${remainingPlayers.length}`);
+      console.log(`ðŸ” Checking game end... Remaining players: ${remainingPlayers.length}`);
       
       if (remainingPlayers.length <= 1) {
         if (remainingPlayers.length === 1) {
@@ -2482,7 +2321,7 @@
           declareWinner(winnerIndex);
         } else {
           // No players left - handle special case
-          console.log('⚠️ No players remaining - this shouldn\'t happen normally');
+          console.log('âš ï¸ No players remaining - this shouldn\'t happen normally');
           declareWinner(-1); // No winner
         }
         return;
@@ -2505,7 +2344,7 @@
           });
           
           if (allOneLifeLost) {
-            console.log('🔄 SPECIAL REPLAY: All remaining players started with 1 life and all lost this round! Replaying this round...');
+            console.log('ðŸ”„ SPECIAL REPLAY: All remaining players started with 1 life and all lost this round! Replaying this round...');
             specialReplayRound();
             return;
           }
@@ -2513,7 +2352,7 @@
       }
       
       // Normal progression to next round
-      console.log('➡️ Proceeding to next round...');
+      console.log('âž¡ï¸ Proceeding to next round...');
       nextRound();
     }
     
@@ -2527,21 +2366,21 @@
         roundEndTimer = null;
       }
       
-      console.log('🏆 GAME OVER!');
+      console.log('ðŸ† GAME OVER!');
       
       if (winnerIndex >= 0) {
         const winner = players[winnerIndex];
-        console.log(`🎉 WINNER: ${winner.name} (Player ${winnerIndex + 1})`);
+        console.log(`ðŸŽ‰ WINNER: ${winner.name} (Player ${winnerIndex + 1})`);
         showGameOverScreen(winnerIndex, winner.name);
       } else {
-        console.log('❌ No winner - all players eliminated');
+        console.log('âŒ No winner - all players eliminated');
         showGameOverScreen(-1, null);
       }
     }
     
     // Special replay round when all remaining players have 1 life and all lost
     function specialReplayRound() {
-      console.log('🔄 Special replay round initiated!');
+      console.log('ðŸ”„ Special replay round initiated!');
       
       // Reset round state but keep current round number
       tubes.forEach((tube, i) => {
@@ -2568,7 +2407,7 @@
                 
                 // Don't allow choices if player has no lives
                 if (players[i].lives <= 0) {
-                  console.log(`❌ Player ${i + 1} has no lives - cannot make choice`);
+                  console.log(`âŒ Player ${i + 1} has no lives - cannot make choice`);
                   return;
                 }
                 
@@ -2672,7 +2511,7 @@
       `;
       
       messageDiv.innerHTML = `
-        <div style="margin-bottom: 10px;">🔄</div>
+        <div style="margin-bottom: 10px;">ðŸ”„</div>
         <div>SPECIAL REPLAY!</div>
         <div style="font-size: 16px; margin-top: 10px; opacity: 0.9;">
           All remaining players have 1 life and lost!
@@ -2732,7 +2571,7 @@
       `;
       
       messageDiv.innerHTML = `
-        <div style="margin-bottom: 8px;">⚠️</div>
+        <div style="margin-bottom: 8px;">âš ï¸</div>
         <div>${player.name.toUpperCase()}</div>
         <div style="font-size: 14px; margin-top: 5px; opacity: 0.9;">
           Choose HEADS or TAILS first!
@@ -2812,7 +2651,7 @@
       
       if (winnerIndex >= 0) {
         contentDiv.innerHTML = `
-          <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
+          <div style="font-size: 80px; margin-bottom: 20px;">ðŸ†</div>
           <div style="font-size: 48px; font-weight: bold; color: #00ff00; margin-bottom: 20px; text-transform: uppercase;">
             GAME OVER
           </div>
@@ -2837,7 +2676,7 @@
         `;
       } else {
         contentDiv.innerHTML = `
-          <div style="font-size: 80px; margin-bottom: 20px;">💀</div>
+          <div style="font-size: 80px; margin-bottom: 20px;">ðŸ’€</div>
           <div style="font-size: 48px; font-weight: bold; color: #ff0000; margin-bottom: 20px; text-transform: uppercase;">
             GAME OVER
           </div>
@@ -2898,7 +2737,7 @@
                 
                 // Don't allow choices if player has no lives
                 if (players[i].lives <= 0) {
-                  console.log(`❌ Player ${i + 1} has no lives - cannot make choice`);
+                  console.log(`âŒ Player ${i + 1} has no lives - cannot make choice`);
                   return;
                 }
                 
@@ -3032,7 +2871,7 @@
         }
       });
       
-      console.log('🔄 Round reset! Ready for next flip!');
+      console.log('ðŸ”„ Round reset! Ready for next flip!');
     }
     
     // Expose reset function globally for testing
@@ -3040,210 +2879,17 @@
 
     // Plasma effects removed - pearls now glow on their own!
 
-    console.log('✅ Game loaded! Hold CHARGE POWER button to fill tubes!');
-    console.log('💡 Call resetRound() to start a new round');
-    console.log('⏱️ Call startTimer() to begin the countdown');
+    console.log('âœ… Game loaded! Hold CHARGE POWER button to fill tubes!');
+    console.log('ðŸ’¡ Call resetRound() to start a new round');
+    console.log('â±ï¸ Call startTimer() to begin the countdown');
     
-    // Update player cards with real data after loading
-    function updatePlayerCards() {
-      console.log('🔄 Updating player cards with real data...');
-      tubes.forEach((tube, index) => {
-        const player = players[index];
-        console.log(`🔍 Tube ${index + 1}:`, { hasCardElement: !!tube.cardElement, player: player?.name });
-        if (!tube.cardElement || !player) return;
-        
-        // Determine if this is the current player's card
-        const isCurrentPlayer = player.address && player.address.toLowerCase() === walletParam.toLowerCase();
-        const isSpectator = roleParam === 'spectator';
-        const showButtons = isCurrentPlayer && !isSpectator && !player.isEmpty;
-        
-        // Update player name and address
-        const playerNameElement = tube.cardElement.querySelector('.player-name');
-        const playerAddressElement = tube.cardElement.querySelector('.player-address');
-        const playerAvatarElement = tube.cardElement.querySelector('.player-avatar');
-        
-        console.log(`📝 Updating player ${index + 1}:`, { name: player.name, address: player.address, isEmpty: player.isEmpty });
-        
-        if (playerNameElement) playerNameElement.textContent = player.name;
-        if (playerAddressElement) {
-          // Shorten wallet address for display
-          const shortAddress = player.address ? `${player.address.slice(0, 6)}...${player.address.slice(-4)}` : '';
-          playerAddressElement.textContent = shortAddress;
-        }
-        if (playerAvatarElement) {
-          playerAvatarElement.src = player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png');
-          playerAvatarElement.alt = player.name;
-        }
-        
-        // Update lives display
-        const lifeElements = tube.cardElement.querySelectorAll('.life');
-        lifeElements.forEach((lifeElement, idx) => {
-          const heartDiv = lifeElement.querySelector('div');
-          if (idx < player.lives) {
-            lifeElement.classList.add('active');
-            if (heartDiv) heartDiv.style.color = '#ff4444'; // Red heart
-          } else {
-            lifeElement.classList.remove('active');
-            if (heartDiv) heartDiv.style.color = '#666'; // Gray heart
-          }
-        });
-        
-        // Update empty slot overlay
-        const existingOverlay = tube.cardElement.querySelector('.empty-slot-overlay');
-        console.log(`🎯 Player ${index + 1} empty slot logic:`, { 
-          isEmpty: player.isEmpty, 
-          hasExistingOverlay: !!existingOverlay,
-          playerName: player.name,
-          playerAddress: player.address 
-        });
-        
-        // Always remove existing overlay first to ensure clean state
-        if (existingOverlay) {
-          console.log(`🧹 Removing existing overlay from player slot ${index + 1}`);
-          existingOverlay.remove();
-        }
-        
-        // Add overlay only for truly empty slots
-        if (player.isEmpty) {
-          console.log(`➕ Adding pink X overlay to empty slot ${index + 1}`);
-          const overlay = document.createElement('div');
-          overlay.className = 'empty-slot-overlay';
-          overlay.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 20, 147, 0.8);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            font-weight: bold;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            z-index: 10;
-          `;
-          overlay.textContent = '✕';
-          tube.cardElement.appendChild(overlay);
-        }
-        
-        // Update buttons visibility
-        const actionButtons = tube.cardElement.querySelectorAll('.action-btn');
-        const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
-        const choicePlaceholder = tube.cardElement.querySelector('.choice-placeholder');
-        
-        if (showButtons) {
-          actionButtons.forEach(btn => btn.style.display = 'block');
-          if (choiceButtons) choiceButtons.style.display = 'flex';
-          if (choicePlaceholder) choicePlaceholder.style.display = 'none';
-        } else {
-          actionButtons.forEach(btn => btn.style.display = 'none');
-          if (choiceButtons) choiceButtons.style.display = 'none';
-          if (!choicePlaceholder && !player.choice) {
-            const placeholder = document.createElement('div');
-            placeholder.className = 'choice-placeholder';
-            placeholder.style.cssText = `
-              height: 40px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: #666;
-              font-size: 14px;
-            `;
-            placeholder.textContent = player.isEmpty ? 'Empty Slot' : 'Choose HEADS or TAILS';
-            const choiceContainer = tube.cardElement.querySelector('.choice-buttons, .choice-badge');
-            if (choiceContainer && !choiceContainer.parentElement.querySelector('.choice-placeholder')) {
-              choiceContainer.parentElement.appendChild(placeholder);
-            }
-          }
-        }
-      });
-    }
-
-    // Fetch participants and map to tubes left-to-right
-    async function loadParticipants() {
-      try {
-        if (!gameIdParam) return;
-        const res = await fetch(`/api/battle-royale/${encodeURIComponent(gameIdParam)}`);
-        if (!res.ok) throw new Error('Failed to load participants');
-        const data = await res.json();
-        const parts = (data?.game?.participants || []).slice().sort((a,b) => (a.slot_number||0)-(b.slot_number||0));
-        console.log('🔍 Raw participants data:', parts);
-        
-        players = [1,2,3,4].map((slot, idx) => {
-          const p = parts[idx];
-          if (!p) {
-            console.log(`📭 Slot ${idx+1}: Empty`);
-            return { id: idx+1, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true };
-          }
-          
-          const playerData = {
-            id: idx+1,
-            name: p.username || p.name || `Player ${idx+1}`,
-            lives: 3,
-            address: p.player_address || '',
-            choice: null,
-            avatar: p.avatar || '/images/default-avatar.png',
-            isEmpty: false
-          };
-          
-          console.log(`👤 Slot ${idx+1}:`, {
-            raw: p,
-            processed: playerData
-          });
-          
-          return playerData;
-        });
-        // Update initial lives tracking
-        roundStartLives = players.map(player => player.lives);
-        console.log('📊 Participants mapped:', players);
-        
-        // Update player cards with real data
-        updatePlayerCards();
-        
-        // Start timer when players are set
-        startTimer();
-      } catch (err) {
-        console.warn('Participants load failed:', err);
-        // Fallback: start timer anyway
-        startTimer();
-      }
-    }
-    await loadParticipants();
-
-    // ===== SERVER JOIN (PLAYER) =====
-    (async () => {
-      try {
-        if (!gameIdParam) return;
-        if (roleParam === 'spectator') {
-          console.log('👀 Spectator mode - skipping join');
-          return;
-        }
-        if (!walletParam) {
-          console.warn('⚠️ No wallet address provided; cannot join game');
-          return;
-        }
-        const res = await fetch(`/api/battle-royale/${encodeURIComponent(gameIdParam)}/join`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(tokenParam ? { Authorization: `Bearer ${tokenParam}` } : {}) },
-          body: JSON.stringify({ player_address: walletParam })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (res.ok) {
-          console.log('✅ Joined game on server:', data);
-        } else {
-          console.warn('⚠️ Join failed:', data?.error || res.statusText);
-        }
-      } catch (err) {
-        console.error('❌ Join error:', err);
-      }
-    })();
+    // Initialize starting lives for Round 1
+    roundStartLives = players.map(player => player.lives);
+    console.log('ðŸ“Š Round 1 starting lives:', roundStartLives);
     
     // ===== DELAYED DEFAULT APPLICATION (1 second after load) =====
     setTimeout(() => {
-      console.log('🔄 Running delayed default application check...');
+      console.log('ðŸ”„ Running delayed default application check...');
       
       tubes.forEach((tube, tubeIndex) => {
         const player = players[tubeIndex];
@@ -3281,12 +2927,12 @@
             tube.coin.material[2].uniforms.map.value = tailsTex;
             tube.coin.material[2].needsUpdate = true;
             
-            console.log(`🔄 Delayed update: Applied ${defaultCoin.name} with ${defaultMaterial.name} to ${player.name}'s coin`);
+            console.log(`ðŸ”„ Delayed update: Applied ${defaultCoin.name} with ${defaultMaterial.name} to ${player.name}'s coin`);
           });
         });
       });
       
-      console.log('✅ Delayed default application complete!');
+      console.log('âœ… Delayed default application complete!');
     }, 1000); // 1 second delay
     
     // Expose timer functions globally
@@ -3483,7 +3129,7 @@
       camera.layers.enable(0); // Only enable layer 0
       
       if (frameCount === 1) {
-        console.log('🎬 Frame 1 - Layer 0 mask:', camera.layers.mask, 'Should be 1 for layer 0');
+        console.log('ðŸŽ¬ Frame 1 - Layer 0 mask:', camera.layers.mask, 'Should be 1 for layer 0');
       }
       
       webglRenderer.autoClear = true;
@@ -3491,7 +3137,7 @@
       webglRenderer.render(scene, camera);
       
       if (frameCount === 1) {
-        console.log('✅ Main scene (layer 0) rendered to screen');
+        console.log('âœ… Main scene (layer 0) rendered to screen');
       }
       
       // PASS 2: Render pearls (layer 1) with bloom to separate buffer  
@@ -3499,14 +3145,14 @@
       camera.layers.enable(1); // Only enable layer 1 (pearls + plasma)
       
       if (frameCount === 1) {
-        console.log('🎬 Frame 1 - Layer 1 mask:', camera.layers.mask, 'Should be 2 for layer 1');
+        console.log('ðŸŽ¬ Frame 1 - Layer 1 mask:', camera.layers.mask, 'Should be 2 for layer 1');
       }
       
       // Render to bloom composer's internal render target (NOT to screen!)
       bloomComposer.render();
       
       if (frameCount === 1) {
-        console.log('✅ Pearls (layer 1) rendered to bloom buffer');
+        console.log('âœ… Pearls (layer 1) rendered to bloom buffer');
       }
       
       // PASS 3: Composite bloomed pearls on top with additive blending
@@ -3516,7 +3162,7 @@
       const bloomTexture = bloomComposer.readBuffer.texture;
       
       if (frameCount === 1) {
-        console.log('🎨 Bloom texture:', bloomTexture ? 'Found' : 'Missing');
+        console.log('ðŸŽ¨ Bloom texture:', bloomTexture ? 'Found' : 'Missing');
       }
       
       // Create a fullscreen quad to display bloom texture (create once)
@@ -3541,7 +3187,7 @@
         window.bloomQuadScene = quadScene;
         window.bloomQuadCamera = quadCamera;
         
-        console.log('✨ Bloom composite quad created!');
+        console.log('âœ¨ Bloom composite quad created!');
       }
       
       // Update bloom texture reference
@@ -3551,8 +3197,8 @@
       webglRenderer.render(window.bloomQuadScene, window.bloomQuadCamera);
       
       if (frameCount === 1) {
-        console.log('✅ Bloomed pearls composited on top');
-        console.log('🎉 Selective bloom rendering complete!');
+        console.log('âœ… Bloomed pearls composited on top');
+        console.log('ðŸŽ‰ Selective bloom rendering complete!');
       }
       
       // Restore renderer settings
@@ -3579,9 +3225,8 @@
       cssRenderer.setSize(newWidth, newHeight);
       bloomComposer.setSize(newWidth, newHeight);
 
-      console.log(`📐 Resized to ${newWidth}x${newHeight}`);
+      console.log(`ðŸ“ Resized to ${newWidth}x${newHeight}`);
     });
   </script>
 </body>
 </html>
-
