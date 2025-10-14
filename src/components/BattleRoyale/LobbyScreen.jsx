@@ -157,25 +157,25 @@ const StatusBar = styled.div`
 
 const PlayerGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 1fr;
   gap: 1rem;
   background: rgba(0, 0, 0, 0.8);
   border: 2px solid #FF1493;
   border-radius: 1rem;
-  padding: 2rem;
-  min-height: 400px;
+  padding: 1.5rem;
+  min-height: 200px;
 `
 
 const PlayerSlot = styled.div`
-  aspect-ratio: 1;
+  aspect-ratio: 0.8;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  border-radius: 1rem;
-  padding: 1rem;
+  gap: 0.3rem;
+  border-radius: 0.8rem;
+  padding: 0.8rem;
   background: ${props => {
     if (props.occupied) {
       return props.isCurrentUser 
@@ -184,7 +184,7 @@ const PlayerSlot = styled.div`
     }
     return 'rgba(255, 255, 255, 0.05)'
   }};
-  border: 3px solid ${props => {
+  border: 2px solid ${props => {
     if (props.occupied) {
       return props.isCurrentUser ? '#00ff88' : '#00bfff'
     }
@@ -198,7 +198,7 @@ const PlayerSlot = styled.div`
     ${props => props.canJoin && `
       border-color: #ff1493;
       background: rgba(255, 20, 147, 0.1);
-      transform: translateY(-5px);
+      transform: translateY(-3px);
     `}
   }
 `
@@ -576,23 +576,26 @@ const LobbyScreen = () => {
 
                 {player ? (
                   <>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                      <div style={{ width: '100px', height: '100px', borderRadius: '12px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)' }}>
-                        <ProfilePicture address={playerAddr} size={100} fallbackEmoji="😊" />
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
+                      <div style={{ width: '70px', height: '70px', borderRadius: '10px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)' }}>
+                        <ProfilePicture address={playerAddr} size={70} fallbackEmoji="😊" />
                       </div>
-                      <div style={{ color: 'white', fontSize: '0.9rem', fontWeight: 'bold', textAlign: 'center' }}>
-                        {player?.username || player?.name || formatAddress(playerAddr)}
+                      <div style={{ color: '#00ffff', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center' }}>
+                        {player?.username || player?.name || `Player ${i + 1}`}
+                      </div>
+                      <div style={{ color: '#cccccc', fontSize: '0.7rem', textAlign: 'center' }}>
+                        {formatAddress(playerAddr)}
                       </div>
                       {player.isCreator && (
-                        <div style={{ color: '#FFD700', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                        <div style={{ color: '#FFD700', fontSize: '0.7rem', fontWeight: 'bold' }}>
                           👑 Creator
                         </div>
                       )}
                     </div>
                   </>
                 ) : (
-                  <div style={{ color: '#FF1493', fontSize: '0.9rem', fontWeight: 'bold', textAlign: 'center' }}>
-                    {canJoin ? '➕ Click to Join' : 'Waiting...'}
+                  <div style={{ color: '#FF1493', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center' }}>
+                    {canJoin ? '➕ Click to Join' : 'Empty'}
                   </div>
                 )}
               </PlayerSlot>

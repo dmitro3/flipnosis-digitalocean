@@ -41,65 +41,58 @@
 
     /* Player Card Styling */
     .player-card {
-      width: 200px;
+      width: 320px;
       background: rgba(10, 15, 35, 0.95);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      padding: 12px;
+      border: 3px solid #00ffff;
+      border-radius: 16px;
+      padding: 15px 20px;
       font-family: 'Orbitron', sans-serif;
       color: white;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
       pointer-events: auto;
       position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
     }
 
     .card-header {
-      margin-bottom: 10px;
+      margin-bottom: 15px;
       display: flex;
-      flex-direction: column;
+      gap: 12px;
       align-items: center;
-      gap: 8px;
     }
 
     .player-avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 12px;
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
       object-fit: cover;
       border: 2px solid #00ffff;
       flex-shrink: 0;
     }
 
     .player-info {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
+      flex: 1;
+      text-align: right;
     }
 
     .player-name {
-      font-size: 16px;
+      font-size: 22px;
       font-weight: bold;
       color: #00ffff;
-      margin: 0;
+      margin-bottom: 5px;
     }
 
     .player-address {
-      font-size: 12px;
-      color: #cccccc;
+      font-size: 16px;
+      color: #ffffff;
       font-family: 'Orbitron', sans-serif;
-      font-weight: normal;
+      font-weight: bold;
     }
 
     .lives-container {
       display: flex;
       justify-content: center;
-      gap: 6px;
-      margin: 8px 0;
+      gap: 12px;
+      margin: 15px 0;
     }
 
     .life {
@@ -1088,13 +1081,13 @@
           <img src="${player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png')}" class="player-avatar" alt="${player.name}" />
           <div class="player-info">
             <div class="player-name">${player.name}</div>
-            <div class="player-address">${player.address.slice(0,6)}...${player.address.slice(-4)}</div>
+            <div class="player-address">${player.address}</div>
           </div>
         </div>
         <div class="lives-container">
           ${Array.from({ length: 3 }, (_, idx) => 
             `<div class="life ${idx < player.lives ? 'active' : ''}">
-              <img src="/images/potion.png" style="width: 20px; height: 20px; object-fit: contain;" />
+              <img src="/images/potion.png" style="width: 32px; height: 32px; object-fit: contain;" />
             </div>`
           ).join('')}
         </div>
@@ -1272,9 +1265,9 @@
       }
 
       const cssObject = new CSS3DObject(cardElement);
-      // Position cards BELOW the tubes in a horizontal line
-      cssObject.position.set(x, 200 - (TUBE_HEIGHT / 2) - 120, 0);
-      cssObject.scale.set(0.4, 0.4, 0.4); // Smaller scale for 4-in-a-row layout
+      // Position cards BELOW the tubes
+      cssObject.position.set(x, 200 - (TUBE_HEIGHT / 2) - 140, 0);
+      cssObject.scale.set(0.6, 0.45, 0.6); // Wider, less tall
       scene.add(cssObject);
 
       // Auto-apply default selections to fix coin picker gradient issue
@@ -3088,7 +3081,7 @@
         console.log(`📝 Updating player ${index + 1}:`, { name: player.name, address: player.address, isEmpty: player.isEmpty });
         
         if (playerNameElement) playerNameElement.textContent = player.name;
-        if (playerAddressElement) playerAddressElement.textContent = player.address ? `${player.address.slice(0,6)}...${player.address.slice(-4)}` : '';
+        if (playerAddressElement) playerAddressElement.textContent = player.address;
         if (playerAvatarElement) {
           playerAvatarElement.src = player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png');
           playerAvatarElement.alt = player.name;
