@@ -261,6 +261,20 @@
     if (!walletParam) {
       walletParam = localStorage.getItem('walletAddress') || '';
       console.log('🔍 No wallet in URL, trying localStorage:', walletParam);
+      
+      // Additional fallback: try to get from window.ethereum
+      if (!walletParam && window.ethereum?.selectedAddress) {
+        walletParam = window.ethereum.selectedAddress;
+        console.log('🔍 Got wallet from window.ethereum:', walletParam);
+      }
+      
+      // Debug: show all available wallet sources
+      console.log('🔍 Wallet detection debug:', {
+        urlParam: urlParams.get('address'),
+        localStorage: localStorage.getItem('walletAddress'),
+        ethereum: window.ethereum?.selectedAddress,
+        final: walletParam
+      });
     }
 
     if (gameIdParam) {
@@ -402,50 +416,9 @@
     const scene = new THREE.Scene();
     scene.background = null; // Transparent to show CSS background image
     
-    // ===== ADD BACKGROUND IMAGE AS TEXTURED PLANE (1920x1080) =====
-    const bgTextureLoader = new THREE.TextureLoader();
-    const bgCandidates = [
-      '/images/background/game-room2.png'
-    ];
-    function loadBackground(paths, onSuccess, onFail) {
-      if (!paths.length) { onFail && onFail(new Error('No background paths worked')); return; }
-      const path = paths[0];
-      bgTextureLoader.load(path, onSuccess, undefined, () => loadBackground(paths.slice(1), onSuccess, onFail));
-    }
-    loadBackground(bgCandidates, (bgTexture) => {
-      // Keep texture in sRGB color space - don't convert
-      bgTexture.colorSpace = THREE.SRGBColorSpace;
-      bgTexture.minFilter = THREE.LinearFilter;
-      bgTexture.magFilter = THREE.LinearFilter;
-      
-      // Calculate correct plane size based on camera FOV and distance
-      // Camera: FOV=30°, position z=1400, background z=-500
-      const distanceFromCamera = 1400 - (-500); // 1900 units
-      const vFOV = camera.fov * Math.PI / 180; // Convert to radians
-      const planeHeight = 2 * Math.tan(vFOV / 2) * distanceFromCamera;
-      const planeWidth = planeHeight * camera.aspect; // Match screen aspect ratio
-      
-      // Create plane with calculated dimensions
-      const bgGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-      const bgMaterial = new THREE.MeshBasicMaterial({
-        map: bgTexture,
-        side: THREE.FrontSide,
-        depthWrite: false, // Don't write to depth buffer
-        depthTest: false, // Always render behind
-        toneMapped: false, // CRITICAL: Don't apply tone mapping to background!
-        fog: false, // Not affected by fog
-        color: 0xcccccc // Slightly darkened (80% brightness) - adjust this if needed
-      });
-      const bgPlane = new THREE.Mesh(bgGeometry, bgMaterial);
-      bgPlane.position.set(0, 150, -500); // Behind the tubes
-      bgPlane.renderOrder = -1; // Render first (behind everything)
-      bgPlane.layers.set(0); // Layer 0 - main scene
-      scene.add(bgPlane);
-      scene.background = null; // Remove fallback color now that we have the texture
-      console.log(`🖼️ Background image loaded! Size: ${planeWidth.toFixed(0)}x${planeHeight.toFixed(0)} at distance ${distanceFromCamera}`);
-    }, undefined, (error) => {
-      console.error('❌ Failed to load background image:', error);
-    });
+    // ===== BACKGROUND HANDLED BY CSS =====
+    // Let the CSS background image show through by keeping scene transparent
+    console.log('🖼️ Using CSS background image - Three.js scene is transparent');
 
     // Camera - FLATTER VIEW
     const width = window.innerWidth;
@@ -1093,7 +1066,9 @@
         <div class="lives-container">
           ${Array.from({ length: 3 }, (_, idx) => 
             `<div class="life ${idx < player.lives ? 'active' : ''}">
-              <img src="/images/potion.png" style="width: 32px; height: 32px; object-fit: contain;" />
+              <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: ${idx < player.lives ? '#ff4444' : '#666'};">
+                ❤️
+              </div>
             </div>`
           ).join('')}
         </div>
@@ -2294,12 +2269,15 @@
       
       // Update each life element based on current lives
       lifeElements.forEach((lifeElement, idx) => {
+        const heartDiv = lifeElement.querySelector('div');
         if (idx < player.lives) {
           // This life should be active
           lifeElement.classList.add('active');
+          if (heartDiv) heartDiv.style.color = '#ff4444'; // Red heart
         } else {
           // This life should be inactive (lost)
           lifeElement.classList.remove('active');
+          if (heartDiv) heartDiv.style.color = '#666'; // Gray heart
         }
       });
       
@@ -3100,10 +3078,13 @@
         // Update lives display
         const lifeElements = tube.cardElement.querySelectorAll('.life');
         lifeElements.forEach((lifeElement, idx) => {
+          const heartDiv = lifeElement.querySelector('div');
           if (idx < player.lives) {
             lifeElement.classList.add('active');
+            if (heartDiv) heartDiv.style.color = '#ff4444'; // Red heart
           } else {
             lifeElement.classList.remove('active');
+            if (heartDiv) heartDiv.style.color = '#666'; // Gray heart
           }
         });
         
