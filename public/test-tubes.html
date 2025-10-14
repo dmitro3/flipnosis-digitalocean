@@ -366,8 +366,12 @@
         const normalizedAddress = walletParam.toLowerCase();
         const player = state.players[normalizedAddress];
         if (player) {
+          const oldPlayerSlot = playerSlot;
           playerSlot = player.slotNumber;
           console.log(`🎮 Player slot: ${playerSlot}`);
+          
+          // Update button visibility for all player cards
+          updatePlayerCardButtons();
         }
       }
       
@@ -478,6 +482,59 @@
     
     // Initialize socket connection
     initializeSocket();
+
+    // ===== PLAYER CARD BUTTON MANAGEMENT =====
+    
+    // Update button visibility for all player cards based on current player slot
+    function updatePlayerCardButtons() {
+      tubes.forEach((tube, i) => {
+        if (tube.cardElement) {
+          const player = players[i];
+          if (!player || player.isEmpty) return;
+          
+          // Determine if this is the current player's slot
+          const isCurrentPlayer = isServerSideMode ? (playerSlot === i) : true;
+          
+          // Update choice buttons visibility
+          const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
+          const choiceBadge = tube.cardElement.querySelector('.choice-badge');
+          const choicePlaceholder = tube.cardElement.querySelector('div[style*="Choose HEADS or TAILS"]');
+          
+          if (isCurrentPlayer && !player.choice) {
+            // Show choice buttons for current player
+            if (choiceBadge) choiceBadge.style.display = 'none';
+            if (choicePlaceholder) choicePlaceholder.style.display = 'none';
+            if (choiceButtons) choiceButtons.style.display = 'block';
+          } else if (player.choice) {
+            // Show choice badge
+            if (choiceButtons) choiceButtons.style.display = 'none';
+            if (choicePlaceholder) choicePlaceholder.style.display = 'none';
+            if (choiceBadge) choiceBadge.style.display = 'block';
+          } else {
+            // Show placeholder for other players
+            if (choiceButtons) choiceButtons.style.display = 'none';
+            if (choiceBadge) choiceBadge.style.display = 'none';
+            if (choicePlaceholder) choicePlaceholder.style.display = 'block';
+          }
+          
+          // Update action buttons visibility
+          const actionButtons = tube.cardElement.querySelectorAll('.action-btn');
+          const actionPlaceholder = tube.cardElement.querySelector('div[style*="Other Player"]');
+          
+          if (isCurrentPlayer) {
+            // Show action buttons for current player
+            actionButtons.forEach(btn => btn.style.display = 'block');
+            if (actionPlaceholder) actionPlaceholder.style.display = 'none';
+          } else {
+            // Show placeholder for other players
+            actionButtons.forEach(btn => btn.style.display = 'none');
+            if (actionPlaceholder) actionPlaceholder.style.display = 'block';
+          }
+          
+          console.log(`🎯 Updated buttons for slot ${i}: isCurrentPlayer=${isCurrentPlayer}, hasChoice=${!!player.choice}`);
+        }
+      });
+    }
 
     // ===== MISSING HELPER FUNCTIONS =====
     
@@ -1259,7 +1316,7 @@
       ];
       
       const coin = new THREE.Mesh(coinGeometry, coinMaterials);
-      coin.rotation.x = Math.PI / 2; // Standing on edge (90 degrees)
+      coin.rotation.x = 0; // Lay flat (not standing on edge)
       coin.rotation.y = Math.PI / 2; // Rotated 90 degrees left for proper facing
       coin.rotation.z = 0; // No tilt
       coin.position.set(x, 200, 0); // Centered in tube
@@ -1322,9 +1379,13 @@
       const cardElement = document.createElement('div');
       cardElement.className = 'player-card';
       
-      // TEMPORARILY REMOVED: Button blocking logic for debugging
-      // Show buttons for ALL players to debug visibility issues
-      const showButtons = !player.isEmpty;
+      // Initially hide buttons - they will be shown when player slot is determined
+      let showButtons = false;
+      if (!isServerSideMode) {
+        // Fallback for local mode
+        showButtons = !player.isEmpty;
+      }
+      // In server-side mode, buttons will be shown via updatePlayerCardButtons() when playerSlot is set
       
       console.log(`🎯 Initial Player ${i + 1} button logic (DEBUGGING MODE):`, {
         playerAddress: player.address,
@@ -1356,10 +1417,9 @@
       cardElement.innerHTML = `
         ${emptySlotOverlay}
         <div class="card-header">
-          <img src="${player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png')}" class="player-avatar" alt="${player.name}" />
+          <img src="${player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png')}" class="player-avatar" alt="${player.name}" style="width: 80px; height: 80px;" />
           <div class="player-info">
             <div class="player-name">${player.name}</div>
-            <div class="player-address">${player.address}</div>
           </div>
         </div>
         <div class="lives-container">
@@ -1918,7 +1978,10 @@
         
         if (timeRemaining <= 0) {
           stopTimer();
-          autoFlipCoins();
+          // Only auto-flip in local mode - server handles timing in server-side mode
+          if (!isServerSideMode) {
+            autoFlipCoins();
+          }
         }
       }, 1000);
     }
@@ -2960,7 +3023,7 @@
         }
         
         // Reset coin position
-        tube.coin.rotation.x = 0;
+        tube.coin.rotation.x = 0; // Keep flat
         tube.coin.rotation.y = Math.PI / 2;
         tube.coin.rotation.z = 0;
         
@@ -3653,6 +3716,11 @@
       });
       
       console.log('✅ Delayed default application complete!');
+      
+      // Update player card buttons after all initialization is complete
+      if (typeof updatePlayerCardButtons === 'function') {
+        updatePlayerCardButtons();
+      }
     }, 1000); // 1 second delay
     
     // Expose timer functions globally
@@ -3807,6 +3875,7 @@
           coin.position.x = tubeX;
           coin.position.y = 200;
           coin.position.z = 0;
+          coin.rotation.x = 0; // Keep flat
           coin.rotation.z = 0;
         }
       });
