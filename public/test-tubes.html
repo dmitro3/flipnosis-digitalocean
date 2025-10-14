@@ -19,7 +19,7 @@
     
     body {
       font-family: 'Orbitron', sans-serif;
-      background: url('/Images/Background/game%20room2.png') no-repeat center center fixed;
+      background: url('/images/background/game-room2.png') no-repeat center center fixed;
       background-size: cover;
       overflow: hidden;
       margin: 0;
@@ -307,11 +307,11 @@
       glass: 0x88ccff
     };
 
-    const players = [
-      { id: 1, name: userNameParam || 'Player 1', lives: 3, address: walletParam || '0x...', choice: null },
-      { id: 2, name: 'Player 2', lives: 3, address: '0x...', choice: null },
-      { id: 3, name: 'Player 3', lives: 3, address: '0x...', choice: null },
-      { id: 4, name: 'Player 4', lives: 3, address: '0x...', choice: null }
+    let players = [
+      { id: 1, name: 'Empty', lives: 0, address: '', choice: null, avatar: '' },
+      { id: 2, name: 'Empty', lives: 0, address: '', choice: null, avatar: '' },
+      { id: 3, name: 'Empty', lives: 0, address: '', choice: null, avatar: '' },
+      { id: 4, name: 'Empty', lives: 0, address: '', choice: null, avatar: '' }
     ];
 
     // Coin options - MUST be defined before tubes are created
@@ -398,11 +398,7 @@
     // ===== ADD BACKGROUND IMAGE AS TEXTURED PLANE (1920x1080) =====
     const bgTextureLoader = new THREE.TextureLoader();
     const bgCandidates = [
-      '/Images/Background/game%20room2.png',
-      '/Images/Background/game%20room2.PNG',
-      '/Images/Background/game room2.png',
-      '/Images/Background/game_room2.png',
-      '/images/background/game%20room2.png',
+      '/images/background/game-room2.png'
     ];
     function loadBackground(paths, onSuccess, onFail) {
       if (!paths.length) { onFail && onFail(new Error('No background paths worked')); return; }
@@ -1053,7 +1049,7 @@
       cardElement.className = 'player-card';
       cardElement.innerHTML = `
         <div class="card-header">
-          <img src="/Images/potionpng.png" class="player-avatar" alt="${player.name}" />
+          <img src="/images/potion.png" class="player-avatar" alt="${player.name}" />
           <div class="player-info">
             <div class="player-name">${player.name}</div>
             <div class="player-address">${player.address}</div>
@@ -1062,7 +1058,7 @@
         <div class="lives-container">
           ${Array.from({ length: 3 }, (_, idx) => 
             `<div class="life ${idx < player.lives ? 'active' : ''}">
-              <img src="/Images/potionpng.png" style="width: 32px; height: 32px; object-fit: contain;" />
+              <img src="/images/potion.png" style="width: 32px; height: 32px; object-fit: contain;" />
             </div>`
           ).join('')}
         </div>
@@ -2367,7 +2363,7 @@
           gap: 10px;
           margin-bottom: 10px;
         ">
-          <img src="/Images/potionpng.png" style="width: 40px; height: 40px; object-fit: contain; ${didWin ? '' : 'filter: grayscale(100%) brightness(0.5);'}" />
+          <img src="/images/potion.png" style="width: 40px; height: 40px; object-fit: contain; ${didWin ? '' : 'filter: grayscale(100%) brightness(0.5);'}" />
           <div style="
             font-size: 30px;
             font-weight: bold;
@@ -3019,9 +3015,38 @@
     console.log('💡 Call resetRound() to start a new round');
     console.log('⏱️ Call startTimer() to begin the countdown');
     
-    // Initialize starting lives for Round 1
-    roundStartLives = players.map(player => player.lives);
-    console.log('📊 Round 1 starting lives:', roundStartLives);
+    // Fetch participants and map to tubes left-to-right
+    async function loadParticipants() {
+      try {
+        if (!gameIdParam) return;
+        const res = await fetch(`/api/battle-royale/${encodeURIComponent(gameIdParam)}`);
+        if (!res.ok) throw new Error('Failed to load participants');
+        const data = await res.json();
+        const parts = (data?.game?.participants || []).slice().sort((a,b) => (a.slot_number||0)-(b.slot_number||0));
+        players = [1,2,3,4].map((slot, idx) => {
+          const p = parts[idx];
+          if (!p) return { id: idx+1, name: 'Empty', lives: 0, address: '', choice: null, avatar: '' };
+          return {
+            id: idx+1,
+            name: p.username || p.name || (p.player_address ? p.player_address.slice(0,6)+'...'+p.player_address.slice(-4) : `Player ${idx+1}`),
+            lives: 3,
+            address: p.player_address || '',
+            choice: null,
+            avatar: p.avatar || ''
+          };
+        });
+        // Update initial lives tracking
+        roundStartLives = players.map(player => player.lives);
+        console.log('📊 Participants mapped:', players);
+        // Start timer when players are set
+        startTimer();
+      } catch (err) {
+        console.warn('Participants load failed:', err);
+        // Fallback: start timer anyway
+        startTimer();
+      }
+    }
+    await loadParticipants();
 
     // ===== SERVER JOIN (PLAYER) =====
     (async () => {
