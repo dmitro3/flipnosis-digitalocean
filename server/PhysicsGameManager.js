@@ -352,6 +352,20 @@ class PhysicsGameManager {
       this.timers.delete(gameId)
     }
 
+    // Auto-flip coins for players who haven't fired yet
+    console.log(`⏱️ Time's up! Auto-flipping coins for players who haven't fired...`)
+    Object.entries(game.players).forEach(([address, player]) => {
+      if (player.isActive && !player.hasFired && player.lives > 0) {
+        const autoPower = 50 // 50% power for auto-flip
+        const autoChoice = player.choice || 'heads' // Default to heads if no choice
+        
+        console.log(`🪙 Auto-flipping for ${address}: power=${autoPower}, choice=${autoChoice}`)
+        
+        // Simulate coin flip with auto power
+        this.serverFlipCoin(gameId, address, autoChoice, autoPower, 0, broadcast)
+      }
+    })
+
     // Check if game is over
     const activePlayers = Object.values(game.players).filter(p => p.isActive)
     

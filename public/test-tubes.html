@@ -1316,7 +1316,7 @@
       ];
       
       const coin = new THREE.Mesh(coinGeometry, coinMaterials);
-      coin.rotation.x = 0; // Lay flat (not standing on edge)
+      coin.rotation.x = Math.PI / 2; // Standing on edge (90 degrees) - facing camera
       coin.rotation.y = Math.PI / 2; // Rotated 90 degrees left for proper facing
       coin.rotation.z = 0; // No tilt
       coin.position.set(x, 200, 0); // Centered in tube
@@ -1432,40 +1432,57 @@
           ).join('')}
         </div>
         ${player.choice ? `
-          <div class="choice-badge ${player.choice}">
+          <div class="choice-badge ${player.choice}" style="display: ${player.choice ? 'block' : 'none'};">
             ${player.choice.toUpperCase()}
           </div>
-        ` : (showButtons ? `
-          <div class="choice-buttons">
-            <button class="choice-btn heads">HEADS</button>
-            <button class="choice-btn tails">TAILS</button>
-          </div>
-        ` : `
-          <div style="height: 40px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 14px;">
-            Choose HEADS or TAILS
-          </div>
-        `)}
+        ` : ''}
+        <div class="choice-buttons" style="display: ${showButtons && !player.choice ? 'block' : 'none'};">
+          <button class="choice-btn heads">HEADS</button>
+          <button class="choice-btn tails">TAILS</button>
+        </div>
+        <div style="height: 40px; display: ${!showButtons && !player.choice ? 'flex' : 'none'}; align-items: center; justify-content: center; color: #666; font-size: 14px;">
+          Choose HEADS or TAILS
+        </div>
         <div style="margin: 15px 0;">
           <div style="height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
             <div class="power-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #00ff00, #39ff14); border-radius: 10px; transition: width 0.1s;"></div>
           </div>
           <div class="power-text" style="color: #00ff00; font-size: 14px; text-align: center;">POWER: 0%</div>
         </div>
-        ${showButtons ? `
-          <button class="action-btn change-coin-btn" data-player="${i}">CHANGE COIN</button>
-          <button class="action-btn">CHARGE POWER</button>
-        ` : `
-          <div style="height: 60px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 14px;">
-            ${player.isEmpty ? 'Empty Slot' : 'Other Player'}
-          </div>
-        `}
+        <button class="action-btn change-coin-btn" data-player="${i}" style="display: ${showButtons ? 'block' : 'none'};">CHANGE COIN</button>
+        <button class="action-btn" style="display: ${showButtons ? 'block' : 'none'};">CHARGE POWER</button>
+        <div style="height: 60px; display: ${!showButtons ? 'flex' : 'none'}; align-items: center; justify-content: center; color: #666; font-size: 14px;">
+          ${player.isEmpty ? 'Empty Slot' : 'Other Player'}
+        </div>
       `;
 
       cardElement.style.pointerEvents = 'auto';
       
-      // Add change coin button handler (only for current player)
+      // Add choice button handlers (always add, visibility controlled by CSS)
+      const choiceButtons = cardElement.querySelectorAll('.choice-btn');
+      choiceButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const choice = button.classList.contains('heads') ? 'heads' : 'tails';
+          
+          if (isServerSideMode && socket && gameIdParam && walletParam) {
+            // Send choice to server
+            socket.emit('physics_set_choice', {
+              gameId: gameIdParam,
+              address: walletParam,
+              choice: choice
+            });
+            console.log(`🎯 Sent choice to server: ${choice}`);
+          } else {
+            // Fallback to local mode
+            setPlayerChoice(i, choice);
+          }
+        });
+      });
+
+      // Add change coin button handler (always add, visibility controlled by CSS)
       const changeCoinButton = cardElement.querySelector('.change-coin-btn');
-      if (changeCoinButton && showButtons) {
+      if (changeCoinButton) {
         changeCoinButton.style.pointerEvents = 'auto';
         changeCoinButton.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -1474,12 +1491,12 @@
         });
       }
 
-      // Add power charge button handler (HOLD TO CHARGE) - only for current player
+      // Add power charge button handler (HOLD TO CHARGE) - always add, visibility controlled by CSS
       const flipButtons = cardElement.querySelectorAll('.action-btn');
       const powerButton = flipButtons[1]; // The second action button
       const powerBar = cardElement.querySelector('.power-bar');
       
-      if (powerButton && showButtons) {
+      if (powerButton) {
         const powerText = cardElement.querySelector('.power-text');
         powerButton.style.pointerEvents = 'auto';
         
@@ -3023,7 +3040,7 @@
         }
         
         // Reset coin position
-        tube.coin.rotation.x = 0; // Keep flat
+        tube.coin.rotation.x = Math.PI / 2; // Standing on edge (facing camera)
         tube.coin.rotation.y = Math.PI / 2;
         tube.coin.rotation.z = 0;
         
@@ -3875,7 +3892,7 @@
           coin.position.x = tubeX;
           coin.position.y = 200;
           coin.position.z = 0;
-          coin.rotation.x = 0; // Keep flat
+          coin.rotation.x = Math.PI / 2; // Standing on edge (facing camera)
           coin.rotation.z = 0;
         }
       });
