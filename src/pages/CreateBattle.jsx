@@ -418,7 +418,8 @@ const CreateBattle = () => {
       setCurrentStep(3)
       setStepStatus({ create: true, approve: true, deposit: true })
       
-      showSuccess('🏆 Battle Royale created successfully! Waiting for 4 players to join.')
+      showSuccess('🏆 Battle Royale created successfully! Opening lobby...')
+      // Keep lobby at /battle-royale/:gameId; gameplay will redirect when active
       navigate(`/battle-royale/${battleRoyaleResult.gameId}`)
       
     } catch (error) {

@@ -8,19 +8,9 @@ import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
 import BattleRoyaleContainer from "./components/BattleRoyale/BattleRoyaleContainer";
 import ErrorBoundary from "./components/BattleRoyale/ErrorBoundary";
-import TestGame from "./pages/TestGame";
-import TestGameStandalone from "./pages/TestGameStandalone";
-import TestGlassTubeGame from "./pages/TestGlassTubeGame";
-import TestTubeGame from "./pages/TestTubeGame";
-import { TubeGamePage } from "./components/tubes";
-import { FlipTubeGamePage } from "./components/fliptubes";
+// Removed legacy in-app test/game pages in favor of standalone HTML game
 
 export const router = createBrowserRouter([
-  {
-    // Standalone test route (no Layout = no wagmi dependencies)
-    path: "/test-standalone",
-    element: <TestGameStandalone />,
-  },
   {
     path: "/",
     element: <Layout />,
@@ -65,26 +55,7 @@ export const router = createBrowserRouter([
           </ErrorBoundary>
         ),
       },
-      {
-        path: "test",
-        element: <TestGame />,
-      },
-      {
-        path: "test-glass-tube",
-        element: <TestGlassTubeGame />,
-      },
-      {
-        path: "test-tube-game",
-        element: <TestTubeGame />,
-      },
-      {
-        path: "tube-game/:gameId",
-        element: <TubeGamePage />,
-      },
-      {
-        path: "flip-tube-game/:gameId",
-        element: <FlipTubeGamePage />,
-      },
+      // Deprecated in-app 3D routes removed; active gameplay occurs at /test-tubes.html
     ],
   },
 ]); 

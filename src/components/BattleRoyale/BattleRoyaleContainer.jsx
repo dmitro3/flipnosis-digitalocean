@@ -111,11 +111,11 @@ const BattleRoyaleContent = () => {
     return <LobbyScreen />
   }
 
-  // When game becomes active, redirect to the new fliptubes game
+  // When game becomes active, redirect to standalone HTML game page
   useEffect(() => {
     if (gameState.phase === 'round_active' || gameState.phase === 'playing') {
-      console.log('🎮 Game started, redirecting to FlipTube game')
-      navigate(`/flip-tube-game/${gameId}`)
+      console.log('🎮 Game started, redirecting to standalone HTML game')
+      window.location.href = `/test-tubes.html?gameId=${gameId}`
     }
   }, [gameState.phase, gameId, navigate])
 

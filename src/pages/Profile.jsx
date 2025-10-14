@@ -709,7 +709,7 @@ const Profile = () => {
         const result = await response.json();
         showSuccess('Offer accepted!');
         if (result.gameId) {
-          navigate(`/battle-royale/${result.gameId}`);
+          window.location.href = `/test-tubes.html?gameId=${result.gameId}`
         }
         loadProfileData();
       } else {
@@ -1090,7 +1090,7 @@ const Profile = () => {
                             Cancel
                           </ActionButton>
                         )}
-                        <ActionButton onClick={() => navigate(`/battle-royale/${game.id}`)}>
+                        <ActionButton onClick={() => { window.location.href = `/test-tubes.html?gameId=${game.id}` }}>
                           View Game
                           <ExternalLink style={{ width: '1rem', height: '1rem' }} />
                         </ActionButton>
@@ -1309,7 +1309,7 @@ const Profile = () => {
                           </ActionButton>
                         )}
                         
-                        <ActionButton onClick={() => navigate(`/battle-royale/${game.id}`)}>
+                          <ActionButton onClick={() => { window.location.href = `/test-tubes.html?gameId=${game.id}` }}>
                           View Game
                           <ExternalLink style={{ width: '1rem', height: '1rem' }} />
                         </ActionButton>

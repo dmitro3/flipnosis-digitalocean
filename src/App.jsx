@@ -128,9 +128,9 @@ function App() {
           // Close any open modals
           window.dispatchEvent(new CustomEvent('closeAllModals'))
           
-          // Navigate to game
+          // Navigate to standalone HTML game
           setTimeout(() => {
-            window.location.href = `/battle-royale/${gameId}`
+            window.location.href = `/test-tubes.html?gameId=${gameId}`
           }, 100)
         }
       }

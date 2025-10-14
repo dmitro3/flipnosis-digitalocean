@@ -874,7 +874,7 @@ const Home = () => {
 
       const result = await response.json()
       showSuccess('Game created successfully!')
-      navigate(`/battle-royale/${result.gameId}`)
+      window.location.href = `/test-tubes.html?gameId=${result.gameId}`
     } catch (error) {
       console.error('Error creating game:', error)
       showError(error.message || 'Failed to create game')
@@ -1346,24 +1346,24 @@ const Home = () => {
                             
                             // Handle battle royale games
                             if (selectedFlip.isBattleRoyale) {
-                              navigate(`/battle-royale/${selectedFlip.id}`)
+                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
                             } else if (selectedFlip.type === 'listing') {
-                              navigate(`/battle-royale/${selectedFlip.id}`)
+                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
                             } else if (selectedFlip.status === 'completed') {
                               // Handle completed game view
-                              navigate(`/battle-royale/${selectedFlip.id}`)
+                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
                             } else if (selectedFlip.status === 'active') {
                               // Handle active game view
-                              navigate(`/battle-royale/${selectedFlip.id}`)
+                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
                             } else if (selectedFlip.status === 'joined') {
                               // Handle joined game view
-                              navigate(`/battle-royale/${selectedFlip.id}`)
+                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
                             } else if (selectedFlip.status === 'waiting') {
                               // Handle waiting games - go to unified game page
-                              navigate(`/battle-royale/${selectedFlip.id}`)
+                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
                             } else {
                               // Handle other statuses
-                              navigate(`/battle-royale/${selectedFlip.id}`)
+                              window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
                             }
                           }}
                           style={{

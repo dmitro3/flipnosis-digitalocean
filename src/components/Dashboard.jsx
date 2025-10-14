@@ -315,7 +315,7 @@ const Dashboard = () => {
           showSuccess('Your offer was accepted!')
           // Navigate directly to the game
           if (data.gameId) {
-            navigate(`/battle-royale/${data.gameId}`)
+            window.location.href = `/test-tubes.html?gameId=${data.gameId}`
           }
           break
           
