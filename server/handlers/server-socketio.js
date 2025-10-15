@@ -189,28 +189,7 @@ initialize(server, dbService) {
         )
       }))
 
-      socket.on('battle_royale_update_coin', safeHandler(async (data) => {
-        console.log(`📥 battle_royale_update_coin from ${socket.id}`, data)
-        const { gameId, address, coin } = data || {}
-        if (gameId && (gameId.startsWith('physics_') || `${gameId}`.includes('physics_'))) {
-          // Route to physics game manager and broadcast physics_state_update
-          const success = this.physicsGameManager.updatePlayerCoin(gameId, address, coin)
-          if (success) {
-            this.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
-              this.io.to(room).emit(event, payload)
-            })
-          }
-          return
-        }
-        return this.battleRoyaleHandlers.handleBattleRoyaleUpdateCoin(
-          socket, 
-          data, 
-          this.battleRoyaleManager, 
-          this.io,
-          this.dbService,
-          this.socketTracker
-        )
-      }))
+      // battle_royale_update_coin removed - coin management handled by PhysicsGameManager only
 
       socket.on('spectate_battle_royale', safeHandler((data) => {
         console.log(`📥 spectate_battle_royale from ${socket.id}`)
@@ -274,15 +253,7 @@ initialize(server, dbService) {
         )
       }))
 
-      socket.on('battle_royale_flip_coin', safeHandler((data) => {
-        console.log(`📥 battle_royale_flip_coin from ${socket.id}`, data)
-        return this.battleRoyaleHandlers.handleBattleRoyaleFlipCoin(
-          socket, 
-          data, 
-          this.battleRoyaleManager, 
-          this.io
-        )
-      }))
+      // battle_royale_flip_coin removed - coin flipping handled by PhysicsGameManager only
 
       // Shield deploy
       socket.on('battle_royale_deploy_shield', safeHandler((data) => {

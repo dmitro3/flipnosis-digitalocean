@@ -335,53 +335,17 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
     return true
   }, [gameId, address, gameState])
 
+  // Coin flipping removed - handled by PhysicsGameManager in HTML game
   const flipCoin = useCallback((power = 5) => {
-    if (!gameId || !address || !gameState) return false
+    console.log('🪙 Coin flipping is handled by the HTML game, not the lobby')
+    return false
+  }, [])
 
-    if (gameState.phase !== 'round_active') {
-      showToast('Wait for the round to start', 'warning')
-      return false
-    }
-
-    const player = gameState.players?.[address.toLowerCase()]
-    if (!player?.choice) {
-      showToast('Choose heads or tails first', 'warning')
-      return false
-    }
-
-    if (player.hasFlipped) {
-      showToast('You already flipped', 'warning')
-      return false
-    }
-
-    socketService.emit('battle_royale_flip_coin', {
-      gameId,
-      address,
-      power
-    })
-
-    console.log(`🪙 Coin flipped with power ${power}`)
-    return true
-  }, [gameId, address, gameState, showToast])
-
+  // Coin updating removed - handled by PhysicsGameManager in HTML game
   const updateCoin = useCallback((coinData) => {
-    if (!gameId || !address) return false
-
-    console.log('🪙 Updating coin to:', coinData.name, 'for address:', address)
-    
-    // Clear cached coin images for this player to force reload
-    const key = address.toLowerCase()
-    loadedAddresses.current.delete(key)
-    
-    socketService.emit('battle_royale_update_coin', {
-      gameId,
-      address,
-      coin: coinData
-    })
-
-    console.log('🪙 Coin update request sent to server')
-    return true
-  }, [gameId, address])
+    console.log('🪙 Coin updating is handled by the HTML game, not the lobby')
+    return false
+  }, [])
 
   const startGameEarly = useCallback(() => {
     if (!gameId || !address || !gameState) return false
