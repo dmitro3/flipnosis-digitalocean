@@ -610,9 +610,10 @@
         if (tube) {
           tube.power = data.power;
           tube.foamIntensity = data.power / 100; // Update foam intensity for pearls animation
+          tube.isFilling = data.isFilling; // Set charging state for coin wobble animation
           const powerPercent = tube.foamIntensity;
           
-          console.log(`⚡ Updated power charging visual for player ${data.playerSlot + 1}: ${data.power}% (foamIntensity: ${tube.foamIntensity})`);
+          console.log(`⚡ Updated power charging visual for player ${data.playerSlot + 1}: ${data.power}% (foamIntensity: ${tube.foamIntensity}, isFilling: ${tube.isFilling})`);
           
           // TRANSITION PEARL COLOR from dark to NEON (different color per tube!)
           const darkPearl = new THREE.Color(0x1a1a1a); // Dark grey (neutral start)
@@ -4070,7 +4071,9 @@
             socket.emit('physics_power_charging', {
               gameId: gameIdParam,
               address: walletParam,
-              power: tube.power
+              power: tube.power,
+              playerSlot: i,
+              isFilling: tube.isFilling
             });
           }
           
