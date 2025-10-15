@@ -347,6 +347,18 @@
         console.error('❌ Physics error:', error);
         alert(`Game Error: ${error.message}`);
       });
+      
+      // Listen for player choice updates from server
+      socket.on('player_choice_update', (data) => {
+        console.log('🎯 Player choice update:', data);
+        updatePlayerChoice(data);
+      });
+      
+      // Listen for player flip actions from server
+      socket.on('player_flip_action', (data) => {
+        console.log('🎰 Player flip action:', data);
+        // This will be handled by physics_coin_flip_start event
+      });
     }
     
     // Update client state from server
@@ -373,6 +385,41 @@
           // Update button visibility for all player cards
           updatePlayerCardButtons();
         }
+        
+        // Sync all player choices from server state
+        Object.keys(state.players).forEach(address => {
+          const serverPlayer = state.players[address];
+          if (serverPlayer && serverPlayer.slotNumber >= 0 && serverPlayer.slotNumber < 4) {
+            const localPlayer = players[serverPlayer.slotNumber];
+            if (localPlayer && !localPlayer.isEmpty) {
+              // Update choice if it changed
+              if (serverPlayer.choice && localPlayer.choice !== serverPlayer.choice) {
+                console.log(`🔄 Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice}`);
+                localPlayer.choice = serverPlayer.choice;
+                
+                // Update UI for this player
+                const tube = tubes[serverPlayer.slotNumber];
+                if (tube && tube.cardElement) {
+                  const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
+                  const choiceBadge = tube.cardElement.querySelector('.choice-badge');
+                  
+                  if (choiceButtons && choiceBadge) {
+                    choiceButtons.style.display = 'none';
+                    choiceBadge.style.display = 'inline-block';
+                    choiceBadge.textContent = serverPlayer.choice.toUpperCase();
+                    choiceBadge.className = `choice-badge ${serverPlayer.choice}`;
+                  }
+                }
+              }
+              
+              // Update lives if changed
+              if (serverPlayer.lives !== undefined && localPlayer.lives !== serverPlayer.lives) {
+                localPlayer.lives = serverPlayer.lives;
+                updateLivesDisplay(serverPlayer.slotNumber);
+              }
+            }
+          }
+        });
       }
       
       // Update timer
@@ -429,18 +476,23 @@
       coinStates.forEach((coinState, index) => {
         if (coinState && coinState.position) {
           const coin = coins[index];
-          if (coin) {
-            // Update coin position from server
-            coin.position.set(coinState.position.x, coinState.position.y, coinState.position.z);
-            
-            // Update coin rotation from server
-            if (coinState.rotation) {
-              coin.quaternion.set(
-                coinState.rotation.x,
-                coinState.rotation.y,
-                coinState.rotation.z,
-                coinState.rotation.w
-              );
+          const tube = tubes[index];
+          if (coin && tube) {
+            // ONLY update from server if we're NOT currently flipping locally
+            // Local flip animations take priority to prevent jittery visuals
+            if (!tube.isFlipping) {
+              // Update coin position from server
+              coin.position.set(coinState.position.x, coinState.position.y, coinState.position.z);
+              
+              // Update coin rotation from server
+              if (coinState.rotation) {
+                coin.quaternion.set(
+                  coinState.rotation.x,
+                  coinState.rotation.y,
+                  coinState.rotation.z,
+                  coinState.rotation.w
+                );
+              }
             }
             
             // Update flip state
@@ -517,6 +569,48 @@
           // Update coin rotation based on angle
           const angleRad = (data.angle * Math.PI) / 180;
           coin.rotation.z = angleRad;
+        }
+      }
+    }
+    
+    // Update player choice from server broadcast
+    function updatePlayerChoice(data) {
+      console.log('🎯 Updating player choice:', data);
+      
+      // Find player by address or slot
+      let playerIndex = -1;
+      
+      if (data.playerSlot !== undefined && data.playerSlot >= 0 && data.playerSlot < 4) {
+        playerIndex = data.playerSlot;
+      } else if (data.address) {
+        const normalizedAddress = data.address.toLowerCase();
+        playerIndex = players.findIndex(p => p.address && p.address.toLowerCase() === normalizedAddress);
+      }
+      
+      if (playerIndex >= 0 && playerIndex < 4) {
+        const player = players[playerIndex];
+        if (player && !player.isEmpty) {
+          // Update player choice
+          player.choice = data.choice;
+          console.log(`✅ Updated player ${playerIndex + 1} choice to: ${data.choice}`);
+          
+          // Update the UI - find the choice badge and update it
+          const tube = tubes[playerIndex];
+          if (tube && tube.cardElement) {
+            const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
+            const choiceBadge = tube.cardElement.querySelector('.choice-badge');
+            
+            if (choiceButtons && choiceBadge) {
+              // Replace choice buttons with badge
+              choiceButtons.style.display = 'none';
+              choiceBadge.style.display = 'inline-block';
+              choiceBadge.textContent = data.choice.toUpperCase();
+              choiceBadge.className = `choice-badge ${data.choice}`;
+            }
+          }
+          
+          // Update coin rotation to show the chosen face
+          updateCoinRotationsFromPlayerChoices();
         }
       }
     }

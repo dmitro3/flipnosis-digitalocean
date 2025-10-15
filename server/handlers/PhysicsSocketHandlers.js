@@ -143,6 +143,15 @@ class PhysicsSocketHandlers {
       if (game && game.players[address.toLowerCase()]) {
         const player = game.players[address.toLowerCase()]
         gameManager.physicsEngine.updatePlayerChoice(gameId, player.slotNumber, choice)
+        
+        // Broadcast choice update to all players immediately for responsive UI
+        io.to(`game_${gameId}`).emit('player_choice_update', {
+          address: address,
+          playerSlot: player.slotNumber,
+          choice: choice,
+          gameId: gameId
+        })
+        console.log(`📢 Broadcasting choice update for player ${player.slotNumber}: ${choice}`)
       }
       
       // Broadcast updated state
