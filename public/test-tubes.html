@@ -414,8 +414,12 @@
             coin.rotation.x = 3 * Math.PI / 2;
             coin.rotation.y = Math.PI / 2;
             coin.rotation.z = 0;
+          } else {
+            // If no choice made, default to standing on edge (heads position)
+            coin.rotation.x = Math.PI / 2;
+            coin.rotation.y = Math.PI / 2;
+            coin.rotation.z = 0;
           }
-          // If no choice made, keep default position (lying flat)
         }
       });
     }
@@ -469,9 +473,19 @@
     function showCoinFlipResult(data) {
       if (data.playerSlot >= 0 && data.playerSlot < 4) {
         const tube = tubes[data.playerSlot];
+        const coin = coins[data.playerSlot];
         
-        if (tube) {
+        if (tube && coin) {
           tube.isFlipping = false;
+          
+          // Lock coin to final rotation based on result
+          const targetRotationX = data.result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
+          const finalCycles = Math.floor(coin.rotation.x / (Math.PI * 2));
+          coin.rotation.x = finalCycles * (Math.PI * 2) + targetRotationX;
+          coin.rotation.y = Math.PI / 2;
+          coin.rotation.z = 0;
+          
+          console.log(`✅ Coin ${data.playerSlot + 1} landed on ${data.result} facing camera (server-side)`);
           
           // Show result
           showResult(data.playerSlot, data.won, data.result);
@@ -1336,8 +1350,8 @@
       ];
       
       const coin = new THREE.Mesh(coinGeometry, coinMaterials);
-      coin.rotation.x = 0; // Lying flat (like reference reset function)
-      coin.rotation.y = Math.PI / 2; // Rotated 90 degrees for proper facing
+      coin.rotation.x = Math.PI / 2; // Standing on edge (90 degrees)
+      coin.rotation.y = Math.PI / 2; // Rotated 90 degrees left for proper facing
       coin.rotation.z = 0; // No tilt
       coin.position.set(x, 200, 0); // Centered in tube
       coin.visible = true; // Explicitly set visible
@@ -3051,8 +3065,8 @@
           tube.loseLight = null;
         }
         
-        // Reset coin position (like reference)
-        tube.coin.rotation.x = 0;
+        // Reset coin position
+        tube.coin.rotation.x = Math.PI / 2;
         tube.coin.rotation.y = Math.PI / 2;
         tube.coin.rotation.z = 0;
         

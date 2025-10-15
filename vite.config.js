@@ -75,9 +75,12 @@ export default defineConfig(({ mode }) => {
         '@wagmi/core',
         '@rainbow-me/rainbowkit'
       ],
-      exclude: ['canvas'],
+      exclude: ['canvas', '@base-org/account'],
       esbuildOptions: {
-        target: 'esnext'
+        target: 'esnext',
+        supported: {
+          'import-assertions': true
+        }
       }
     },
     build: {
