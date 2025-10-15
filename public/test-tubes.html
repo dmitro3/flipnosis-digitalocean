@@ -348,7 +348,7 @@
         console.log('💰 FLIP tokens awarded:', data);
         if (data.success) {
           console.log(`✅ Received ${data.amount} FLIP tokens! Total: ${data.totalXP}`);
-          // You could show a notification here if desired
+          showXPAwardNotification(data.amount, data.totalXP);
         } else {
           console.error('❌ Failed to award FLIP tokens:', data.error);
         }
@@ -602,7 +602,8 @@
         const tube = tubes[data.playerSlot];
         if (tube) {
           tube.power = data.power;
-          // Visual updates will be handled in the animation loop
+          tube.foamIntensity = data.power / 100; // Update foam intensity for pearls animation
+          console.log(`⚡ Updated power charging visual for player ${data.playerSlot + 1}: ${data.power}%`);
         }
       }
     }
@@ -3422,6 +3423,55 @@
       }
     }
     
+    // Show XP award notification
+    function showXPAwardNotification(amount, totalXP) {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        border: 2px solid #00ff00;
+        border-radius: 15px;
+        padding: 20px 25px;
+        color: #00ff00;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: bold;
+        font-size: 18px;
+        z-index: 10001;
+        box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+        transform: translateX(100%);
+        transition: transform 0.3s ease-in-out;
+      `;
+      
+      notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="font-size: 24px;">💰</div>
+          <div>
+            <div style="font-size: 20px; margin-bottom: 5px;">+${amount} FLIP</div>
+            <div style="font-size: 14px; opacity: 0.8;">Total: ${totalXP}</div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Slide in
+      setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+      }, 100);
+      
+      // Slide out and remove after 3 seconds
+      setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 300);
+      }, 3000);
+    }
+
     // Show game over screen
     function showGameOverScreen(winnerIndex, winnerName) {
       const gameOverDiv = document.createElement('div');
@@ -3884,53 +3934,8 @@
       }
     })();
     
-    // ===== DELAYED DEFAULT APPLICATION (1 second after load) =====
+    // ===== POST-INITIALIZATION SETUP =====
     setTimeout(() => {
-      console.log('🔄 Running delayed default application check...');
-      
-      tubes.forEach((tube, tubeIndex) => {
-        const player = players[tubeIndex];
-        const defaultCoin = coinOptions[0]; // Classic
-        const defaultMaterial = coinMaterials[0]; // Graphite
-        
-        // Force update stored selections
-        tube.selectedCoin = defaultCoin;
-        tube.selectedMaterial = defaultMaterial;
-        
-        // Apply material edge color
-        const edgeColor = new THREE.Color(defaultMaterial.edgeColor);
-        tube.coin.material[0].color.copy(edgeColor);
-        tube.coin.material[0].emissive.copy(edgeColor);
-        tube.coin.material[0].emissiveIntensity = 0.3;
-        tube.coin.material[0].needsUpdate = true;
-        
-        // Load and apply coin textures
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load(defaultCoin.headsImage, (headsTex) => {
-          headsTex.minFilter = THREE.LinearFilter;
-          headsTex.magFilter = THREE.LinearFilter;
-          headsTex.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
-          headsTex.generateMipmaps = false;
-          
-          textureLoader.load(defaultCoin.tailsImage, (tailsTex) => {
-            tailsTex.minFilter = THREE.LinearFilter;
-            tailsTex.magFilter = THREE.LinearFilter;
-            tailsTex.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
-            tailsTex.generateMipmaps = false;
-            
-            // Update textures
-            tube.coin.material[1].uniforms.map.value = headsTex;
-            tube.coin.material[1].needsUpdate = true;
-            tube.coin.material[2].uniforms.map.value = tailsTex;
-            tube.coin.material[2].needsUpdate = true;
-            
-            console.log(`🔄 Delayed update: Applied ${defaultCoin.name} with ${defaultMaterial.name} to ${player.name}'s coin`);
-          });
-        });
-      });
-      
-      console.log('✅ Delayed default application complete!');
-      
       // Update player card buttons after all initialization is complete
       if (typeof updatePlayerCardButtons === 'function') {
         updatePlayerCardButtons();
