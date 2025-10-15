@@ -495,6 +495,33 @@ initialize(server, dbService) {
         )
       }))
 
+      // Award FLIP tokens for coin flips
+      socket.on('award_flip_tokens', safeHandler(async (data) => {
+        console.log(`💰 award_flip_tokens from ${socket.id}`, data)
+        const { gameId, address, amount, reason } = data
+        
+        try {
+          // Award XP/FLIP tokens using the existing XP service
+          const result = await this.xpService.awardSpecialXP(address, reason, amount, gameId)
+          
+          // Send confirmation back to client
+          socket.emit('flip_tokens_awarded', {
+            success: true,
+            amount: result.xpGained,
+            totalXP: result.totalXP,
+            message: result.message
+          })
+          
+          console.log(`✅ Awarded ${amount} FLIP tokens to ${address}`)
+        } catch (error) {
+          console.error('Error awarding FLIP tokens:', error)
+          socket.emit('flip_tokens_awarded', {
+            success: false,
+            error: 'Failed to award FLIP tokens'
+          })
+        }
+      }))
+
       // Legacy physics events for compatibility
       socket.on('physics_fire_coin', safeHandler((data) => {
         console.log(`🔥 physics_fire_coin (legacy) from ${socket.id}`, data)

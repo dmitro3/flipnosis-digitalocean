@@ -343,6 +343,17 @@
         updateCoinAngleVisual(data);
       });
       
+      // Handle FLIP token award confirmation
+      socket.on('flip_tokens_awarded', (data) => {
+        console.log('💰 FLIP tokens awarded:', data);
+        if (data.success) {
+          console.log(`✅ Received ${data.amount} FLIP tokens! Total: ${data.totalXP}`);
+          // You could show a notification here if desired
+        } else {
+          console.error('❌ Failed to award FLIP tokens:', data.error);
+        }
+      });
+      
       socket.on('physics_error', (error) => {
         console.error('❌ Physics error:', error);
         alert(`Game Error: ${error.message}`);
@@ -379,6 +390,22 @@
       } else if (state.phase === 'game_over') {
         stopTimer();
         gameOver = true;
+        
+        // Handle server-side game end
+        if (state.winner) {
+          // Find winner index
+          const winnerIndex = players.findIndex(p => p.address && p.address.toLowerCase() === state.winner.toLowerCase());
+          if (winnerIndex >= 0) {
+            console.log(`🏆 Server declared winner: ${players[winnerIndex].name}`);
+            showGameOverScreen(winnerIndex, players[winnerIndex].name);
+          } else {
+            console.log(`🏆 Server declared winner but couldn't find player: ${state.winner}`);
+            showGameOverScreen(-1, state.winner);
+          }
+        } else {
+          console.log(`🏆 Server declared game over with no winner`);
+          showGameOverScreen(-1, null);
+        }
       }
       
       // Update player data
@@ -457,20 +484,27 @@
         const player = players[i];
         const coin = coins[i];
         
-        if (player && !player.isEmpty && coin && !tube.isFlipping && !tube.isShattered) {
-          // Only update rotation if player has made a choice and coin is not flipping
-          if (player.choice === 'heads') {
-            // Show heads face (standing on edge, heads facing camera)
-            coin.rotation.x = Math.PI / 2;
-            coin.rotation.y = Math.PI / 2;
-            coin.rotation.z = 0;
-          } else if (player.choice === 'tails') {
-            // Show tails face (standing on edge, tails facing camera)
-            coin.rotation.x = 3 * Math.PI / 2;
-            coin.rotation.y = Math.PI / 2;
-            coin.rotation.z = 0;
+        if (coin && !tube.isFlipping && !tube.isShattered) {
+          if (player && !player.isEmpty) {
+            // Only update rotation if player has made a choice and coin is not flipping
+            if (player.choice === 'heads') {
+              // Show heads face (standing on edge, heads facing camera)
+              coin.rotation.x = Math.PI / 2;
+              coin.rotation.y = Math.PI / 2;
+              coin.rotation.z = 0;
+            } else if (player.choice === 'tails') {
+              // Show tails face (standing on edge, tails facing camera)
+              coin.rotation.x = 3 * Math.PI / 2;
+              coin.rotation.y = Math.PI / 2;
+              coin.rotation.z = 0;
+            } else {
+              // If no choice made, default to standing on edge (heads position)
+              coin.rotation.x = Math.PI / 2;
+              coin.rotation.y = Math.PI / 2;
+              coin.rotation.z = 0;
+            }
           } else {
-            // If no choice made, default to standing on edge (heads position)
+            // For empty players, ensure coin is in default upright position (not sideways)
             coin.rotation.x = Math.PI / 2;
             coin.rotation.y = Math.PI / 2;
             coin.rotation.z = 0;
@@ -492,14 +526,18 @@
               // Update coin position from server
               coin.position.set(coinState.position.x, coinState.position.y, coinState.position.z);
               
-              // Update coin rotation from server
-              if (coinState.rotation) {
+              // Update coin rotation from server, but preserve choice-based rotation when not flipping
+              if (coinState.rotation && coinState.isFlipping) {
+                // Only update rotation from server if the coin is actually flipping
                 coin.quaternion.set(
                   coinState.rotation.x,
                   coinState.rotation.y,
                   coinState.rotation.z,
                   coinState.rotation.w
                 );
+              } else {
+                // When not flipping, ensure coin maintains proper choice-based rotation
+                updateCoinRotationsFromPlayerChoices();
               }
             }
             
@@ -2484,6 +2522,23 @@
             tubes[tubeIndex].coin.material[0].needsUpdate = true;
             
             console.log(`✅ Applied ${selectedCoin.name} with ${selectedMaterial.name} material to ${players[tubeIndex].name}'s coin`);
+            
+            // Send coin update to server
+            if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === tubeIndex) {
+              socket.emit('physics_update_coin', {
+                gameId: gameIdParam,
+                address: walletParam,
+                coinData: {
+                  id: selectedCoin.id,
+                  type: selectedCoin.type,
+                  name: selectedCoin.name,
+                  headsImage: selectedCoin.headsImage,
+                  tailsImage: selectedCoin.tailsImage,
+                  material: selectedMaterial
+                }
+              });
+              console.log(`🎯 Sent coin update to server: ${selectedCoin.name}`);
+            }
           });
         });
         
@@ -2657,6 +2712,17 @@
       
       const reward = getRandomFlipReward();
       console.log(`💰 Player ${tubeIndex + 1} earned ${reward.amount} FLIP!`);
+      
+      // Award FLIP tokens to player via server
+      if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === tubeIndex) {
+        socket.emit('award_flip_tokens', {
+          gameId: gameIdParam,
+          address: walletParam,
+          amount: reward.amount,
+          reason: 'coin_flip_reward'
+        });
+        console.log(`🎯 Sent FLIP token award to server: ${reward.amount} tokens`);
+      }
       
       // Create floating reward box styled like win/lose boxes
       const rewardBox = document.createElement('div');
@@ -3902,6 +3968,15 @@
           
           // Update foam intensity
           tube.foamIntensity = powerPercent;
+          
+          // Broadcast power charging to server for other players to see pearls animation
+          if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === i) {
+            socket.emit('physics_charge_power', {
+              gameId: gameIdParam,
+              address: walletParam,
+              power: tube.power
+            });
+          }
           
           // Update UI elements
           if (tube.cardElement) {
