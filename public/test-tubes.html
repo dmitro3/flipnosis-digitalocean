@@ -1594,17 +1594,30 @@
           e.stopPropagation();
           const choice = button.classList.contains('heads') ? 'heads' : 'tails';
           
+          // Update local player choice immediately
+          players[i].choice = choice;
+          
+          // Update local UI immediately
+          const choiceBadge = cardElement.querySelector('.choice-badge');
+          const choiceButtons = cardElement.querySelector('.choice-buttons');
+          if (choiceButtons && choiceBadge) {
+            choiceButtons.style.display = 'none';
+            choiceBadge.style.display = 'inline-block';
+            choiceBadge.textContent = choice.toUpperCase();
+            choiceBadge.className = `choice-badge ${choice}`;
+          }
+          
+          // Update coin rotation locally
+          updateCoinRotationsFromPlayerChoices();
+          
           if (isServerSideMode && socket && gameIdParam && walletParam) {
-            // Send choice to server
+            // Send choice to server (will broadcast to other players)
             socket.emit('physics_set_choice', {
               gameId: gameIdParam,
               address: walletParam,
               choice: choice
             });
             console.log(`🎯 Sent choice to server: ${choice}`);
-          } else {
-            // Fallback to local mode
-            setPlayerChoice(i, choice);
           }
         });
       });
@@ -1764,6 +1777,9 @@
             const choice = btn.textContent.toLowerCase();
             players[i].choice = choice;
             console.log(`Player ${i + 1} selected: ${choice}`);
+            
+            // Update coin rotation immediately
+            updateCoinRotationsFromPlayerChoices();
             
             // Send choice to server
             if (isServerSideMode && socket && gameIdParam && walletParam) {
@@ -3121,6 +3137,9 @@
                 const choice = btn.textContent.toLowerCase();
                 players[i].choice = choice;
                 
+                // Update coin rotation immediately
+                updateCoinRotationsFromPlayerChoices();
+                
                 // Send choice to server
                 if (isServerSideMode && socket && gameIdParam && walletParam) {
                   socket.emit('physics_set_choice', {
@@ -3461,6 +3480,9 @@
                 const choice = btn.textContent.toLowerCase();
                 players[i].choice = choice;
                 console.log(`Player ${i + 1} selected: ${choice}`);
+                
+                // Update coin rotation immediately
+                updateCoinRotationsFromPlayerChoices();
                 
                 // Send choice to server
                 if (isServerSideMode && socket && gameIdParam && walletParam) {
