@@ -75,8 +75,8 @@ class ServerPhysicsEngine {
   initializeGamePhysics(gameId, gameData) {
     const gameBodies = {
       tubes: [],
-      coins: [],
-      liquidParticles: []
+      coins: []
+      // liquidParticles removed - client-side visual only
     }
 
     // Create tube physics bodies (4 tubes)
@@ -98,29 +98,10 @@ class ServerPhysicsEngine {
       coinBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI / 2) // Lay flat
       this.world.addBody(coinBody)
       
-      // Liquid particles (small spheres)
-      const particles = []
-      for (let j = 0; j < 20; j++) {
-        const particleShape = new CANNON.Sphere(2)
-        const particleBody = new CANNON.Body({ mass: 0.01 })
-        particleBody.addShape(particleShape)
-        
-        // Random position in tube
-        const angle = Math.random() * Math.PI * 2
-        const radius = Math.random() * 20
-        particleBody.position.set(
-          tubeX + Math.cos(angle) * radius,
-          200 - 100 + Math.random() * 50, // Bottom half of tube
-          Math.sin(angle) * radius
-        )
-        
-        this.world.addBody(particleBody)
-        particles.push(particleBody)
-      }
+      // Liquid particles removed - client-side visual only for performance
       
       gameBodies.tubes.push(tubeBody)
       gameBodies.coins.push(coinBody)
-      gameBodies.liquidParticles.push(particles)
     }
 
     this.bodies.set(gameId, gameBodies)
@@ -325,32 +306,51 @@ class ServerPhysicsEngine {
     
     if (!gameBodies || !gameState) return null
     
-    const coinStates = gameBodies.coins.map((coin, index) => ({
-      index: index,
-      position: {
-        x: coin.position.x,
-        y: coin.position.y,
-        z: coin.position.z
-      },
-      rotation: {
-        x: coin.quaternion.x,
-        y: coin.quaternion.y,
-        z: coin.quaternion.z,
-        w: coin.quaternion.w
-      },
-      velocity: {
-        x: coin.velocity.x,
-        y: coin.velocity.y,
-        z: coin.velocity.z
-      },
-      angularVelocity: {
-        x: coin.angularVelocity.x,
-        y: coin.angularVelocity.y,
-        z: coin.angularVelocity.z
-      },
-      isFlipping: gameState.coinStates[index].isFlipping,
-      result: gameState.coinStates[index].result
-    }))
+    const coinStates = gameBodies.coins.map((coin, index) => {
+      const isFlipping = gameState.coinStates[index].isFlipping
+      
+      // Only send position/rotation updates when NOT flipping
+      // During flip, client handles animation locally
+      if (isFlipping) {
+        return {
+          index: index,
+          position: { x: coin.position.x, y: 200, z: 0 }, // Keep centered
+          rotation: null, // Don't send rotation during flip - prevents conflict
+          velocity: null,
+          angularVelocity: null,
+          isFlipping: true,
+          result: gameState.coinStates[index].result
+        }
+      }
+      
+      // When not flipping, send full state
+      return {
+        index: index,
+        position: {
+          x: coin.position.x,
+          y: coin.position.y,
+          z: coin.position.z
+        },
+        rotation: {
+          x: coin.quaternion.x,
+          y: coin.quaternion.y,
+          z: coin.quaternion.z,
+          w: coin.quaternion.w
+        },
+        velocity: {
+          x: coin.velocity.x,
+          y: coin.velocity.y,
+          z: coin.velocity.z
+        },
+        angularVelocity: {
+          x: coin.angularVelocity.x,
+          y: coin.angularVelocity.y,
+          z: coin.angularVelocity.z
+        },
+        isFlipping: false,
+        result: gameState.coinStates[index].result
+      }
+    })
     
     return {
       gameId: gameId,
@@ -416,7 +416,7 @@ class ServerPhysicsEngine {
     
     if (gameBodies) {
       // Remove all bodies from world
-      [...gameBodies.tubes, ...gameBodies.coins, ...gameBodies.liquidParticles.flat()].forEach(body => {
+      [...gameBodies.tubes, ...gameBodies.coins].forEach(body => {
         this.world.removeBody(body)
       })
       

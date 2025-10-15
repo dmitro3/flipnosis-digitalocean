@@ -229,9 +229,18 @@ class PhysicsGameManager {
 
     console.log(`🎲 Server-side coin flip initiated for ${address}: power=${power}, choice=${player.choice}`)
 
-    // Broadcast the flip start to all clients
+    // Broadcast the flip start AND glass shatter to all clients
     if (broadcast) {
       const room = `game_${gameId}`
+      
+      // Broadcast glass shatter effect
+      broadcast(room, 'glass_shatter', {
+        gameId: gameId,
+        playerSlot: player.slotNumber,
+        power: power
+      })
+      
+      // Broadcast flip start
       broadcast(room, 'physics_coin_flip_start', {
         gameId: gameId,
         playerAddress: address,

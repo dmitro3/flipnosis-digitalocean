@@ -359,6 +359,14 @@
         console.log('🎰 Player flip action:', data);
         // This will be handled by physics_coin_flip_start event
       });
+      
+      // Listen for glass shatter events
+      socket.on('glass_shatter', (data) => {
+        console.log('💥 Glass shatter:', data);
+        if (data.playerSlot >= 0 && data.playerSlot < 4) {
+          shatterGlass(data.playerSlot, data.power);
+        }
+      });
     }
     
     // Update client state from server
@@ -565,8 +573,9 @@
     function updateCoinAngleVisual(data) {
       if (data.playerSlot >= 0 && data.playerSlot < 4) {
         const coin = coins[data.playerSlot];
-        if (coin) {
-          // Update coin rotation based on angle
+        const tube = tubes[data.playerSlot];
+        if (coin && tube && !tube.isFlipping) {
+          // Only update angle if NOT currently flipping (prevent conflict)
           const angleRad = (data.angle * Math.PI) / 180;
           coin.rotation.z = angleRad;
         }
@@ -1660,17 +1669,14 @@
           // Stop power charging sound
           stopSound(powerChargeSound);
           
-          // Shatter glass at ANY power level (spray scales with power)
-          // Minimum 5% power to prevent instant flips
+          // Shatter glass and flip coin (minimum 5% power to prevent instant flips)
           if (finalPower >= 5) {
-            shatterGlass(i, finalPower);
-            
             // Server-side physics: Send flip request to server
             if (isServerSideMode && socket && gameIdParam && walletParam) {
               // Get player choice from the card
               const playerChoice = players[i].choice;
               
-              // Send flip request to server
+              // Send flip request to server (server will broadcast glass shatter to all)
               socket.emit('physics_flip_coin', {
                 gameId: gameIdParam,
                 address: walletParam,
@@ -1681,6 +1687,7 @@
               console.log(`🪙 Sent flip request to server: power=${finalPower}, choice=${playerChoice}`);
             } else {
               // Fallback to local physics (for testing)
+              shatterGlass(i, finalPower);
               const playerChoice = players[i].choice;
               flipCoinWithPower(i, finalPower, playerChoice);
             }
@@ -1704,17 +1711,14 @@
             // Stop power charging sound
             stopSound(powerChargeSound);
             
-            // Shatter glass at ANY power level
-            // Minimum 5% power to prevent instant flips
+            // Shatter glass and flip coin (minimum 5% power)
             if (finalPower >= 5) {
-              shatterGlass(i, finalPower);
-              
               // Server-side physics: Send flip request to server
               if (isServerSideMode && socket && gameIdParam && walletParam) {
                 // Get player choice from the card
                 const playerChoice = players[i].choice;
                 
-                // Send flip request to server
+                // Send flip request to server (server will broadcast glass shatter to all)
                 socket.emit('physics_flip_coin', {
                   gameId: gameIdParam,
                   address: walletParam,
@@ -1725,6 +1729,7 @@
                 console.log(`🪙 Sent flip request to server (mouseleave): power=${finalPower}, choice=${playerChoice}`);
               } else {
                 // Fallback to local physics (for testing)
+                shatterGlass(i, finalPower);
                 const playerChoice = players[i].choice;
                 flipCoinWithPower(i, finalPower, playerChoice);
               }

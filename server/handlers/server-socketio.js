@@ -16,8 +16,14 @@ class GameServer {
     
     // Initialize managers FIRST
     // this.gameManager = new GameManager() // TODO: Not implemented yet - for 1v1 games
+    
+    // ⚠️ DEPRECATED: Old battle royale system - kept for backward compatibility
+    // Current client (test-tubes.html) uses ONLY PhysicsGameManager
     this.battleRoyaleManager = new BattleRoyaleGameManager()
+    
+    // ✅ ACTIVE: Physics-based game system (current implementation)
     this.physicsGameManager = new PhysicsGameManager()
+    
     // this.flipService = new FlipService() // Temporarily disabled for debugging
     this.flipService = null // Placeholder
     
@@ -28,7 +34,11 @@ class GameServer {
     // this.oneVOneHandlers = require('./1v1SocketHandlers') // TODO: Not implemented yet
     const BattleRoyaleSocketHandlersClass = require('./BattleRoyaleSocketHandlers')
     const PhysicsSocketHandlersClass = require('./PhysicsSocketHandlers')
+    
+    // ⚠️ DEPRECATED: Old handlers - kept for backward compatibility
     this.battleRoyaleHandlers = new BattleRoyaleSocketHandlersClass()
+    
+    // ✅ ACTIVE: Physics handlers (current implementation)
     this.physicsHandlers = new PhysicsSocketHandlersClass()
     
     this.socketData = new Map() // socketId -> { address, gameId, roomId, role }
