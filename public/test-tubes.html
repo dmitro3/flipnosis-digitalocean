@@ -610,7 +610,37 @@
         if (tube) {
           tube.power = data.power;
           tube.foamIntensity = data.power / 100; // Update foam intensity for pearls animation
+          const powerPercent = tube.foamIntensity;
+          
           console.log(`⚡ Updated power charging visual for player ${data.playerSlot + 1}: ${data.power}% (foamIntensity: ${tube.foamIntensity})`);
+          
+          // TRANSITION PEARL COLOR from dark to NEON (different color per tube!)
+          const darkPearl = new THREE.Color(0x1a1a1a); // Dark grey (neutral start)
+          
+          // Define neon colors for each tube
+          let neonColor;
+          if (data.playerSlot === 0) {
+            neonColor = new THREE.Color(0x00ff00); // Tube 1: NEON GREEN
+          } else if (data.playerSlot === 1) {
+            neonColor = new THREE.Color(0x00ddff); // Tube 2: NEON BLUE
+          } else if (data.playerSlot === 2) {
+            neonColor = new THREE.Color(0xff0088); // Tube 3: NEON PINK
+          } else {
+            neonColor = new THREE.Color(0xffff00); // Tube 4: NEON YELLOW
+          }
+          
+          const currentColor = darkPearl.clone().lerp(neonColor, powerPercent);
+          
+          // Update pearl colors with MAXIMUM NEON - ULTRA VIBRANT with bloom!
+          tube.liquidParticleMeshes.forEach(particleMesh => {
+            particleMesh.material.color.copy(currentColor);
+            particleMesh.material.emissive.copy(currentColor);
+            particleMesh.material.emissiveIntensity = 0.2 + (powerPercent * 25.0); // 0.2 to 25.2 - Perfect with bloom!
+          });
+          
+          // Update liquid light to match pearl color
+          tube.liquidLight.color.copy(currentColor);
+          tube.liquidLight.intensity = 0.3 + (powerPercent * 15.0); // 0.3 to 15.3 - MEGA INTENSE!
           
           // Debug: Check if pearls exist and are visible
           if (tube.liquidParticleMeshes && tube.liquidParticleMeshes.length > 0) {
@@ -4037,7 +4067,7 @@
           
           // Broadcast power charging to server for other players to see pearls animation
           if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === i) {
-            socket.emit('physics_charge_power', {
+            socket.emit('physics_power_charging', {
               gameId: gameIdParam,
               address: walletParam,
               power: tube.power
@@ -4104,6 +4134,7 @@
           // Debug: Log pearl animation for remote players
           if (tube.foamIntensity > 0 && !tube.isFilling) {
             console.log(`🌊 REMOTE pearl animation for tube ${i + 1}: foamIntensity=${tube.foamIntensity}, isFilling=${tube.isFilling}, isShattered=${tube.isShattered}`);
+            console.log(`🌊 Animating ${tube.liquidParticles.length} pearls with forces: buoyancy=${buoyancyForce}, spin=${spinForce}`);
           }
           
           // Debug: Log pearl animation for local players
