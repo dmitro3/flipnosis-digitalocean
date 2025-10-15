@@ -365,6 +365,12 @@
         updatePlayerChoice(data);
       });
       
+      // Listen for coin updates from server
+      socket.on('coin_update', (data) => {
+        console.log('🪙 Coin update received:', data);
+        updateCoinFromServer(data);
+      });
+      
       // Listen for player flip actions from server
       socket.on('player_flip_action', (data) => {
         console.log('🎰 Player flip action:', data);
@@ -604,6 +610,54 @@
           tube.power = data.power;
           tube.foamIntensity = data.power / 100; // Update foam intensity for pearls animation
           console.log(`⚡ Updated power charging visual for player ${data.playerSlot + 1}: ${data.power}%`);
+        }
+      }
+    }
+    
+    // Update coin from server
+    function updateCoinFromServer(data) {
+      if (data.playerSlot >= 0 && data.playerSlot < 4) {
+        const tube = tubes[data.playerSlot];
+        const coin = coins[data.playerSlot];
+        const player = players[data.playerSlot];
+        
+        if (tube && coin && player && data.coinData) {
+          console.log(`🪙 Updating coin for player ${data.playerSlot + 1}: ${data.coinData.name}`);
+          
+          // Update stored selections
+          tube.selectedCoin = data.coinData;
+          tube.selectedMaterial = coinMaterials.find(m => m.id === data.coinData.material) || coinMaterials[0];
+          
+          // Load and apply new coin textures
+          const textureLoader = new THREE.TextureLoader();
+          textureLoader.load(data.coinData.headsImage, (headsTex) => {
+            headsTex.minFilter = THREE.LinearFilter;
+            headsTex.magFilter = THREE.LinearFilter;
+            headsTex.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
+            headsTex.generateMipmaps = false;
+            
+            textureLoader.load(data.coinData.tailsImage, (tailsTex) => {
+              tailsTex.minFilter = THREE.LinearFilter;
+              tailsTex.magFilter = THREE.LinearFilter;
+              tailsTex.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
+              tailsTex.generateMipmaps = false;
+              
+              // Update textures
+              coin.material[1].uniforms.map.value = headsTex;
+              coin.material[1].needsUpdate = true;
+              coin.material[2].uniforms.map.value = tailsTex;
+              coin.material[2].needsUpdate = true;
+              
+              // Update coin edge color based on material
+              const edgeColor = new THREE.Color(tube.selectedMaterial.edgeColor);
+              coin.material[0].color.copy(edgeColor);
+              coin.material[0].emissive.copy(edgeColor);
+              coin.material[0].emissiveIntensity = 0.3;
+              coin.material[0].needsUpdate = true;
+              
+              console.log(`✅ Applied ${data.coinData.name} with ${tube.selectedMaterial.name} material to ${player.name}'s coin`);
+            });
+          });
         }
       }
     }

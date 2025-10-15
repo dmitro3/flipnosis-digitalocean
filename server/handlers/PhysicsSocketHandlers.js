@@ -210,6 +210,17 @@ class PhysicsSocketHandlers {
       console.log(`📊 State has ${state.currentPlayers} players:`, Object.keys(state.players))
       console.log(`📊 Player ${address.slice(0, 8)}... now has coin:`, state.players[address.toLowerCase()]?.coin?.name)
       
+      // Get player slot for coin update broadcast
+      const game = gameManager.getGame(gameId)
+      let playerSlot = -1
+      if (game && game.players) {
+        const normalizedAddress = address.toLowerCase()
+        const player = game.players[normalizedAddress]
+        if (player) {
+          playerSlot = player.slotNumber || 0
+        }
+      }
+      
       // Use our socket tracker for direct broadcast
       if (socketTracker) {
         const gameSockets = socketTracker.getGameSockets(gameId)
@@ -222,7 +233,14 @@ class PhysicsSocketHandlers {
           gameSockets.forEach(socketId => {
             const targetSocket = io.sockets.sockets.get(socketId)
             if (targetSocket) {
+              // Send both state update and specific coin update
               targetSocket.emit('physics_state_update', state)
+              targetSocket.emit('coin_update', {
+                gameId: gameId,
+                playerAddress: address,
+                playerSlot: playerSlot,
+                coinData: coinToUpdate
+              })
               console.log(`✅ Sent physics coin update to socket ${socketId}`)
               successCount++
             } else {
@@ -236,12 +254,24 @@ class PhysicsSocketHandlers {
           console.log(`⚠️ Falling back to room-based broadcast`)
           const roomId = `game_${gameId}`
           io.to(roomId).emit('physics_state_update', state)
+          io.to(roomId).emit('coin_update', {
+            gameId: gameId,
+            playerAddress: address,
+            playerSlot: playerSlot,
+            coinData: coinToUpdate
+          })
         }
       } else {
         console.log(`⚠️ WARNING: SocketTracker not available!`)
         console.log(`⚠️ Falling back to room-based broadcast`)
         const roomId = `game_${gameId}`
         io.to(roomId).emit('physics_state_update', state)
+        io.to(roomId).emit('coin_update', {
+          gameId: gameId,
+          playerAddress: address,
+          playerSlot: playerSlot,
+          coinData: coinToUpdate
+        })
         console.log(`📡 Broadcasted to room ${roomId}`)
       }
       
@@ -356,10 +386,22 @@ class PhysicsSocketHandlers {
     const { gameId, address, power } = data
     console.log(`⚡ ${address} charging power to ${power}%`)
     
+    // Get player slot from game state
+    const game = gameManager.getGame(gameId)
+    let playerSlot = -1
+    if (game && game.players) {
+      const normalizedAddress = address.toLowerCase()
+      const player = game.players[normalizedAddress]
+      if (player) {
+        playerSlot = player.slotNumber || 0
+      }
+    }
+    
     // Broadcast power charging to all clients for visual feedback
     io.to(`game_${gameId}`).emit('physics_power_charging', {
       gameId: gameId,
       playerAddress: address,
+      playerSlot: playerSlot,
       power: power
     })
   }
