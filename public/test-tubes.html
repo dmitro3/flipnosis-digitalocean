@@ -1057,9 +1057,9 @@
     // Bloom effect - ULTRA CRISP neon glow with minimal blur!
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(width, height),
-      0.7,  // Strength - slightly reduced for crispness
-      0.2,  // Radius - VERY TIGHT to prevent blur/squareness
-      0.3   // Threshold - LOW to catch all pearl emission
+      1.0,  // Strength - increased for better visibility
+      0.3,  // Radius - slightly increased for better glow
+      0.1   // Threshold - VERY LOW to catch all pearl emission
     );
     bloomPass.renderToScreen = false; // DON'T render to screen - keep in buffer!
     bloomComposer.addPass(bloomPass);
@@ -4089,14 +4089,26 @@
         }
         
         // PEARLS FLOAT UP & SPIN AROUND - Like a magical snow globe!
-        if (tube.foamIntensity > 0 && !tube.isShattered) {
+        // Run animation for both local charging (isFilling) and remote charging (foamIntensity > 0)
+        
+        // Debug: Check why pearl animation might not run
+        if (tube.foamIntensity > 0 && tube.isShattered) {
+          console.log(`🚫 Pearl animation BLOCKED for tube ${i + 1}: foamIntensity=${tube.foamIntensity} but isShattered=${tube.isShattered}`);
+        }
+        
+        if ((tube.isFilling || tube.foamIntensity > 0) && !tube.isShattered) {
           const spinSpeed = tube.foamIntensity * 0.3; // Rotation speed increases with power
           const spinForce = tube.foamIntensity * 1200; // Orbital force
           const buoyancyForce = tube.foamIntensity * 800; // Upward float force
           
-          // Debug: Log pearl animation for first few frames
-          if (frameCount < 10 && i === 0) {
-            console.log(`✨ Pearl animation for tube ${i + 1}: foamIntensity=${tube.foamIntensity}, particles=${tube.liquidParticles.length}`);
+          // Debug: Log pearl animation for remote players
+          if (tube.foamIntensity > 0 && !tube.isFilling) {
+            console.log(`🌊 REMOTE pearl animation for tube ${i + 1}: foamIntensity=${tube.foamIntensity}, isFilling=${tube.isFilling}, isShattered=${tube.isShattered}`);
+          }
+          
+          // Debug: Log pearl animation for local players
+          if (tube.isFilling) {
+            console.log(`⚡ LOCAL pearl animation for tube ${i + 1}: foamIntensity=${tube.foamIntensity}, isFilling=${tube.isFilling}, isShattered=${tube.isShattered}`);
           }
           
           tube.liquidParticles.forEach((particleBody, idx) => {
@@ -4240,6 +4252,8 @@
       
       if (frameCount === 1) {
         console.log('✅ Pearls (layer 1) rendered to bloom buffer');
+        console.log('🔍 Bloom composer render target:', bloomComposer.renderTarget1 ? 'Found' : 'Missing');
+        console.log('🔍 Bloom composer read buffer:', bloomComposer.readBuffer ? 'Found' : 'Missing');
       }
       
       // PASS 3: Composite bloomed pearls on top with additive blending
@@ -4250,6 +4264,27 @@
       
       if (frameCount === 1) {
         console.log('🎨 Bloom texture:', bloomTexture ? 'Found' : 'Missing');
+        if (bloomTexture) {
+          console.log('🎨 Bloom texture details:', {
+            width: bloomTexture.image?.width,
+            height: bloomTexture.image?.height,
+            format: bloomTexture.format,
+            type: bloomTexture.type
+          });
+        }
+      }
+      
+      // Debug: Check if any pearls are visible on layer 1
+      if (frameCount === 1) {
+        let visiblePearls = 0;
+        tubes.forEach((tube, i) => {
+          if (tube.liquidParticleMeshes) {
+            const tubeVisiblePearls = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
+            visiblePearls += tubeVisiblePearls;
+            console.log(`🔍 Tube ${i + 1} has ${tubeVisiblePearls} visible pearls on layer 1`);
+          }
+        });
+        console.log(`🔍 Total visible pearls on layer 1: ${visiblePearls}`);
       }
       
       // Create a fullscreen quad to display bloom texture (create once)
@@ -4277,11 +4312,28 @@
         console.log('✨ Bloom composite quad created!');
       }
       
-      // Update bloom texture reference
-      window.bloomQuadMesh.material.map = bloomTexture;
+      // Update bloom texture reference and ensure it's properly bound
+      if (window.bloomQuadMesh && bloomTexture) {
+        window.bloomQuadMesh.material.map = bloomTexture;
+        window.bloomQuadMesh.material.needsUpdate = true;
+        
+        // Force texture update
+        if (bloomTexture.needsUpdate !== undefined) {
+          bloomTexture.needsUpdate = true;
+        }
+      }
       
       // Render the bloomed pearls additively on top of the main scene
-      webglRenderer.render(window.bloomQuadScene, window.bloomQuadCamera);
+      if (window.bloomQuadScene && window.bloomQuadCamera && bloomTexture) {
+        webglRenderer.render(window.bloomQuadScene, window.bloomQuadCamera);
+      } else {
+        // Fallback: If bloom fails, render pearls directly to main layer
+        console.log('⚠️ Bloom rendering failed, using fallback direct rendering');
+        camera.layers.disableAll();
+        camera.layers.enable(1); // Enable layer 1
+        webglRenderer.render(scene, camera);
+        camera.layers.mask = originalMask; // Restore original mask
+      }
       
       if (frameCount === 1) {
         console.log('✅ Bloomed pearls composited on top');
