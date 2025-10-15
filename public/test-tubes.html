@@ -529,8 +529,9 @@
             // ONLY update from server if we're NOT currently flipping locally
             // Local flip animations take priority to prevent jittery visuals
             if (!tube.isFlipping) {
-              // Update coin position from server
-              coin.position.set(coinState.position.x, coinState.position.y, coinState.position.z);
+              // Update coin position from server, but ensure it stays within the correct tube
+              const tubeX = tube.tube.position.x;
+              coin.position.set(tubeX, coinState.position.y, coinState.position.z);
               
               // Update coin rotation from server, but preserve choice-based rotation when not flipping
               if (coinState.rotation && coinState.isFlipping) {
@@ -609,7 +610,13 @@
         if (tube) {
           tube.power = data.power;
           tube.foamIntensity = data.power / 100; // Update foam intensity for pearls animation
-          console.log(`⚡ Updated power charging visual for player ${data.playerSlot + 1}: ${data.power}%`);
+          console.log(`⚡ Updated power charging visual for player ${data.playerSlot + 1}: ${data.power}% (foamIntensity: ${tube.foamIntensity})`);
+          
+          // Debug: Check if pearls exist and are visible
+          if (tube.liquidParticleMeshes && tube.liquidParticleMeshes.length > 0) {
+            const visibleCount = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
+            console.log(`🔍 Tube ${data.playerSlot + 1} has ${tube.liquidParticleMeshes.length} pearls, ${visibleCount} visible`);
+          }
         }
       }
     }
@@ -4086,6 +4093,11 @@
           const spinSpeed = tube.foamIntensity * 0.3; // Rotation speed increases with power
           const spinForce = tube.foamIntensity * 1200; // Orbital force
           const buoyancyForce = tube.foamIntensity * 800; // Upward float force
+          
+          // Debug: Log pearl animation for first few frames
+          if (frameCount < 10 && i === 0) {
+            console.log(`✨ Pearl animation for tube ${i + 1}: foamIntensity=${tube.foamIntensity}, particles=${tube.liquidParticles.length}`);
+          }
           
           tube.liquidParticles.forEach((particleBody, idx) => {
             // BUOYANCY - Float upward!
