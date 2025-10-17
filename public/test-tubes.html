@@ -571,10 +571,8 @@
           // Start visual animation based on server data
           animateCoinFlip(data.playerSlot, data.power, data.duration);
           
-          // ✅ ADD THIS: Show FLIP reward for the player who flipped
-          if (data.playerSlot === playerSlot) {
-            showFlipReward(data.playerSlot);
-          }
+          // ✅ Show FLIP reward for everyone to see (more fun!)
+          showFlipReward(data.playerSlot);
         }
       }
     }
@@ -4073,6 +4071,7 @@
           
           // Broadcast power charging to server for other players to see pearls animation
           if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === i) {
+            console.log(`⚡ Broadcasting power charging to server: power=${tube.power}%, slot=${i}`);
             socket.emit('physics_power_charging', {
               gameId: gameIdParam,
               address: walletParam,
