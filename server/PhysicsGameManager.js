@@ -495,12 +495,11 @@ class PhysicsGameManager {
   // Generate random FLIP reward with weighted distribution
   generateFlipReward() {
     const rewards = [
-      { amount: 50, weight: 40 },   // 40% chance
-      { amount: 100, weight: 25 },  // 25% chance
-      { amount: 200, weight: 15 },  // 15% chance
-      { amount: 500, weight: 10 },  // 10% chance
-      { amount: 1000, weight: 7 },  // 7% chance
-      { amount: 2000, weight: 3 }   // 3% chance
+      { amount: 50, color: '#ffffff', weight: 40 },      // White - Very common
+      { amount: 100, color: '#87ceeb', weight: 25 },     // Sky blue - Common
+      { amount: 200, color: '#ffff00', weight: 15 },     // Yellow - Uncommon
+      { amount: 500, color: '#ff8800', weight: 10 },     // Orange - Rare
+      { amount: 1000, color: '#FFD700', weight: 10 }     // Gold - Rare (max amount)
     ]
     
     const totalWeight = rewards.reduce((sum, reward) => sum + reward.weight, 0)

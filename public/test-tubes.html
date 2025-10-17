@@ -561,6 +561,9 @@
     
     // Start client coin flip animation (visual only)
     function startClientCoinFlipAnimation(data) {
+      console.log('🎁 Received flip reward data:', data.flipReward);
+      console.log('🎁 Full data object:', data);
+      
       if (data.playerSlot >= 0 && data.playerSlot < 4) {
         const tube = tubes[data.playerSlot];
         const coin = coins[data.playerSlot];
@@ -614,49 +617,118 @@
           tube.power = data.power;
           tube.powerLevel = data.powerLevel || Math.min(5, Math.max(1, Math.ceil(data.power / 20)));
           
-          // Use power level to determine animation intensity (0.2 to 1.0+)
-          const baseIntensity = 0.2 + (tube.powerLevel - 1) * 0.2; // 0.2, 0.4, 0.6, 0.8, 1.0
-          tube.foamIntensity = baseIntensity;
-          tube.isFilling = data.isFilling; // Set charging state for coin wobble animation
-          const powerPercent = tube.foamIntensity;
-          
-          console.log(`⚡ Updated power charging visual for player ${data.playerSlot + 1}: ${data.power}% (level ${tube.powerLevel}, foamIntensity: ${tube.foamIntensity}, isFilling: ${tube.isFilling})`);
-          
-          // TRANSITION PEARL COLOR from dark to NEON (different color per tube!)
-          const darkPearl = new THREE.Color(0x1a1a1a); // Dark grey (neutral start)
-          
-          // Define neon colors for each tube
-          let neonColor;
-          if (data.playerSlot === 0) {
-            neonColor = new THREE.Color(0x00ff00); // Tube 1: NEON GREEN
-          } else if (data.playerSlot === 1) {
-            neonColor = new THREE.Color(0x00ddff); // Tube 2: NEON BLUE
-          } else if (data.playerSlot === 2) {
-            neonColor = new THREE.Color(0xff0088); // Tube 3: NEON PINK
-          } else {
-            neonColor = new THREE.Color(0xffff00); // Tube 4: NEON YELLOW
+          // For viewers (not the charging player), start a 5-second pearl animation cycle
+          if (data.playerSlot !== playerSlot && data.isFilling) {
+            console.log(`🌊 Starting 5-second pearl cycle for viewer - tube ${data.playerSlot + 1}, level ${tube.powerLevel}`);
+            startViewerPearlCycle(data.playerSlot, tube.powerLevel);
+            return; // Don't do the normal incremental update for viewers
           }
           
-          const currentColor = darkPearl.clone().lerp(neonColor, powerPercent);
-          
-          // Update pearl colors with MAXIMUM NEON - ULTRA VIBRANT with bloom!
-          tube.liquidParticleMeshes.forEach(particleMesh => {
-            particleMesh.material.color.copy(currentColor);
-            particleMesh.material.emissive.copy(currentColor);
-            particleMesh.material.emissiveIntensity = 0.2 + (powerPercent * 25.0); // 0.2 to 25.2 - Perfect with bloom!
-          });
-          
-          // Update liquid light to match pearl color
-          tube.liquidLight.color.copy(currentColor);
-          tube.liquidLight.intensity = 0.3 + (powerPercent * 15.0); // 0.3 to 15.3 - MEGA INTENSE!
-          
-          // Debug: Check if pearls exist and are visible
-          if (tube.liquidParticleMeshes && tube.liquidParticleMeshes.length > 0) {
-            const visibleCount = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
-            console.log(`🔍 Tube ${data.playerSlot + 1} has ${tube.liquidParticleMeshes.length} pearls, ${visibleCount} visible`);
+          // For the charging player, use normal incremental updates
+          if (data.playerSlot === playerSlot) {
+            // Use power level to determine animation intensity (0.2 to 1.0+)
+            const baseIntensity = 0.2 + (tube.powerLevel - 1) * 0.2; // 0.2, 0.4, 0.6, 0.8, 1.0
+            tube.foamIntensity = baseIntensity;
+            tube.isFilling = data.isFilling; // Set charging state for coin wobble animation
+            const powerPercent = tube.foamIntensity;
+            
+            console.log(`⚡ Updated power charging visual for player ${data.playerSlot + 1}: ${data.power}% (level ${tube.powerLevel}, foamIntensity: ${tube.foamIntensity}, isFilling: ${tube.isFilling})`);
+            
+            // TRANSITION PEARL COLOR from dark to NEON (different color per tube!)
+            const darkPearl = new THREE.Color(0x1a1a1a); // Dark grey (neutral start)
+            
+            // Define neon colors for each tube
+            let neonColor;
+            if (data.playerSlot === 0) {
+              neonColor = new THREE.Color(0x00ff00); // Tube 1: NEON GREEN
+            } else if (data.playerSlot === 1) {
+              neonColor = new THREE.Color(0x00ddff); // Tube 2: NEON BLUE
+            } else if (data.playerSlot === 2) {
+              neonColor = new THREE.Color(0xff0088); // Tube 3: NEON PINK
+            } else {
+              neonColor = new THREE.Color(0xffff00); // Tube 4: NEON YELLOW
+            }
+            
+            const currentColor = darkPearl.clone().lerp(neonColor, powerPercent);
+            
+            // Update pearl colors with MAXIMUM NEON - ULTRA VIBRANT with bloom!
+            tube.liquidParticleMeshes.forEach(particleMesh => {
+              particleMesh.material.color.copy(currentColor);
+              particleMesh.material.emissive.copy(currentColor);
+              particleMesh.material.emissiveIntensity = 0.2 + (powerPercent * 25.0); // 0.2 to 25.2 - Perfect with bloom!
+            });
+            
+            // Update liquid light to match pearl color
+            tube.liquidLight.color.copy(currentColor);
+            tube.liquidLight.intensity = 0.3 + (powerPercent * 15.0); // 0.3 to 15.3 - MEGA INTENSE!
+            
+            // Debug: Check if pearls exist and are visible
+            if (tube.liquidParticleMeshes && tube.liquidParticleMeshes.length > 0) {
+              const visibleCount = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
+              console.log(`🔍 Tube ${data.playerSlot + 1} has ${tube.liquidParticleMeshes.length} pearls, ${visibleCount} visible`);
+            }
           }
         }
       }
+    }
+    
+    // Start a 5-second pearl animation cycle for viewers
+    function startViewerPearlCycle(tubeIndex, powerLevel) {
+      const tube = tubes[tubeIndex];
+      if (!tube || tube.viewerCycleActive) return; // Prevent multiple cycles
+      
+      tube.viewerCycleActive = true;
+      const duration = 5000; // 5 seconds
+      const startTime = Date.now();
+      
+      // Define neon colors for each tube
+      let neonColor;
+      if (tubeIndex === 0) {
+        neonColor = new THREE.Color(0x00ff00); // Tube 1: NEON GREEN
+      } else if (tubeIndex === 1) {
+        neonColor = new THREE.Color(0x00ddff); // Tube 2: NEON BLUE
+      } else if (tubeIndex === 2) {
+        neonColor = new THREE.Color(0xff0088); // Tube 3: NEON PINK
+      } else {
+        neonColor = new THREE.Color(0xffff00); // Tube 4: NEON YELLOW
+      }
+      
+      const darkPearl = new THREE.Color(0x1a1a1a);
+      
+      const animateCycle = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Create a wave effect - intensity goes up and down
+        const waveIntensity = Math.sin(progress * Math.PI * 2) * 0.5 + 0.5; // 0 to 1
+        const baseIntensity = 0.2 + (powerLevel - 1) * 0.2; // 0.2, 0.4, 0.6, 0.8, 1.0
+        const finalIntensity = baseIntensity * waveIntensity;
+        
+        tube.foamIntensity = finalIntensity;
+        
+        // Update pearl colors
+        const currentColor = darkPearl.clone().lerp(neonColor, finalIntensity);
+        
+        tube.liquidParticleMeshes.forEach(particleMesh => {
+          particleMesh.material.color.copy(currentColor);
+          particleMesh.material.emissive.copy(currentColor);
+          particleMesh.material.emissiveIntensity = 0.2 + (finalIntensity * 25.0);
+        });
+        
+        // Update liquid light
+        tube.liquidLight.color.copy(currentColor);
+        tube.liquidLight.intensity = 0.3 + (finalIntensity * 15.0);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateCycle);
+        } else {
+          // Cycle complete
+          tube.viewerCycleActive = false;
+          console.log(`🌊 Completed 5-second pearl cycle for tube ${tubeIndex + 1}`);
+        }
+      };
+      
+      animateCycle();
     }
     
     // Update coin from server
