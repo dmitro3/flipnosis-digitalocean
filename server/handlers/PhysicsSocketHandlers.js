@@ -402,7 +402,8 @@ class PhysicsSocketHandlers {
       gameId: gameId,
       playerAddress: address,
       playerSlot: playerSlot,
-      power: power
+      power: power,
+      isFilling: power > 0  // ✅ ADD THIS LINE - critical for pearl animation sync
     })
   }
 

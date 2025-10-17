@@ -570,6 +570,11 @@
           
           // Start visual animation based on server data
           animateCoinFlip(data.playerSlot, data.power, data.duration);
+          
+          // ✅ ADD THIS: Show FLIP reward for the player who flipped
+          if (data.playerSlot === playerSlot) {
+            showFlipReward(data.playerSlot);
+          }
         }
       }
     }
