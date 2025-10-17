@@ -397,12 +397,16 @@ class PhysicsSocketHandlers {
       }
     }
     
+    // Calculate power level (1-5) based on power percentage
+    const powerLevel = Math.min(5, Math.max(1, Math.ceil(power / 20)));
+    
     // Broadcast power charging to all clients for visual feedback
     io.to(`game_${gameId}`).emit('physics_power_charging', {
       gameId: gameId,
       playerAddress: address,
       playerSlot: playerSlot,
       power: power,
+      powerLevel: powerLevel,
       isFilling: power > 0  // ✅ ADD THIS LINE - critical for pearl animation sync
     })
   }

@@ -240,6 +240,9 @@ class PhysicsGameManager {
         power: power
       })
       
+      // Generate random FLIP reward amount (server-side for consistency)
+      const flipReward = this.generateFlipReward()
+      
       // Broadcast flip start
       broadcast(room, 'physics_coin_flip_start', {
         gameId: gameId,
@@ -248,7 +251,8 @@ class PhysicsGameManager {
         power: power,
         angle: angle,
         choice: player.choice,
-        duration: simulationResult.duration
+        duration: simulationResult.duration,
+        flipReward: flipReward
       })
     }
 
@@ -486,6 +490,31 @@ class PhysicsGameManager {
     }
     
     return success
+  }
+
+  // Generate random FLIP reward with weighted distribution
+  generateFlipReward() {
+    const rewards = [
+      { amount: 50, weight: 40 },   // 40% chance
+      { amount: 100, weight: 25 },  // 25% chance
+      { amount: 200, weight: 15 },  // 15% chance
+      { amount: 500, weight: 10 },  // 10% chance
+      { amount: 1000, weight: 7 },  // 7% chance
+      { amount: 2000, weight: 3 }   // 3% chance
+    ]
+    
+    const totalWeight = rewards.reduce((sum, reward) => sum + reward.weight, 0)
+    const random = Math.random() * totalWeight
+    
+    let currentWeight = 0
+    for (const reward of rewards) {
+      currentWeight += reward.weight
+      if (random <= currentWeight) {
+        return reward
+      }
+    }
+    
+    return rewards[0] // Fallback to 50
   }
 }
 
