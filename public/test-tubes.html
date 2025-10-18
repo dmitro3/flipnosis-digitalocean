@@ -1279,16 +1279,17 @@
       pointer-events: none;
     `;
     xpCounter.innerHTML = `
-      <div style="font-size: 18px; margin-bottom: 2px;">${currentPlayerXP}</div>
-      <div style="font-size: 10px; color: #ffffff; opacity: 0.8;">XP EARNED</div>
+      <div style="font-size: 12px; color: #ffffff; opacity: 0.8; margin-bottom: 4px;">Total Earnings</div>
+      <div style="font-size: 18px; margin-bottom: 2px;">${currentPlayerXP} FLIP</div>
+      <div style="font-size: 10px; color: #ffffff; opacity: 0.8;">This Game</div>
     `;
     document.body.appendChild(xpCounter);
 
     // Function to update XP counter
     function updateXPCounter(amount) {
       currentPlayerXP += amount;
-      const xpDisplay = xpCounter.querySelector('div');
-      xpDisplay.textContent = currentPlayerXP;
+      const xpDisplay = xpCounter.querySelectorAll('div')[1]; // Second div contains the FLIP amount
+      xpDisplay.textContent = `${currentPlayerXP} FLIP`;
       
       // Add a subtle glow effect when XP increases
       xpCounter.style.boxShadow = '0 0 30px rgba(0, 255, 136, 0.6)';
