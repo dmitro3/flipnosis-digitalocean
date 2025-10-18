@@ -349,6 +349,11 @@
         if (data.success) {
           console.log(`✅ Received ${data.amount} FLIP tokens! Total: ${data.totalXP}`);
           showXPAwardNotification(data.amount, data.totalXP);
+          
+          // Update XP counter if this is for the current player
+          if (data.address && data.address.toLowerCase() === walletParam.toLowerCase()) {
+            updateXPCounter(data.amount);
+          }
         } else {
           console.error('❌ Failed to award FLIP tokens:', data.error);
         }
@@ -1250,6 +1255,47 @@
       window.location.href = lobbyUrl;
     };
     document.body.appendChild(leaveBtn);
+
+    // XP Counter for current player
+    let currentPlayerXP = 0;
+    const xpCounter = document.createElement('div');
+    xpCounter.id = 'xp-counter';
+    xpCounter.style.cssText = `
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 10001;
+      padding: 12px 18px;
+      background: #0a0f2e;
+      border: 2px solid #00ff88;
+      border-radius: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      color: #00ff88;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    `;
+    xpCounter.innerHTML = `
+      <div style="font-size: 18px; margin-bottom: 2px;">${currentPlayerXP}</div>
+      <div style="font-size: 10px; color: #ffffff; opacity: 0.8;">XP EARNED</div>
+    `;
+    document.body.appendChild(xpCounter);
+
+    // Function to update XP counter
+    function updateXPCounter(amount) {
+      currentPlayerXP += amount;
+      const xpDisplay = xpCounter.querySelector('div');
+      xpDisplay.textContent = currentPlayerXP;
+      
+      // Add a subtle glow effect when XP increases
+      xpCounter.style.boxShadow = '0 0 30px rgba(0, 255, 136, 0.6)';
+      setTimeout(() => {
+        xpCounter.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.3)';
+      }, 500);
+    }
 
     // Lighting - Very low ambient to protect background from any indirect brightening
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); // Minimal ambient
@@ -2895,6 +2941,9 @@
           reason: 'coin_flip_reward'
         });
         console.log(`🎯 Sent FLIP token award to server: ${reward.amount} tokens`);
+        
+        // Update XP counter for current player
+        updateXPCounter(reward.amount);
       }
       
       // Create floating reward box styled like win/lose boxes
@@ -2902,7 +2951,7 @@
       rewardBox.style.cssText = `
         width: 200px;
         padding: 12px 18px;
-        background: darkblue;
+        background: #0a0f2e;
         border: 3px solid ${reward.color};
         border-radius: 12px;
         text-align: center;
