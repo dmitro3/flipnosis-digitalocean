@@ -190,6 +190,18 @@ initializeServices()
       })
     })
 
+    // Specific route for test-tubes.html (only if dist exists)
+    if (fs.existsSync(distPath)) {
+      app.get('/test-tubes.html', (req, res) => {
+        const testTubesPath = path.join(distPath, 'test-tubes.html')
+        if (fs.existsSync(testTubesPath)) {
+          res.sendFile(testTubesPath)
+        } else {
+          res.status(404).json({ error: 'test-tubes.html not found' })
+        }
+      })
+    }
+
     // Catch-all for SPA (only if dist exists)
     if (fs.existsSync(distPath)) {
       app.get('*', (req, res) => {
