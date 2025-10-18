@@ -54,7 +54,14 @@ console.log('📁 Checking dist path:', distPath)
 console.log('📁 Dist exists:', fs.existsSync(distPath))
 
 if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath))
+  app.use(express.static(distPath, {
+    setHeaders: (res, path) => {
+      console.log('📁 Serving static file:', path)
+      if (path.endsWith('.html')) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8')
+      }
+    }
+  }))
   console.log('✅ Serving static files from:', distPath)
 } else {
   console.log('⚠️ No dist directory found - creating placeholder')
@@ -190,21 +197,29 @@ initializeServices()
       })
     })
 
-    // Specific route for test-tubes.html (only if dist exists)
+    // Specific route for test-tubes.html to ensure it's served correctly
     if (fs.existsSync(distPath)) {
       app.get('/test-tubes.html', (req, res) => {
+        console.log('🎮 Serving test-tubes.html with query params:', req.query)
         const testTubesPath = path.join(distPath, 'test-tubes.html')
         if (fs.existsSync(testTubesPath)) {
           res.sendFile(testTubesPath)
         } else {
+          console.error('❌ test-tubes.html not found at:', testTubesPath)
           res.status(404).json({ error: 'test-tubes.html not found' })
         }
       })
     }
 
     // Catch-all for SPA (only if dist exists)
+    // Exclude test-tubes.html from catch-all since it has its own route above
     if (fs.existsSync(distPath)) {
       app.get('*', (req, res) => {
+        // Skip if this is test-tubes.html - it should be handled by the specific route above
+        if (req.path === '/test-tubes.html') {
+          return res.status(404).json({ error: 'test-tubes.html route not working' })
+        }
+        
         const indexPath = path.join(distPath, 'index.html')
         if (fs.existsSync(indexPath)) {
           res.sendFile(indexPath)
