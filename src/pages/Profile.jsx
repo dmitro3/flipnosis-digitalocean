@@ -872,7 +872,7 @@ const Profile = () => {
         <StatCard>
           <StatIcon><Zap style={{ width: '2rem', height: '2rem' }} /></StatIcon>
           <StatValue>{profileData.xp}</StatValue>
-          <StatLabel>Experience Points</StatLabel>
+          <StatLabel>FLIP Tokens (XP)</StatLabel>
         </StatCard>
       </StatsGrid>
 

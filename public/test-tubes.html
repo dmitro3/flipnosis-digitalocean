@@ -3972,6 +3972,24 @@
 
     // Show game over screen
     function showGameOverScreen(winnerIndex, winnerName) {
+      // Create collection sessions for all players
+      players.forEach((player, index) => {
+        if (player.lives >= 0) { // Include all players (even eliminated ones get consolation FLIP)
+          const gameResult = index === winnerIndex ? 'won' : 'lost';
+          
+          if (isServerSideMode && socket && gameIdParam && walletParam) {
+            // Only create collection for the current player
+            if (index === playerSlot) {
+              socket.emit('create_flip_collection', {
+                gameId: gameIdParam,
+                address: walletParam,
+                gameResult: gameResult
+              });
+            }
+          }
+        }
+      });
+
       const gameOverDiv = document.createElement('div');
       gameOverDiv.style.cssText = `
         position: fixed;
