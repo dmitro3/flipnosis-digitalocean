@@ -3,6 +3,7 @@ const BattleRoyaleGameManager = require('../BattleRoyaleGameManager')
 const PhysicsGameManager = require('../PhysicsGameManager')
 const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
 const SocketTracker = require('./SocketTracker')
+const { FlipCollectionService } = require('../services/FlipCollectionService')
 // const FlipService = require('../services/FlipService') // Temporarily disabled for debugging
 
 // ===== CLEAN SERVER ARCHITECTURE =====
@@ -29,6 +30,9 @@ class GameServer {
     
     // Initialize socket tracker for reliable broadcasting
     this.socketTracker = new SocketTracker()
+    
+    // Initialize FLIP collection service
+    this.flipCollectionService = new FlipCollectionService(dbService.databasePath)
     
     // Then instantiate handlers (FIXED: They are classes, not modules)
     // this.oneVOneHandlers = require('./1v1SocketHandlers') // TODO: Not implemented yet
@@ -63,6 +67,11 @@ initialize(server, dbService) {
     // Add Battle Royale DB service
     if (dbService && dbService.db) {
       this.battleRoyaleDBService = new BattleRoyaleDBService(dbService.db)
+    }
+    
+    // Initialize FLIP collection service
+    if (this.flipCollectionService) {
+      this.flipCollectionService.initialize().catch(console.error)
     }
     this.io = socketIO(server, {
       cors: { 
@@ -523,23 +532,100 @@ initialize(server, dbService) {
         const { gameId, address, amount, reason } = data
         
         try {
-          // Award XP/FLIP tokens using the existing XP service
-          const result = await this.xpService.awardSpecialXP(address, reason, amount, gameId)
+          // Record FLIP earning (not immediately added to XP - collected later)
+          await this.flipCollectionService.recordFlipEarning(gameId, address, amount, reason)
           
           // Send confirmation back to client
           socket.emit('flip_tokens_awarded', {
             success: true,
-            amount: result.xpGained,
-            totalXP: result.totalXP,
-            message: result.message
+            amount: amount,
+            message: `+${amount} FLIP earned! Collect at game end.`
           })
           
-          console.log(`✅ Awarded ${amount} FLIP tokens to ${address}`)
+          console.log(`✅ Recorded ${amount} FLIP earnings for ${address}`)
         } catch (error) {
-          console.error('Error awarding FLIP tokens:', error)
+          console.error('Error recording FLIP tokens:', error)
           socket.emit('flip_tokens_awarded', {
             success: false,
-            error: 'Failed to award FLIP tokens'
+            error: 'Failed to record FLIP tokens'
+          })
+        }
+      }))
+
+      // Create collection session when game ends
+      socket.on('create_flip_collection', safeHandler(async (data) => {
+        console.log(`🎁 create_flip_collection from ${socket.id}`, data)
+        const { gameId, address, gameResult } = data
+        
+        try {
+          const collection = await this.flipCollectionService.createCollectionSession(gameId, address, gameResult)
+          
+          // Send collection session to client
+          socket.emit('flip_collection_created', {
+            success: true,
+            collectionId: collection.collectionId,
+            totalFlip: collection.totalFlip,
+            gameResult: collection.gameResult,
+            expiresAt: collection.expiresAt
+          })
+          
+          console.log(`✅ Created collection session for ${address}: ${collection.totalFlip} FLIP`)
+        } catch (error) {
+          console.error('Error creating collection session:', error)
+          socket.emit('flip_collection_created', {
+            success: false,
+            error: 'Failed to create collection session'
+          })
+        }
+      }))
+
+      // Collect FLIP tokens
+      socket.on('collect_flip_tokens', safeHandler(async (data) => {
+        console.log(`💎 collect_flip_tokens from ${socket.id}`, data)
+        const { collectionId, address } = data
+        
+        try {
+          const result = await this.flipCollectionService.collectFlipTokens(collectionId, address)
+          
+          // Send confirmation back to client
+          socket.emit('flip_tokens_collected', {
+            success: true,
+            collected: result.collected,
+            gameResult: result.gameResult,
+            message: `+${result.collected} XP collected!`
+          })
+          
+          console.log(`✅ Collected ${result.collected} FLIP for ${address}`)
+        } catch (error) {
+          console.error('Error collecting FLIP tokens:', error)
+          socket.emit('flip_tokens_collected', {
+            success: false,
+            error: error.message
+          })
+        }
+      }))
+
+      // Claim NFT for winner
+      socket.on('claim_nft', safeHandler(async (data) => {
+        console.log(`🏆 claim_nft from ${socket.id}`, data)
+        const { collectionId, address } = data
+        
+        try {
+          const result = await this.flipCollectionService.claimNFT(collectionId, address)
+          
+          // Send confirmation back to client
+          socket.emit('nft_claimed', {
+            success: true,
+            nftClaimed: result.nftClaimed,
+            message: 'NFT claimed successfully!'
+          })
+          
+          console.log(`✅ NFT claimed for ${address}`)
+        } catch (error) {
+          console.error('Error claiming NFT:', error)
+          socket.emit('nft_claimed', {
+            success: false,
+            error: error.message
           })
         }
       }))

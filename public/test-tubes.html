@@ -374,15 +374,36 @@
       socket.on('flip_tokens_awarded', (data) => {
         console.log('💰 FLIP tokens awarded:', data);
         if (data.success) {
-          console.log(`✅ Received ${data.amount} FLIP tokens! Total: ${data.totalXP}`);
-          showXPAwardNotification(data.amount, data.totalXP);
-          
-          // Update XP counter if this is for the current player
-          if (data.address && data.address.toLowerCase() === walletParam.toLowerCase()) {
-            updateXPCounter(data.amount);
-          }
+          // Show floating message instead of immediate XP update
+          showFloatingMessage(`+${data.amount} FLIP earned!`, '#FFD700', 3000);
         } else {
           console.error('❌ Failed to award FLIP tokens:', data.error);
+        }
+      });
+
+      // Handle collection session creation
+      socket.on('flip_collection_created', (data) => {
+        console.log('🎁 FLIP collection created:', data);
+        if (data.success) {
+          showCollectionUI(data.collectionId, data.totalFlip, data.gameResult, data.expiresAt);
+        }
+      });
+
+      // Handle FLIP collection confirmation
+      socket.on('flip_tokens_collected', (data) => {
+        console.log('💎 FLIP tokens collected:', data);
+        if (data.success) {
+          updateXPCounter(data.collected);
+          showFloatingMessage(`+${data.collected} XP collected!`, '#00ff00', 3000);
+          hideCollectionUI();
+        }
+      });
+
+      // Handle NFT claim confirmation
+      socket.on('nft_claimed', (data) => {
+        console.log('🏆 NFT claimed:', data);
+        if (data.success) {
+          showFloatingMessage('NFT claimed successfully!', '#ff0088', 3000);
         }
       });
       
@@ -1290,6 +1311,234 @@
       setTimeout(() => {
         xpCounter.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.3)';
       }, 500);
+    }
+
+    // Function to show floating messages
+    function showFloatingMessage(message, color, duration = 3000) {
+      const floatingMsg = document.createElement('div');
+      floatingMsg.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: ${color};
+        padding: 15px 25px;
+        border-radius: 12px;
+        border: 2px solid ${color};
+        font-family: 'Orbitron', sans-serif;
+        font-size: 18px;
+        font-weight: bold;
+        z-index: 10000;
+        text-align: center;
+        box-shadow: 0 0 40px ${color}99;
+        pointer-events: none;
+        animation: floatIn 0.5s ease-out;
+      `;
+      
+      floatingMsg.textContent = message;
+      document.body.appendChild(floatingMsg);
+      
+      // Add CSS animation if not already added
+      if (!document.getElementById('floating-animations')) {
+        const style = document.createElement('style');
+        style.id = 'floating-animations';
+        style.textContent = `
+          @keyframes floatIn {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      setTimeout(() => {
+        floatingMsg.style.animation = 'floatIn 0.5s ease-out reverse';
+        setTimeout(() => {
+          if (floatingMsg.parentNode) {
+            floatingMsg.parentNode.removeChild(floatingMsg);
+          }
+        }, 500);
+      }, duration);
+    }
+
+    // Global variables for collection UI
+    let currentCollectionId = null;
+    let collectionExpiryTimer = null;
+
+    // Function to show collection UI
+    function showCollectionUI(collectionId, totalFlip, gameResult, expiresAt) {
+      currentCollectionId = collectionId;
+      
+      // Create collection overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'collection-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.5s ease-out;
+      `;
+
+      // Create collection box
+      const collectionBox = document.createElement('div');
+      collectionBox.style.cssText = `
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        border: 3px solid ${gameResult === 'won' ? '#FFD700' : '#00ff00'};
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        font-family: 'Orbitron', sans-serif;
+        color: white;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 0 50px ${gameResult === 'won' ? '#FFD700' : '#00ff00'}99;
+        animation: scaleIn 0.5s ease-out;
+      `;
+
+      const title = gameResult === 'won' ? '🏆 VICTORY!' : '💰 Game Complete';
+      const titleColor = gameResult === 'won' ? '#FFD700' : '#00ff00';
+      
+      collectionBox.innerHTML = `
+        <h2 style="color: ${titleColor}; margin: 0 0 20px 0; font-size: 28px;">${title}</h2>
+        <div style="font-size: 24px; margin: 20px 0; color: #FFD700;">
+          💎 ${totalFlip} FLIP Tokens Earned
+        </div>
+        <div style="font-size: 14px; color: #888; margin: 20px 0;">
+          ⏰ Collect within 24 hours or they expire!
+        </div>
+        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
+          <button id="collect-flip-btn" style="
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+          ">💎 Claim FLIP</button>
+          ${gameResult === 'won' ? `
+          <button id="claim-nft-btn" style="
+            background: linear-gradient(45deg, #ff0088, #cc0066);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+          ">🏆 Claim NFT</button>
+          ` : ''}
+        </div>
+        <div style="font-size: 12px; color: #666; margin-top: 15px;">
+          Collection expires: ${new Date(expiresAt).toLocaleString()}
+        </div>
+      `;
+
+      overlay.appendChild(collectionBox);
+      document.body.appendChild(overlay);
+
+      // Add button hover effects
+      const collectBtn = document.getElementById('collect-flip-btn');
+      const claimNftBtn = document.getElementById('claim-nft-btn');
+      
+      collectBtn.addEventListener('mouseenter', () => {
+        collectBtn.style.transform = 'scale(1.05)';
+        collectBtn.style.boxShadow = '0 0 20px rgba(0, 255, 0, 0.6)';
+      });
+      collectBtn.addEventListener('mouseleave', () => {
+        collectBtn.style.transform = 'scale(1)';
+        collectBtn.style.boxShadow = 'none';
+      });
+
+      if (claimNftBtn) {
+        claimNftBtn.addEventListener('mouseenter', () => {
+          claimNftBtn.style.transform = 'scale(1.05)';
+          claimNftBtn.style.boxShadow = '0 0 20px rgba(255, 0, 136, 0.6)';
+        });
+        claimNftBtn.addEventListener('mouseleave', () => {
+          claimNftBtn.style.transform = 'scale(1)';
+          claimNftBtn.style.boxShadow = 'none';
+        });
+      }
+
+      // Add event listeners
+      collectBtn.addEventListener('click', () => {
+        if (isServerSideMode && socket && gameIdParam && walletParam) {
+          socket.emit('collect_flip_tokens', {
+            collectionId: collectionId,
+            address: walletParam
+          });
+        }
+      });
+
+      if (claimNftBtn) {
+        claimNftBtn.addEventListener('click', () => {
+          if (isServerSideMode && socket && gameIdParam && walletParam) {
+            socket.emit('claim_nft', {
+              collectionId: collectionId,
+              address: walletParam
+            });
+          }
+        });
+      }
+
+      // Set expiry timer
+      const expiryTime = new Date(expiresAt).getTime() - Date.now();
+      if (expiryTime > 0) {
+        collectionExpiryTimer = setTimeout(() => {
+          showFloatingMessage('⏰ Collection expired!', '#ff4444', 3000);
+          hideCollectionUI();
+        }, expiryTime);
+      }
+
+      // Add CSS animations if not already added
+      if (!document.getElementById('collection-animations')) {
+        const style = document.createElement('style');
+        style.id = 'collection-animations';
+        style.textContent = `
+          @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+          }
+          @keyframes scaleIn {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+
+    // Function to hide collection UI
+    function hideCollectionUI() {
+      const overlay = document.getElementById('collection-overlay');
+      if (overlay) {
+        overlay.style.animation = 'fadeIn 0.5s ease-out reverse';
+        setTimeout(() => {
+          if (overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+          }
+        }, 500);
+      }
+      
+      currentCollectionId = null;
+      if (collectionExpiryTimer) {
+        clearTimeout(collectionExpiryTimer);
+        collectionExpiryTimer = null;
+      }
     }
 
     // Lighting - Very low ambient to protect background from any indirect brightening

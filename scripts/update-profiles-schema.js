@@ -37,6 +37,7 @@ async function updateProfilesSchema() {
       'tailsImage',
       'twitter',
       'telegram',
+      'xp',
       'xp_name_earned',
       'xp_avatar_earned',
       'xp_twitter_earned',
@@ -62,7 +63,10 @@ async function updateProfilesSchema() {
       let columnType = 'TEXT';
       let defaultValue = "''";
       
-      if (column.startsWith('xp_') && column.endsWith('_earned')) {
+      if (column === 'xp') {
+        columnType = 'INTEGER';
+        defaultValue = '0';
+      } else if (column.startsWith('xp_') && column.endsWith('_earned')) {
         columnType = 'BOOLEAN';
         defaultValue = 'FALSE';
       }
