@@ -3608,9 +3608,26 @@
           const winnerIndex = players.findIndex(p => p.id === winner.id);
           declareWinner(winnerIndex);
         } else {
-          // No players left - handle special case
-          console.log('⚠️ No players remaining - this shouldn\'t happen normally');
-          declareWinner(-1); // No winner
+          // No players left - this should never happen with proper game mechanics
+          // If it does, find the last player who was eliminated (highest lives when they lost)
+          console.log('⚠️ No players remaining - finding last eliminated player as winner');
+          const lastEliminated = players.reduce((last, player, index) => {
+            const tube = tubes[index];
+            // Find the player who was eliminated most recently (has loseLight)
+            if (tube && tube.loseLight) {
+              return { player, index };
+            }
+            return last;
+          }, null);
+          
+          if (lastEliminated) {
+            console.log(`🏆 Declaring last eliminated player as winner: ${lastEliminated.player.name}`);
+            declareWinner(lastEliminated.index);
+          } else {
+            // Fallback: declare first player as winner (shouldn't happen)
+            console.log('⚠️ Fallback: declaring first player as winner');
+            declareWinner(0);
+          }
         }
         return;
       }
@@ -3639,6 +3656,23 @@
         }
       }
       
+      // Additional safety check: if we have 2+ players with 1 life and they all lost, 
+      // we need to ensure there's always a winner by implementing a "sudden death" mechanism
+      const oneLifePlayers = remainingPlayers.filter(player => player.lives === 1);
+      if (oneLifePlayers.length >= 2) {
+        const allOneLifeLost = oneLifePlayers.every(player => {
+          const playerIndex = players.findIndex(p => p.id === player.id);
+          const tube = tubes[playerIndex];
+          return tube && tube.loseLight;
+        });
+        
+        if (allOneLifeLost) {
+          console.log('🔄 SUDDEN DEATH: All 1-life players lost - implementing sudden death round...');
+          suddenDeathRound();
+          return;
+        }
+      }
+      
       // Normal progression to next round
       console.log('➡️ Proceeding to next round...');
       nextRound();
@@ -3656,16 +3690,131 @@
       
       console.log('🏆 GAME OVER!');
       
-      if (winnerIndex >= 0) {
+      // Ensure there's always a valid winner
+      let finalWinnerIndex = winnerIndex;
+      let finalWinnerName = null;
+      
+      if (winnerIndex >= 0 && players[winnerIndex]) {
         const winner = players[winnerIndex];
+        finalWinnerName = winner.name;
         console.log(`🎉 WINNER: ${winner.name} (Player ${winnerIndex + 1})`);
-        showGameOverScreen(winnerIndex, winner.name);
       } else {
-        console.log('❌ No winner - all players eliminated');
-        showGameOverScreen(-1, null);
+        // Fallback: find any player as winner (shouldn't happen with new logic)
+        console.log('⚠️ Invalid winner index, finding fallback winner');
+        const fallbackPlayer = players.find(p => p.lives >= 0);
+        if (fallbackPlayer) {
+          finalWinnerIndex = players.findIndex(p => p.id === fallbackPlayer.id);
+          finalWinnerName = fallbackPlayer.name;
+          console.log(`🎉 FALLBACK WINNER: ${fallbackPlayer.name} (Player ${finalWinnerIndex + 1})`);
+        } else {
+          // Last resort: create a default winner
+          finalWinnerName = 'Champion';
+          finalWinnerIndex = 0;
+          console.log('🎉 DEFAULT WINNER: Champion');
+        }
       }
+      
+      showGameOverScreen(finalWinnerIndex, finalWinnerName);
     }
     
+    // Sudden death round - when all 1-life players lose, they get one more chance
+    function suddenDeathRound() {
+      console.log('⚡ Sudden death round initiated!');
+      
+      // Reset round state for sudden death
+      tubes.forEach((tube, i) => {
+        // Reset player choice for sudden death
+        players[i].choice = null;
+        
+        // Reset choice buttons in card - replace badge with buttons
+        if (tube.cardElement) {
+          const choiceBadge = tube.cardElement.querySelector('.choice-badge');
+          if (choiceBadge) {
+            choiceBadge.outerHTML = `
+              <div class="choice-buttons">
+                <button class="choice-btn heads">HEADS</button>
+                <button class="choice-btn tails">TAILS</button>
+              </div>
+            `;
+            
+            // Re-attach click handlers to new buttons
+            const choiceButtons = tube.cardElement.querySelectorAll('.choice-btn');
+            choiceButtons.forEach(btn => {
+              btn.style.pointerEvents = 'auto';
+              btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                // Don't allow choices if player has no lives
+                if (players[i].lives <= 0) {
+                  console.log(`❌ Player ${i + 1} has no lives - cannot make choice`);
+                  return;
+                }
+                
+                const choice = btn.textContent.toLowerCase();
+                players[i].choice = choice;
+                console.log(`Player ${i + 1} selected: ${choice}`);
+                
+                // Update coin rotation immediately
+                updateCoinRotationsFromPlayerChoices();
+                
+                // Update button states
+                choiceButtons.forEach(b => b.style.opacity = '0.3');
+                btn.style.opacity = '1';
+                btn.style.borderColor = '#00ff00';
+              });
+            });
+          }
+        }
+        
+        // Clear result indicators
+        if (tube.resultBox) {
+          scene.remove(tube.resultBox);
+          tube.resultBox = null;
+        }
+        
+        // Clear win/lose lights
+        if (tube.winLight) {
+          coin.remove(tube.winLight);
+          tube.winLight = null;
+        }
+        if (tube.loseLight) {
+          coin.remove(tube.loseLight);
+          tube.loseLight = null;
+        }
+        
+        // Reset coin to neutral state
+        const coin = coins[i];
+        if (coin) {
+          coin.children.forEach(child => {
+            if (child.isLight) {
+              child.color.setHex(0xffffff);
+              child.intensity = 2;
+            }
+          });
+        }
+        
+        // Reset glass state
+        tube.isShattered = false;
+        tube.isFlipping = false;
+        tube.power = 0;
+        tube.isFilling = false;
+        
+        // Reset glass appearance
+        if (tube.glassMaterial) {
+          tube.glassMaterial.opacity = 0.3;
+          tube.glassMaterial.transparent = true;
+        }
+      });
+      
+      // Reset round state
+      allPlayersFlipped = false;
+      
+      // Show sudden death message
+      showFloatingMessage('⚡ SUDDEN DEATH ROUND!', '#ff4444', 3000);
+      
+      console.log('⚡ Sudden death round ready - players must choose again!');
+    }
+
     // Special replay round when all remaining players have 1 life and all lost
     function specialReplayRound() {
       console.log('🔄 Special replay round initiated!');
@@ -3972,23 +4121,16 @@
 
     // Show game over screen
     function showGameOverScreen(winnerIndex, winnerName) {
-      // Create collection sessions for all players
-      players.forEach((player, index) => {
-        if (player.lives >= 0) { // Include all players (even eliminated ones get consolation FLIP)
-          const gameResult = index === winnerIndex ? 'won' : 'lost';
-          
-          if (isServerSideMode && socket && gameIdParam && walletParam) {
-            // Only create collection for the current player
-            if (index === playerSlot) {
-              socket.emit('create_flip_collection', {
-                gameId: gameIdParam,
-                address: walletParam,
-                gameResult: gameResult
-              });
-            }
-          }
-        }
-      });
+      // Create collection session for the current player only
+      if (isServerSideMode && socket && gameIdParam && walletParam) {
+        const gameResult = playerSlot === winnerIndex ? 'won' : 'lost';
+        socket.emit('create_flip_collection', {
+          gameId: gameIdParam,
+          address: walletParam,
+          gameResult: gameResult
+        });
+        console.log(`🎁 Creating collection session for player ${playerSlot + 1} (${gameResult})`);
+      }
 
       const gameOverDiv = document.createElement('div');
       gameOverDiv.style.cssText = `
@@ -4017,60 +4159,32 @@
         width: 90%;
       `;
       
-      if (winnerIndex >= 0) {
-        contentDiv.innerHTML = `
-          <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
-          <div style="font-size: 48px; font-weight: bold; color: #00ff00; margin-bottom: 20px; text-transform: uppercase;">
-            GAME OVER
-          </div>
-          <div style="font-size: 36px; color: #ffffff; margin-bottom: 30px;">
-            WINNER: ${winnerName}
-          </div>
-          <button onclick="location.reload()" style="
-            background: linear-gradient(135deg, #00ff00, #39ff14);
-            border: none;
-            border-radius: 15px;
-            padding: 15px 30px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
-            font-weight: bold;
-            color: #000;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-          ">
-            Play Again
-          </button>
-        `;
-      } else {
-        contentDiv.innerHTML = `
-          <div style="font-size: 80px; margin-bottom: 20px;">💀</div>
-          <div style="font-size: 48px; font-weight: bold; color: #ff0000; margin-bottom: 20px; text-transform: uppercase;">
-            GAME OVER
-          </div>
-          <div style="font-size: 36px; color: #ffffff; margin-bottom: 30px;">
-            NO WINNER
-          </div>
-          <div style="font-size: 20px; color: #cccccc; margin-bottom: 30px;">
-            All players eliminated!
-          </div>
-          <button onclick="location.reload()" style="
-            background: linear-gradient(135deg, #ff6b00, #ff8c00);
-            border: none;
-            border-radius: 15px;
-            padding: 15px 30px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
-            font-weight: bold;
-            color: #fff;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-          ">
-            Try Again
-          </button>
-        `;
-      }
+      // Always show winner (there should always be a winner now)
+      const displayWinnerName = winnerName || 'Unknown Player';
+      contentDiv.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
+        <div style="font-size: 48px; font-weight: bold; color: #00ff00; margin-bottom: 20px; text-transform: uppercase;">
+          GAME OVER
+        </div>
+        <div style="font-size: 36px; color: #ffffff; margin-bottom: 30px;">
+          WINNER: ${displayWinnerName}
+        </div>
+        <button onclick="location.reload()" style="
+          background: linear-gradient(135deg, #00ff00, #39ff14);
+          border: none;
+          border-radius: 15px;
+          padding: 15px 30px;
+          font-family: 'Orbitron', sans-serif;
+          font-size: 18px;
+          font-weight: bold;
+          color: #000;
+          cursor: pointer;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+        ">
+          Play Again
+        </button>
+      `;
       
       gameOverDiv.appendChild(contentDiv);
       document.body.appendChild(gameOverDiv);
