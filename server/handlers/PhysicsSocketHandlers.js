@@ -423,6 +423,31 @@ class PhysicsSocketHandlers {
       angle: angle
     })
   }
+
+  // 🎯 NEW: Handle power charging start
+  async handlePhysicsPowerChargingStart(socket, data, gameManager, io) {
+    const { gameId, address, playerSlot } = data
+    console.log(`⚡ ${address} started charging power in slot ${playerSlot}`)
+    
+    // Broadcast to all OTHER players in the room
+    socket.to(`game_${gameId}`).emit('physics_power_charging_start', {
+      playerSlot: playerSlot,
+      address: address
+    })
+  }
+
+  // 🎯 NEW: Handle power charging stop
+  async handlePhysicsPowerChargingStop(socket, data, gameManager, io) {
+    const { gameId, address, playerSlot, finalPower } = data
+    console.log(`⚡ ${address} stopped charging power at ${finalPower}% in slot ${playerSlot}`)
+    
+    // Broadcast to all OTHER players in the room
+    socket.to(`game_${gameId}`).emit('physics_power_charging_stop', {
+      playerSlot: playerSlot,
+      address: address,
+      finalPower: finalPower
+    })
+  }
 }
 
 module.exports = PhysicsSocketHandlers

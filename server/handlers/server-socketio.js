@@ -485,6 +485,28 @@ initialize(server, dbService) {
         )
       }))
 
+      // 🎯 NEW: Handle power charging start
+      socket.on('physics_power_charging_start', safeHandler((data) => {
+        console.log(`🔥 physics_power_charging_start from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsPowerChargingStart(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      // 🎯 NEW: Handle power charging stop
+      socket.on('physics_power_charging_stop', safeHandler((data) => {
+        console.log(`🔥 physics_power_charging_stop from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsPowerChargingStop(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
       socket.on('physics_update_coin_angle', safeHandler((data) => {
         console.log(`🔥 physics_update_coin_angle from ${socket.id}`, data)
         return this.physicsHandlers.handlePhysicsUpdateCoinAngle(

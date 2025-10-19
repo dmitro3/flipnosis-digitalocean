@@ -338,6 +338,33 @@
         updatePowerChargingVisual(data);
       });
       
+      // 🎯 NEW: Handle charging start event
+      socket.on('physics_power_charging_start', (data) => {
+        console.log('⚡ Received charging start:', data);
+        if (data.playerSlot >= 0 && data.playerSlot < 4) {
+          const tube = tubes[data.playerSlot];
+          if (tube) {
+            tube.isFilling = true;
+            tube.power = 0;
+            tube.chargingStartTime = Date.now();
+            console.log(`🌊 Started pearl animation for tube ${data.playerSlot + 1}`);
+          }
+        }
+      });
+
+      // 🎯 NEW: Handle charging stop event
+      socket.on('physics_power_charging_stop', (data) => {
+        console.log('⚡ Received charging stop:', data);
+        if (data.playerSlot >= 0 && data.playerSlot < 4) {
+          const tube = tubes[data.playerSlot];
+          if (tube) {
+            tube.isFilling = false;
+            tube.power = data.finalPower || tube.power;
+            console.log(`🛑 Stopped pearl animation for tube ${data.playerSlot + 1} at ${tube.power}%`);
+          }
+        }
+      });
+      
       socket.on('physics_coin_angle_update', (data) => {
         console.log('🎯 Coin angle update:', data);
         updateCoinAngleVisual(data);
@@ -614,127 +641,94 @@
       }
     }
     
-    // Update power charging visual
+    // 🎯 REFACTORED: Update power charging visual - REAL-TIME for all players
     function updatePowerChargingVisual(data) {
       if (data.playerSlot >= 0 && data.playerSlot < 4) {
         const tube = tubes[data.playerSlot];
-        if (tube) {
-          tube.power = data.power;
-          tube.powerLevel = data.powerLevel || Math.min(5, Math.max(1, Math.ceil(data.power / 20)));
-          
-          // For viewers (not the charging player), start a 5-second pearl animation cycle
-          if (data.playerSlot !== playerSlot && data.isFilling) {
-            console.log(`🌊 Starting 5-second pearl cycle for viewer - tube ${data.playerSlot + 1}, level ${tube.powerLevel}`);
-            startViewerPearlCycle(data.playerSlot, tube.powerLevel);
-            return; // Don't do the normal incremental update for viewers
-          }
-          
-          // For the charging player, use normal incremental updates
-          if (data.playerSlot === playerSlot) {
-            // Use power level to determine animation intensity (0.2 to 1.0+)
-            const baseIntensity = 0.2 + (tube.powerLevel - 1) * 0.2; // 0.2, 0.4, 0.6, 0.8, 1.0
-            tube.foamIntensity = baseIntensity;
-            tube.isFilling = data.isFilling; // Set charging state for coin wobble animation
-            const powerPercent = tube.foamIntensity;
-            
-            console.log(`⚡ Updated power charging visual for player ${data.playerSlot + 1}: ${data.power}% (level ${tube.powerLevel}, foamIntensity: ${tube.foamIntensity}, isFilling: ${tube.isFilling})`);
-            
-            // TRANSITION PEARL COLOR from dark to NEON (different color per tube!)
-            const darkPearl = new THREE.Color(0x1a1a1a); // Dark grey (neutral start)
-            
-            // Define neon colors for each tube
-            let neonColor;
-            if (data.playerSlot === 0) {
-              neonColor = new THREE.Color(0x00ff00); // Tube 1: NEON GREEN
-            } else if (data.playerSlot === 1) {
-              neonColor = new THREE.Color(0x00ddff); // Tube 2: NEON BLUE
-            } else if (data.playerSlot === 2) {
-              neonColor = new THREE.Color(0xff0088); // Tube 3: NEON PINK
-            } else {
-              neonColor = new THREE.Color(0xffff00); // Tube 4: NEON YELLOW
-            }
-            
-            const currentColor = darkPearl.clone().lerp(neonColor, powerPercent);
-            
-            // Update pearl colors with MAXIMUM NEON - ULTRA VIBRANT with bloom!
-            tube.liquidParticleMeshes.forEach(particleMesh => {
-              particleMesh.material.color.copy(currentColor);
-              particleMesh.material.emissive.copy(currentColor);
-              particleMesh.material.emissiveIntensity = 0.2 + (powerPercent * 25.0); // 0.2 to 25.2 - Perfect with bloom!
-            });
-            
-            // Update liquid light to match pearl color
-            tube.liquidLight.color.copy(currentColor);
-            tube.liquidLight.intensity = 0.3 + (powerPercent * 15.0); // 0.3 to 15.3 - MEGA INTENSE!
-            
-            // Debug: Check if pearls exist and are visible
-            if (tube.liquidParticleMeshes && tube.liquidParticleMeshes.length > 0) {
-              const visibleCount = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
-              console.log(`🔍 Tube ${data.playerSlot + 1} has ${tube.liquidParticleMeshes.length} pearls, ${visibleCount} visible`);
-            }
-          }
+        if (!tube) return;
+        
+        tube.power = data.power;
+        tube.powerLevel = data.powerLevel || Math.min(5, Math.max(1, Math.ceil(data.power / 20)));
+        tube.isFilling = data.isFilling;
+        
+        const powerPercent = tube.power / 100;
+        tube.foamIntensity = powerPercent;
+        
+        console.log(`⚡ Updated power visual for player ${data.playerSlot + 1}: ${data.power}% (level ${tube.powerLevel}, foamIntensity: ${tube.foamIntensity})`);
+        
+        // 🎯 UNIFIED ANIMATION - Same code for charger and viewers!
+        updatePearlColors(tube, powerPercent, data.playerSlot);
+        
+        // Debug: Check if pearls exist and are visible
+        if (tube.liquidParticleMeshes && tube.liquidParticleMeshes.length > 0) {
+          const visibleCount = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
+          console.log(`🔍 Tube ${data.playerSlot + 1} has ${tube.liquidParticleMeshes.length} pearls, ${visibleCount} visible`);
         }
       }
     }
     
-    // Start a 5-second pearl animation cycle for viewers
-    function startViewerPearlCycle(tubeIndex, powerLevel) {
-      const tube = tubes[tubeIndex];
-      if (!tube || tube.viewerCycleActive) return; // Prevent multiple cycles
-      
-      tube.viewerCycleActive = true;
-      const duration = 5000; // 5 seconds
-      const startTime = Date.now();
+    // 🎯 NEW: Update pearl colors - Extracted for reusability
+    function updatePearlColors(tube, powerPercent, tubeIndex) {
+      const darkPearl = new THREE.Color(0x1a1a1a); // Dark grey (neutral start)
       
       // Define neon colors for each tube
-      let neonColor;
-      if (tubeIndex === 0) {
-        neonColor = new THREE.Color(0x00ff00); // Tube 1: NEON GREEN
-      } else if (tubeIndex === 1) {
-        neonColor = new THREE.Color(0x00ddff); // Tube 2: NEON BLUE
-      } else if (tubeIndex === 2) {
-        neonColor = new THREE.Color(0xff0088); // Tube 3: NEON PINK
-      } else {
-        neonColor = new THREE.Color(0xffff00); // Tube 4: NEON YELLOW
-      }
+      const neonColors = [
+        new THREE.Color(0x00ff00), // Tube 1: NEON GREEN
+        new THREE.Color(0x00ddff), // Tube 2: NEON BLUE
+        new THREE.Color(0xff0088), // Tube 3: NEON PINK
+        new THREE.Color(0xffff00)  // Tube 4: NEON YELLOW
+      ];
       
-      const darkPearl = new THREE.Color(0x1a1a1a);
+      const neonColor = neonColors[tubeIndex] || neonColors[0];
+      const currentColor = darkPearl.clone().lerp(neonColor, powerPercent);
       
-      const animateCycle = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        
-        // Create a wave effect - intensity goes up and down
-        const waveIntensity = Math.sin(progress * Math.PI * 2) * 0.5 + 0.5; // 0 to 1
-        const baseIntensity = 0.2 + (powerLevel - 1) * 0.2; // 0.2, 0.4, 0.6, 0.8, 1.0
-        const finalIntensity = baseIntensity * waveIntensity;
-        
-        tube.foamIntensity = finalIntensity;
-        
-        // Update pearl colors
-        const currentColor = darkPearl.clone().lerp(neonColor, finalIntensity);
-        
-        tube.liquidParticleMeshes.forEach(particleMesh => {
-          particleMesh.material.color.copy(currentColor);
-          particleMesh.material.emissive.copy(currentColor);
-          particleMesh.material.emissiveIntensity = 0.2 + (finalIntensity * 25.0);
-        });
-        
-        // Update liquid light
-        tube.liquidLight.color.copy(currentColor);
-        tube.liquidLight.intensity = 0.3 + (finalIntensity * 15.0);
-        
-        if (progress < 1) {
-          requestAnimationFrame(animateCycle);
-        } else {
-          // Cycle complete
-          tube.viewerCycleActive = false;
-          console.log(`🌊 Completed 5-second pearl cycle for tube ${tubeIndex + 1}`);
-        }
-      };
+      // Update pearl colors with MAXIMUM NEON - ULTRA VIBRANT with bloom!
+      tube.liquidParticleMeshes.forEach(particleMesh => {
+        particleMesh.material.color.copy(currentColor);
+        particleMesh.material.emissive.copy(currentColor);
+        particleMesh.material.emissiveIntensity = 0.2 + (powerPercent * 25.0); // 0.2 to 25.2 - Perfect with bloom!
+      });
       
-      animateCycle();
+      // Update liquid light to match pearl color
+      tube.liquidLight.color.copy(currentColor);
+      tube.liquidLight.intensity = 0.3 + (powerPercent * 15.0); // 0.3 to 15.3 - MEGA INTENSE!
     }
+
+    // 🎯 NEW: Update pearl physics - Extracted for reusability
+    function updatePearlPhysics(tube, powerPercent, tubeIndex, frameCount) {
+      const spinSpeed = powerPercent * 0.3; // Rotation speed increases with power
+      const spinForce = powerPercent * 1200; // Orbital force
+      const buoyancyForce = powerPercent * 800; // Upward float force
+      
+      tube.liquidParticles.forEach((particleBody, idx) => {
+        // BUOYANCY - Float upward!
+        particleBody.force.y += buoyancyForce;
+        
+        // Calculate position relative to tube center
+        const dx = particleBody.position.x - tube.tube.position.x;
+        const dz = particleBody.position.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        
+        if (distance > 1) {
+          // Calculate tangential force (perpendicular to radius) for circular motion
+          const angle = Math.atan2(dz, dx);
+          const tangentAngle = angle + Math.PI / 2; // 90 degrees to create orbit
+          
+          // Apply circular orbital force - pearls spin around the walls!
+          const orbitForceX = Math.cos(tangentAngle) * spinForce * (1 + idx * 0.05);
+          const orbitForceZ = Math.sin(tangentAngle) * spinForce * (1 + idx * 0.05);
+          
+          particleBody.force.x += orbitForceX;
+          particleBody.force.z += orbitForceZ;
+        }
+        
+        // Add chaotic bouncing movement
+        const chaos = Math.sin(frameCount * 0.2 + idx) * 200 * powerPercent;
+        particleBody.force.x += chaos;
+        particleBody.force.z += Math.cos(frameCount * 0.2 + idx * 1.3) * 200 * powerPercent;
+      });
+    }
+    
     
     // Update coin from server
     function updateCoinFromServer(data) {
@@ -1924,9 +1918,20 @@
           isCharging = true;
           tubes[i].isFilling = true;
           tubes[i].power = 0;
+          tubes[i].chargingStartTime = Date.now(); // Track start time for sync
           
           // Play power charging sound
           playSound(powerChargeSound);
+          
+          // 🎯 NEW: INSTANT BROADCAST - Tell everyone charging started
+          if (isServerSideMode && socket && gameIdParam && walletParam) {
+            socket.emit('physics_power_charging_start', {
+              gameId: gameIdParam,
+              address: walletParam,
+              playerSlot: i
+            });
+            console.log(`📢 Broadcast: Player ${i + 1} started charging`);
+          }
         });
         
         powerButton.addEventListener('mouseup', (e) => {
@@ -1938,6 +1943,17 @@
           
           // Stop power charging sound
           stopSound(powerChargeSound);
+          
+          // 🎯 NEW: INSTANT BROADCAST - Tell everyone charging stopped
+          if (isServerSideMode && socket && gameIdParam && walletParam) {
+            socket.emit('physics_power_charging_stop', {
+              gameId: gameIdParam,
+              address: walletParam,
+              playerSlot: i,
+              finalPower: finalPower
+            });
+            console.log(`📢 Broadcast: Player ${i + 1} stopped charging at ${finalPower}%`);
+          }
           
           // Shatter glass and flip coin (minimum 5% power to prevent instant flips)
           if (finalPower >= 5) {
@@ -1980,6 +1996,17 @@
             
             // Stop power charging sound
             stopSound(powerChargeSound);
+            
+            // 🎯 NEW: INSTANT BROADCAST - Tell everyone charging stopped
+            if (isServerSideMode && socket && gameIdParam && walletParam) {
+              socket.emit('physics_power_charging_stop', {
+                gameId: gameIdParam,
+                address: walletParam,
+                playerSlot: i,
+                finalPower: finalPower
+              });
+              console.log(`📢 Broadcast: Player ${i + 1} stopped charging (mouseleave) at ${finalPower}%`);
+            }
             
             // Shatter glass and flip coin (minimum 5% power)
             if (finalPower >= 5) {
@@ -4187,7 +4214,7 @@
       tubes.forEach((tube, i) => {
         const offset = i * 0.4;
         
-        // POWER CHARGING SYSTEM - PEARLS GLOW PINK & SPIN WILDLY
+        // 🎯 REFACTORED: POWER CHARGING SYSTEM - REAL-TIME SYNC
         if (tube.isFilling && !tube.isShattered) {
           // Increase power (0-100 over ~3 seconds)
           tube.power = Math.min(tube.power + 0.6, 100);
@@ -4199,17 +4226,19 @@
           // Calculate power level (1-5) based on power percentage
           const powerLevel = Math.min(5, Math.max(1, Math.ceil(tube.power / 20)));
           
-          // Broadcast power charging to server for other players to see pearls animation
+          // 🎯 FASTER BROADCAST - Every 5 frames = 12 updates/second (was every frame)
           if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === i) {
-            console.log(`⚡ Broadcasting power charging to server: power=${tube.power}%, level=${powerLevel}, slot=${i}`);
-            socket.emit('physics_power_charging', {
-              gameId: gameIdParam,
-              address: walletParam,
-              power: tube.power,
-              powerLevel: powerLevel,
-              playerSlot: i,
-              isFilling: tube.isFilling
-            });
+            if (frameCount % 5 === 0) { // Changed from every frame to every 5 frames
+              socket.emit('physics_power_charging', {
+                gameId: gameIdParam,
+                address: walletParam,
+                power: tube.power,
+                powerLevel: powerLevel,
+                playerSlot: i,
+                isFilling: tube.isFilling
+              });
+              // Removed console.log to reduce spam - only log on start/stop
+            }
           }
           
           // Update UI elements
@@ -4227,86 +4256,13 @@
             }
           }
           
-          // TRANSITION PEARL COLOR from dark to NEON (different color per tube!)
-          const darkPearl = new THREE.Color(0x1a1a1a); // Dark grey (neutral start)
-          
-          // Define neon colors for each tube
-          let neonColor;
-          if (i === 0) {
-            neonColor = new THREE.Color(0x00ff00); // Tube 1: NEON GREEN
-          } else if (i === 1) {
-            neonColor = new THREE.Color(0x00ddff); // Tube 2: NEON BLUE
-          } else if (i === 2) {
-            neonColor = new THREE.Color(0xff0088); // Tube 3: NEON PINK
-          } else {
-            neonColor = new THREE.Color(0xffff00); // Tube 4: NEON YELLOW
-          }
-          
-          const currentColor = darkPearl.clone().lerp(neonColor, powerPercent);
-          
-          // Update pearl colors with MAXIMUM NEON - ULTRA VIBRANT with bloom!
-          tube.liquidParticleMeshes.forEach(particleMesh => {
-            particleMesh.material.color.copy(currentColor);
-            particleMesh.material.emissive.copy(currentColor);
-            particleMesh.material.emissiveIntensity = 0.2 + (powerPercent * 25.0); // 0.2 to 25.2 - Perfect with bloom!
-          });
-          
-          // Update liquid light to match pearl color
-          tube.liquidLight.color.copy(currentColor);
-          tube.liquidLight.intensity = 0.3 + (powerPercent * 15.0); // 0.3 to 15.3 - MEGA INTENSE!
+          // 🎯 UNIFIED PEARL COLOR UPDATE - Same for local and remote
+          updatePearlColors(tube, powerPercent, i);
         }
         
-        // PEARLS FLOAT UP & SPIN AROUND - Like a magical snow globe!
-        // Run animation for both local charging (isFilling) and remote charging (foamIntensity > 0)
-        
-        // Debug: Check why pearl animation might not run
-        if (tube.foamIntensity > 0 && tube.isShattered) {
-          console.log(`🚫 Pearl animation BLOCKED for tube ${i + 1}: foamIntensity=${tube.foamIntensity} but isShattered=${tube.isShattered}`);
-        }
-        
+        // 🎯 UNIFIED PEARL PHYSICS - Runs for BOTH local charging AND remote viewing
         if ((tube.isFilling || tube.foamIntensity > 0) && !tube.isShattered) {
-          const spinSpeed = tube.foamIntensity * 0.3; // Rotation speed increases with power
-          const spinForce = tube.foamIntensity * 1200; // Orbital force
-          const buoyancyForce = tube.foamIntensity * 800; // Upward float force
-          
-          // Debug: Log pearl animation for remote players
-          if (tube.foamIntensity > 0 && !tube.isFilling) {
-            console.log(`🌊 REMOTE pearl animation for tube ${i + 1}: foamIntensity=${tube.foamIntensity}, isFilling=${tube.isFilling}, isShattered=${tube.isShattered}`);
-            console.log(`🌊 Animating ${tube.liquidParticles.length} pearls with forces: buoyancy=${buoyancyForce}, spin=${spinForce}`);
-          }
-          
-          // Debug: Log pearl animation for local players
-          if (tube.isFilling) {
-            console.log(`⚡ LOCAL pearl animation for tube ${i + 1}: foamIntensity=${tube.foamIntensity}, isFilling=${tube.isFilling}, isShattered=${tube.isShattered}`);
-          }
-          
-          tube.liquidParticles.forEach((particleBody, idx) => {
-            // BUOYANCY - Float upward!
-            particleBody.force.y += buoyancyForce;
-            
-            // Calculate position relative to tube center
-            const dx = particleBody.position.x - tube.tube.position.x;
-            const dz = particleBody.position.z;
-            const distance = Math.sqrt(dx * dx + dz * dz);
-            
-            if (distance > 1) {
-              // Calculate tangential force (perpendicular to radius) for circular motion
-              const angle = Math.atan2(dz, dx);
-              const tangentAngle = angle + Math.PI / 2; // 90 degrees to create orbit
-              
-              // Apply circular orbital force - pearls spin around the walls!
-              const orbitForceX = Math.cos(tangentAngle) * spinForce * (1 + idx * 0.05);
-              const orbitForceZ = Math.sin(tangentAngle) * spinForce * (1 + idx * 0.05);
-              
-              particleBody.force.x += orbitForceX;
-              particleBody.force.z += orbitForceZ;
-            }
-            
-            // Add chaotic bouncing movement
-            const chaos = Math.sin(frameCount * 0.2 + idx) * 200 * tube.foamIntensity;
-            particleBody.force.x += chaos;
-            particleBody.force.z += Math.cos(frameCount * 0.2 + idx * 1.3) * 200 * tube.foamIntensity;
-          });
+          updatePearlPhysics(tube, tube.foamIntensity, i, frameCount);
         }
         
         // Sync particle visual meshes with physics bodies
