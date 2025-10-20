@@ -195,7 +195,7 @@ const ProgressBox = styled.div`
 const CompactProgressContainer = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1.5rem;
   position: relative;
   width: 100%;
@@ -251,6 +251,25 @@ const CompactProgressLine = styled.div`
   );
   border-radius: 1px;
   z-index: 1;
+`
+
+const CompactStepLabel = styled.div`
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+  transition: all 0.3s ease;
+  font-family: 'Orbitron', sans-serif;
+  
+  ${props => {
+    if (props.completed) {
+      return `color: #00ff88;`
+    } else if (props.active) {
+      return `color: #ff1493;`
+    } else {
+      return `color: rgba(255, 255, 255, 0.6);`
+    }
+  }}
 `
 
 // Styled components for progress steps (matching CreateFlip)
@@ -940,26 +959,50 @@ const CreateBattle = () => {
                     <CompactProgressContainer>
                       <CompactProgressLine progress={getProgressPercentage()} />
                       
-                      <CompactStepCircle 
-                        completed={stepStatus.create}
-                        active={currentStep === 1 && !stepStatus.create}
-                      >
-                        {stepStatus.create ? '✓' : '1'}
-                      </CompactStepCircle>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <CompactStepCircle 
+                          completed={stepStatus.create}
+                          active={currentStep === 1 && !stepStatus.create}
+                        >
+                          {stepStatus.create ? '✓' : '1'}
+                        </CompactStepCircle>
+                        <CompactStepLabel 
+                          completed={stepStatus.create}
+                          active={currentStep === 1 && !stepStatus.create}
+                        >
+                          Create Game
+                        </CompactStepLabel>
+                      </div>
                       
-                      <CompactStepCircle 
-                        completed={stepStatus.approve}
-                        active={currentStep === 2 && !stepStatus.approve}
-                      >
-                        {stepStatus.approve ? '✓' : '2'}
-                      </CompactStepCircle>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <CompactStepCircle 
+                          completed={stepStatus.approve}
+                          active={currentStep === 2 && !stepStatus.approve}
+                        >
+                          {stepStatus.approve ? '✓' : '2'}
+                        </CompactStepCircle>
+                        <CompactStepLabel 
+                          completed={stepStatus.approve}
+                          active={currentStep === 2 && !stepStatus.approve}
+                        >
+                          Approve & Deposit
+                        </CompactStepLabel>
+                      </div>
                       
-                      <CompactStepCircle 
-                        completed={stepStatus.deposit}
-                        active={currentStep === 3 && !stepStatus.deposit}
-                      >
-                        {stepStatus.deposit ? '✓' : '3'}
-                      </CompactStepCircle>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <CompactStepCircle 
+                          completed={stepStatus.deposit}
+                          active={currentStep === 3 && !stepStatus.deposit}
+                        >
+                          {stepStatus.deposit ? '✓' : '3'}
+                        </CompactStepCircle>
+                        <CompactStepLabel 
+                          completed={stepStatus.deposit}
+                          active={currentStep === 3 && !stepStatus.deposit}
+                        >
+                          Complete Setup
+                        </CompactStepLabel>
+                      </div>
                     </CompactProgressContainer>
 
                     <BattleSubmitButton type="submit" disabled={loading || !isFullyConnected}>
