@@ -64,8 +64,8 @@ const Box = styled.div`
   
   /* Make the Flip Price container (bottom left) taller */
   &:nth-child(3) {
-    min-height: 250px;
-    max-height: 312px;
+    min-height: 300px;
+    max-height: 380px;
   }
 `
 
@@ -357,12 +357,12 @@ const BattleHeader = styled.div`
 const BattleTitle = styled.h1`
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #00ffff, #9d00ff);
+  background: linear-gradient(135deg, #ff1493, #ff69b4);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0 0 0.8rem 0;
   font-family: 'Orbitron', sans-serif;
-  text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+  text-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
 `
 
 const BattleSubtitle = styled.p`
@@ -423,20 +423,20 @@ const PlaceholderText = styled.div`
 const BattleSubmitButton = styled(Button)`
   margin-top: 1.5rem;
   width: 100%;
-  background: linear-gradient(135deg, #00ff00, #39ff14);
-  border: 2px solid #00ff00;
-  color: #000;
+  background: linear-gradient(135deg, #ff1493, #ff69b4);
+  border: 2px solid #ff1493;
+  color: #fff;
   font-size: 1.3rem;
   padding: 1rem;
   border-radius: 12px;
   font-weight: bold;
   font-family: 'Orbitron', sans-serif;
-  box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+  box-shadow: 0 0 20px rgba(255, 20, 147, 0.6);
   transition: all 0.3s ease;
   
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #39ff14, #00ff00);
-    box-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
+    background: linear-gradient(135deg, #ff69b4, #ff1493);
+    box-shadow: 0 0 30px rgba(255, 20, 147, 0.8);
     transform: translateY(-2px);
   }
   
@@ -787,23 +787,55 @@ const CreateBattle = () => {
                 <Box>
                   <BoxTitle>Choose Your Room</BoxTitle>
                   <RoomGrid>
-                    {[1, 2, 3, 4].map((roomNum) => (
+                    {[
+                      { id: 1, image: '/images/background/game room2.png', label: 'Potion Room' },
+                      { id: 2, image: '/images/background/thelab.png', label: 'The Lab' },
+                      { id: 3, image: null, label: 'Room 3' },
+                      { id: 4, image: null, label: 'Room 4' }
+                    ].map((room) => (
                       <RoomOption 
-                        key={roomNum}
-                        onClick={() => setSelectedRoom(roomNum)}
+                        key={room.id}
+                        onClick={() => setSelectedRoom(room.id)}
                         style={{
-                          borderColor: selectedRoom === roomNum ? '#9d00ff' : '#00ffff',
-                          background: selectedRoom === roomNum ? 'linear-gradient(135deg, rgba(157, 0, 255, 0.3), rgba(0, 255, 255, 0.3))' : 'linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1))',
-                          boxShadow: selectedRoom === roomNum ? '0 0 30px rgba(157, 0, 255, 0.6)' : '0 0 15px rgba(0, 255, 255, 0.2)'
+                          borderColor: selectedRoom === room.id ? '#9d00ff' : '#00ffff',
+                          background: selectedRoom === room.id ? 'linear-gradient(135deg, rgba(157, 0, 255, 0.3), rgba(0, 255, 255, 0.3))' : 'linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1))',
+                          boxShadow: selectedRoom === room.id ? '0 0 30px rgba(157, 0, 255, 0.6)' : '0 0 15px rgba(0, 255, 255, 0.2)',
+                          flexDirection: 'column',
+                          padding: '0.5rem'
                         }}
                       >
-                        <div style={{ 
-                          color: selectedRoom === roomNum ? '#9d00ff' : '#00ffff', 
-                          fontSize: '1.2rem',
+                        {room.image ? (
+                          <img 
+                            src={room.image} 
+                            alt={room.label}
+                            style={{
+                              width: '100%',
+                              height: '60%',
+                              objectFit: 'cover',
+                              borderRadius: '8px',
+                              marginBottom: '0.3rem'
+                            }}
+                          />
+                        ) : (
+                          <div style={{ 
+                            color: selectedRoom === room.id ? '#9d00ff' : '#00ffff', 
+                            fontSize: '1.5rem',
+                            textAlign: 'center',
+                            textShadow: selectedRoom === room.id ? '0 0 10px rgba(157, 0, 255, 0.8)' : '0 0 5px rgba(0, 255, 255, 0.5)',
+                            marginBottom: '0.3rem'
+                          }}>
+                            🏠
+                          </div>
+                        )}
+                        <div style={{
+                          color: selectedRoom === room.id ? '#9d00ff' : '#00ffff',
+                          fontSize: '0.7rem',
                           textAlign: 'center',
-                          textShadow: selectedRoom === roomNum ? '0 0 10px rgba(157, 0, 255, 0.8)' : '0 0 5px rgba(0, 255, 255, 0.5)'
+                          fontFamily: 'Orbitron, sans-serif',
+                          fontWeight: 'bold',
+                          textShadow: selectedRoom === room.id ? '0 0 5px rgba(157, 0, 255, 0.8)' : '0 0 3px rgba(0, 255, 255, 0.5)'
                         }}>
-                          🏠
+                          {room.label}
                         </div>
                       </RoomOption>
                     ))}
@@ -884,6 +916,18 @@ const CreateBattle = () => {
                             if (!n) return '0.000000 ETH'
                             return `${(n * 0.95).toFixed(6)} ETH`
                           })()}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <span>Service Fee:</span>
+                          <span>{(() => {
+                            const n = parseFloat(totalEth || '0')
+                            if (!n) return '0.000000 ETH'
+                            return `${(n * 0.05).toFixed(6)} ETH`
+                          })()}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff69b4' }}>
+                          <span>Network Fee:</span>
+                          <span>~0.001 ETH</span>
                         </div>
                       </div>
                     )}
