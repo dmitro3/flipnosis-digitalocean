@@ -57,6 +57,12 @@ const Box = styled.div`
     border-color: rgba(255, 20, 147, 0.6);
     box-shadow: 0 0 20px rgba(255, 20, 147, 0.2);
   }
+  
+  /* Make the Flip Price container (bottom left) taller */
+  &:nth-child(3) {
+    min-height: 250px;
+    max-height: 312px;
+  }
 `
 
 const BoxTitle = styled.h3`
