@@ -171,7 +171,7 @@ const RoomOption = styled.div`
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-height: 40px;
+  min-height: 32px;
   backdrop-filter: blur(5px);
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
   
@@ -765,7 +765,7 @@ const CreateBattle = () => {
                       <SquareUploadZone onClick={() => setIsNFTSelectorOpen(true)}>
                         <div style={{ textAlign: 'center', color: theme.colors.textSecondary }}>
                           <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>📷</div>
-                          <div style={{ fontSize: '1.1rem' }}>Click to upload NFT</div>
+                          <div style={{ fontSize: '1.1rem' }}>Upload NFT</div>
                         </div>
                       </SquareUploadZone>
                     )}
@@ -789,8 +789,8 @@ const CreateBattle = () => {
                     {[
                       { id: 1, image: '/images/background/game room2.png', label: 'Potion Room' },
                       { id: 2, image: '/images/background/thelab.png', label: 'The Lab' },
-                      { id: 3, image: null, label: 'Room 3' },
-                      { id: 4, image: null, label: 'Room 4' }
+                      { id: 3, image: null, label: 'Sweet Factory' },
+                      { id: 4, image: null, label: 'Workshop' }
                     ].map((room) => (
                       <RoomOption 
                         key={room.id}

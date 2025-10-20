@@ -111,20 +111,10 @@ const BattleRoyaleContent = () => {
     return <LobbyScreen />
   }
 
-  // When game becomes active, redirect to standalone HTML game page
-  useEffect(() => {
-    if (gameState.phase === 'round_active' || gameState.phase === 'playing') {
-      console.log('🎮 Game started, redirecting to standalone HTML game')
-      // Store wallet address in localStorage for the test-tubes page to use
-      const currentAddress = window.ethereum?.selectedAddress || localStorage.getItem('walletAddress')
-      if (currentAddress) {
-        localStorage.setItem('walletAddress', currentAddress)
-      }
-      window.location.href = `/test-tubes.html?gameId=${gameId}`
-    }
-  }, [gameState.phase, gameId, navigate])
-
-  // Show loading while redirecting
+  // The redirect is now handled by the BattleRoyaleGameContext when it receives
+  // the physics_state_update event. No need for duplicate redirect logic here.
+  
+  // Show loading while waiting for game to start or redirect
   return <LoadingScreen />
 }
 
