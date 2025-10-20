@@ -562,6 +562,10 @@ const LobbyScreen = () => {
           <strong style={{ color: '#00ff88' }}>${formatEntryFee(gameState.entryFee)}</strong>
         </InfoRow>
         <InfoRow>
+          <span>Service Fee:</span>
+          <strong style={{ color: '#ffa500' }}>${formatEntryFee(gameState.serviceFee)}</strong>
+        </InfoRow>
+        <InfoRow>
           <span>Creator:</span>
           <strong>{formatAddress(gameState.creator)}</strong>
         </InfoRow>

@@ -32,6 +32,194 @@ const BattleContainer = styled.div`
   padding: 2rem;
 `
 
+// New 4-box layout components
+const FourBoxGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+  min-height: 60vh;
+`
+
+const Box = styled.div`
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 20, 147, 0.3);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: rgba(255, 20, 147, 0.6);
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.2);
+  }
+`
+
+const BoxTitle = styled.h3`
+  color: ${props => props.theme.colors.textPrimary};
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  text-align: center;
+`
+
+// NFT Upload Box
+const NFTUploadArea = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+`
+
+const SquareUploadZone = styled.div`
+  width: 150px;
+  height: 150px;
+  border: 2px dashed ${props => props.theme.colors.neonPink};
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 20, 147, 0.05);
+  margin-bottom: 1rem;
+  
+  &:hover {
+    border-color: ${props => props.theme.colors.neonBlue};
+    background: rgba(0, 191, 255, 0.05);
+  }
+`
+
+const NFTPreviewSquare = styled.img`
+  width: 150px;
+  height: 150px;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  border: 2px solid ${props => props.theme.colors.neonPink};
+`
+
+// Pricing Box
+const PricingContainer = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+`
+
+const PriceInput = styled(Input)`
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 1.1rem;
+`
+
+const JoinButton = styled(Button)`
+  background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+  margin-top: 1rem;
+  width: 100%;
+  
+  &:hover {
+    background: linear-gradient(135deg, #00cc6a 0%, #00aa55 100%);
+  }
+`
+
+// Room Selection Box
+const RoomGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  flex: 1;
+`
+
+const RoomOption = styled.div`
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: ${props => props.theme.colors.neonPink};
+    background: rgba(255, 20, 147, 0.1);
+  }
+`
+
+// Progress Box
+const ProgressBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+`
+
+const CompactProgressContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+`
+
+const CompactStepCircle = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  border: 2px solid;
+  
+  ${props => {
+    if (props.completed) {
+      return `
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        border-color: #00ff88;
+        color: white;
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+      `
+    } else if (props.active) {
+      return `
+        background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
+        border-color: #ff1493;
+        color: white;
+        box-shadow: 0 0 15px rgba(255, 20, 147, 0.5);
+      `
+    } else {
+      return `
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: ${props.theme.colors.textSecondary};
+      `
+    }
+  }}
+`
+
+const CompactProgressLine = styled.div`
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    ${props => props.progress >= 50 ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'} 0%, 
+    ${props => props.progress >= 100 ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'} 100%
+  );
+  border-radius: 1px;
+  z-index: 1;
+`
+
 // Styled components for progress steps (matching CreateFlip)
 const ProgressContainer = styled.div`
   display: flex;
@@ -288,6 +476,8 @@ const CreateBattle = () => {
   const [loading, setLoading] = useState(false)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [creatorParticipates, setCreatorParticipates] = useState(false)
+  const [ethPriceUSD, setEthPriceUSD] = useState(0)
+  const [selectedRoom, setSelectedRoom] = useState(null)
 
   // Progress tracking
   const [currentStep, setCurrentStep] = useState(0)
@@ -312,6 +502,21 @@ const CreateBattle = () => {
     console.log('🏆 Battle Royale creation page loaded')
     console.log('🔍 Wallet status:', { address, isConnected, chainId })
   }, [address, isConnected, chainId])
+
+  // Fetch ETH price for USD display
+  useEffect(() => {
+    const fetchPrice = async () => {
+      try {
+        const price = await contractService.getETHPriceUSD()
+        setEthPriceUSD(price)
+      } catch (error) {
+        console.warn('Failed to fetch ETH price for display:', error)
+      }
+    }
+    fetchPrice()
+    const interval = setInterval(fetchPrice, 30000) // Update every 30 seconds
+    return () => clearInterval(interval)
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -344,6 +549,8 @@ const CreateBattle = () => {
       
       // Calculate pricing in ETH
       const totalEthNum = Math.round(parseFloat(totalEth) * 1e6) / 1e6
+      // If creator participates, they take 1 seat, so only 3 other players pay
+      const payingPlayers = creatorParticipates ? 3 : 4
       const perPlayerEth = Math.round((totalEthNum / 4) * 1e6) / 1e6
       const entryFeeWei = ethers.parseEther(perPlayerEth.toString())
 
@@ -461,8 +668,8 @@ const CreateBattle = () => {
         <ContentWrapper>
           <BattleContainer>
             <BattleHeader>
-              <BattleTitle>🏆 Create Battle Royale</BattleTitle>
-              <BattleSubtitle>6-player elimination tournament</BattleSubtitle>
+              <BattleTitle>Create Flip</BattleTitle>
+              <BattleSubtitle>4-player elimination tournament</BattleSubtitle>
             </BattleHeader>
             
             {/* Network Check */}
@@ -484,246 +691,169 @@ const CreateBattle = () => {
               </div>
             )}
             
-            {/* Enhanced Progress Indicator */}
-            <ProgressContainer>
-              <ProgressLine progress={getProgressPercentage()} />
-              
-              <ProgressStep>
-                <StepCircle 
-                  completed={stepStatus.create}
-                  active={currentStep === 1 && !stepStatus.create}
-                >
-                  {stepStatus.create ? '✓' : '1'}
-                </StepCircle>
-                <StepLabel 
-                  completed={stepStatus.create}
-                  active={currentStep === 1 && !stepStatus.create}
-                >
-                  Create Battle Royale Game
-                </StepLabel>
-              </ProgressStep>
-              
-              <ProgressStep>
-                <StepCircle 
-                  completed={stepStatus.approve}
-                  active={currentStep === 2 && !stepStatus.approve}
-                >
-                  {stepStatus.approve ? '✓' : '2'}
-                </StepCircle>
-                <StepLabel 
-                  completed={stepStatus.approve}
-                  active={currentStep === 2 && !stepStatus.approve}
-                >
-                  Approve & Deposit NFT
-                </StepLabel>
-              </ProgressStep>
-              
-              <ProgressStep>
-                <StepCircle 
-                  completed={stepStatus.deposit}
-                  active={currentStep === 3 && !stepStatus.deposit}
-                >
-                  {stepStatus.deposit ? '✓' : '3'}
-                </StepCircle>
-                <StepLabel 
-                  completed={stepStatus.deposit}
-                  active={currentStep === 3 && !stepStatus.deposit}
-                >
-                  Battle Royale Ready!
-                </StepLabel>
-              </ProgressStep>
-            </ProgressContainer>
-
             <form onSubmit={handleSubmit}>
-              {/* NFT Selection */}
-              <FormGroup>
-                <Label>Select Your NFT Prize</Label>
-                <NFTPreview onClick={() => setIsNFTSelectorOpen(true)}>
-                  {selectedNFT ? (
-                    <>
-                      <img src={selectedNFT.image} alt={selectedNFT.name} />
-                      <div>
-                        <h4>{selectedNFT.name}</h4>
-                        <p>{selectedNFT.collection}</p>
+              <FourBoxGrid>
+                {/* Top Left: Load Your NFT */}
+                <Box>
+                  <BoxTitle>Load Your NFT</BoxTitle>
+                  <NFTUploadArea>
+                    {selectedNFT ? (
+                      <NFTPreviewSquare 
+                        src={selectedNFT.image} 
+                        alt={selectedNFT.name}
+                        onClick={() => setIsNFTSelectorOpen(true)}
+                      />
+                    ) : (
+                      <SquareUploadZone onClick={() => setIsNFTSelectorOpen(true)}>
+                        <div style={{ textAlign: 'center', color: theme.colors.textSecondary }}>
+                          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📷</div>
+                          <div>Click to upload NFT</div>
+                        </div>
+                      </SquareUploadZone>
+                    )}
+                    {selectedNFT && (
+                      <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                        <div style={{ color: theme.colors.textPrimary, fontWeight: '600' }}>
+                          {selectedNFT.name}
+                        </div>
+                        <div style={{ color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
+                          {selectedNFT.collection}
+                        </div>
                       </div>
-                    </>
-                  ) : (
-                    <PlaceholderText>Click to select an NFT</PlaceholderText>
-                  )}
-                </NFTPreview>
-              </FormGroup>
+                    )}
+                  </NFTUploadArea>
+                </Box>
 
-              {/* Creator Participation Toggle */}
-              <FormGroup>
-                <Label>Creator Participation</Label>
-                <ToggleContainer>
-                  <div>
-                    <ToggleLabel>Join the Battle Royale</ToggleLabel>
-                    <ToggleDescription>
-                      {creatorParticipates 
-                        ? "You will participate in the game and can win your NFT back"
-                        : "You will not participate - all 6 seats are open for other players"
-                      }
-                    </ToggleDescription>
-                  </div>
-                  <ToggleSwitch>
-                    <input
-                      type="checkbox"
-                      checked={creatorParticipates}
-                      onChange={(e) => setCreatorParticipates(e.target.checked)}
-                    />
-                    <span className="slider"></span>
-                  </ToggleSwitch>
-                </ToggleContainer>
-              </FormGroup>
+                {/* Top Right: Choose Your Room */}
+                <Box>
+                  <BoxTitle>Choose Your Room</BoxTitle>
+                  <RoomGrid>
+                    {[1, 2, 3, 4].map((roomNum) => (
+                      <RoomOption 
+                        key={roomNum}
+                        onClick={() => setSelectedRoom(roomNum)}
+                        style={{
+                          borderColor: selectedRoom === roomNum ? theme.colors.neonPink : 'rgba(255, 255, 255, 0.3)',
+                          background: selectedRoom === roomNum ? 'rgba(255, 20, 147, 0.1)' : 'rgba(255, 255, 255, 0.1)'
+                        }}
+                      >
+                        <div style={{ 
+                          color: theme.colors.textSecondary, 
+                          fontSize: '1.5rem',
+                          textAlign: 'center'
+                        }}>
+                          🏠
+                        </div>
+                      </RoomOption>
+                    ))}
+                  </RoomGrid>
+                </Box>
 
-              {/* Battle Royale Fees */}
-              <FormGroup>
-                <Label>Battle Royale Price</Label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                      Total Price (ETH)
-                      <span style={{ color: '#00ff88', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
-                        (enter the total ETH you want for your NFT)
-                      </span>
-                    </Label>
-                    <Input
-                      type="text"
-                      placeholder="1.00"
-                      value={totalEth}
-                      onChange={(e) => setTotalEth(e.target.value)}
-                      min="0"
-                      step="0.000001"
-                    />
-                  </div>
-                </div>
-                <small style={{ 
-                  color: theme.colors.textSecondary, 
-                  fontSize: '0.7rem',
-                  marginTop: '0.25rem',
-                  display: 'block',
-                  fontStyle: 'italic'
-                }}>
-                  USD amounts are display-only. Players pay exact ETH stored on-chain. A 5% fee of the per-player entry + a flat $0.50/$1.00 (converted once) is added per join.
-                </small>
-                {totalEth && (
-                  <div style={{ 
-                    background: 'rgba(255, 20, 147, 0.1)',
-                    border: '1px solid rgba(255, 20, 147, 0.3)',
-                    borderRadius: '0.5rem',
-                    padding: '0.75rem',
-                    marginTop: '0.5rem',
-                    fontSize: '0.9rem'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span>Per Player Entry (ETH):</span>
-                      <span>{(() => {
-                        const n = parseFloat(totalEth || '0')
-                        if (!n || n <= 0) return '0.000000'
-                        return (n / 4).toFixed(6)
-                      })()}</span>
+                {/* Bottom Left: Flip Price */}
+                <Box>
+                  <BoxTitle>Flip Price</BoxTitle>
+                  <PricingContainer>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                        Total Price (ETH)
+                      </Label>
+                      <PriceInput
+                        type="text"
+                        placeholder="1.00"
+                        value={totalEth}
+                        onChange={(e) => setTotalEth(e.target.value)}
+                      />
+                      {ethPriceUSD > 0 && (
+                        <div style={{ 
+                          color: theme.colors.textSecondary, 
+                          fontSize: '0.8rem', 
+                          marginTop: '0.25rem',
+                          textAlign: 'center'
+                        }}>
+                          ≈ ${(parseFloat(totalEth || '0') * ethPriceUSD).toFixed(2)} USD
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span>Total Entry Pool (ETH):</span>
-                      <span>{parseFloat(totalEth || '0').toFixed(6)}</span>
-                    </div>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      marginTop: '0.5rem',
-                      paddingTop: '0.5rem',
-                      borderTop: '1px solid rgba(255, 20, 147, 0.3)',
-                      color: creatorParticipates ? '#00ff88' : '#ff1493'
-                    }}>
-                      <span>Creator Status:</span>
-                      <span>{creatorParticipates ? 'Participating' : 'Not Participating'}</span>
-                    </div>
-                  </div>
-                )}
-              </FormGroup>
 
-              {/* Battle Royale Info */}
-              <FormGroup>
-                <Label>Battle Royale Rules</Label>
-                <div style={{ 
-                  background: 'rgba(255, 20, 147, 0.1)',
-                  border: '1px solid rgba(255, 20, 147, 0.3)',
-                  borderRadius: '0.5rem',
-                  padding: '1rem',
-                  fontSize: '0.9rem'
-                }}>
-                  <ul style={{ margin: '0', paddingLeft: '1.5rem', color: theme.colors.textSecondary }}>
-                    <li><strong>You receive NFT price minus platform fees and gas fees</strong></li>
-                    <li>4 players compete in elimination rounds</li>
-                    <li>Last player standing wins your NFT</li>
-                    <li>{creatorParticipates ? 'You will participate and can win your NFT back' : 'You will not participate - all seats are open for other players'}</li>
-                  </ul>
-                </div>
-              </FormGroup>
+                    {totalEth && (
+                      <div style={{ 
+                        background: 'rgba(255, 20, 147, 0.1)',
+                        border: '1px solid rgba(255, 20, 147, 0.3)',
+                        borderRadius: '0.5rem',
+                        padding: '0.75rem',
+                        marginBottom: '1rem',
+                        fontSize: '0.8rem'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <span>Per Player Entry:</span>
+                          <span>{(() => {
+                            const n = parseFloat(totalEth || '0')
+                            if (!n || n <= 0) return '0.000000'
+                            return (n / 4).toFixed(6)
+                          })()} ETH</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <span>Total Pool:</span>
+                          <span>{parseFloat(totalEth || '0').toFixed(6)} ETH</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00ff88' }}>
+                          <span>Your Earnings:</span>
+                          <span>{(() => {
+                            const n = parseFloat(totalEth || '0')
+                            if (!n) return '0.000000 ETH'
+                            return `${(n * 0.95).toFixed(6)} ETH`
+                          })()}</span>
+                        </div>
+                      </div>
+                    )}
 
-              {/* Progress Indicator at Bottom */}
-              <div style={{ marginTop: '2rem', marginBottom: '1rem' }}>
-                <ProgressContainer>
-                  <ProgressLine progress={getProgressPercentage()} />
-                  
-                  <ProgressStep>
-                    <StepCircle 
-                      completed={stepStatus.create}
-                      active={currentStep === 1 && !stepStatus.create}
-                    >
-                      {stepStatus.create ? '✓' : '1'}
-                    </StepCircle>
-                    <StepLabel 
-                      completed={stepStatus.create}
-                      active={currentStep === 1 && !stepStatus.create}
-                    >
-                      Create Battle Royale Game
-                    </StepLabel>
-                  </ProgressStep>
-                  
-                  <ProgressStep>
-                    <StepCircle 
-                      completed={stepStatus.approve}
-                      active={currentStep === 2 && !stepStatus.approve}
-                    >
-                      {stepStatus.approve ? '✓' : '2'}
-                    </StepCircle>
-                    <StepLabel 
-                      completed={stepStatus.approve}
-                      active={currentStep === 2 && !stepStatus.approve}
-                    >
-                      Approve & Deposit NFT
-                    </StepLabel>
-                  </ProgressStep>
-                  
-                  <ProgressStep>
-                    <StepCircle 
-                      completed={stepStatus.deposit}
-                      active={currentStep === 3 && !stepStatus.deposit}
-                    >
-                      {stepStatus.deposit ? '✓' : '3'}
-                    </StepCircle>
-                    <StepLabel 
-                      completed={stepStatus.deposit}
-                      active={currentStep === 3 && !stepStatus.deposit}
-                    >
-                      Battle Royale Ready!
-                    </StepLabel>
-                  </ProgressStep>
-                </ProgressContainer>
-              </div>
+                    <JoinButton type="button" disabled={!selectedNFT || !totalEth}>
+                      Join (4 Players)
+                    </JoinButton>
+                  </PricingContainer>
+                </Box>
 
-              {/* Submit Button */}
-              <BattleSubmitButton type="submit" disabled={loading || !isFullyConnected}>
-                {loading ? (
-                  <>
-                    <LoadingSpinner /> Creating Battle Royale...
-                  </>
-                ) : (
-                  '🏆 Create Flip'
-                )}
-              </BattleSubmitButton>
+                {/* Bottom Right: Progress & Create Button */}
+                <Box>
+                  <BoxTitle>Progress</BoxTitle>
+                  <ProgressBox>
+                    <CompactProgressContainer>
+                      <CompactProgressLine progress={getProgressPercentage()} />
+                      
+                      <CompactStepCircle 
+                        completed={stepStatus.create}
+                        active={currentStep === 1 && !stepStatus.create}
+                      >
+                        {stepStatus.create ? '✓' : '1'}
+                      </CompactStepCircle>
+                      
+                      <CompactStepCircle 
+                        completed={stepStatus.approve}
+                        active={currentStep === 2 && !stepStatus.approve}
+                      >
+                        {stepStatus.approve ? '✓' : '2'}
+                      </CompactStepCircle>
+                      
+                      <CompactStepCircle 
+                        completed={stepStatus.deposit}
+                        active={currentStep === 3 && !stepStatus.deposit}
+                      >
+                        {stepStatus.deposit ? '✓' : '3'}
+                      </CompactStepCircle>
+                    </CompactProgressContainer>
+
+                    <BattleSubmitButton type="submit" disabled={loading || !isFullyConnected}>
+                      {loading ? (
+                        <>
+                          <LoadingSpinner /> Creating Flip...
+                        </>
+                      ) : (
+                        'Create Flip'
+                      )}
+                    </BattleSubmitButton>
+                  </ProgressBox>
+                </Box>
+              </FourBoxGrid>
             </form>
           </BattleContainer>
         </ContentWrapper>
