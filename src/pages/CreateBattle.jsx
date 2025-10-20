@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { ethers } from 'ethers'
 import { useNavigate } from 'react-router-dom'
 import { ThemeProvider } from '@emotion/react'
 import styled from '@emotion/styled'
@@ -348,7 +349,7 @@ const CreateBattle = () => {
       
       // Calculate pricing based on creator participation
       const totalPlayers = creatorParticipates ? 4 : 4 // 4 players total
-      const entryFeePerPlayer = parseFloat(nftPrice) / totalPlayers
+      const entryFeePerPlayerUSD = parseFloat(nftPrice) / totalPlayers
       
       // Compute fee tier and minimums
       const isUnder20 = parseFloat(nftPrice) < 20
@@ -368,12 +369,14 @@ const CreateBattle = () => {
         throw new Error('Failed to fetch ETH price. Please try again.')
       }
       
-      // Convert USD fees to wei (round to 6 decimals first to avoid precision drift)
+      // Convert USD amounts to ETH then to wei (round to 6 decimals first to avoid precision drift)
+      const entryFeeEth = Math.round((entryFeePerPlayerUSD / ethPriceUSD) * 1e6) / 1e6
       const serviceFeeEth = Math.round((serviceFeeUsd / ethPriceUSD) * 1e6) / 1e6
       const minUnder20Eth = Math.round((minUnder20Usd / ethPriceUSD) * 1e6) / 1e6
-      
-      const serviceFeeWei = window.ethers ? window.ethers.parseEther(serviceFeeEth.toString()) : ethers.parseEther(serviceFeeEth.toString())
-      const minUnder20Wei = window.ethers ? window.ethers.parseEther(minUnder20Eth.toString()) : ethers.parseEther(minUnder20Eth.toString())
+
+      const entryFeeWei = ethers.parseEther(entryFeeEth.toString())
+      const serviceFeeWei = ethers.parseEther(serviceFeeEth.toString())
+      const minUnder20Wei = ethers.parseEther(minUnder20Eth.toString())
       
       // Validate and sanitize data before sending
       const requestData = {
@@ -384,8 +387,8 @@ const CreateBattle = () => {
         nft_image: selectedNFT.image || '',
         nft_collection: selectedNFT.collection || '',
         nft_chain: 'base', // Battle royale games are on Base
-        entry_fee: entryFeePerPlayer, // Calculate per-player entry fee
-        service_fee: parseFloat(serviceFee),
+        entry_fee: entryFeePerPlayerUSD, // Store USD for display/server if needed
+        service_fee: serviceFeeUsd,
         creator_participates: creatorParticipates // Add creator participation flag
       }
       
@@ -431,10 +434,10 @@ const CreateBattle = () => {
         battleRoyaleResult.gameId,
         selectedNFT.contractAddress,
         selectedNFT.tokenId,
-        Math.round(entryFeePerPlayer * 1000000), // Convert to microdollars
-        Number(serviceFeeWei),
+        entryFeeWei.toString(),
+        serviceFeeWei.toString(),
         isUnder20,
-        Number(minUnder20Wei)
+        minUnder20Wei.toString()
       )
       
       if (!createResult.success) {
