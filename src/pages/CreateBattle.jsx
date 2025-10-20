@@ -28,8 +28,7 @@ const BattleContainer = styled.div`
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 0 30px rgba(255, 20, 147, 0.3);
-  min-height: 70vh;
-  max-height: 85vh;
+  min-height: 90vh;
   padding: 1.5rem;
 `
 
@@ -133,8 +132,8 @@ const JoinButton = styled(Button)`
 // Room Selection Box
 const RoomGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.8rem;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.6rem;
   flex: 1;
 `
 
@@ -148,7 +147,7 @@ const RoomOption = styled.div`
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-height: 60px;
+  min-height: 50px;
   
   &:hover {
     border-color: ${props => props.theme.colors.neonPink};
@@ -172,18 +171,18 @@ const CompactProgressContainer = styled.div`
   margin-bottom: 1.5rem;
   position: relative;
   width: 100%;
-  max-width: 280px;
+  max-width: 320px;
 `
 
 const CompactStepCircle = styled.div`
-  width: 35px;
-  height: 35px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   transition: all 0.3s ease;
   border: 2px solid;
   
@@ -214,9 +213,9 @@ const CompactStepCircle = styled.div`
 
 const CompactProgressLine = styled.div`
   position: absolute;
-  top: 17px;
-  left: 17px;
-  right: 17px;
+  top: 22px;
+  left: 22px;
+  right: 22px;
   height: 2px;
   background: linear-gradient(90deg, 
     ${props => props.progress >= 50 ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'} 0%, 
@@ -745,7 +744,7 @@ const CreateBattle = () => {
                       >
                         <div style={{ 
                           color: theme.colors.textSecondary, 
-                          fontSize: '1.8rem',
+                          fontSize: '1.2rem',
                           textAlign: 'center'
                         }}>
                           🏠
