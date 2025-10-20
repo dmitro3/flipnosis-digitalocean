@@ -828,12 +828,12 @@ const CreateBattle = () => {
                           </div>
                         )}
                         <div style={{
-                          color: selectedRoom === room.id ? '#9d00ff' : '#00ffff',
-                          fontSize: '0.7rem',
+                          color: '#ff8c00',
+                          fontSize: '1.4rem',
                           textAlign: 'center',
                           fontFamily: 'Orbitron, sans-serif',
                           fontWeight: 'bold',
-                          textShadow: selectedRoom === room.id ? '0 0 5px rgba(157, 0, 255, 0.8)' : '0 0 3px rgba(0, 255, 255, 0.5)'
+                          textShadow: '0 0 10px rgba(255, 140, 0, 0.8)'
                         }}>
                           {room.label}
                         </div>
@@ -893,7 +893,7 @@ const CreateBattle = () => {
                         borderRadius: '12px',
                         padding: '0.75rem',
                         marginBottom: '1rem',
-                        fontSize: '0.9rem',
+                        fontSize: '1.1rem',
                         backdropFilter: 'blur(5px)',
                         boxShadow: '0 0 20px rgba(0, 255, 255, 0.2)'
                       }}>
@@ -901,28 +901,28 @@ const CreateBattle = () => {
                           <span>Per Player Entry:</span>
                           <span>{(() => {
                             const n = parseFloat(totalEth || '0')
-                            if (!n || n <= 0) return '0.000000'
-                            return (n / 4).toFixed(6)
-                          })()} ETH</span>
+                            if (!n || n <= 0) return '0 ETH'
+                            return parseFloat((n / 4).toFixed(6)).toString() + ' ETH'
+                          })()}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                           <span>Total Pool:</span>
-                          <span>{parseFloat(totalEth || '0').toFixed(6)} ETH</span>
+                          <span>{parseFloat(parseFloat(totalEth || '0').toFixed(6)).toString()} ETH</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00ff88' }}>
                           <span>Your Earnings:</span>
                           <span>{(() => {
                             const n = parseFloat(totalEth || '0')
-                            if (!n) return '0.000000 ETH'
-                            return `${(n * 0.95).toFixed(6)} ETH`
+                            if (!n) return '0 ETH'
+                            return parseFloat((n * 0.95).toFixed(6)).toString() + ' ETH'
                           })()}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                           <span>Service Fee:</span>
                           <span>{(() => {
                             const n = parseFloat(totalEth || '0')
-                            if (!n) return '0.000000 ETH'
-                            return `${(n * 0.05).toFixed(6)} ETH`
+                            if (!n) return '0 ETH'
+                            return parseFloat((n * 0.05).toFixed(6)).toString() + ' ETH'
                           })()}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff69b4' }}>
