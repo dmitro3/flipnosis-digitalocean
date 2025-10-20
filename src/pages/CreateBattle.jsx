@@ -37,16 +37,16 @@ const FourBoxGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: 2rem;
+  gap: 1.5rem;
   margin-top: 2rem;
-  min-height: 60vh;
+  height: 50vh;
 `
 
 const Box = styled.div`
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid rgba(255, 20, 147, 0.3);
   border-radius: 1rem;
-  padding: 1.5rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
@@ -72,12 +72,11 @@ const NFTUploadArea = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
 `
 
 const SquareUploadZone = styled.div`
-  width: 150px;
-  height: 150px;
+  width: 100px;
+  height: 100px;
   border: 2px dashed ${props => props.theme.colors.neonPink};
   border-radius: 0.5rem;
   display: flex;
@@ -86,7 +85,7 @@ const SquareUploadZone = styled.div`
   cursor: pointer;
   transition: all 0.3s ease;
   background: rgba(255, 20, 147, 0.05);
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   
   &:hover {
     border-color: ${props => props.theme.colors.neonBlue};
@@ -95,8 +94,8 @@ const SquareUploadZone = styled.div`
 `
 
 const NFTPreviewSquare = styled.img`
-  width: 150px;
-  height: 150px;
+  width: 100px;
+  height: 100px;
   border-radius: 0.5rem;
   object-fit: cover;
   border: 2px solid ${props => props.theme.colors.neonPink};
@@ -112,17 +111,8 @@ const PricingContainer = styled.div`
 const PriceInput = styled(Input)`
   margin-bottom: 1rem;
   text-align: center;
-  font-size: 1.1rem;
-`
-
-const JoinButton = styled(Button)`
-  background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-  margin-top: 1rem;
-  width: 100%;
-  
-  &:hover {
-    background: linear-gradient(135deg, #00cc6a 0%, #00aa55 100%);
-  }
+  font-size: 1.2rem;
+  padding: 0.75rem;
 `
 
 // Room Selection Box
@@ -143,6 +133,7 @@ const RoomOption = styled.div`
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  min-height: 60px;
   
   &:hover {
     border-color: ${props => props.theme.colors.neonPink};
@@ -713,7 +704,7 @@ const CreateBattle = () => {
                     )}
                     {selectedNFT && (
                       <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-                        <div style={{ color: theme.colors.textPrimary, fontWeight: '600' }}>
+                        <div style={{ color: theme.colors.textPrimary, fontWeight: '600', fontSize: '1rem' }}>
                           {selectedNFT.name}
                         </div>
                         <div style={{ color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
@@ -754,7 +745,7 @@ const CreateBattle = () => {
                   <BoxTitle>Flip Price</BoxTitle>
                   <PricingContainer>
                     <div style={{ marginBottom: '1rem' }}>
-                      <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                      <Label style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>
                         Total Price (ETH)
                       </Label>
                       <PriceInput
@@ -766,7 +757,7 @@ const CreateBattle = () => {
                       {ethPriceUSD > 0 && (
                         <div style={{ 
                           color: theme.colors.textSecondary, 
-                          fontSize: '0.8rem', 
+                          fontSize: '1rem', 
                           marginTop: '0.25rem',
                           textAlign: 'center'
                         }}>
@@ -775,14 +766,36 @@ const CreateBattle = () => {
                       )}
                     </div>
 
+                    {/* Creator Participation Toggle */}
+                    <div style={{ marginBottom: '1rem' }}>
+                      <ToggleContainer>
+                        <div>
+                          <ToggleLabel style={{ fontSize: '1rem' }}>Join the Battle</ToggleLabel>
+                          <ToggleDescription style={{ fontSize: '0.9rem' }}>
+                            {creatorParticipates 
+                              ? "You will participate in the game"
+                              : "You will not participate - all 4 seats are open"
+                            }
+                          </ToggleDescription>
+                        </div>
+                        <ToggleSwitch>
+                          <input
+                            type="checkbox"
+                            checked={creatorParticipates}
+                            onChange={(e) => setCreatorParticipates(e.target.checked)}
+                          />
+                          <span className="slider"></span>
+                        </ToggleSwitch>
+                      </ToggleContainer>
+                    </div>
+
                     {totalEth && (
                       <div style={{ 
                         background: 'rgba(255, 20, 147, 0.1)',
                         border: '1px solid rgba(255, 20, 147, 0.3)',
                         borderRadius: '0.5rem',
                         padding: '0.75rem',
-                        marginBottom: '1rem',
-                        fontSize: '0.8rem'
+                        fontSize: '1rem'
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                           <span>Per Player Entry:</span>
@@ -796,20 +809,23 @@ const CreateBattle = () => {
                           <span>Total Pool:</span>
                           <span>{parseFloat(totalEth || '0').toFixed(6)} ETH</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00ff88' }}>
+                        {creatorParticipates && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', color: '#ffa500' }}>
+                            <span>Your Pool (3/4 players):</span>
+                            <span>{(parseFloat(totalEth || '0') * 0.75).toFixed(6)} ETH</span>
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00ff88', fontWeight: 'bold' }}>
                           <span>Your Earnings:</span>
                           <span>{(() => {
                             const n = parseFloat(totalEth || '0')
                             if (!n) return '0.000000 ETH'
-                            return `${(n * 0.95).toFixed(6)} ETH`
+                            const netAmount = creatorParticipates ? n * 0.75 * 0.95 : n * 0.95
+                            return `${netAmount.toFixed(6)} ETH`
                           })()}</span>
                         </div>
                       </div>
                     )}
-
-                    <JoinButton type="button" disabled={!selectedNFT || !totalEth}>
-                      Join (4 Players)
-                    </JoinButton>
                   </PricingContainer>
                 </Box>
 
