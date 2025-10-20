@@ -780,6 +780,24 @@ const CreateBattle = () => {
                       )}
                     </div>
 
+                    {/* Creator Participation Toggle */}
+                    <ToggleContainer>
+                      <div>
+                        <ToggleLabel>Creator Participates</ToggleLabel>
+                        <ToggleDescription>
+                          {creatorParticipates ? 'You will take 1 seat (3 others join)' : 'You will not participate (4 others join)'}
+                        </ToggleDescription>
+                      </div>
+                      <ToggleSwitch>
+                        <input
+                          type="checkbox"
+                          checked={creatorParticipates}
+                          onChange={(e) => setCreatorParticipates(e.target.checked)}
+                        />
+                        <span className="slider"></span>
+                      </ToggleSwitch>
+                    </ToggleContainer>
+
                     {totalEth && (
                       <div style={{ 
                         background: 'rgba(255, 20, 147, 0.1)',
@@ -811,10 +829,6 @@ const CreateBattle = () => {
                         </div>
                       </div>
                     )}
-
-                    <JoinButton type="button" disabled={!selectedNFT || !totalEth}>
-                      Join (4 Players)
-                    </JoinButton>
                   </PricingContainer>
                 </Box>
 
