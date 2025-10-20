@@ -64,8 +64,8 @@ const Box = styled.div`
   
   /* Make the Flip Price container (bottom left) taller */
   &:nth-child(3) {
-    min-height: 300px;
-    max-height: 380px;
+    min-height: 375px;
+    max-height: 475px;
   }
 `
 
@@ -171,7 +171,7 @@ const RoomOption = styled.div`
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-height: 50px;
+  min-height: 40px;
   backdrop-filter: blur(5px);
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
   
@@ -728,7 +728,6 @@ const CreateBattle = () => {
           <BattleContainer>
             <BattleHeader>
               <BattleTitle>Create Flip</BattleTitle>
-              <BattleSubtitle>4-player elimination tournament</BattleSubtitle>
             </BattleHeader>
             
             {/* Network Check */}
