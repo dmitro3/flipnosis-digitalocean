@@ -72,7 +72,9 @@ const CONTRACT_ABI = [
       {"internalType": "address", "name": "nftContract", "type": "address"},
       {"internalType": "uint256", "name": "tokenId", "type": "uint256"},
       {"internalType": "uint256", "name": "entryFee", "type": "uint256"},
-      {"internalType": "uint256", "name": "serviceFee", "type": "uint256"}
+      {"internalType": "uint256", "name": "serviceFee", "type": "uint256"},
+      {"internalType": "bool", "name": "isUnder20", "type": "bool"},
+      {"internalType": "uint256", "name": "minUnder20Wei", "type": "uint256"}
     ],
     "name": "createBattleRoyale",
     "outputs": [],
@@ -175,7 +177,7 @@ const NFT_ABI = [
 
 class ContractService {
   constructor() {
-    this.contractAddress = '0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb' // Battle Royale Contract
+    this.contractAddress = '0x8CE785e0EC60B3e34Ac49D4E1128683d4acc6502' // Battle Royale Contract
     this.walletClient = null
     this.publicClient = null
     this.userAddress = null
@@ -1432,7 +1434,7 @@ class ContractService {
   // ===== BATTLE ROYALE FUNCTIONS =====
 
   // Create Battle Royale game
-  async createBattleRoyale(gameId, nftContract, tokenId, entryFee, serviceFee) {
+  async createBattleRoyale(gameId, nftContract, tokenId, entryFee, serviceFee, isUnder20, minUnder20Wei) {
     if (!this.isReady()) {
       return { success: false, error: 'Contract service not initialized' }
     }
@@ -1456,7 +1458,7 @@ class ContractService {
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'createBattleRoyale',
-        args: [gameIdBytes32, nftContract, BigInt(tokenId), BigInt(entryFee), BigInt(serviceFee)],
+        args: [gameIdBytes32, nftContract, BigInt(tokenId), BigInt(entryFee), BigInt(serviceFee), Boolean(isUnder20), BigInt(minUnder20Wei)],
         chain: BASE_CHAIN,
         account: this.walletClient.account
       })

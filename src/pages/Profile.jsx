@@ -495,6 +495,7 @@ const Profile = () => {
   const [activeGames, setActiveGames] = useState([]);
   const [offers, setOffers] = useState([]);
   const [winnings, setWinnings] = useState([]);
+  const [claimables, setClaimables] = useState({ creator: [], winner: [] });
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -596,6 +597,22 @@ const Profile = () => {
   useEffect(() => {
     loadProfileData();
   }, [targetAddress]);
+
+  useEffect(() => {
+    const loadClaimables = async () => {
+      if (!targetAddress || activeTab !== 'assets') return;
+      try {
+        const resp = await fetch(`/api/users/${targetAddress}/claimables`)
+        if (resp.ok) {
+          const data = await resp.json()
+          setClaimables({ creator: data.creator || [], winner: data.winner || [] })
+        }
+      } catch (e) {
+        console.error('Failed to load claimables:', e)
+      }
+    }
+    loadClaimables()
+  }, [targetAddress, activeTab])
 
   // Copy address
   const copyAddress = () => {
@@ -901,6 +918,12 @@ const Profile = () => {
           onClick={() => setActiveTab('winnings')}
         >
           💰 My Winnings
+        </TabButton>
+        <TabButton 
+          active={activeTab === 'assets'} 
+          onClick={() => setActiveTab('assets')}
+        >
+          Assets
         </TabButton>
       </TabContainer>
 
@@ -1318,6 +1341,106 @@ const Profile = () => {
                   </GameCard>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'assets' && (
+          <div>
+            <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+              📦 Assets In Contract
+            </h3>
+
+            <div style={{ marginBottom: '1rem', color: 'rgba(255,255,255,0.8)' }}>
+              View assets you can withdraw now. Once withdrawn, they disappear from this list.
+            </div>
+
+            <h4 style={{ color: '#FFD700', marginTop: '1rem' }}>Creator Funds</h4>
+            {(claimables.creator?.length || 0) === 0 ? (
+              <EmptyState>No creator funds available.</EmptyState>
+            ) : (
+              claimables.creator.map(item => (
+                <GameCard key={`creator-${item.gameId}`}>
+                  <GameHeader>
+                    <GameInfo>
+                      <div style={{ fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)' }}>
+                        Game #{item.gameId}
+                      </div>
+                      <div style={{ color: '#ccc' }}>
+                        Entry fee per player: ${item.entry_fee} • Max: {item.max_players}
+                      </div>
+                    </GameInfo>
+                    <GameActions>
+                      <ActionButton
+                        onClick={async () => {
+                          try {
+                            showInfo('Withdrawing creator funds...')
+                            const res = await contractService.withdrawBattleRoyaleCreatorFunds(item.gameId)
+                            if (res.success) {
+                              showSuccess('Creator funds withdrawn!')
+                              setClaimables(prev => ({
+                                ...prev,
+                                creator: prev.creator.filter(c => c.gameId !== item.gameId)
+                              }))
+                            } else {
+                              showError(res.error || 'Withdraw failed')
+                            }
+                          } catch (e) {
+                            showError(e?.message || 'Withdraw failed')
+                          }
+                        }}
+                        style={{ background: 'linear-gradient(45deg, #FFD700, #FFA500)', color: '#000' }}
+                      >
+                        Withdraw
+                      </ActionButton>
+                    </GameActions>
+                  </GameHeader>
+                </GameCard>
+              ))
+            )}
+
+            <h4 style={{ color: '#00FF41', marginTop: '2rem' }}>Winner NFTs</h4>
+            {(claimables.winner?.length || 0) === 0 ? (
+              <EmptyState>No winner NFTs available.</EmptyState>
+            ) : (
+              claimables.winner.map(item => (
+                <GameCard key={`winner-${item.gameId}`}>
+                  <GameHeader>
+                    <GameInfo>
+                      <div style={{ fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)' }}>
+                        Game #{item.gameId}
+                      </div>
+                      <div style={{ color: '#ccc' }}>
+                        {item.nft_name || `Token #${item.nft_token_id}`}
+                      </div>
+                    </GameInfo>
+                    <GameActions>
+                      <ActionButton
+                        onClick={async () => {
+                          try {
+                            showInfo('Claiming NFT...')
+                            const res = await contractService.withdrawBattleRoyaleWinnerNFT(item.gameId)
+                            if (res.success) {
+                              showSuccess('NFT claimed!')
+                              setClaimables(prev => ({
+                                ...prev,
+                                winner: prev.winner.filter(w => w.gameId !== item.gameId)
+                              }))
+                            } else {
+                              showError(res.error || 'Claim failed')
+                            }
+                          } catch (e) {
+                            showError(e?.message || 'Claim failed')
+                          }
+                        }}
+                        style={{ background: 'linear-gradient(45deg, #00FF41, #39FF14)', color: '#000' }}
+                      >
+                        Claim NFT
+                      </ActionButton>
+                    </GameActions>
+                  </GameHeader>
+                </GameCard>
+              ))
             )}
           </div>
         )}

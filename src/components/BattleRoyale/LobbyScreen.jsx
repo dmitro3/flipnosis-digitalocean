@@ -336,12 +336,44 @@ const LobbyScreen = () => {
   const [isJoining, setIsJoining] = useState(false)
   // Simplified lobby: no coin selection
   const [showImageModal, setShowImageModal] = useState(false)
+  const [escrowCheck, setEscrowCheck] = useState({ checking: false, inEscrow: null, error: null })
+  const [claiming, setClaiming] = useState(false)
+
+  // Escrow verification: check ownerOf(tokenId) equals contract address
+  const verifyEscrow = useCallback(async () => {
+    if (!gameState?.nftContract || !gameState?.nftTokenId) return
+    setEscrowCheck({ checking: true, inEscrow: null, error: null })
+    try {
+      const owner = await contractService.publicClient.readContract({
+        address: gameState.nftContract,
+        abi: [
+          {
+            inputs: [{ internalType: 'uint256', name: 'tokenId', type: 'uint256' }],
+            name: 'ownerOf',
+            outputs: [{ internalType: 'address', name: '', type: 'address' }],
+            stateMutability: 'view',
+            type: 'function'
+          }
+        ],
+        functionName: 'ownerOf',
+        args: [BigInt(gameState.nftTokenId)]
+      })
+      const inEscrow = owner?.toLowerCase() === contractService.contractAddress.toLowerCase()
+      setEscrowCheck({ checking: false, inEscrow, error: null })
+    } catch (e) {
+      setEscrowCheck({ checking: false, inEscrow: null, error: e?.message || 'Failed to verify' })
+    }
+  }, [gameState])
 
   if (!gameState) return null
 
   const isCreator = gameState.creator?.toLowerCase() === address?.toLowerCase()
   const userInGame = gameState.playerSlots?.some(addr => addr?.toLowerCase() === address?.toLowerCase())
   const canJoin = !userInGame && gameState.currentPlayers < 4
+
+  // Winner claim gate: only show if player is winner and server marked completed
+  const isWinner = gameState?.winner && gameState.winner.toLowerCase?.() === address?.toLowerCase?.()
+  const canClaim = isWinner && gameState?.phase === 'completed'
 
   const handleJoinGame = async () => {
     if (!isContractInitialized || !contractService) {
@@ -450,6 +482,23 @@ const LobbyScreen = () => {
     window.open(shareUrl, '_blank', 'width=600,height=400')
   }
 
+  const handleClaimNFT = async () => {
+    if (!canClaim) return
+    try {
+      setClaiming(true)
+      const res = await contractService.withdrawBattleRoyaleWinnerNFT(gameState.gameId)
+      if (res.success) {
+        showToast('NFT claimed successfully!', 'success')
+      } else {
+        showToast(res.error || 'Failed to claim NFT', 'error')
+      }
+    } catch (e) {
+      showToast(e?.message || 'Failed to claim NFT', 'error')
+    } finally {
+      setClaiming(false)
+    }
+  }
+
   return (
     <Container>
       {/* LEFT: NFT INFO */}
@@ -459,6 +508,19 @@ const LobbyScreen = () => {
         <NFTImageContainer onClick={() => setShowImageModal(true)}>
           <NFTImage src={gameState.nftImage} alt={gameState.nftName} />
         </NFTImageContainer>
+        
+        <ActionButton onClick={verifyEscrow} style={{ marginTop: '0.5rem' }}>
+          {escrowCheck.checking ? 'Checking escrow...' : '✅ Verify NFT is in escrow'}
+        </ActionButton>
+        {escrowCheck.inEscrow === true && (
+          <div style={{ color: '#00ff88', fontWeight: 'bold' }}>NFT is held in the game contract</div>
+        )}
+        {escrowCheck.inEscrow === false && (
+          <div style={{ color: '#ff6b6b', fontWeight: 'bold' }}>Warning: NFT not found in escrow</div>
+        )}
+        {escrowCheck.error && (
+          <div style={{ color: '#ffa500', fontWeight: 'bold' }}>{escrowCheck.error}</div>
+        )}
         
         <InfoRow>
           <span>Name:</span>
@@ -544,6 +606,11 @@ const LobbyScreen = () => {
               style={{ marginTop: '1rem', background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
             >
               🚀 Start Game Early ({gameState.currentPlayers}/4)
+            </JoinActionButton>
+          )}
+          {canClaim && (
+            <JoinActionButton onClick={handleClaimNFT} disabled={claiming} style={{ marginTop: '1rem', background: 'linear-gradient(135deg, #00c853, #00e676)' }}>
+              {claiming ? 'Claiming...' : '🏆 Claim NFT'}
             </JoinActionButton>
           )}
         </StatusBar>

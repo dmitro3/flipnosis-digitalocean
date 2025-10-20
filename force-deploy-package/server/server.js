@@ -20,7 +20,7 @@ const server = http.createServer(app)
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3000
 const DATABASE_PATH = path.join(__dirname, 'flipz.db')
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb'
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x8CE785e0EC60B3e34Ac49D4E1128683d4acc6502'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 

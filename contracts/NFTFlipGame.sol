@@ -61,6 +61,8 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         bool nftClaimed;
         uint256 totalPool; // Total entry fees collected
         uint256 createdAt;
+        bool isUnder20; // Creator's listed USD price < $20
+        uint256 minUnder20Wei; // Minimum platform fee in wei when isUnder20
     }
     
     // Battle Royale mappings
@@ -70,7 +72,7 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     
     // Configuration
     uint256 public depositTimeout = 2 minutes;
-    uint256 public platformFeePercent = 350; // 3.5%
+    uint256 public platformFeePercent = 500; // 5%
     uint256 public constant BASIS_POINTS = 10000;
     address public platformFeeReceiver;
     address public usdcToken;
@@ -478,7 +480,9 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         address nftContract,
         uint256 tokenId,
         uint256 entryFee,
-        uint256 serviceFee
+        uint256 serviceFee,
+        bool isUnder20,
+        uint256 minUnder20Wei
     ) external nonReentrant whenNotPaused {
         require(battleRoyaleGames[gameId].creator == address(0), "Game already exists");
         require(entryFee > 0, "Entry fee must be greater than 0");
@@ -500,7 +504,9 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
             creatorPaid: false,
             nftClaimed: false,
             totalPool: 0,
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            isUnder20: isUnder20,
+            minUnder20Wei: minUnder20Wei
         });
         
         emit BattleRoyaleCreated(gameId, msg.sender, entryFee, serviceFee);
@@ -525,6 +531,12 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         battleRoyaleEntryAmounts[gameId][msg.sender] = msg.value;
         game.currentPlayers++;
         game.totalPool += game.entryFee; // Only entry fee goes to pool, service fee goes to platform
+        
+        // Immediately forward the per-join service fee to the platform
+        if (game.serviceFee > 0) {
+            (bool feeSuccess,) = platformFeeReceiver.call{value: game.serviceFee}("");
+            require(feeSuccess, "Service fee transfer failed");
+        }
         
         emit BattleRoyaleJoined(gameId, msg.sender, msg.value);
         
@@ -566,6 +578,9 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         require(!game.creatorPaid, "Already withdrawn");
         
         uint256 platformFee = (game.totalPool * platformFeePercent) / BASIS_POINTS;
+        if (game.isUnder20 && game.minUnder20Wei > platformFee) {
+            platformFee = game.minUnder20Wei;
+        }
         uint256 creatorAmount = game.totalPool - platformFee;
         
         game.creatorPaid = true;

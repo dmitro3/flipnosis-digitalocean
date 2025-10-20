@@ -194,7 +194,7 @@ const CONTRACT_ABI = [
 
 // Contract addresses for different chains
 const CONTRACT_ADDRESSES = {
-              'base': '0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb', // Base Battle Royale contract address
+              'base': '0x8CE785e0EC60B3e34Ac49D4E1128683d4acc6502', // Base Battle Royale contract address
   'ethereum': '0x...',
   'bnb': '0x...',
   'avalanche': '0x...',
@@ -550,8 +550,13 @@ export default function AdminPanel() {
   const [filteredListings, setFilteredListings] = useState([])
   const [players, setPlayers] = useState([])
   const [settings, setSettings] = useState({
-    platformFeePercent: 3.5,
-    listingFeeUSD: 0.20
+    platformFeePercent: 5.0,
+    listingFeeUSD: 0.20,
+    serviceFeeEnabled: true,
+    lowJoinFeeUSD: 0.5,
+    highJoinFeeUSD: 1.0,
+    under20MinUSD: 1.0,
+    platformBps: 500
   })
   
   const [expandedGame, setExpandedGame] = useState(null)
@@ -1654,6 +1659,13 @@ export default function AdminPanel() {
               Settings
             </Tab>
             <Tab 
+              active={activeTab === 'fees'} 
+              onClick={() => setActiveTab('fees')}
+            >
+              <DollarSign size={20} />
+              Fees
+            </Tab>
+            <Tab 
               active={activeTab === 'emergency'} 
               onClick={() => setActiveTab('emergency')}
             >
@@ -2132,6 +2144,70 @@ export default function AdminPanel() {
                   <Button onClick={updateListingFee} disabled={!contractService.currentChain}>
                     Update Listing Fee
                   </Button>
+                </SettingsForm>
+              </div>
+            )}
+
+            {activeTab === 'fees' && (
+              <div>
+                <h3>Fee Settings</h3>
+                <SettingsForm>
+                  <FormGroup>
+                    <Label>Service Fees Enabled</Label>
+                    <input
+                      type="checkbox"
+                      checked={settings.serviceFeeEnabled}
+                      onChange={(e) => setSettings(prev => ({ ...prev, serviceFeeEnabled: e.target.checked }))}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label>Low Join Fee (USD)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.lowJoinFeeUSD}
+                      onChange={(e) => setSettings(prev => ({ ...prev, lowJoinFeeUSD: parseFloat(e.target.value) }))}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label>High Join Fee (USD)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.highJoinFeeUSD}
+                      onChange={(e) => setSettings(prev => ({ ...prev, highJoinFeeUSD: parseFloat(e.target.value) }))}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label>Under-$20 Minimum (USD)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.under20MinUSD}
+                      onChange={(e) => setSettings(prev => ({ ...prev, under20MinUSD: parseFloat(e.target.value) }))}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label>Platform Fee (bps)</Label>
+                    <Input
+                      type="number"
+                      step="1"
+                      value={settings.platformBps}
+                      onChange={(e) => setSettings(prev => ({ ...prev, platformBps: parseInt(e.target.value || '0', 10) }))}
+                    />
+                  </FormGroup>
+                  <Button onClick={async () => {
+                    try {
+                      const resp = await fetch(`/api/admin/fee-settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) })
+                      if (resp.ok) {
+                        addNotification('success', 'Fee settings updated')
+                      } else {
+                        addNotification('error', 'Failed to update fee settings')
+                      }
+                    } catch (e) {
+                      addNotification('error', 'Failed to update fee settings')
+                    }
+                  }}>Save Fee Settings</Button>
                 </SettingsForm>
               </div>
             )}

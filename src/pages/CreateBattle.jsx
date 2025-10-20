@@ -350,6 +350,31 @@ const CreateBattle = () => {
       const totalPlayers = creatorParticipates ? 4 : 4 // 4 players total
       const entryFeePerPlayer = parseFloat(nftPrice) / totalPlayers
       
+      // Compute fee tier and minimums
+      const isUnder20 = parseFloat(nftPrice) < 20
+      const isUnder50 = parseFloat(nftPrice) < 50
+      const serviceFeeUsd = isUnder50 ? 0.50 : 1.00
+      const minUnder20Usd = 1.00
+      
+      // Fetch ETH price in USD (client-side) for fee conversions
+      let ethPriceUSD = 0
+      try {
+        const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')
+        const j = await r.json()
+        ethPriceUSD = j?.ethereum?.usd || 0
+      } catch {}
+      
+      if (!ethPriceUSD || ethPriceUSD <= 0) {
+        throw new Error('Failed to fetch ETH price. Please try again.')
+      }
+      
+      // Convert USD fees to wei (round to 6 decimals first to avoid precision drift)
+      const serviceFeeEth = Math.round((serviceFeeUsd / ethPriceUSD) * 1e6) / 1e6
+      const minUnder20Eth = Math.round((minUnder20Usd / ethPriceUSD) * 1e6) / 1e6
+      
+      const serviceFeeWei = window.ethers ? window.ethers.parseEther(serviceFeeEth.toString()) : ethers.parseEther(serviceFeeEth.toString())
+      const minUnder20Wei = window.ethers ? window.ethers.parseEther(minUnder20Eth.toString()) : ethers.parseEther(minUnder20Eth.toString())
+      
       // Validate and sanitize data before sending
       const requestData = {
         creator: address,
@@ -407,7 +432,9 @@ const CreateBattle = () => {
         selectedNFT.contractAddress,
         selectedNFT.tokenId,
         Math.round(entryFeePerPlayer * 1000000), // Convert to microdollars
-        Math.round(parseFloat(serviceFee) * 1000000) // Convert to microdollars
+        Number(serviceFeeWei),
+        isUnder20,
+        Number(minUnder20Wei)
       )
       
       if (!createResult.success) {

@@ -413,6 +413,41 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
+  // Claimables endpoint: approximates items user can withdraw/claim
+  router.get('/users/:address/claimables', async (req, res) => {
+    const { address } = req.params
+    try {
+      // Creator claimables (post-completion, unpaid)
+      const creatorClaimables = await new Promise((resolve, reject) => {
+        db.all(`
+          SELECT br.id as gameId, br.creator, br.entry_fee, br.service_fee, br.max_players
+          FROM battle_royale_games br
+          WHERE br.creator = ? AND br.status = 'completed' AND (br.creator_paid IS NULL OR br.creator_paid = 0)
+        `, [address.toLowerCase()], (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows || [])
+        })
+      })
+
+      // Winner claimables (post-completion, NFT not claimed)
+      const winnerClaimables = await new Promise((resolve, reject) => {
+        db.all(`
+          SELECT br.id as gameId, br.nft_contract, br.nft_token_id, br.nft_name, br.nft_image
+          FROM battle_royale_games br
+          WHERE br.winner = ? AND br.status = 'completed' AND (br.nft_claimed IS NULL OR br.nft_claimed = 0)
+        `, [address.toLowerCase()], (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows || [])
+        })
+      })
+
+      res.json({ success: true, creator: creatorClaimables, winner: winnerClaimables })
+    } catch (error) {
+      console.error('Error fetching claimables:', error)
+      res.status(500).json({ error: 'Failed to fetch claimables' })
+    }
+  })
+
   router.post('/listings', async (req, res) => {
     const { creator, game_id, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data } = req.body
     
@@ -1412,6 +1447,46 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     })
   })
 
+  // Admin: Fee settings storage (simple JSON file)
+  const fs = require('fs')
+  const path = require('path')
+  const feeSettingsPath = path.join(process.cwd(), 'server', 'fee-settings.json')
+
+  function readFeeSettings() {
+    try {
+      if (fs.existsSync(feeSettingsPath)) {
+        return JSON.parse(fs.readFileSync(feeSettingsPath, 'utf-8'))
+      }
+    } catch {}
+    return {
+      serviceFeeEnabled: true,
+      lowJoinFeeUSD: 0.5,
+      highJoinFeeUSD: 1.0,
+      under20MinUSD: 1.0,
+      platformBps: 500
+    }
+  }
+
+  function writeFeeSettings(settings) {
+    fs.writeFileSync(feeSettingsPath, JSON.stringify(settings, null, 2))
+  }
+
+  router.get('/admin/fee-settings', (req, res) => {
+    const settings = readFeeSettings()
+    res.json({ success: true, settings })
+  })
+
+  router.put('/admin/fee-settings', (req, res) => {
+    try {
+      const current = readFeeSettings()
+      const updated = { ...current, ...req.body }
+      writeFeeSettings(updated)
+      res.json({ success: true, settings: updated })
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to update fee settings', details: e.message })
+    }
+  })
+
   // Update game status
   router.patch('/admin/games/:gameId', (req, res) => {
     const { gameId } = req.params
@@ -1705,6 +1780,40 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     } catch (error) {
       console.error('❌ Error completing game:', error)
       res.status(500).json({ error: 'Failed to complete game', details: error.message })
+    }
+  })
+
+  // Route: Complete Battle Royale on-chain and broadcast
+  router.post('/battle-royale/:gameId/complete', async (req, res) => {
+    const { gameId } = req.params
+    const { winner } = req.body
+
+    try {
+      if (!winner) return res.status(400).json({ error: 'Winner address required' })
+
+      if (!gameServer || !blockchainService.hasOwnerWallet()) {
+        return res.status(500).json({ error: 'Blockchain service not configured' })
+      }
+
+      const result = await blockchainService.completeBattleRoyaleOnChain(gameId, winner)
+      if (!result.success) {
+        return res.status(500).json({ error: result.error || 'Failed to complete Battle Royale' })
+      }
+
+      // Notify room
+      if (gameServer && gameServer.io) {
+        gameServer.io.to(gameId).emit('battle_royale_completed_on_chain', {
+          type: 'battle_royale_completed_on_chain',
+          gameId,
+          winner,
+          transactionHash: result.transactionHash
+        })
+      }
+
+      res.json({ success: true, transactionHash: result.transactionHash })
+    } catch (error) {
+      console.error('❌ Error completing Battle Royale on-chain:', error)
+      res.status(500).json({ error: 'Failed to complete Battle Royale', details: error.message })
     }
   })
 
