@@ -81,6 +81,32 @@ const CONTRACT_ABI = [
     "stateMutability": "nonpayable",
     "type": "function"
   },
+  // Battle Royale games public mapping getter
+  {
+    "inputs": [
+      {"internalType": "bytes32", "name": "", "type": "bytes32"}
+    ],
+    "name": "battleRoyaleGames",
+    "outputs": [
+      {"internalType": "address", "name": "creator", "type": "address"},
+      {"internalType": "address", "name": "nftContract", "type": "address"},
+      {"internalType": "uint256", "name": "tokenId", "type": "uint256"},
+      {"internalType": "uint256", "name": "entryFee", "type": "uint256"},
+      {"internalType": "uint256", "name": "serviceFee", "type": "uint256"},
+      {"internalType": "uint8", "name": "maxPlayers", "type": "uint8"},
+      {"internalType": "uint8", "name": "currentPlayers", "type": "uint8"},
+      {"internalType": "address", "name": "winner", "type": "address"},
+      {"internalType": "bool", "name": "completed", "type": "bool"},
+      {"internalType": "bool", "name": "creatorPaid", "type": "bool"},
+      {"internalType": "bool", "name": "nftClaimed", "type": "bool"},
+      {"internalType": "uint256", "name": "totalPool", "type": "uint256"},
+      {"internalType": "uint256", "name": "createdAt", "type": "uint256"},
+      {"internalType": "bool", "name": "isUnder20", "type": "bool"},
+      {"internalType": "uint256", "name": "minUnder20Wei", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
   {
     "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}],
     "name": "joinBattleRoyale",

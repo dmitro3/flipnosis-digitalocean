@@ -384,15 +384,42 @@ const LobbyScreen = () => {
     setIsJoining(true)
     try {
       showToast('Opening MetaMask...', 'info')
-      
-      const totalPrize = parseFloat(gameState.entryFee || 0)
-      const entryFeeUSD = totalPrize / 6
-      const serviceFeeUSD = parseFloat(gameState.serviceFee || 0)
-      const totalAmountUSD = entryFeeUSD + serviceFeeUSD
-      
-      const totalAmountETHWei = await contractService.getETHAmount(totalAmountUSD)
-      const totalAmountETH = ethers.formatEther(totalAmountETHWei)
-      
+      // Read on-chain entryFee and serviceFee, pay exact sum (wei)
+      const gameIdBytes32 = contractService.getGameIdBytes32(gameState.gameId)
+      const onchain = await contractService.publicClient.readContract({
+        address: contractService.contractAddress,
+        abi: [
+          {
+            inputs: [{ internalType: 'bytes32', name: '', type: 'bytes32' }],
+            name: 'battleRoyaleGames',
+            outputs: [
+              { internalType: 'address', name: 'creator', type: 'address' },
+              { internalType: 'address', name: 'nftContract', type: 'address' },
+              { internalType: 'uint256', name: 'tokenId', type: 'uint256' },
+              { internalType: 'uint256', name: 'entryFee', type: 'uint256' },
+              { internalType: 'uint256', name: 'serviceFee', type: 'uint256' },
+              { internalType: 'uint8', name: 'maxPlayers', type: 'uint8' },
+              { internalType: 'uint8', name: 'currentPlayers', type: 'uint8' },
+              { internalType: 'address', name: 'winner', type: 'address' },
+              { internalType: 'bool', name: 'completed', type: 'bool' },
+              { internalType: 'bool', name: 'creatorPaid', type: 'bool' },
+              { internalType: 'bool', name: 'nftClaimed', type: 'bool' },
+              { internalType: 'uint256', name: 'totalPool', type: 'uint256' },
+              { internalType: 'uint256', name: 'createdAt', type: 'uint256' },
+              { internalType: 'bool', name: 'isUnder20', type: 'bool' },
+              { internalType: 'uint256', name: 'minUnder20Wei', type: 'uint256' }
+            ],
+            stateMutability: 'view',
+            type: 'function'
+          }
+        ],
+        functionName: 'battleRoyaleGames',
+        args: [gameIdBytes32]
+      })
+      const entryFeeWei = onchain[3]
+      const serviceFeeWei = onchain[4]
+      const totalWei = (BigInt(entryFeeWei) + BigInt(serviceFeeWei)).toString()
+      const totalAmountETH = ethers.formatEther(totalWei)
       const result = await contractService.joinBattleRoyale(gameState.gameId, totalAmountETH)
       
       if (result.success) {

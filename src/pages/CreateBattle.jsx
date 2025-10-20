@@ -284,8 +284,7 @@ const CreateBattle = () => {
   const { address, walletClient, publicClient, nfts, loading: nftsLoading, chainId, switchToBase, isConnected, isConnecting } = useWallet()
   
   const [selectedNFT, setSelectedNFT] = useState(null)
-  const [nftPrice, setNftPrice] = useState('80.00')
-  const [serviceFee, setServiceFee] = useState('0.10')
+  const [totalEth, setTotalEth] = useState('0.10')
   const [loading, setLoading] = useState(false)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [creatorParticipates, setCreatorParticipates] = useState(false)
@@ -320,12 +319,8 @@ const CreateBattle = () => {
       showError('Please select an NFT')
       return
     }
-    if (!nftPrice || parseFloat(nftPrice) <= 0) {
-      showError('Please enter a valid NFT price greater than $0')
-      return
-    }
-    if (!serviceFee || parseFloat(serviceFee) <= 0) {
-      showError('Please enter a valid service fee greater than $0')
+    if (!totalEth || parseFloat(totalEth) <= 0) {
+      showError('Please enter a valid total price in ETH (> 0)')
       return
     }
     
@@ -347,36 +342,34 @@ const CreateBattle = () => {
       showInfo('Creating Battle Royale game...')
       setStepStatus({ create: true, approve: false, deposit: false })
       
-      // Calculate pricing based on creator participation
-      const totalPlayers = creatorParticipates ? 4 : 4 // 4 players total
-      const entryFeePerPlayerUSD = parseFloat(nftPrice) / totalPlayers
-      
-      // Compute fee tier and minimums
-      const isUnder20 = parseFloat(nftPrice) < 20
-      const isUnder50 = parseFloat(nftPrice) < 50
-      const serviceFeeUsd = isUnder50 ? 0.50 : 1.00
-      const minUnder20Usd = 1.00
-      
-      // Fetch ETH price in USD (client-side) for fee conversions
+      // Calculate pricing in ETH
+      const totalEthNum = Math.round(parseFloat(totalEth) * 1e6) / 1e6
+      const perPlayerEth = Math.round((totalEthNum / 4) * 1e6) / 1e6
+      const entryFeeWei = ethers.parseEther(perPlayerEth.toString())
+
+      // Percent fee: 5% of per-player entry (in wei)
+      const percentFeeWei = (entryFeeWei * 5n) / 100n
+
+      // Flat tier: $0.50 if total < $50, else $1.00 — converted once to ETH
       let ethPriceUSD = 0
       try {
-        const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')
-        const j = await r.json()
-        ethPriceUSD = j?.ethereum?.usd || 0
-      } catch {}
-      
-      if (!ethPriceUSD || ethPriceUSD <= 0) {
-        throw new Error('Failed to fetch ETH price. Please try again.')
+        ethPriceUSD = await contractService.getETHPriceUSD()
+      } catch {
+        ethPriceUSD = 0
       }
-      
-      // Convert USD amounts to ETH then to wei (round to 6 decimals first to avoid precision drift)
-      const entryFeeEth = Math.round((entryFeePerPlayerUSD / ethPriceUSD) * 1e6) / 1e6
-      const serviceFeeEth = Math.round((serviceFeeUsd / ethPriceUSD) * 1e6) / 1e6
-      const minUnder20Eth = Math.round((minUnder20Usd / ethPriceUSD) * 1e6) / 1e6
+      if (!ethPriceUSD || ethPriceUSD <= 0) {
+        throw new Error('Failed to fetch price for fee calculation. Please try again.')
+      }
+      const totalUsd = totalEthNum * ethPriceUSD
+      const flatUsd = totalUsd < 50 ? 0.50 : 1.00
+      const flatEth = Math.round((flatUsd / ethPriceUSD) * 1e6) / 1e6
+      const flatFeeWei = ethers.parseEther(flatEth.toString())
 
-      const entryFeeWei = ethers.parseEther(entryFeeEth.toString())
-      const serviceFeeWei = ethers.parseEther(serviceFeeEth.toString())
-      const minUnder20Wei = ethers.parseEther(minUnder20Eth.toString())
+      const serviceFeeWei = percentFeeWei + flatFeeWei
+
+      // For the withdraw-minimum path we are not using under-$20 anymore
+      const isUnder20 = false
+      const minUnder20Wei = 0n
       
       // Validate and sanitize data before sending
       const requestData = {
@@ -387,8 +380,8 @@ const CreateBattle = () => {
         nft_image: selectedNFT.image || '',
         nft_collection: selectedNFT.collection || '',
         nft_chain: 'base', // Battle royale games are on Base
-        entry_fee: entryFeePerPlayerUSD, // Store USD for display/server if needed
-        service_fee: serviceFeeUsd,
+        entry_fee: perPlayerEth, // store for display if server desires
+        service_fee: ethers.formatEther(serviceFeeWei),
         creator_participates: creatorParticipates // Add creator participation flag
       }
       
@@ -586,33 +579,22 @@ const CreateBattle = () => {
 
               {/* Battle Royale Fees */}
               <FormGroup>
-                <Label>Battle Royale Fees</Label>
+                <Label>Battle Royale Price</Label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
                     <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                      NFT Price (USD) 
+                      Total Price (ETH)
                       <span style={{ color: '#00ff88', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
-                        (enter the price you want for your NFT)
+                        (enter the total ETH you want for your NFT)
                       </span>
                     </Label>
                     <Input
-                      type="number"
-                      placeholder="80.00"
-                      value={nftPrice}
-                      onChange={(e) => setNftPrice(e.target.value)}
+                      type="text"
+                      placeholder="1.00"
+                      value={totalEth}
+                      onChange={(e) => setTotalEth(e.target.value)}
                       min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  <div>
-                    <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Service Fee (USD)</Label>
-                    <Input
-                      type="number"
-                      placeholder="0.10"
-                      value={serviceFee}
-                      onChange={(e) => setServiceFee(e.target.value)}
-                      min="0"
-                      step="0.01"
+                      step="0.000001"
                     />
                   </div>
                 </div>
@@ -623,9 +605,9 @@ const CreateBattle = () => {
                   display: 'block',
                   fontStyle: 'italic'
                 }}>
-                  ⚠️ All fees are approximate and will fluctuate based on gas fees and network conditions.
+                  USD amounts are display-only. Players pay exact ETH stored on-chain. A 5% fee of the per-player entry + a flat $0.50/$1.00 (converted once) is added per join.
                 </small>
-                {nftPrice && serviceFee && (
+                {totalEth && (
                   <div style={{ 
                     background: 'rgba(255, 20, 147, 0.1)',
                     border: '1px solid rgba(255, 20, 147, 0.3)',
@@ -635,16 +617,16 @@ const CreateBattle = () => {
                     fontSize: '0.9rem'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span>Per Player Entry:</span>
-                      <span>${(parseFloat(nftPrice) / 4).toFixed(2)}</span>
+                      <span>Per Player Entry (ETH):</span>
+                      <span>{(() => {
+                        const n = parseFloat(totalEth || '0')
+                        if (!n || n <= 0) return '0.000000'
+                        return (n / 4).toFixed(6)
+                      })()}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span>Total Entry Pool:</span>
-                      <span>${parseFloat(nftPrice).toFixed(2)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span>Your Earnings (after 3.5% fee):</span>
-                      <span>${(parseFloat(nftPrice) * 0.965).toFixed(2)}</span>
+                      <span>Total Entry Pool (ETH):</span>
+                      <span>{parseFloat(totalEth || '0').toFixed(6)}</span>
                     </div>
                     <div style={{ 
                       display: 'flex', 
