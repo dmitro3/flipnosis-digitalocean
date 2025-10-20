@@ -23,11 +23,12 @@ import {
 
 // Battle Royale specific styled components
 const BattleContainer = styled.div`
-  background: rgba(0, 0, 20, 0.95);
-  border: 2px solid rgba(255, 20, 147, 0.5);
-  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+  border: 3px solid #00ffff;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 0 30px rgba(255, 20, 147, 0.3);
+  box-shadow: 0 0 50px rgba(0, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
   min-height: 90vh;
   padding: 1.5rem;
 `
@@ -43,19 +44,22 @@ const FourBoxGrid = styled.div`
 `
 
 const Box = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 20, 147, 0.3);
-  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(10, 15, 35, 0.8), rgba(16, 33, 62, 0.8));
+  border: 2px solid #9d00ff;
+  border-radius: 16px;
   padding: 1.2rem;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
   min-height: 200px;
   max-height: 250px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 30px rgba(157, 0, 255, 0.3);
   
   &:hover {
-    border-color: rgba(255, 20, 147, 0.6);
-    box-shadow: 0 0 20px rgba(255, 20, 147, 0.2);
+    border-color: #00ffff;
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
+    transform: translateY(-2px);
   }
   
   /* Make the Flip Price container (bottom left) taller */
@@ -66,11 +70,13 @@ const Box = styled.div`
 `
 
 const BoxTitle = styled.h3`
-  color: ${props => props.theme.colors.textPrimary};
+  color: #00ffff;
   font-size: 1.4rem;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0 0 0.8rem 0;
   text-align: center;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  font-family: 'Orbitron', sans-serif;
 `
 
 // NFT Upload Box
@@ -86,28 +92,40 @@ const NFTUploadArea = styled.div`
 const SquareUploadZone = styled.div`
   width: 100px;
   height: 100px;
-  border: 2px dashed ${props => props.theme.colors.neonPink};
-  border-radius: 0.5rem;
+  border: 2px dashed #00ffff;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: rgba(255, 20, 147, 0.05);
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1));
   margin-bottom: 0.8rem;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
   
   &:hover {
-    border-color: ${props => props.theme.colors.neonBlue};
-    background: rgba(0, 191, 255, 0.05);
+    border-color: #9d00ff;
+    background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+    box-shadow: 0 0 30px rgba(157, 0, 255, 0.4);
+    transform: scale(1.05);
   }
 `
 
 const NFTPreviewSquare = styled.img`
   width: 100px;
   height: 100px;
-  border-radius: 0.5rem;
+  border-radius: 12px;
   object-fit: cover;
-  border: 2px solid ${props => props.theme.colors.neonPink};
+  border: 2px solid #00ffff;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: #9d00ff;
+    box-shadow: 0 0 30px rgba(157, 0, 255, 0.6);
+    transform: scale(1.05);
+  }
 `
 
 // Pricing Box
@@ -145,19 +163,23 @@ const RoomGrid = styled.div`
 
 const RoomOption = styled.div`
   aspect-ratio: 1;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 0.5rem;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1));
+  border: 2px solid #00ffff;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
   min-height: 50px;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
   
   &:hover {
-    border-color: ${props => props.theme.colors.neonPink};
-    background: rgba(255, 20, 147, 0.1);
+    border-color: #9d00ff;
+    background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+    box-shadow: 0 0 25px rgba(157, 0, 255, 0.4);
+    transform: scale(1.05);
   }
 `
 
@@ -325,24 +347,30 @@ const BattleHeader = styled.div`
   text-align: center;
   margin-bottom: 1.5rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, rgba(255, 20, 147, 0.2) 0%, rgba(138, 43, 226, 0.2) 100%);
-  border-radius: 1rem;
-  border: 2px solid rgba(255, 20, 147, 0.3);
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(157, 0, 255, 0.2));
+  border-radius: 20px;
+  border: 3px solid #00ffff;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
 `
 
 const BattleTitle = styled.h1`
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
+  background: linear-gradient(135deg, #00ffff, #9d00ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0 0 0.8rem 0;
+  font-family: 'Orbitron', sans-serif;
+  text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
 `
 
 const BattleSubtitle = styled.p`
-  color: ${props => props.theme.colors.textSecondary};
+  color: rgba(255, 255, 255, 0.9);
   font-size: 1.3rem;
   margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 `
 
 const NFTPreview = styled.div`
@@ -395,9 +423,22 @@ const PlaceholderText = styled.div`
 const BattleSubmitButton = styled(Button)`
   margin-top: 1.5rem;
   width: 100%;
-  background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
+  background: linear-gradient(135deg, #00ff00, #39ff14);
+  border: 2px solid #00ff00;
+  color: #000;
   font-size: 1.3rem;
   padding: 1rem;
+  border-radius: 12px;
+  font-weight: bold;
+  font-family: 'Orbitron', sans-serif;
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #39ff14, #00ff00);
+    box-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
+    transform: translateY(-2px);
+  }
   
   &:disabled {
     opacity: 0.5;
@@ -411,22 +452,27 @@ const ToggleContainer = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
-  background: rgba(255, 20, 147, 0.1);
-  border: 2px solid rgba(255, 20, 147, 0.3);
-  border-radius: 0.5rem;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1));
+  border: 2px solid #00ffff;
+  border-radius: 12px;
   margin-bottom: 1rem;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
 `
 
 const ToggleLabel = styled.div`
-  color: ${props => props.theme.colors.textPrimary};
+  color: #00ffff;
   font-weight: 600;
   font-size: 1rem;
+  font-family: 'Orbitron', sans-serif;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
 `
 
 const ToggleDescription = styled.div`
-  color: ${props => props.theme.colors.textSecondary};
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
   margin-top: 0.25rem;
+  font-family: 'Orbitron', sans-serif;
 `
 
 const ToggleSwitch = styled.label`
@@ -448,10 +494,11 @@ const ToggleSwitch = styled.label`
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(157, 0, 255, 0.2));
     transition: .4s;
     border-radius: 34px;
-    border: 2px solid rgba(255, 20, 147, 0.5);
+    border: 2px solid #00ffff;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
   }
   
   .slider:before {
@@ -467,8 +514,9 @@ const ToggleSwitch = styled.label`
   }
   
   input:checked + .slider {
-    background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-    border-color: #00ff88;
+    background: linear-gradient(135deg, #00ff00, #39ff14);
+    border-color: #00ff00;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
   }
   
   input:checked + .slider:before {
@@ -744,14 +792,16 @@ const CreateBattle = () => {
                         key={roomNum}
                         onClick={() => setSelectedRoom(roomNum)}
                         style={{
-                          borderColor: selectedRoom === roomNum ? theme.colors.neonPink : 'rgba(255, 255, 255, 0.3)',
-                          background: selectedRoom === roomNum ? 'rgba(255, 20, 147, 0.1)' : 'rgba(255, 255, 255, 0.1)'
+                          borderColor: selectedRoom === roomNum ? '#9d00ff' : '#00ffff',
+                          background: selectedRoom === roomNum ? 'linear-gradient(135deg, rgba(157, 0, 255, 0.3), rgba(0, 255, 255, 0.3))' : 'linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1))',
+                          boxShadow: selectedRoom === roomNum ? '0 0 30px rgba(157, 0, 255, 0.6)' : '0 0 15px rgba(0, 255, 255, 0.2)'
                         }}
                       >
                         <div style={{ 
-                          color: theme.colors.textSecondary, 
+                          color: selectedRoom === roomNum ? '#9d00ff' : '#00ffff', 
                           fontSize: '1.2rem',
-                          textAlign: 'center'
+                          textAlign: 'center',
+                          textShadow: selectedRoom === roomNum ? '0 0 10px rgba(157, 0, 255, 0.8)' : '0 0 5px rgba(0, 255, 255, 0.5)'
                         }}>
                           🏠
                         </div>
@@ -806,12 +856,14 @@ const CreateBattle = () => {
 
                     {totalEth && (
                       <div style={{ 
-                        background: 'rgba(255, 20, 147, 0.1)',
-                        border: '1px solid rgba(255, 20, 147, 0.3)',
-                        borderRadius: '0.5rem',
+                        background: 'linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1))',
+                        border: '2px solid #00ffff',
+                        borderRadius: '12px',
                         padding: '0.75rem',
                         marginBottom: '1rem',
-                        fontSize: '0.9rem'
+                        fontSize: '0.9rem',
+                        backdropFilter: 'blur(5px)',
+                        boxShadow: '0 0 20px rgba(0, 255, 255, 0.2)'
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                           <span>Per Player Entry:</span>
