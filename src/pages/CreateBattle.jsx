@@ -28,28 +28,31 @@ const BattleContainer = styled.div`
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 0 30px rgba(255, 20, 147, 0.3);
-  min-height: 80vh;
-  padding: 2rem;
+  min-height: 70vh;
+  max-height: 85vh;
+  padding: 1.5rem;
 `
 
 // New 4-box layout components
 const FourBoxGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 2rem;
-  margin-top: 2rem;
-  min-height: 60vh;
+  grid-template-rows: auto auto;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  max-height: 50vh;
 `
 
 const Box = styled.div`
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid rgba(255, 20, 147, 0.3);
   border-radius: 1rem;
-  padding: 1.5rem;
+  padding: 1.2rem;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+  min-height: 200px;
+  max-height: 250px;
   
   &:hover {
     border-color: rgba(255, 20, 147, 0.6);
@@ -59,9 +62,9 @@ const Box = styled.div`
 
 const BoxTitle = styled.h3`
   color: ${props => props.theme.colors.textPrimary};
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   font-weight: 600;
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.8rem 0;
   text-align: center;
 `
 
@@ -72,12 +75,12 @@ const NFTUploadArea = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  min-height: 120px;
 `
 
 const SquareUploadZone = styled.div`
-  width: 150px;
-  height: 150px;
+  width: 100px;
+  height: 100px;
   border: 2px dashed ${props => props.theme.colors.neonPink};
   border-radius: 0.5rem;
   display: flex;
@@ -86,7 +89,7 @@ const SquareUploadZone = styled.div`
   cursor: pointer;
   transition: all 0.3s ease;
   background: rgba(255, 20, 147, 0.05);
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
   
   &:hover {
     border-color: ${props => props.theme.colors.neonBlue};
@@ -95,8 +98,8 @@ const SquareUploadZone = styled.div`
 `
 
 const NFTPreviewSquare = styled.img`
-  width: 150px;
-  height: 150px;
+  width: 100px;
+  height: 100px;
   border-radius: 0.5rem;
   object-fit: cover;
   border: 2px solid ${props => props.theme.colors.neonPink};
@@ -110,15 +113,17 @@ const PricingContainer = styled.div`
 `
 
 const PriceInput = styled(Input)`
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
   text-align: center;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 `
 
 const JoinButton = styled(Button)`
   background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-  margin-top: 1rem;
+  margin-top: 0.8rem;
   width: 100%;
+  font-size: 1.1rem;
+  padding: 0.8rem;
   
   &:hover {
     background: linear-gradient(135deg, #00cc6a 0%, #00aa55 100%);
@@ -129,7 +134,7 @@ const JoinButton = styled(Button)`
 const RoomGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.8rem;
   flex: 1;
 `
 
@@ -143,6 +148,7 @@ const RoomOption = styled.div`
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  min-height: 60px;
   
   &:hover {
     border-color: ${props => props.theme.colors.neonPink};
@@ -163,21 +169,21 @@ const CompactProgressContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   position: relative;
   width: 100%;
-  max-width: 300px;
+  max-width: 280px;
 `
 
 const CompactStepCircle = styled.div`
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 0.9rem;
   transition: all 0.3s ease;
   border: 2px solid;
   
@@ -208,9 +214,9 @@ const CompactStepCircle = styled.div`
 
 const CompactProgressLine = styled.div`
   position: absolute;
-  top: 20px;
-  left: 20px;
-  right: 20px;
+  top: 17px;
+  left: 17px;
+  right: 17px;
   height: 2px;
   background: linear-gradient(90deg, 
     ${props => props.progress >= 50 ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'} 0%, 
@@ -312,25 +318,25 @@ const ProgressLine = styled.div`
 
 const BattleHeader = styled.div`
   text-align: center;
-  margin-bottom: 2rem;
-  padding: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
   background: linear-gradient(135deg, rgba(255, 20, 147, 0.2) 0%, rgba(138, 43, 226, 0.2) 100%);
   border-radius: 1rem;
   border: 2px solid rgba(255, 20, 147, 0.3);
 `
 
 const BattleTitle = styled.h1`
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 700;
   background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.8rem 0;
 `
 
 const BattleSubtitle = styled.p`
   color: ${props => props.theme.colors.textSecondary};
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   margin: 0;
 `
 
@@ -382,11 +388,11 @@ const PlaceholderText = styled.div`
 `
 
 const BattleSubmitButton = styled(Button)`
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   width: 100%;
   background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
-  font-size: 1.2rem;
-  padding: 1.2rem;
+  font-size: 1.3rem;
+  padding: 1rem;
   
   &:disabled {
     opacity: 0.5;
@@ -706,17 +712,17 @@ const CreateBattle = () => {
                     ) : (
                       <SquareUploadZone onClick={() => setIsNFTSelectorOpen(true)}>
                         <div style={{ textAlign: 'center', color: theme.colors.textSecondary }}>
-                          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📷</div>
-                          <div>Click to upload NFT</div>
+                          <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>📷</div>
+                          <div style={{ fontSize: '1.1rem' }}>Click to upload NFT</div>
                         </div>
                       </SquareUploadZone>
                     )}
                     {selectedNFT && (
                       <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-                        <div style={{ color: theme.colors.textPrimary, fontWeight: '600' }}>
+                        <div style={{ color: theme.colors.textPrimary, fontWeight: '600', fontSize: '1.1rem' }}>
                           {selectedNFT.name}
                         </div>
-                        <div style={{ color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
+                        <div style={{ color: theme.colors.textSecondary, fontSize: '1rem' }}>
                           {selectedNFT.collection}
                         </div>
                       </div>
@@ -739,7 +745,7 @@ const CreateBattle = () => {
                       >
                         <div style={{ 
                           color: theme.colors.textSecondary, 
-                          fontSize: '1.5rem',
+                          fontSize: '1.8rem',
                           textAlign: 'center'
                         }}>
                           🏠
@@ -754,7 +760,7 @@ const CreateBattle = () => {
                   <BoxTitle>Flip Price</BoxTitle>
                   <PricingContainer>
                     <div style={{ marginBottom: '1rem' }}>
-                      <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                      <Label style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
                         Total Price (ETH)
                       </Label>
                       <PriceInput
@@ -766,7 +772,7 @@ const CreateBattle = () => {
                       {ethPriceUSD > 0 && (
                         <div style={{ 
                           color: theme.colors.textSecondary, 
-                          fontSize: '0.8rem', 
+                          fontSize: '1rem', 
                           marginTop: '0.25rem',
                           textAlign: 'center'
                         }}>
@@ -782,7 +788,7 @@ const CreateBattle = () => {
                         borderRadius: '0.5rem',
                         padding: '0.75rem',
                         marginBottom: '1rem',
-                        fontSize: '0.8rem'
+                        fontSize: '0.9rem'
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                           <span>Per Player Entry:</span>
