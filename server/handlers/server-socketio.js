@@ -132,6 +132,13 @@ initialize(server, dbService) {
         const normalizedRoom = roomId.startsWith('game_') ? roomId : `game_${gameId}`
         socket.join(normalizedRoom)
         this.socketData.set(socket.id, { address: data.address, roomId: normalizedRoom })
+        
+        // Track user socket mapping for FLIP collection notifications
+        if (data.address) {
+          this.userSockets.set(data.address.toLowerCase(), socket.id)
+          console.log(`🔗 Mapped ${data.address} to socket ${socket.id}`)
+        }
+        
         console.log(`✅ ${data.address} joined room ${normalizedRoom}`)
         
         // Track socket for reliable broadcasting
@@ -410,6 +417,13 @@ initialize(server, dbService) {
 
       socket.on('physics_join', safeHandler((data) => {
         console.log(`🔥 physics_join from ${socket.id}`, data)
+        
+        // Track user socket mapping for FLIP collection notifications
+        if (data.address) {
+          this.userSockets.set(data.address.toLowerCase(), socket.id)
+          console.log(`🔗 Mapped ${data.address} to socket ${socket.id}`)
+        }
+        
         return this.physicsHandlers.handleJoinPhysics(
           socket, 
           data, 
@@ -640,18 +654,24 @@ initialize(server, dbService) {
       // Handle game over event for FLIP collection
       socket.on('game_over', safeHandler(async (data) => {
         console.log(`🏁 Game over event from ${socket.id}`, data)
-        const { gameId, winner, players } = data
+        const { gameId, winner, finalState } = data
         
-        if (this.flipCollectionService) {
+        if (this.flipCollectionService && finalState && finalState.players) {
+          console.log(`🎁 Creating collection sessions for ${Object.keys(finalState.players).length} players`)
+          
           // Create collection sessions for all players
-          for (const [address, playerData] of Object.entries(players || {})) {
+          for (const [address, playerData] of Object.entries(finalState.players)) {
             try {
               const gameResult = address.toLowerCase() === winner?.toLowerCase() ? 'won' : 'lost'
+              console.log(`🎁 Creating collection for ${address}: ${gameResult}`)
+              
               const collection = await this.flipCollectionService.createCollectionSession(
                 gameId, 
                 address, 
                 gameResult
               )
+              
+              console.log(`✅ Collection created for ${address}: ${collection.totalFlip} FLIP`)
               
               // Notify the specific player about their collection
               const playerSocket = this.userSockets.get(address.toLowerCase())
@@ -665,12 +685,15 @@ initialize(server, dbService) {
                     gameResult: collection.gameResult,
                     expiresAt: collection.expiresAt
                   })
+                  console.log(`📤 Sent collection notification to ${address}`)
                 }
               }
             } catch (error) {
-              console.error(`Error creating collection for ${address}:`, error)
+              console.error(`❌ Error creating collection for ${address}:`, error)
             }
           }
+        } else {
+          console.log(`⚠️ No FLIP collection service or players data available`)
         }
       }))
 
@@ -762,6 +785,12 @@ initialize(server, dbService) {
     if (socketData) {
       console.log(`❌ ${socketData.address} disconnected from ${socketData.roomId}`)
       this.socketData.delete(socket.id)
+      
+      // Clean up user socket mapping
+      if (socketData.address) {
+        this.userSockets.delete(socketData.address.toLowerCase())
+        console.log(`🔗 Unmapped ${socketData.address} from socket ${socket.id}`)
+      }
     }
     
     // Clean up from socket tracker
