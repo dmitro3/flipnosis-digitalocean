@@ -420,6 +420,7 @@ class PhysicsGameManager {
     
     // Clear any existing timer for this game
     if (this.timers.has(gameId)) {
+      console.log(`⚠️ Timer already exists for game ${gameId}, clearing it`)
       clearInterval(this.timers.get(gameId))
       this.timers.delete(gameId)
       console.log(`⏰ Cleared existing timer for game ${gameId}`)
@@ -427,6 +428,7 @@ class PhysicsGameManager {
     
     // Reset timer to 60 seconds for new round
     if (game.roundTimer <= 0 || game.roundTimer > 60) {
+      console.log(`⚠️ Invalid timer value: ${game.roundTimer}, resetting to 60`)
       game.roundTimer = 60
     }
     
@@ -479,13 +481,17 @@ class PhysicsGameManager {
     
     // Prevent multiple endRound calls
     if (game.processingRoundEnd) {
-      console.log(`⚠️ Already processing round end for game ${gameId}`)
+      console.log(`⚠️ Already processing round end for game ${gameId} - skipping duplicate call`)
       return
     }
     
     game.processingRoundEnd = true
     
-    console.log(`⏱️ Round ${game.currentRound} ended for game ${gameId}`)
+    console.log(`⏱️ Round ${game.currentRound} ended for game ${gameId}`, {
+      phase: game.phase,
+      timer: game.roundTimer,
+      activePlayers: Object.values(game.players).filter(p => p.lives > 0).length
+    })
     
     // Auto-flip coins for players who haven't fired yet
     const playersToAutoFlip = []
@@ -560,6 +566,12 @@ class PhysicsGameManager {
         // Multiple players remain - start next round
         console.log(`🔄 Starting next round for game ${gameId}`)
         
+        // Safety check: ensure game is still valid
+        if (!this.games.has(gameId)) {
+          console.log(`⚠️ Game ${gameId} no longer exists, aborting round start`)
+          return
+        }
+        
         // Reset physics for new round
         this.physicsEngine.resetGameForNewRound(gameId)
         this.physicsEngine.updateGamePhase(gameId, 'round_active')
@@ -576,10 +588,21 @@ class PhysicsGameManager {
         // Increment round and reset timer
         game.currentRound++
         game.roundTimer = 60
-        game.processingRoundEnd = false // Reset flag
         
-        // Start the new round timer
+        // Add detailed logging for round progression
+        console.log(`🔄 Round ${game.currentRound} progression:`, {
+          phase: game.phase,
+          timer: game.roundTimer,
+          processing: game.processingRoundEnd,
+          activePlayers: Object.values(game.players).filter(p => p.lives > 0).length,
+          playersWithLives: Object.entries(game.players).map(([addr, p]) => ({ address: addr, lives: p.lives }))
+        })
+        
+        // Start the new round timer FIRST
         this.startRoundTimer(gameId, broadcast)
+        
+        // THEN reset the processing flag
+        game.processingRoundEnd = false
         
         console.log(`🎮 Game ${gameId} - Round ${game.currentRound} started`)
       }
