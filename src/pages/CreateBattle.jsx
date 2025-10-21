@@ -672,7 +672,7 @@ const CreateBattle = () => {
         entry_fee: perPlayerEth, // store for display if server desires
         service_fee: ethers.formatEther(serviceFeeWei),
         creator_participates: creatorParticipates, // Add creator participation flag
-        room_type: selectedRoom === 2 ? 'lab' : 'potion' // Add room type (default to potion if not selected)
+        room_type: selectedRoom === 2 ? 'lab' : selectedRoom === 3 ? 'cyber' : selectedRoom === 4 ? 'mech' : 'potion' // Add room type (default to potion if not selected)
       }
       
       // Validate required fields
@@ -813,8 +813,8 @@ const CreateBattle = () => {
                     {[
                       { id: 1, image: '/images/background/game room2.png', label: 'Potion Room' },
                       { id: 2, image: '/images/background/thelab.png', label: 'The Lab' },
-                      { id: 3, image: null, label: 'Sweet Factory' },
-                      { id: 4, image: null, label: 'Workshop' }
+                      { id: 3, image: '/images/background/cyber.png', label: 'Cyber Bay' },
+                      { id: 4, image: '/images/background/mech.png', label: 'Mech Room' }
                     ].map((room) => (
                       <RoomOption 
                         key={room.id}

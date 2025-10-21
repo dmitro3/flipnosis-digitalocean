@@ -1871,6 +1871,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       } = req.body
 
       console.log('🎨 Room type received:', room_type)
+      console.log('🎨 Full request body:', req.body)
 
       // Validate required fields
       if (!creator || !nft_contract || !nft_token_id || !entry_fee) {

@@ -16,6 +16,7 @@ class PhysicsGameManager {
   // Create a new physics game
   createPhysicsGame(gameId, gameData) {
     console.log(`🎮 Creating server-side physics game: ${gameId}`)
+    console.log(`🎨 Game data room_type:`, gameData.room_type)
     
     const game = {
       gameId,
@@ -38,6 +39,7 @@ class PhysicsGameManager {
       nftChain: gameData.nft_chain || 'base',
       entryFee: gameData.entry_fee,
       serviceFee: gameData.service_fee,
+      room_type: gameData.room_type || 'potion', // Add room type
       // Physics state
       physicsInitialized: false,
       material: 'glass' // Default material
@@ -654,6 +656,7 @@ class PhysicsGameManager {
       nftChain: game.nftChain,
       entryFee: game.entryFee,
       serviceFee: game.serviceFee,
+      room_type: game.room_type || 'potion', // Add room type to state
       // Physics Data
       physicsInitialized: game.physicsInitialized,
       material: game.material,

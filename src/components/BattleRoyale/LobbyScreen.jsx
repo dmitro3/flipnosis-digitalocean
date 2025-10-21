@@ -570,6 +570,18 @@ const LobbyScreen = () => {
           <span>Creator:</span>
           <strong>{formatAddress(gameState.creator)}</strong>
         </InfoRow>
+        <InfoRow>
+          <span>Room:</span>
+          <strong style={{ 
+            color: gameState.room_type === 'lab' ? '#00ff88' : 
+                   gameState.room_type === 'cyber' ? '#ff6600' : 
+                   gameState.room_type === 'mech' ? '#ff0000' : '#ff8800' 
+          }}>
+            {gameState.room_type === 'lab' ? '🧪 The Lab' : 
+             gameState.room_type === 'cyber' ? '🤖 Cyber Bay' : 
+             gameState.room_type === 'mech' ? '🔧 Mech Room' : '🧙 Potion Room'}
+          </strong>
+        </InfoRow>
         
         <ShareButtonsGrid>
           <ActionButton 

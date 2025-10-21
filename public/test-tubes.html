@@ -30,6 +30,16 @@
     body.lab-room {
       background: url('/images/background/thelab.png') no-repeat center center fixed;
     }
+    
+    /* Cyber Bay room background */
+    body.cyber-room {
+      background: url('/images/background/cyber.png') no-repeat center center fixed;
+    }
+    
+    /* Mech Room background */
+    body.mech-room {
+      background: url('/images/background/mech.png') no-repeat center center fixed;
+    }
 
     #container {
       position: fixed;
@@ -293,6 +303,10 @@
     // Apply room-specific styling
     if (roomParam === 'lab') {
       document.body.classList.add('lab-room');
+    } else if (roomParam === 'cyber') {
+      document.body.classList.add('cyber-room');
+    } else if (roomParam === 'mech') {
+      document.body.classList.add('mech-room');
     }
     
     info.textContent = '🎮 Initializing 4-Player Glass Tube Game...';
@@ -1207,6 +1221,10 @@
     const bgTextureLoader = new THREE.TextureLoader();
     const bgCandidates = roomParam === 'lab' 
       ? ['/images/background/thelab.png']
+      : roomParam === 'cyber'
+      ? ['/images/background/cyber.png']
+      : roomParam === 'mech'
+      ? ['/images/background/mech.png']
       : ['/images/background/game room2.png'];
     function loadBackground(paths, onSuccess, onFail) {
       if (!paths.length) { onFail && onFail(new Error('No background paths worked')); return; }
@@ -1768,6 +1786,44 @@
           tubeRadius: TUBE_RADIUS * 0.8, // Slightly narrower
           tubeHeight: TUBE_HEIGHT * 1.1 // Slightly taller
         };
+      } else if (roomType === 'cyber') {
+        return {
+          // Cyber Bay tubes: Futuristic/cyberpunk look
+          glassColor: 0x00ffff, // Cyan glass
+          glassOpacity: 0.25,
+          glassEmissive: 0x004444,
+          glassEmissiveIntensity: 0.2,
+          capColor: 0xff6600, // Bright neon orange
+          capMetalness: 0.3,
+          capRoughness: 0.2,
+          rimColor: 0xff6600, // Bright neon orange
+          backingColor: 0x001122, // Dark cyber backing
+          backingMetalness: 0.9,
+          backingRoughness: 0.1,
+          // Cyber-specific geometry
+          tubeShape: 'cyber', // Different shape for cyber tubes
+          tubeRadius: TUBE_RADIUS * 0.9, // Slightly narrower than potion
+          tubeHeight: TUBE_HEIGHT * 1.05 // Slightly taller
+        };
+      } else if (roomType === 'mech') {
+        return {
+          // Mech Room tubes: Industrial/mechanical look
+          glassColor: 0x666666, // Dark steel glass
+          glassOpacity: 0.3,
+          glassEmissive: 0x220000,
+          glassEmissiveIntensity: 0.1,
+          capColor: 0xff0000, // Bright red
+          capMetalness: 0.8,
+          capRoughness: 0.3,
+          rimColor: 0xff0000, // Bright red
+          backingColor: 0x222222, // Dark industrial backing
+          backingMetalness: 0.9,
+          backingRoughness: 0.2,
+          // Mech-specific geometry
+          tubeShape: 'mech', // Different shape for mech tubes
+          tubeRadius: TUBE_RADIUS * 0.95, // Slightly narrower
+          tubeHeight: TUBE_HEIGHT * 1.02 // Slightly taller
+        };
       } else {
         // Default potion room style
         return {
@@ -1803,20 +1859,40 @@
       // Glass tube - ROOM-SPECIFIC STYLING with RECTANGULAR CUTOUT around coin
       let tubeGeometry;
       if (tubeStyle.tubeShape === 'lab') {
-        // Lab tubes: Slightly tapered, more scientific look
+        // Lab tubes: More circular/rounded shape with higher segment count
         tubeGeometry = new THREE.CylinderGeometry(
           tubeStyle.tubeRadius * 0.9, // Top slightly narrower
           tubeStyle.tubeRadius, // Bottom wider
           tubeStyle.tubeHeight, 
-          64, 1, true
+          128, // Double the segments for more circular look
+          1, true
         );
-      } else {
-        // Potion tubes: Standard cylinder
+      } else if (tubeStyle.tubeShape === 'cyber') {
+        // Cyber tubes: Futuristic tapered shape
+        tubeGeometry = new THREE.CylinderGeometry(
+          tubeStyle.tubeRadius * 0.85, // Top narrower
+          tubeStyle.tubeRadius * 1.05, // Bottom wider
+          tubeStyle.tubeHeight, 
+          128, // High segments for smooth look
+          1, true
+        );
+      } else if (tubeStyle.tubeShape === 'mech') {
+        // Mech tubes: Industrial straight cylinder with high segments
         tubeGeometry = new THREE.CylinderGeometry(
           tubeStyle.tubeRadius, 
           tubeStyle.tubeRadius, 
           tubeStyle.tubeHeight, 
-          64, 1, true
+          128, // High segments for industrial precision
+          1, true
+        );
+      } else {
+        // Potion tubes: Standard cylinder with more segments for circular look
+        tubeGeometry = new THREE.CylinderGeometry(
+          tubeStyle.tubeRadius, 
+          tubeStyle.tubeRadius, 
+          tubeStyle.tubeHeight, 
+          128, // More segments for circular appearance
+          1, true
         );
       }
       
