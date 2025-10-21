@@ -31,6 +31,8 @@ const Container = styled.div`
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
+  background: url('/images/background/lobby.png') no-repeat center center fixed;
+  background-size: cover;
   
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
