@@ -25,6 +25,11 @@
       margin: 0;
       padding: 0;
     }
+    
+    /* Lab room background */
+    body.lab-room {
+      background: url('/images/background/thelab.png') no-repeat center center fixed;
+    }
 
     #container {
       position: fixed;
@@ -258,6 +263,7 @@
     const userNameParam = urlParams.get('username') || '';
     let walletParam = urlParams.get('address') || '';
     const avatarParam = urlParams.get('avatar') || '';
+    const roomParam = urlParams.get('room') || 'potion'; // Default to potion room
     const tokenParam = urlParams.get('token') || '';
     
     // Fallback: Try to get wallet from localStorage if not in URL (for React redirects)
@@ -283,6 +289,12 @@
     if (gameIdParam) {
       document.title = `Glass Tube Game • ${gameIdParam}`;
     }
+    
+    // Apply room-specific styling
+    if (roomParam === 'lab') {
+      document.body.classList.add('lab-room');
+    }
+    
     info.textContent = '🎮 Initializing 4-Player Glass Tube Game...';
 
     // ===== SOCKET.IO CONNECTION =====
@@ -1193,9 +1205,9 @@
     
     // ===== ADD BACKGROUND IMAGE AS TEXTURED PLANE (1920x1080) =====
     const bgTextureLoader = new THREE.TextureLoader();
-    const bgCandidates = [
-      '/images/background/game room2.png'
-    ];
+    const bgCandidates = roomParam === 'lab' 
+      ? ['/images/background/thelab.png']
+      : ['/images/background/game room2.png'];
     function loadBackground(paths, onSuccess, onFail) {
       if (!paths.length) { onFail && onFail(new Error('No background paths worked')); return; }
       const path = paths[0];
@@ -1735,6 +1747,44 @@
 
     console.log('⚙️ Physics world created with gravity');
 
+    // ===== ROOM-SPECIFIC TUBE STYLES =====
+    function getTubeStyle(roomType) {
+      if (roomType === 'lab') {
+        return {
+          // Lab tubes: More scientific/industrial look
+          glassColor: 0x4a90e2, // Steel blue
+          glassOpacity: 0.2,
+          glassEmissive: 0x1a3a5c,
+          glassEmissiveIntensity: 0.1,
+          capColor: 0x2c3e50, // Dark steel
+          capMetalness: 0.9,
+          capRoughness: 0.3,
+          rimColor: 0x00ff88, // Neon green (scientific)
+          backingColor: 0x34495e, // Dark steel backing
+          backingMetalness: 0.8,
+          backingRoughness: 0.4
+        };
+      } else {
+        // Default potion room style
+        return {
+          glassColor: 0xd0d0d0, // Bright silver
+          glassOpacity: 0.15,
+          glassEmissive: 0x505050,
+          glassEmissiveIntensity: 0.15,
+          capColor: 0xcd7f32, // Brass
+          capMetalness: 0.98,
+          capRoughness: 0.1,
+          rimColor: 0xff8800, // Orange
+          backingColor: 0xe0e0e0, // Chrome
+          backingMetalness: 0.98,
+          backingRoughness: 0.1
+        };
+      }
+    }
+
+    const tubeStyle = getTubeStyle(roomParam);
+    console.log(`🎨 Using ${roomParam} room tube style:`, tubeStyle);
+
     const tubes = [];
     const coins = [];
 
@@ -1742,18 +1792,18 @@
       const x = startX + (i * SPACING);
       const player = players[i];
 
-      // Glass tube - METALLIC SILVER with RECTANGULAR CUTOUT around coin
+      // Glass tube - ROOM-SPECIFIC STYLING with RECTANGULAR CUTOUT around coin
       const tubeGeometry = new THREE.CylinderGeometry(TUBE_RADIUS, TUBE_RADIUS, TUBE_HEIGHT, 64, 1, true);
       
       const glassMaterial = new THREE.MeshStandardMaterial({
-        color: 0xd0d0d0, // Bright silver
+        color: tubeStyle.glassColor,
         transparent: true,
-        opacity: 0.15, // Very transparent to see video background
+        opacity: tubeStyle.glassOpacity,
         alphaMap: tubeAlphaTexture, // Apply shared rectangular cutout
         roughness: 0.2,
         metalness: 1.0, // Full metallic
-        emissive: 0x505050, // Slight silver glow
-        emissiveIntensity: 0.15,
+        emissive: tubeStyle.glassEmissive,
+        emissiveIntensity: tubeStyle.glassEmissiveIntensity,
         side: THREE.DoubleSide
       });
       const tube = new THREE.Mesh(tubeGeometry, glassMaterial);
@@ -1761,12 +1811,12 @@
       tube.rotation.y = Math.PI; // Rotate 180° so cutout faces camera
       scene.add(tube);
 
-      // ===== CHROME BACKING PANEL - Creates contrast with background image =====
+      // ===== ROOM-SPECIFIC BACKING PANEL - Creates contrast with background image =====
       const backingGeometry = new THREE.CylinderGeometry(TUBE_RADIUS + 5, TUBE_RADIUS + 5, TUBE_HEIGHT + 20, 32, 1, false);
       const backingMaterial = new THREE.MeshStandardMaterial({
-        color: 0xe0e0e0, // Bright chrome/silver
-        roughness: 0.1,
-        metalness: 0.98,
+        color: tubeStyle.backingColor,
+        roughness: tubeStyle.backingRoughness,
+        metalness: tubeStyle.backingMetalness,
         emissive: 0x404040,
         emissiveIntensity: 0.1,
         side: THREE.BackSide // Only visible from inside
@@ -1775,13 +1825,14 @@
       backing.position.set(x, 200, -10); // Position slightly behind the tube
       scene.add(backing);
 
-      // ===== BRASS CAPS (TOP & BOTTOM LIDS) - METALLIC =====
-      const brassCapMaterial = new THREE.MeshStandardMaterial({
+      // ===== ROOM-SPECIFIC CAPS (TOP & BOTTOM LIDS) - METALLIC =====
+      const capMaterial = new THREE.MeshStandardMaterial({
         map: brassColorMap,
         displacementMap: brassDisplacementMap,
         displacementScale: 0.2,
-        metalness: 0.98,
-        roughness: 0.1,
+        color: tubeStyle.capColor,
+        metalness: tubeStyle.capMetalness,
+        roughness: tubeStyle.capRoughness,
       });
 
       // Top cap with transparent circle cutout for coin viewing
@@ -1806,7 +1857,7 @@
       
       const capAlphaTexture = new THREE.CanvasTexture(capCanvas);
       
-      const topCapMaterial = brassCapMaterial.clone();
+      const topCapMaterial = capMaterial.clone();
       topCapMaterial.alphaMap = capAlphaTexture;
       topCapMaterial.transparent = true;
       
@@ -1814,15 +1865,15 @@
       topCap.position.set(x, 200 + (TUBE_HEIGHT / 2) + 7.5, 0);
       scene.add(topCap);
 
-      // Bottom cap (solid brass metallic disc)
-      const bottomCap = new THREE.Mesh(capGeometry, brassCapMaterial.clone());
+      // Bottom cap (solid room-specific metallic disc)
+      const bottomCap = new THREE.Mesh(capGeometry, capMaterial.clone());
       bottomCap.position.set(x, 200 - (TUBE_HEIGHT / 2) - 7.5, 0);
       scene.add(bottomCap);
 
-      // Decorative rims (ORANGE - SMOOTH & GLOSSY)
+      // Decorative rims (ROOM-SPECIFIC COLOR - SMOOTH & GLOSSY)
       const rimGeometry = new THREE.TorusGeometry(TUBE_RADIUS + 5, 8, 32, 64);
       const rimMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff8800, // BRIGHT ORANGE
+        color: tubeStyle.rimColor,
         metalness: 0.95,
         roughness: 0.1,
       });

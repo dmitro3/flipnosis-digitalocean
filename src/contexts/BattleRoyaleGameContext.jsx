@@ -202,7 +202,9 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
           if (address) {
             localStorage.setItem('walletAddress', address)
           }
-          window.location.href = `/test-tubes.html?gameId=${id}`
+          // Get room type from game data
+          const roomType = data?.room_type || 'potion'
+          window.location.href = `/test-tubes.html?gameId=${id}&room=${roomType}`
         }
       }
     } catch (e) {

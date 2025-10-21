@@ -667,7 +667,8 @@ const CreateBattle = () => {
         nft_chain: 'base', // Battle royale games are on Base
         entry_fee: perPlayerEth, // store for display if server desires
         service_fee: ethers.formatEther(serviceFeeWei),
-        creator_participates: creatorParticipates // Add creator participation flag
+        creator_participates: creatorParticipates, // Add creator participation flag
+        room_type: selectedRoom === 2 ? 'lab' : 'potion' // Add room type (default to potion if not selected)
       }
       
       // Validate required fields

@@ -323,7 +323,8 @@ const LobbyScreen = () => {
       // Hard redirect to avoid any transient React render errors
       if (gameState?.gameId) {
         setTimeout(() => {
-          window.location.href = `/test-tubes.html?gameId=${gameState.gameId}`
+          const roomType = gameState?.room_type || 'potion'
+          window.location.href = `/test-tubes.html?gameId=${gameState.gameId}&room=${roomType}`
         }, 50)
       }
     } catch (e) {

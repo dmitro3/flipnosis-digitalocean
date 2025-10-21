@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS battle_royale_games (
   nft_deposited BOOLEAN DEFAULT 0,
   nft_deposit_time TIMESTAMP,
   nft_deposit_hash TEXT,
+  room_type TEXT DEFAULT 'potion',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   started_at TIMESTAMP,
   completed_at TIMESTAMP,

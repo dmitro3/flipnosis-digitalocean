@@ -1349,12 +1349,14 @@ const Home = () => {
                               if (isLobby) {
                                 navigate(`/battle-royale/${selectedFlip.id}`)
                               } else {
-                                window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
+                                const roomType = selectedFlip?.room_type || 'potion'
+                                window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}&room=${roomType}`
                               }
                               return
                             }
                             // Non-BR: keep current behavior (send to HTML game)
-                            window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}`
+                            const roomType = selectedFlip?.room_type || 'potion'
+                            window.location.href = `/test-tubes.html?gameId=${selectedFlip.id}&room=${roomType}`
                           }}
                           style={{
                             flex: 2,

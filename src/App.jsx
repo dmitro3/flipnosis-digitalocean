@@ -135,7 +135,9 @@ function App() {
             if (currentAddress) {
               localStorage.setItem('walletAddress', currentAddress)
             }
-            window.location.href = `/test-tubes.html?gameId=${gameId}`
+            // Get room type from data or default to potion
+            const roomType = data?.room_type || 'potion'
+            window.location.href = `/test-tubes.html?gameId=${gameId}&room=${roomType}`
           }, 100)
         }
       }
