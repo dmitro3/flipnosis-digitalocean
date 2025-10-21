@@ -72,6 +72,12 @@ class PhysicsGameManager {
       if (gameData) {
         console.log(`📂 Loading game ${gameId} from database...`)
         
+        // Check if game already exists in memory
+        if (this.games.has(gameId)) {
+          console.log(`📦 Game ${gameId} already exists in memory, returning existing game`)
+          return this.games.get(gameId)
+        }
+        
         // Create the game structure from database data
         const game = this.createPhysicsGame(gameId, gameData)
         

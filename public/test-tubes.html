@@ -508,11 +508,10 @@
     function updateClientFromServerState(state) {
       if (!state) return;
       
-      // Update game phase
+      // SERVER-AUTHORITATIVE: Client only reacts to server state
       if (state.phase === 'round_active' && !gameOver) {
-        startTimer();
+        // Server manages timer, client just displays
       } else if (state.phase === 'game_over') {
-        stopTimer();
         gameOver = true;
         
         // Handle server-side game end
@@ -1153,12 +1152,12 @@
     // Game state
     let currentRound = 1;
     let timeRemaining = 30;
-    let timerInterval = null;
+    // SERVER-AUTHORITATIVE: No client-side timers
     let roundCounterElement = null;
     // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
     let timerElement = null;
     let gameOver = false;
-    let allPlayersFlipped = false;
+    // SERVER-AUTHORITATIVE: Game progression managed by server
     let roundEndTimer = null;
     let roundStartLives = []; // Track lives at start of each round
 
@@ -2733,25 +2732,8 @@
       }
     });
 
-    // ===== TIMER FUNCTIONS =====
-    function startTimer() {
-      // SERVER-AUTHORITATIVE: Client no longer manages timers
-      // Server will broadcast timer updates via physics_state_update
-      console.log('⏱️ Timer management delegated to server');
-      
-      // Show game in progress indicator
-      showGamePhaseIndicator('in_progress', `Round ${currentRound} - Choose your side!`);
-    }
-
-    function stopTimer() {
-      // SERVER-AUTHORITATIVE: Client no longer manages timers
-      console.log('⏱️ Timer management delegated to server');
-    }
-
-    function resetTimer() {
-      // SERVER-AUTHORITATIVE: Client no longer manages timers
-      console.log('⏱️ Timer management delegated to server');
-    }
+    // ===== SERVER-AUTHORITATIVE: NO CLIENT TIMER FUNCTIONS =====
+    // All timer management is handled by the server
 
     function updateTimerDisplay() {
       // SERVER-AUTHORITATIVE: Timer display is now purely reactive to server state
@@ -2771,37 +2753,9 @@
       }
     }
 
-    function autoFlipCoins() {
-      // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
-      // The server will automatically flip coins when the timer expires
-      console.log('⏱️ Auto-flip delegated to server');
-    }
+    // SERVER-AUTHORITATIVE: Auto-flip is handled by the server
 
-    function nextRound() {
-      currentRound++;
-      const roundNumber = roundCounterElement.querySelector('#round-number');
-      if (roundNumber) {
-        roundNumber.textContent = currentRound;
-      }
-      
-      console.log(`📊 Starting Round ${currentRound}`);
-      
-      // Track starting lives for this round
-      roundStartLives = players.map(player => player.lives);
-      console.log(`📊 Round ${currentRound} starting lives:`, roundStartLives);
-      
-      // Reset round state
-      allPlayersFlipped = false;
-      // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
-      if (roundEndTimer) {
-        clearTimeout(roundEndTimer);
-        roundEndTimer = null;
-      }
-      
-      resetRound();
-      resetTimer();
-      startTimer();
-    }
+    // SERVER-AUTHORITATIVE: Round progression managed by server
 
     // Coin selector modal
     function showCoinSelector(tubeIndex) {
@@ -3628,10 +3582,7 @@
       setTimeout(() => {
         resultBox.style.opacity = '1';
         
-        // Check if all players have flipped after this coin lands
-        setTimeout(() => {
-          checkAllPlayersFlipped();
-        }, 500); // Small delay to ensure the flip animation is complete
+        // SERVER-AUTHORITATIVE: Game progression managed by server
       }, 50);
     }
 
@@ -3742,15 +3693,13 @@
         }
       }
       
-      // Normal progression to next round
-      console.log('➡️ Proceeding to next round...');
-      nextRound();
+      // SERVER-AUTHORITATIVE: Game progression managed by server
     }
     
     // Declare winner and end game
     function declareWinner(winnerIndex) {
       gameOver = true;
-      stopTimer();
+      // SERVER-AUTHORITATIVE: Server manages all timing
       
       if (roundEndTimer) {
         clearTimeout(roundEndTimer);
@@ -3875,8 +3824,7 @@
         }
       });
       
-      // Reset round state
-      allPlayersFlipped = false;
+      // SERVER-AUTHORITATIVE: Game progression managed by server
       
       // Show sudden death message
       showFloatingMessage('⚡ SUDDEN DEATH ROUND!', '#ff4444', 3000);
@@ -3994,15 +3942,12 @@
         });
       });
       
-      // Reset round state
-      allPlayersFlipped = false;
+      // SERVER-AUTHORITATIVE: Game progression managed by server
       
       // Show special replay message
       showSpecialReplayMessage();
       
-      // Reset timer and start new round
-      resetTimer();
-      startTimer();
+      // SERVER-AUTHORITATIVE: Server manages all timing
     }
     
     // Show special replay message
@@ -4300,7 +4245,7 @@
       
       // Stop any ongoing game mechanics
       gameOver = true;
-      stopTimer();
+      // SERVER-AUTHORITATIVE: Server manages all timing
       
       // Show game ended phase indicator
       showGamePhaseIndicator('ended', 'Game Over - Claim your rewards!');
@@ -4519,8 +4464,7 @@
 
     // ===== RESET ROUND (Clear results and prepare for next round) =====
     function resetRound() {
-      // Reset round state
-      allPlayersFlipped = false;
+      // SERVER-AUTHORITATIVE: Game progression managed by server
       // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
       
       tubes.forEach((tube, i) => {
@@ -4857,8 +4801,7 @@
         // Show waiting phase indicator
         showGamePhaseIndicator('waiting', 'Waiting for players to join...');
         
-        // Start timer when players are set
-        startTimer();
+        // SERVER-AUTHORITATIVE: Server manages all timing
         
         // Show game start notification
         if (!gameOver) {
@@ -4866,8 +4809,7 @@
         }
       } catch (err) {
         console.warn('Participants load failed:', err);
-        // Fallback: start timer anyway
-        startTimer();
+        // SERVER-AUTHORITATIVE: Server manages all timing
       }
     }
     await loadParticipants();
@@ -4913,10 +4855,7 @@
       }
     }, 1000); // 1 second delay
     
-    // Expose timer functions globally
-    window.startTimer = startTimer;
-    window.resetTimer = resetTimer;
-    window.nextRound = nextRound;
+    // SERVER-AUTHORITATIVE: No client timer functions to expose
 
     // Animation loop with physics
     let frameCount = 0;

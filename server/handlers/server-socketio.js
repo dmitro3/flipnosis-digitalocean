@@ -156,11 +156,12 @@ initialize(server, dbService) {
             // Trigger load via request handler path
             const gameData = await this.dbService.getBattleRoyaleGame(gameId)
             if (gameData) {
-              this.physicsGameManager.createPhysicsGame(gameId, gameData)
-              const participants = await this.dbService.getBattleRoyaleParticipants(gameId)
-              for (const p of participants) { await this.physicsGameManager.addPlayer(gameId, p.player_address, this.dbService) }
-              const loadedState = this.physicsGameManager.getFullGameState(gameId)
-              if (loadedState) socket.emit('physics_state_update', loadedState)
+              // Use loadGameFromDatabase to prevent creating multiple instances
+              const game = await this.physicsGameManager.loadGameFromDatabase(gameId, this.dbService)
+              if (game) {
+                const loadedState = this.physicsGameManager.getFullGameState(gameId)
+                if (loadedState) socket.emit('physics_state_update', loadedState)
+              }
             }
           }
           return
@@ -233,17 +234,11 @@ initialize(server, dbService) {
           let game = this.physicsGameManager.getGame(gameId)
           
           if (!game) {
-            // Load from database
+            // Load from database using loadGameFromDatabase to prevent multiple instances
             const gameData = await this.dbService.getBattleRoyaleGame(gameId)
             if (gameData) {
               console.log(`🔄 Loading physics game from database: ${gameId}`)
-              game = this.physicsGameManager.createPhysicsGame(gameId, gameData)
-              
-              // Load existing players
-              const participants = await this.dbService.getBattleRoyaleParticipants(gameId)
-              for (const participant of participants) {
-                await this.physicsGameManager.addPlayer(gameId, participant.player_address, this.dbService)
-              }
+              game = await this.physicsGameManager.loadGameFromDatabase(gameId, this.dbService)
             }
           }
           
@@ -690,10 +685,31 @@ initialize(server, dbService) {
               }
             } catch (error) {
               console.error(`❌ Error creating collection for ${address}:`, error)
+              // Send fallback notification to client
+              const playerSocket = this.userSockets.get(address.toLowerCase())
+              if (playerSocket) {
+                const targetSocket = this.io.sockets.sockets.get(playerSocket)
+                if (targetSocket) {
+                  targetSocket.emit('flip_collection_created', {
+                    success: false,
+                    error: 'Server collection session failed, using fallback',
+                    fallback: true
+                  })
+                }
+              }
             }
           }
         } else {
           console.log(`⚠️ No FLIP collection service or players data available`)
+          if (!this.flipCollectionService) {
+            console.log(`❌ FLIP collection service is null`)
+          }
+          if (!finalState) {
+            console.log(`❌ No finalState provided`)
+          }
+          if (!finalState?.players) {
+            console.log(`❌ No players in finalState`)
+          }
         }
       }))
 
