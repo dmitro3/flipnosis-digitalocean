@@ -83,6 +83,18 @@ class DatabaseService {
               this.createBattleRoyaleTables(database)
             }
           })
+
+          // Check and create FLIP tables if they don't exist
+          database.get("SELECT name FROM sqlite_master WHERE type='table' AND name='flip_collections'", (err, result) => {
+            if (err) {
+              console.error('❌ Error checking flip_collections table:', err)
+            } else if (result) {
+              console.log('✅ FLIP collections table exists')
+            } else {
+              console.log('⚠️ FLIP collections table not found - creating it...')
+              this.createFlipTables(database)
+            }
+          })
         })
         
         this.db = database
@@ -178,6 +190,65 @@ class DatabaseService {
         console.log('✅ Created battle_royale_rounds table')
       }
     })
+  }
+
+  createFlipTables(database) {
+    console.log('🔧 Creating FLIP collection tables...')
+    
+    // Create flip_earnings table
+    database.run(`
+      CREATE TABLE IF NOT EXISTS flip_earnings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        game_id TEXT NOT NULL,
+        player_address TEXT NOT NULL,
+        flip_amount INTEGER NOT NULL,
+        reason TEXT,
+        collection_id INTEGER,
+        earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (collection_id) REFERENCES flip_collections(id)
+      )
+    `, (err) => {
+      if (err) {
+        console.error('❌ Error creating flip_earnings table:', err)
+      } else {
+        console.log('✅ Created flip_earnings table')
+      }
+    })
+    
+    // Create flip_collections table
+    database.run(`
+      CREATE TABLE IF NOT EXISTS flip_collections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        game_id TEXT NOT NULL,
+        player_address TEXT NOT NULL,
+        total_flip_earned INTEGER DEFAULT 0,
+        flip_collected INTEGER DEFAULT 0,
+        collection_status TEXT DEFAULT 'pending',
+        game_result TEXT,
+        nft_claimed BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        collected_at TIMESTAMP,
+        expires_at TIMESTAMP,
+        CHECK (collection_status IN ('pending', 'collected', 'expired'))
+      )
+    `, (err) => {
+      if (err) {
+        console.error('❌ Error creating flip_collections table:', err)
+      } else {
+        console.log('✅ Created flip_collections table')
+      }
+    })
+    
+    // Create indexes for better performance
+    database.run(`
+      CREATE INDEX IF NOT EXISTS idx_flip_earnings_game_player 
+      ON flip_earnings(game_id, player_address)
+    `)
+    
+    database.run(`
+      CREATE INDEX IF NOT EXISTS idx_flip_collections_player_status 
+      ON flip_collections(player_address, collection_status)
+    `)
   }
 
   // Game management methods
@@ -1134,6 +1205,24 @@ class DatabaseService {
 
   async expireOffer(offerId) {
     await this.run('UPDATE offers SET status = "expired" WHERE id = ?', [offerId])
+  }
+
+  // Get battle royale game by ID (alias for compatibility)
+  getBattleRoyaleGame(gameId) {
+    return new Promise((resolve, reject) => {
+      this.db.get(
+        `SELECT * FROM battle_royale_games WHERE id = ?`,
+        [gameId],
+        (err, game) => {
+          if (err) {
+            console.error('Error getting battle royale game:', err)
+            reject(err)
+          } else {
+            resolve(game)
+          }
+        }
+      )
+    })
   }
 }
 

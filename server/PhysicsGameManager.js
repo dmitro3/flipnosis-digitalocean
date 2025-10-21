@@ -52,6 +52,86 @@ class PhysicsGameManager {
     return game
   }
 
+  // Load game from database if not in memory
+  async loadGameFromDatabase(gameId, dbService) {
+    // Check if already loaded in memory
+    if (this.games.has(gameId)) {
+      console.log(`📦 Game ${gameId} already loaded in memory`)
+      return this.games.get(gameId)
+    }
+    
+    if (!dbService) {
+      console.log(`⚠️ No database service available, cannot load game ${gameId}`)
+      return null
+    }
+    
+    try {
+      // Try to load from battle_royale_games table first
+      const gameData = await dbService.getBattleRoyaleGame(gameId)
+      
+      if (gameData) {
+        console.log(`📂 Loading game ${gameId} from database...`)
+        
+        // Create the game structure from database data
+        const game = this.createPhysicsGame(gameId, gameData)
+        
+        // Restore player data if exists
+        if (gameData.players) {
+          try {
+            const playersData = typeof gameData.players === 'string' 
+              ? JSON.parse(gameData.players) 
+              : gameData.players
+              
+            // Restore each player
+            for (const [address, playerData] of Object.entries(playersData)) {
+              const normalizedAddress = address.toLowerCase()
+              
+              // Add player to game
+              if (!game.players[normalizedAddress]) {
+                await this.addPlayer(gameId, address, dbService)
+              }
+              
+              // Restore player state
+              if (game.players[normalizedAddress]) {
+                Object.assign(game.players[normalizedAddress], playerData)
+              }
+            }
+            
+            // Update player count and slots
+            game.currentPlayers = Object.keys(game.players).length
+            console.log(`✅ Restored ${game.currentPlayers} players for game ${gameId}`)
+          } catch (error) {
+            console.error(`⚠️ Error restoring players for game ${gameId}:`, error)
+          }
+        }
+        
+        // Restore game phase and round
+        if (gameData.current_round) {
+          game.currentRound = gameData.current_round
+        }
+        
+        if (gameData.status === 'active' || gameData.status === 'in_progress') {
+          game.phase = 'round_active'
+          // Don't restart timer here - let the client request trigger it
+        } else if (gameData.status === 'completed') {
+          game.phase = 'game_over'
+        } else {
+          game.phase = 'waiting'
+        }
+        
+        console.log(`✅ Game ${gameId} loaded from database - Phase: ${game.phase}, Players: ${game.currentPlayers}`)
+        return game
+      }
+      
+      console.log(`⚠️ Game ${gameId} not found in database`)
+      return null
+      
+    } catch (error) {
+      console.error(`❌ Error loading game ${gameId} from database:`, error)
+      return null
+    }
+  }
+
   // Add a player to the game
   async addPlayer(gameId, address, dbService = null) {
     const game = this.games.get(gameId)
@@ -329,28 +409,66 @@ class PhysicsGameManager {
 
   // Start round timer
   startRoundTimer(gameId, broadcast) {
-    // Clear existing timer
-    if (this.timers.has(gameId)) {
-      clearInterval(this.timers.get(gameId))
-    }
-
     const game = this.games.get(gameId)
     if (!game) return
-
+    
+    // Clear any existing timer for this game
+    if (this.timers.has(gameId)) {
+      clearInterval(this.timers.get(gameId))
+      this.timers.delete(gameId)
+      console.log(`⏰ Cleared existing timer for game ${gameId}`)
+    }
+    
+    // Reset timer to 60 seconds for new round
+    if (game.roundTimer <= 0 || game.roundTimer > 60) {
+      game.roundTimer = 60
+    }
+    
+    console.log(`⏰ Starting round timer for game ${gameId} - ${game.roundTimer} seconds`)
+    
+    let lastBroadcastTime = game.roundTimer
+    
     const timerId = setInterval(() => {
+      if (!this.games.has(gameId)) {
+        // Game was removed, clean up timer
+        clearInterval(timerId)
+        this.timers.delete(gameId)
+        return
+      }
+      
       if (game.roundTimer > 0) {
         game.roundTimer--
         
-        // Broadcast timer update only every 5 seconds to reduce spam
-        if (broadcast && game.roundTimer % 5 === 0) {
+        // Broadcast timer update only at specific intervals to reduce spam
+        // Broadcast at: 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 4, 3, 2, 1
+        const shouldBroadcast = 
+          game.roundTimer === 60 ||
+          game.roundTimer === 55 ||
+          game.roundTimer === 50 ||
+          game.roundTimer === 45 ||
+          game.roundTimer === 40 ||
+          game.roundTimer === 35 ||
+          game.roundTimer === 30 ||
+          game.roundTimer === 25 ||
+          game.roundTimer === 20 ||
+          game.roundTimer === 15 ||
+          game.roundTimer === 10 ||
+          game.roundTimer <= 5
+        
+        if (broadcast && shouldBroadcast && game.roundTimer !== lastBroadcastTime) {
+          lastBroadcastTime = game.roundTimer
           this.broadcastState(gameId, broadcast)
         }
       } else {
-        // Time's up - end round
+        // Time's up - clear this timer first to prevent multiple calls
+        clearInterval(timerId)
+        this.timers.delete(gameId)
+        
+        // Then end the round
         this.endRound(gameId, broadcast)
       }
     }, 1000)
-
+    
     this.timers.set(gameId, timerId)
   }
 
@@ -358,17 +476,35 @@ class PhysicsGameManager {
   endRound(gameId, broadcast) {
     const game = this.games.get(gameId)
     if (!game) return
-
-    // Clear timer
+    
+    // Clear timer immediately to prevent multiple calls
     if (this.timers.has(gameId)) {
       clearInterval(this.timers.get(gameId))
       this.timers.delete(gameId)
     }
-
+    
+    // Prevent multiple endRound calls
+    if (game.processingRoundEnd) {
+      console.log(`⚠️ Already processing round end for game ${gameId}`)
+      return
+    }
+    
+    game.processingRoundEnd = true
+    
+    console.log(`⏱️ Round ${game.currentRound} ended for game ${gameId}`)
+    
     // Auto-flip coins for players who haven't fired yet
-    console.log(`⏱️ Time's up! Auto-flipping coins for players who haven't fired...`)
+    const playersToAutoFlip = []
     Object.entries(game.players).forEach(([address, player]) => {
       if (player.isActive && !player.hasFired && player.lives > 0) {
+        playersToAutoFlip.push({ address, player })
+      }
+    })
+    
+    if (playersToAutoFlip.length > 0) {
+      console.log(`⏱️ Auto-flipping for ${playersToAutoFlip.length} players...`)
+      
+      playersToAutoFlip.forEach(({ address, player }) => {
         const autoPower = 50 // 50% power for auto-flip
         const autoChoice = player.choice || 'heads' // Default to heads if no choice
         
@@ -376,42 +512,95 @@ class PhysicsGameManager {
         
         // Simulate coin flip with auto power
         this.serverFlipCoin(gameId, address, autoChoice, autoPower, 0, broadcast)
-      }
-    })
-
-    // Check if game is over
-    const activePlayers = Object.values(game.players).filter(p => p.isActive)
+      })
+    }
     
-    if (activePlayers.length <= 1) {
-      // Game over
-      game.phase = 'game_over'
-      const winner = activePlayers[0] ? Object.keys(game.players).find(k => game.players[k] === activePlayers[0]) : null
-      console.log(`🏆 Game ${gameId} ended - Winner: ${winner || 'None'}`)
+    // Wait for auto-flips to complete before checking game state
+    setTimeout(() => {
+      // Check active players (players with lives > 0)
+      const activePlayers = Object.entries(game.players).filter(([_, p]) => p.lives > 0)
       
-      // Cleanup physics
-      this.physicsEngine.cleanupGamePhysics(gameId)
-    } else {
-      // Next round - reset physics and player states
-      this.physicsEngine.resetGameForNewRound(gameId)
-      this.physicsEngine.updateGamePhase(gameId, 'round_active')
-      
-      // Reset player states
-      Object.values(game.players).forEach(player => {
-        if (player.isActive) {
-          player.choice = null
-          player.hasFired = false
-        }
+      console.log(`👥 Active players remaining: ${activePlayers.length}`)
+      activePlayers.forEach(([address, player]) => {
+        console.log(`  - ${address}: ${player.lives} lives`)
       })
       
-      game.currentRound++
-      game.roundTimer = 60
-      this.startRoundTimer(gameId, broadcast)
-      console.log(`🎮 Game ${gameId} - Round ${game.currentRound} started`)
-    }
-
-    if (broadcast) {
-      this.broadcastState(gameId, broadcast)
-    }
+      if (activePlayers.length === 0) {
+        // No players left - game ends in a draw
+        game.phase = 'game_over'
+        game.winner = null
+        console.log(`🏁 Game ${gameId} ended - No winner (all eliminated)`)
+        
+        // Cleanup physics
+        this.physicsEngine.cleanupGamePhysics(gameId)
+        
+        if (broadcast) {
+          broadcast(`game_${gameId}`, 'game_over', {
+            gameId: gameId,
+            winner: null,
+            reason: 'all_eliminated',
+            finalState: this.getFullGameState(gameId)
+          })
+        }
+      } else if (activePlayers.length === 1) {
+        // One player left - they win!
+        game.phase = 'game_over'
+        const [winnerAddress, winnerData] = activePlayers[0]
+        game.winner = winnerAddress
+        
+        console.log(`🏆 Game ${gameId} ended - Winner: ${winnerAddress} with ${winnerData.lives} lives`)
+        
+        // Cleanup physics
+        this.physicsEngine.cleanupGamePhysics(gameId)
+        
+        if (broadcast) {
+          broadcast(`game_${gameId}`, 'game_over', {
+            gameId: gameId,
+            winner: winnerAddress,
+            winnerData: winnerData,
+            reason: 'last_player_standing',
+            finalState: this.getFullGameState(gameId)
+          })
+        }
+      } else {
+        // Multiple players remain - start next round
+        console.log(`🔄 Starting next round for game ${gameId}`)
+        
+        // Reset physics for new round
+        this.physicsEngine.resetGameForNewRound(gameId)
+        this.physicsEngine.updateGamePhase(gameId, 'round_active')
+        
+        // Reset player states for next round
+        Object.values(game.players).forEach(player => {
+          if (player.lives > 0) {
+            player.isActive = true
+            player.choice = null
+            player.hasFired = false
+          }
+        })
+        
+        // Increment round and reset timer
+        game.currentRound++
+        game.roundTimer = 60
+        game.processingRoundEnd = false // Reset flag
+        
+        // Start the new round timer
+        this.startRoundTimer(gameId, broadcast)
+        
+        console.log(`🎮 Game ${gameId} - Round ${game.currentRound} started`)
+      }
+      
+      // Broadcast final state
+      if (broadcast) {
+        this.broadcastState(gameId, broadcast)
+      }
+      
+      // Clear the processing flag if game is over
+      if (game.phase === 'game_over') {
+        game.processingRoundEnd = false
+      }
+      
+    }, 2000) // Wait 2 seconds for auto-flips to process
   }
 
   // Get game state

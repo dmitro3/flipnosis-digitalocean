@@ -32,7 +32,7 @@ class GameServer {
     this.socketTracker = new SocketTracker()
     
     // Initialize FLIP collection service
-    this.flipCollectionService = new FlipCollectionService(dbService.databasePath)
+    this.flipCollectionService = new FlipCollectionService(dbService ? dbService.databasePath : null)
     
     // Then instantiate handlers (FIXED: They are classes, not modules)
     // this.oneVOneHandlers = require('./1v1SocketHandlers') // TODO: Not implemented yet
@@ -69,9 +69,16 @@ initialize(server, dbService) {
       this.battleRoyaleDBService = new BattleRoyaleDBService(dbService.db)
     }
     
-    // Initialize FLIP collection service
-    if (this.flipCollectionService) {
-      this.flipCollectionService.initialize().catch(console.error)
+    // Initialize FLIP collection service with proper error handling
+    if (this.flipCollectionService && this.dbService) {
+      this.flipCollectionService.databasePath = this.dbService.databasePath
+      this.flipCollectionService.initialize()
+        .then(() => console.log('✅ FLIP Collection Service initialized'))
+        .catch(error => {
+          console.error('❌ Failed to initialize FLIP Collection Service:', error)
+          // Don't fail the entire server, just disable FLIP features
+          this.flipCollectionService = null
+        })
     }
     this.io = socketIO(server, {
       cors: { 
@@ -627,6 +634,43 @@ initialize(server, dbService) {
             success: false,
             error: error.message
           })
+        }
+      }))
+
+      // Handle game over event for FLIP collection
+      socket.on('game_over', safeHandler(async (data) => {
+        console.log(`🏁 Game over event from ${socket.id}`, data)
+        const { gameId, winner, players } = data
+        
+        if (this.flipCollectionService) {
+          // Create collection sessions for all players
+          for (const [address, playerData] of Object.entries(players || {})) {
+            try {
+              const gameResult = address.toLowerCase() === winner?.toLowerCase() ? 'won' : 'lost'
+              const collection = await this.flipCollectionService.createCollectionSession(
+                gameId, 
+                address, 
+                gameResult
+              )
+              
+              // Notify the specific player about their collection
+              const playerSocket = this.userSockets.get(address.toLowerCase())
+              if (playerSocket) {
+                const targetSocket = this.io.sockets.sockets.get(playerSocket)
+                if (targetSocket) {
+                  targetSocket.emit('flip_collection_created', {
+                    success: true,
+                    collectionId: collection.collectionId,
+                    totalFlip: collection.totalFlip,
+                    gameResult: collection.gameResult,
+                    expiresAt: collection.expiresAt
+                  })
+                }
+              }
+            } catch (error) {
+              console.error(`Error creating collection for ${address}:`, error)
+            }
+          }
         }
       }))
 
