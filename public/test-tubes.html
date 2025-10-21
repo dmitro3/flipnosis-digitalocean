@@ -516,6 +516,15 @@
       // SERVER-AUTHORITATIVE: Client only reacts to server state
       if (state.phase === 'round_active' && !gameOver) {
         // Server manages timer, client just displays
+        // Clear any waiting phase indicator and show round active
+        const existingIndicator = document.getElementById('game-phase-indicator');
+        if (existingIndicator) {
+          existingIndicator.remove();
+        }
+        console.log(`🎮 Game is now round_active - Round ${state.currentRound}`);
+        
+        // Update button visibility for the new round
+        updatePlayerCardButtons();
       } else if (state.phase === 'game_over') {
         gameOver = true;
         
@@ -561,9 +570,9 @@
           if (serverPlayer && serverPlayer.slotNumber >= 0 && serverPlayer.slotNumber < 4) {
             const localPlayer = players[serverPlayer.slotNumber];
             if (localPlayer && !localPlayer.isEmpty) {
-              // Update choice if it changed
-              if (serverPlayer.choice && localPlayer.choice !== serverPlayer.choice) {
-                console.log(`🔄 Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice}`);
+              // Update choice if it changed (including reset to null)
+              if (serverPlayer.choice !== localPlayer.choice) {
+                console.log(`🔄 Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice || 'null'}`);
                 localPlayer.choice = serverPlayer.choice;
                 
                 // Update UI for this player
@@ -573,10 +582,21 @@
                   const choiceBadge = tube.cardElement.querySelector('.choice-badge');
                   
                   if (choiceButtons && choiceBadge) {
-                    choiceButtons.style.display = 'none';
-                    choiceBadge.style.display = 'inline-block';
-                    choiceBadge.textContent = serverPlayer.choice.toUpperCase();
-                    choiceBadge.className = `choice-badge ${serverPlayer.choice}`;
+                    if (serverPlayer.choice) {
+                      // Show choice badge
+                      choiceButtons.style.display = 'none';
+                      choiceBadge.style.display = 'inline-block';
+                      choiceBadge.textContent = serverPlayer.choice.toUpperCase();
+                      choiceBadge.className = `choice-badge ${serverPlayer.choice}`;
+                    } else {
+                      // Hide choice badge, show buttons for current player
+                      choiceBadge.style.display = 'none';
+                      if (playerSlot === serverPlayer.slotNumber) {
+                        choiceButtons.style.display = 'block';
+                      } else {
+                        choiceButtons.style.display = 'none';
+                      }
+                    }
                   }
                 }
               }
@@ -4213,8 +4233,9 @@
         // Update player cards with real data
         updatePlayerCards();
         
-        // Show waiting phase indicator
-        showGamePhaseIndicator('waiting', 'Waiting for players to join...');
+        // Show appropriate phase indicator based on server state
+        // The server will send the correct phase via physics_state_update
+        // Don't hardcode to 'waiting' - let server control the phase
         
         // SERVER-AUTHORITATIVE: Server manages all timing
         
