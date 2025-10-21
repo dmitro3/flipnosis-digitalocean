@@ -28,8 +28,7 @@ const Container = styled.div`
   grid-template-columns: 1fr 2fr;
   gap: 2rem;
   padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100vw;
   min-height: 100vh;
   background: url('/images/background/lobby3.png') no-repeat center center fixed;
   background-size: cover;
