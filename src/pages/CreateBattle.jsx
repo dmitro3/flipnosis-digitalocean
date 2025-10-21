@@ -555,7 +555,7 @@ const CreateBattle = () => {
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [creatorParticipates, setCreatorParticipates] = useState(false)
   const [ethPriceUSD, setEthPriceUSD] = useState(0)
-  const [selectedRoom, setSelectedRoom] = useState(null)
+  const [selectedRoom, setSelectedRoom] = useState(1) // Default to Potion Room (id: 1)
 
   // Progress tracking
   const [currentStep, setCurrentStep] = useState(0)
@@ -606,6 +606,10 @@ const CreateBattle = () => {
       showError('Please enter a valid total price in ETH (> 0)')
       return
     }
+    
+    // Debug room selection
+    console.log('🎨 Selected room:', selectedRoom)
+    console.log('🎨 Room type will be:', selectedRoom === 2 ? 'lab' : 'potion')
     
     if (chainId !== 8453) {
       showError('Please switch to Base network to create Battle Royale games')
@@ -814,7 +818,10 @@ const CreateBattle = () => {
                     ].map((room) => (
                       <RoomOption 
                         key={room.id}
-                        onClick={() => setSelectedRoom(room.id)}
+                        onClick={() => {
+                          console.log('🎨 Room clicked:', room.id, room.label)
+                          setSelectedRoom(room.id)
+                        }}
                         style={{
                           borderColor: selectedRoom === room.id ? '#9d00ff' : '#00ffff',
                           background: selectedRoom === room.id ? 'linear-gradient(135deg, rgba(157, 0, 255, 0.3), rgba(0, 255, 255, 0.3))' : 'linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1))',
@@ -847,14 +854,15 @@ const CreateBattle = () => {
                           </div>
                         )}
                         <div style={{
-                          color: '#ff8c00',
+                          color: selectedRoom === room.id ? '#9d00ff' : '#ff8c00',
                           fontSize: '1.4rem',
                           textAlign: 'center',
                           fontFamily: 'Orbitron, sans-serif',
                           fontWeight: 'bold',
-                          textShadow: '0 0 10px rgba(255, 140, 0, 0.8)'
+                          textShadow: selectedRoom === room.id ? '0 0 10px rgba(157, 0, 255, 0.8)' : '0 0 10px rgba(255, 140, 0, 0.8)'
                         }}>
                           {room.label}
+                          {selectedRoom === room.id && ' ✓'}
                         </div>
                       </RoomOption>
                     ))}
