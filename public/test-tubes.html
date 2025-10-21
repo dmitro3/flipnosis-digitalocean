@@ -587,10 +587,10 @@
         });
       }
       
-      // Update timer (only if server timer is valid and not jumping backwards)
-      if (state.roundTimer !== undefined && state.roundTimer > 0) {
-        // Only update if server timer is significantly different and not jumping backwards
-        if (Math.abs(state.roundTimer - timeRemaining) > 2) {
+      // SERVER-AUTHORITATIVE: Always update timer from server state
+      if (state.roundTimer !== undefined) {
+        // Always sync with server timer - server is the single source of truth
+        if (state.roundTimer !== timeRemaining) {
           console.log(`⏱️ Server timer update: ${timeRemaining} -> ${state.roundTimer}`);
           timeRemaining = state.roundTimer;
           updateTimerDisplay();
@@ -1155,7 +1155,7 @@
     let timeRemaining = 30;
     let timerInterval = null;
     let roundCounterElement = null;
-    let autoFlipTriggered = false; // Prevent multiple autoflip triggers
+    // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
     let timerElement = null;
     let gameOver = false;
     let allPlayersFlipped = false;
@@ -2735,98 +2735,46 @@
 
     // ===== TIMER FUNCTIONS =====
     function startTimer() {
-      // Don't start timer if game is over
-      if (gameOver) {
-        console.log('⏱️ Game is over, not starting timer');
-        return;
-      }
-      
-      // Always stop existing timer first
-      stopTimer();
-      
-      console.log('⏱️ Timer started!');
+      // SERVER-AUTHORITATIVE: Client no longer manages timers
+      // Server will broadcast timer updates via physics_state_update
+      console.log('⏱️ Timer management delegated to server');
       
       // Show game in progress indicator
       showGamePhaseIndicator('in_progress', `Round ${currentRound} - Choose your side!`);
-      
-      timerInterval = setInterval(() => {
-        timeRemaining--;
-        updateTimerDisplay();
-        
-        if (timeRemaining <= 0 && !autoFlipTriggered) {
-          stopTimer();
-          autoFlipTriggered = true;
-          console.log('⏱️ Timer reached zero - triggering autoflip');
-          // Auto-flip for any players who haven't chosen or flipped
-          autoFlipCoins();
-        }
-      }, 1000);
     }
 
     function stopTimer() {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
+      // SERVER-AUTHORITATIVE: Client no longer manages timers
+      console.log('⏱️ Timer management delegated to server');
     }
 
     function resetTimer() {
-      stopTimer();
-      timeRemaining = 30;
-      updateTimerDisplay();
-      console.log('⏱️ Timer reset');
+      // SERVER-AUTHORITATIVE: Client no longer manages timers
+      console.log('⏱️ Timer management delegated to server');
     }
 
     function updateTimerDisplay() {
-      timerDisplay.textContent = timeRemaining;
-      
-      // Change color based on time remaining
-      if (timeRemaining <= 5) {
-        timerDisplay.style.color = '#ff0000';
-      } else if (timeRemaining <= 10) {
-        timerDisplay.style.color = '#ffaa00';
-      } else {
-        timerDisplay.style.color = '#00ff00';
+      // SERVER-AUTHORITATIVE: Timer display is now purely reactive to server state
+      // The server will broadcast the timer value via physics_state_update
+      // This function will be called when server sends timer updates
+      if (timerDisplay) {
+        timerDisplay.textContent = timeRemaining;
+        
+        // Change color based on time remaining
+        if (timeRemaining <= 5) {
+          timerDisplay.style.color = '#ff0000';
+        } else if (timeRemaining <= 10) {
+          timerDisplay.style.color = '#ffaa00';
+        } else {
+          timerDisplay.style.color = '#00ff00';
+        }
       }
     }
 
     function autoFlipCoins() {
-      if (autoFlipTriggered && timeRemaining > 0) {
-        console.log('⏱️ Autoflip already triggered, skipping...');
-        return;
-      }
-      
-      console.log('⏱️ TIME\'S UP! Auto-flipping all coins...');
-      
-      // Auto flip all tubes that haven't flipped yet (only for players with lives)
-      tubes.forEach((tube, i) => {
-        if (!tube.isFlipping && !tube.isShattered && players[i].lives > 0) {
-          // Set power to 50% for auto-flip
-          const autoPower = 50;
-          tube.power = autoPower;
-          
-          // Auto-choose heads if player hasn't chosen
-          if (!players[i].choice) {
-            players[i].choice = 'heads';
-            updatePlayerCardChoice(i, 'heads');
-            console.log(`🤖 Auto-chose heads for player ${i + 1}`);
-          }
-          
-          // Shatter glass
-          shatterGlass(i, autoPower);
-          
-          // Get player choice (now guaranteed to exist)
-          const playerChoice = players[i].choice;
-          
-          // Start coin flip
-          flipCoinWithPower(i, autoPower, playerChoice);
-        }
-      });
-      
-      // Trigger game progression check after autoflip
-      setTimeout(() => {
-        checkAllPlayersFlipped();
-      }, 1000); // Wait 1 second for all coins to finish flipping
+      // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
+      // The server will automatically flip coins when the timer expires
+      console.log('⏱️ Auto-flip delegated to server');
     }
 
     function nextRound() {
@@ -2844,7 +2792,7 @@
       
       // Reset round state
       allPlayersFlipped = false;
-      autoFlipTriggered = false; // Reset autoflip flag for new round
+      // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
       if (roundEndTimer) {
         clearTimeout(roundEndTimer);
         roundEndTimer = null;
@@ -4573,7 +4521,7 @@
     function resetRound() {
       // Reset round state
       allPlayersFlipped = false;
-      autoFlipTriggered = false; // Reset autoflip flag
+      // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
       
       tubes.forEach((tube, i) => {
         // Reset player choice for next round

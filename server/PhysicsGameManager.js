@@ -439,21 +439,9 @@ class PhysicsGameManager {
       if (game.roundTimer > 0) {
         game.roundTimer--
         
-        // Broadcast timer update only at specific intervals to reduce spam
-        // Broadcast at: 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 4, 3, 2, 1
-        const shouldBroadcast = 
-          game.roundTimer === 60 ||
-          game.roundTimer === 55 ||
-          game.roundTimer === 50 ||
-          game.roundTimer === 45 ||
-          game.roundTimer === 40 ||
-          game.roundTimer === 35 ||
-          game.roundTimer === 30 ||
-          game.roundTimer === 25 ||
-          game.roundTimer === 20 ||
-          game.roundTimer === 15 ||
-          game.roundTimer === 10 ||
-          game.roundTimer <= 5
+        // SERVER-AUTHORITATIVE: Broadcast timer updates more frequently for better responsiveness
+        // Broadcast every second for smooth countdown
+        const shouldBroadcast = true
         
         if (broadcast && shouldBroadcast && game.roundTimer !== lastBroadcastTime) {
           lastBroadcastTime = game.roundTimer
