@@ -584,10 +584,12 @@
         });
       }
       
-      // Update timer
+      // Update timer (only if server timer is less than current to prevent jumping backwards)
       if (state.roundTimer !== undefined) {
-        timeRemaining = state.roundTimer;
-        updateTimerDisplay();
+        if (state.roundTimer <= timeRemaining) {
+          timeRemaining = state.roundTimer;
+          updateTimerDisplay();
+        }
       }
       
       // Update round
@@ -2740,10 +2742,8 @@
         
         if (timeRemaining <= 0) {
           stopTimer();
-          // Only auto-flip in local mode - server handles timing in server-side mode
-          if (!isServerSideMode) {
-            autoFlipCoins();
-          }
+          // Auto-flip for any players who haven't chosen or flipped
+          autoFlipCoins();
         }
       }, 1000);
     }
@@ -2785,18 +2785,28 @@
           const autoPower = 50;
           tube.power = autoPower;
           
+          // Auto-choose heads if player hasn't chosen
+          if (!players[i].choice) {
+            players[i].choice = 'heads';
+            updatePlayerCardChoice(i, 'heads');
+            console.log(`🤖 Auto-chose heads for player ${i + 1}`);
+          }
+          
           // Shatter glass
           shatterGlass(i, autoPower);
           
-          // Get player choice (or default to heads if none selected)
-          const playerChoice = players[i].choice || 'heads';
+          // Get player choice (now guaranteed to exist)
+          const playerChoice = players[i].choice;
           
           // Start coin flip
           flipCoinWithPower(i, autoPower, playerChoice);
         }
       });
       
-      // Game progression is now handled by checkAllPlayersFlipped() after each coin lands
+      // Trigger game progression check after autoflip
+      setTimeout(() => {
+        checkAllPlayersFlipped();
+      }, 1000); // Wait 1 second for all coins to finish flipping
     }
 
     function nextRound() {
@@ -4465,6 +4475,7 @@
         if (claimFlipBtn) {
             claimFlipBtn.addEventListener('click', () => {
                 if (socket && currentCollectionId) {
+                    console.log(`💰 Claiming ${currentPlayerXP} FLIP tokens for ${walletParam}`);
                     socket.emit('collect_flip_tokens', {
                         collectionId: currentCollectionId,
                         address: walletParam,
@@ -4472,6 +4483,8 @@
                     });
                     claimFlipBtn.disabled = true;
                     claimFlipBtn.textContent = 'Claiming...';
+                } else {
+                    console.error('❌ Cannot claim FLIP: missing socket, collectionId, or walletParam');
                 }
             });
         }
@@ -4479,19 +4492,22 @@
         if (claimNftBtn && didCurrentPlayerWin) {
             claimNftBtn.addEventListener('click', () => {
                 if (socket && gameIdParam && walletParam) {
+                    console.log(`🏆 Claiming NFT prize for winner ${walletParam} in game ${gameIdParam}`);
                     socket.emit('claim_nft_prize', {
                         gameId: gameIdParam,
                         address: walletParam
                     });
                     claimNftBtn.disabled = true;
                     claimNftBtn.textContent = 'Claiming...';
+                } else {
+                    console.error('❌ Cannot claim NFT: missing socket, gameId, or walletParam');
                 }
             });
         }
         
         if (returnLobbyBtn) {
             returnLobbyBtn.addEventListener('click', () => {
-                window.location.href = `/battle-royale/${gameIdParam}`;
+                window.location.href = '/';
             });
         }
       }, 100);
