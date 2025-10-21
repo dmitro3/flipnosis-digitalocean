@@ -438,6 +438,9 @@
           currentCollectionId = data.collectionId;
           // Collection UI is already shown in showGameOverScreen
           showFloatingMessage('Collection session created!', '#00ff00', 2000);
+        } else {
+          console.error('❌ Collection session creation failed:', data.error);
+          showFloatingMessage(`Collection failed: ${data.error}`, '#ff0000', 3000);
         }
       });
 
@@ -3538,6 +3541,25 @@
       console.log(`💊 Updated lives display for player ${tubeIndex + 1}: ${player.lives} lives remaining`);
     }
 
+    // ===== UPDATE PLAYER CARD CHOICE =====
+    function updatePlayerCardChoice(tubeIndex, choice) {
+      const tube = tubes[tubeIndex];
+      if (!tube.cardElement) return;
+      
+      const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
+      const choiceBadge = tube.cardElement.querySelector('.choice-badge');
+      
+      if (choiceButtons && choiceBadge) {
+        // Hide choice buttons and show choice badge
+        choiceButtons.style.display = 'none';
+        choiceBadge.className = `choice-badge ${choice}`;
+        choiceBadge.textContent = choice.toUpperCase();
+        choiceBadge.style.display = 'block';
+      }
+      
+      console.log(`🎯 Updated player ${tubeIndex + 1} choice to: ${choice}`);
+    }
+
     // ===== SHOW WIN/LOSE RESULT =====
     function showResult(tubeIndex, didWin, result) {
       const tube = tubes[tubeIndex];
@@ -4321,6 +4343,14 @@
       const didCurrentPlayerWin = (playerSlot === winnerIndex);
       const currentPlayerLives = players[playerSlot]?.lives || 0;
       
+      console.log(`🏁 Game Over Debug:`, {
+        playerSlot,
+        winnerIndex,
+        didCurrentPlayerWin,
+        currentPlayerLives,
+        winnerName
+      });
+      
       // Create collection session via server
       if (isServerSideMode && socket && gameIdParam && walletParam) {
         const gameResult = didCurrentPlayerWin ? 'won' : 'lost';
@@ -4459,7 +4489,7 @@
             margin-left: auto;
             margin-right: auto;
         ">
-            Return to Lobby
+            Return Home
         </button>
       `;
       
