@@ -368,7 +368,12 @@
       
       // Server-side physics events
       socket.on('physics_state_update', (state) => {
-        console.log('📊 Received physics state update:', state);
+        console.log('📊 Received physics state update:', {
+          phase: state?.phase,
+          currentRound: state?.currentRound,
+          roundTimer: state?.roundTimer,
+          players: state?.players ? Object.keys(state.players).length : 0
+        });
         gameState = state;
         updateClientFromServerState(state);
       });

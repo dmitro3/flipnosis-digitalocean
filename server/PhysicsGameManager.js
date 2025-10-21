@@ -643,7 +643,18 @@ class PhysicsGameManager {
     const state = this.getFullGameState(gameId)
     if (state && broadcast) {
       const room = `game_${gameId}`
+      console.log(`📡 Broadcasting state to room ${room}:`, {
+        phase: state.phase,
+        currentRound: state.currentRound,
+        roundTimer: state.roundTimer,
+        players: Object.keys(state.players).length
+      })
       broadcast(room, 'physics_state_update', state)
+    } else {
+      console.log(`⚠️ Cannot broadcast state for game ${gameId}:`, {
+        hasState: !!state,
+        hasBroadcast: !!broadcast
+      })
     }
   }
 

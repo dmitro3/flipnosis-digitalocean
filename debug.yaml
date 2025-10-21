@@ -1,260 +1,474 @@
-Hi Opus, today I would like to examine something. When a user creates a game, how does it assign the ownership of the nft. Then during a game, in the test-tubes.html page, how does it see the owner. And finally when the game is concluded is there a function to transfer ownership from the current user or from the game to the winnerYou're going to have to read every line of my code to understand this. So please dont take shortcuts. the solution is probably multifacted so dont just stop at the first thing you see, ther emay be multiple issues or concerns. If you need to see the game lobby, let me know and I'll addI'll help you examine the NFT ownership flow in your game system. Let me start by searching through your project knowledge to understand the codebase structure and then trace through the ownership assignment, verification, and transfer mechanisms.Searched project for “NFT ownership transfer game winner test-tubes”2 resultstest-tubes.html7 relevant sectionstextCreateBattle.jsxtextLet me search for more specific information about NFT ownership creation and transfer mechanics.Searched project for “createBattleRoyale NFT deposit transfer ownership contract”2 resultsCreateBattle.jsx7 relevant sectionstexttest-tubes.htmltextLet me search for contract service and smart contract interactions for NFT ownership.Searched project for “contractService smart contract NFT ownership approve transfer claimNFT”2 resultsCreateBattle.jsx6 relevant sectionstexttest-tubes.html2 relevant sectionstextNow let me search for the server-side battle royale backend code and game state management.Searched project for “server battle-royale game winner ownership database nft transfer”2 resultsCreateBattle.jsx7 relevant sectionstexttest-tubes.htmltextNow let me search for the ContractService implementation to understand how NFT ownership transfer works.Searched project for “ContractService.js createBattleRoyale claimNFT approve transfer gameContract”2 resultsCreateBattle.jsx6 relevant sectionstexttest-tubes.html2 relevant sectionstextLet me search for more backend code and server-side game management, particularly focusing on the socket events and game conclusion logic.Searched project for “socket emit claim_nft game_over winner transfer server battle-royale”2 resultsCreateBattle.jsx5 relevant sectionstexttest-tubes.html3 relevant sectionstextNow I need to find the actual ContractService.js file to see the smart contract interaction methods.Searched project for “ContractService implementation approve safeTransferFrom NFT ERC721 contract methods”2 resultsCreateBattle.jsx7 relevant sectionstexttest-tubes.htmltextNow let me look for the actual game lobby files to understand how ownership is tracked during the game.Searched project for “BattleLobby game state players owner see ownership verification”2 resultstest-tubes.html5 relevant sectionstextCreateBattle.jsx3 relevant sectionstextNow I should look for if there is a game lobby page to understand how ownership is displayed during the game. Let me also search for smart contract or server files.Searched project for “BattleLobby.jsx lobby game NFT display owner creator participant”1 resultCreateBattle.jsx8 relevant sectionstextNow I'll examine if I can find a lobby page, since the code mentions navigating to /battle-royale/${battleRoyaleResult.gameId}.Searched project for “game start button BattleLobby creator participants waiting room”2 resultstest-tubes.html3 relevant sectionstextCreateBattle.jsx5 relevant sectionstextI need to find the actual game lobby file or server files that handle the NFT transfer. Let me search more specifically.Searched project for “services ContractService.js claimBattleRoyaleNFT transferNFT”2 resultsCreateBattle.jsx5 relevant sectionstexttest-tubes.html3 relevant sectionstextBased on my comprehensive analysis of your codebase, I can now provide you with a detailed examination of how NFT ownership is handled in your game system. Here are my findings:
-NFT Ownership Flow Analysis
-1. NFT Creation & Initial Ownership Assignment
-When a user creates a game, the NFT ownership process works as follows:
-In CreateBattle.jsx:
-
-The creator selects an NFT from their wallet
-They call contractService.createBattleRoyale() which:
-
-Approves the smart contract to transfer the NFT
-Deposits the NFT into the game contract
-The NFT is now owned by the smart contract, not the creator
-
-
-
-javascriptconst createResult = await contractService.createBattleRoyale(
-  battleRoyaleResult.gameId,
-  selectedNFT.contractAddress,
-  selectedNFT.tokenId,
-  Math.round(entryFeePerPlayer * 1000000),
-  Math.round(parseFloat(serviceFee) * 1000000)
-)
-Key Issue #1: The NFT is transferred FROM the creator TO the smart contract during game creation. The smart contract becomes the custodian.
-2. During Game - Ownership Visibility
-In test-tubes.html, the game doesn't actually check or display NFT ownership during gameplay. The participants are loaded and displayed as players, but there's no mechanism to show who currently "owns" the NFT because:
-
-The NFT is held by the smart contract
-Players are just participants competing for the NFT
-There's no visual indicator showing the NFT stake or current ownership
-
-Key Issue #2: The game interface doesn't display information about the NFT prize or its current custody status.
-3. Game Conclusion - NFT Transfer to Winner
-When the game ends and a winner is declared:
-In test-tubes.html:
-javascriptsocket.on('nft_claimed', (data) => {
-  console.log('🏆 NFT claimed:', data);
-  if (data.success) {
-    showFloatingMessage('NFT claimed successfully!', '#ff0088', 3000);
-  }
-});
-The winner can claim the NFT through a socket event claim_nft, but:
-Key Issue #3: The actual NFT transfer mechanism is incomplete. The code shows:
-
-A UI button for claiming the NFT appears for the winner
-The button emits a claim_nft socket event
-But there's no visible implementation of the actual blockchain transfer back to the winner
-
-Missing Components & Concerns:
-
-No ContractService Implementation Visible: The contractService.createBattleRoyale() method is called but the actual implementation isn't in the provided code. This should handle:
-
-NFT approval (ERC721 approve)
-NFT transfer to contract (safeTransferFrom)
-NFT transfer to winner (another safeTransferFrom)
-
-
-Server-Side Transfer Logic Missing: The backend API endpoints (/api/battle-royale/create, etc.) are referenced but not implemented in the visible code.
-No Ownership Verification: During the game, there's no check to verify:
-
-That the NFT is still in the contract
-That the contract has permission to transfer it
-That the winner's claim is valid
-
-
-
-Recommendations:
-
-Add Ownership Display: Show in the game UI that the NFT is held in escrow by the smart contract
-Implement Transfer Function: You need a function like:
-
-javascriptasync function transferNFTToWinner(gameId, winnerAddress) {
-  // Call smart contract to transfer NFT from contract to winner
-  const result = await contractService.claimBattleRoyaleNFT(
-    gameId,
-    winnerAddress
-  );
-  return result;
-}
-
-Add Verification Steps:
-
-Verify NFT is still in contract before game starts
-Verify winner's address matches the claimant
-Add fallback mechanisms if transfer fails
-
-
-Security Considerations:
-
-Ensure only the legitimate winner can claim
-Add time limits for claiming
-Implement emergency withdrawal for stuck NFTs
-
-
-
-The main issue is that while the UI and game flow exist, the actual blockchain interactions for NFT custody and transfer appear to be incomplete or not visible in the provided code. The smart contract integration layer (ContractService.js) is crucial but missing from the analysis.
-Would you like me to help you implement the missing NFT transfer logic or would you like to show me additional files (like ContractService.js or your backend API handlers) so I can provide more specific guidance?RetryKive added some more files for you. does this help. including the smart contract. nftflipgame.solI'll search for and analyze the newly added files, particularly the smart contract and ContractService implementation.Searched project for “NFTFlipGame.sol smart contract createBattleRoyale claimNFT transferFrom”2 resultsnftflipgame.sol7 relevant sectionstextContractService.jstextNow let me search for more ContractService implementation details, particularly the NFT claiming function.Searched project for “ContractService withdrawWinnerNFT claimBattleRoyale battle royale winner claim”3 resultsContractService.js5 relevant sectionstextnftflipgame.sol2 relevant sectionstextapi.jstextNow let me search for the backend socket handler to see how the NFT claim is processed when the game ends.Searched project for “socket.on claim_nft game_over declare winner battle royale complete”5 resultsnftflipgame.sol3 relevant sectionstextserver-socketio.jstexttest-tubes.htmltextapi.js2 relevant sectionstextContractService.jstextExcellent! Now I have a comprehensive understanding of your NFT ownership flow. Let me provide you with a detailed analysis of how NFT ownership works in your system and identify the key issues and solutions.
-Complete NFT Ownership Flow Analysis
-1. GAME CREATION - NFT Deposit
-When a user creates a Battle Royale game:
-Frontend (CreateBattle.jsx):
-javascriptconst createResult = await contractService.createBattleRoyale(
-  battleRoyaleResult.gameId,
-  selectedNFT.contractAddress,
-  selectedNFT.tokenId,
-  entryFee,
-  serviceFee
-)
-Contract Service (ContractService.js):
-
-First approves the NFT transfer
-Then calls the smart contract's createBattleRoyale function
-
-Smart Contract (NFTFlipGame.sol):
-solidityfunction createBattleRoyale(...) {
-    // Transfer NFT from creator to contract
-    IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
-    
-    battleRoyaleGames[gameId] = BattleRoyaleGame({
-        creator: msg.sender,
-        nftContract: nftContract,
-        tokenId: tokenId,
-        // ... other fields
-    });
-}
-✅ This part works correctly - The NFT is transferred from the creator to the smart contract.
-2. DURING GAME - Ownership Visibility
-Current Status in test-tubes.html:
-
-No display of NFT ownership/custody status
-Players don't see what NFT they're playing for
-No verification that NFT is still in contract
-
-ISSUE #1: The game interface doesn't show the NFT prize or indicate it's held in escrow.
-3. GAME CONCLUSION - Winner Declaration
-Missing Implementation:
-The game ends in test-tubes.html but there's NO call to the backend to officially declare the winner on the blockchain.
-What happens now:
-javascript// test-tubes.html
-socket.on('nft_claimed', (data) => {
-  console.log('🏆 NFT claimed:', data);
-  // Just shows a message, doesn't actually transfer NFT
-});
-What SHOULD happen:
-
-When game ends, the server should call completeBattleRoyale on the smart contract
-This sets the winner in the contract
-Then the winner can claim their NFT
-
-4. NFT TRANSFER TO WINNER
-The Complete Flow Should Be:
-
-Server declares winner (currently missing):
-
-javascript// This needs to be called by the backend when game ends
-await contractService.completeBattleRoyale(gameId, winnerAddress)
-
-Winner claims NFT:
-
-javascript// Winner calls this from the UI
-await contractService.withdrawBattleRoyaleWinnerNFT(gameId)
-Smart Contract:
-solidityfunction withdrawWinnerNFT(bytes32 gameId) {
-    require(game.winner == msg.sender, "Not the winner");
-    require(game.completed, "Game not completed");
-    require(!game.nftClaimed, "NFT already claimed");
-    
-    game.nftClaimed = true;
-    
-    // Transfer NFT from contract to winner
-    IERC721(game.nftContract).transferFrom(address(this), msg.sender, game.tokenId);
-}
-Critical Issues & Solutions
-Issue 1: Game Completion Not Connected to Blockchain
-Problem: When the game ends in test-tubes.html, it doesn't call completeBattleRoyale on the smart contract.
-Solution: Add this to your backend when the game ends:
-javascript// In your socket handler or game completion logic
-async function declareGameWinner(gameId, winnerAddress) {
-  // This should be called by your backend with owner wallet
-  const result = await blockchainService.completeBattleRoyale(gameId, winnerAddress);
-  
-  // Then notify the winner they can claim
-  socket.emit('game_completed_on_chain', {
-    gameId,
-    winner: winnerAddress,
-    canClaimNFT: true
-  });
-}
-Issue 2: NFT Claim Process Not Implemented
-Problem: The claim_nft socket event doesn't actually call the smart contract.
-Solution: In server-socketio.js:
-javascriptsocket.on('claim_nft', async (data) => {
-  const { gameId, address } = data;
-  
-  try {
-    // Call the contract to transfer NFT to winner
-    const result = await contractService.withdrawBattleRoyaleWinnerNFT(gameId);
-    
-    socket.emit('nft_claimed', {
-      success: true,
-      transactionHash: result.transactionHash
-    });
-  } catch (error) {
-    socket.emit('nft_claimed', {
-      success: false,
-      error: error.message
-    });
-  }
-});
-Issue 3: Owner-Only Function Problem
-Critical Issue: completeBattleRoyale in your smart contract is marked onlyOwner:
-solidityfunction completeBattleRoyale(bytes32 gameId, address winner) external onlyOwner
-This means ONLY the contract owner can declare winners, not players. You need a backend service with the owner's private key to call this.
-Issue 4: No Ownership Display
-Solution: Add NFT display to the game UI:
-javascript// In test-tubes.html, add near the top of the game screen
-function displayNFTPrize() {
-  const nftDisplay = document.createElement('div');
-  nftDisplay.innerHTML = `
-    <div style="position: absolute; top: 20px; right: 20px; 
-                background: rgba(0,0,0,0.8); padding: 15px; 
-                border-radius: 10px; border: 2px solid #ff1493;">
-      <h3>🏆 Playing For:</h3>
-      <img src="${gameData.nft_image}" style="width: 100px; height: 100px;">
-      <p>${gameData.nft_name}</p>
-      <small>Held in Smart Contract</small>
-    </div>
-  `;
-  document.body.appendChild(nftDisplay);
-}
-Recommended Implementation Steps
-
-Backend Service for Game Completion:
-
-Create a backend service with the contract owner's wallet
-When game ends, call completeBattleRoyale(gameId, winnerAddress)
-Store this transaction hash in your database
-
-
-Update Socket Handler:
-
-When winner is determined, emit blockchain completion status
-Enable NFT claim button only after blockchain confirmation
-
-
-Frontend Winner Claim Flow:
-
-Show "Claim NFT" button to winner
-Call contractService.withdrawBattleRoyaleWinnerNFT(gameId)
-Show transaction status and confirmation
-
-
-Add Verification:
-
-Before game starts, verify NFT is in contract
-After game ends, verify winner is set in contract
-Show transaction hashes for transparency
-
-
-
-The main issue is that your game completion logic isn't connected to the blockchain. The smart contract is waiting for someone to call compnpm run buildn be claimed, but this never happens in your current implementation.
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:266 🔍 No wallet in URL, trying localStorage: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:275 🔍 Wallet detection debug: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1224 📷 Camera positioned for shorter tubes with dual-layer support
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1238 🎨 WebGL Renderer initialized with transparency
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1274 ✨ Selective bloom composer created for layer 1 (pearls)!
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1302 🎨 Additive blend shader created for compositing!
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1665 🎨 Brass metallic textures loaded
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1713 ⚙️ Physics world created with gravity
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1848 ⚙️ Sealed physics container created for tube 1
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2102 🎯 Initial Player 1 button logic (DEBUGGING MODE): Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2456 ✅ Applied default Classic with  material to Empty's coin
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1848 ⚙️ Sealed physics container created for tube 2
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2102 🎯 Initial Player 2 button logic (DEBUGGING MODE): Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2456 ✅ Applied default Classic with  material to Empty's coin
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1848 ⚙️ Sealed physics container created for tube 3
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2102 🎯 Initial Player 3 button logic (DEBUGGING MODE): Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2456 ✅ Applied default Classic with  material to Empty's coin
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1848 ⚙️ Sealed physics container created for tube 4
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2102 🎯 Initial Player 4 button logic (DEBUGGING MODE): Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2456 ✅ Applied default Classic with  material to Empty's coin
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2485 🎮 Game started - applying default coin selections to all players...
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4649 ✅ Game loaded! Hold CHARGE POWER button to fill tubes!
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4650 💡 Call resetRound() to start a new round
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4651 ⏱️ Call startTimer() to begin the countdown
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4768 🔍 Raw participants data: Array(2)
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4787 👤 Slot 1: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4787 👤 Slot 2: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4773 📭 Slot 3: Empty
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4773 📭 Slot 4: Empty
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4796 📊 Participants mapped: Array(4)
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4655 🔄 Updating player cards with real data...
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4658 🔍 Tube 1: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4665 🎯 Player 1 button logic (DEBUGGING MODE): Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4676 📝 Updating player 1: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4704 🎯 Player 1 empty slot logic: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4713 🧹 Removing existing overlay from player slot 1
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4658 🔍 Tube 2: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4665 🎯 Player 2 button logic (DEBUGGING MODE): Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4676 📝 Updating player 2: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4704 🎯 Player 2 empty slot logic: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4713 🧹 Removing existing overlay from player slot 2
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4658 🔍 Tube 3: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4665 🎯 Player 3 button logic (DEBUGGING MODE): Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4676 📝 Updating player 3: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4704 🎯 Player 3 empty slot logic: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4713 🧹 Removing existing overlay from player slot 3
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4719 ➕ Adding pink X overlay to empty slot 3
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4658 🔍 Tube 4: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4665 🎯 Player 4 button logic (DEBUGGING MODE): Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4676 📝 Updating player 4: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4704 🎯 Player 4 empty slot logic: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4713 🧹 Removing existing overlay from player slot 4
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4719 ➕ Adding pink X overlay to empty slot 4
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5012 🎬 Frame 1 - Layer 0 mask: 1 Should be 1 for layer 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5020 ✅ Main scene (layer 0) rendered to screen
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5028 🎬 Frame 1 - Layer 1 mask: 2 Should be 2 for layer 1
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5035 ✅ Pearls (layer 1) rendered to bloom buffer
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5036 🔍 Bloom composer render target: Found
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5037 🔍 Bloom composer read buffer: Found
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5047 🎨 Bloom texture: Found
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5049 🎨 Bloom texture details: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5065 🔍 Tube 1 has 80 visible pearls on layer 1
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5065 🔍 Tube 2 has 80 visible pearls on layer 1
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5065 🔍 Tube 3 has 80 visible pearls on layer 1
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5065 🔍 Tube 4 has 80 visible pearls on layer 1
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5068 🔍 Total visible pearls on layer 1: 320
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5093 ✨ Bloom composite quad created!
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5120 ✅ Bloomed pearls composited on top
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5121 🎉 Selective bloom rendering complete!
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:304 ✅ Connected to server
+/api/battle-royale/physics_1761045602185_69a03a7471fc10a8/join:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1211 🖼️ Background image loaded! Size: 1791x1018 at distance 1900
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2445 ✅ Applied default Classic textures to Empty's coin
+3test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2519 ✅ Applied default Classic with  material to Empty's coin
+3test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2445 ✅ Applied default Classic textures to Empty's coin
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2519 ✅ Applied default Classic with  material to Empty's coin
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4838 ⚠️ Join failed: Player already joined this game
+(anonymous) @ test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:4838Understand this warning
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 30 -> 58
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 58 -> 57
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 57 -> 56
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 56 -> 55
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 55 -> 54
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 54 -> 53
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 53 -> 52
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 52 -> 51
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 51 -> 50
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2206 🎨 Change coin for player 1
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2871 🔧 Forced material reset to: Graphite
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2874 🎨 Auto-selecting: Coin="Classic", Material="Graphite" (ID: graphite)
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2884 ✅ Auto-selected coin: Classic
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2894 ✅ Auto-selected material: Graphite
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 50 -> 49
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2915 Coin design selected: Jestress
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 49 -> 48
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3023 ✅ Applied Jestress with Graphite material to Koda 's coin
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3039 🎯 Sent coin update to server: Jestress
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:488 🪙 Coin update received: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:836 🪙 Updating coin for player 1: Jestress
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:869 ✅ Applied Jestress with Graphite material to Koda 's coin
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 48 -> 47
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 47 -> 46
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 46 -> 45
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 45 -> 44
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:488 🪙 Coin update received: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:836 🪙 Updating coin for player 2: Calavera
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:869 ✅ Applied Calavera with Graphite material to Lola 's coin
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 44 -> 43
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2234 ❌ Player 1 must choose heads or tails first!
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 43 -> 42
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2264 ⚡ Power released at 0%
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2279 📢 Broadcast: Player 1 stopped charging at 0%
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 42 -> 41
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2195 🎯 Sent choice to server: heads
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2387 Player 1 selected: heads
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2399 🎯 Sent choice to server: heads
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:482 🎯 Player choice update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:891 🎯 Updating player choice: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:908 ✅ Updated player 1 choice to: heads
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:482 🎯 Player choice update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:891 🎯 Updating player choice: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:908 ✅ Updated player 1 choice to: heads
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 41 -> 40
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2241 ⚡ Charging power for tube 1
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2257 📢 Broadcast: Player 1 started charging
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1049 Audio play prevented: NotSupportedError: The element has no supported sources.
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 40 -> 39
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2264 ⚡ Power released at 46%
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2279 📢 Broadcast: Player 1 stopped charging at 46.20000000000007%
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:2297 🪙 Sent flip request to server: power=46.20000000000007, choice=heads
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:500 💥 Glass shatter: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3059 💥 Shattering glass for tube 1 at 46% power
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3172 💥 Glass shattered! 47 shards + 80 liquid particles at 46% power
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1049 Audio play prevented: NotSupportedError: The element has no supported sources.
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:377 🪙 Coin flip started: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:691 🎁 Received flip reward data: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:692 🎁 Full data object: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1007 🎬 Starting visual coin flip for slot 0: duration=4772.000000000004ms, speed=0.33100000000000035
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3214 💰 Player 1 earned 500 FLIP!
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3224 🎯 Sent FLIP token award to server: 500 tokens
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:425 💰 FLIP tokens awarded: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 39 -> 38
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 38 -> 37
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 37 -> 36
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 36 -> 35
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 35 -> 34
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1029 🎬 Visual flip animation complete for slot 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:382 🎲 Coin flip result: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:726 ✅ Coin 1 landed on tails facing camera (server-side)
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3516 💔 Player 1 LOST - Lives remaining: 2
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3461 💊 Updated lives display for player 1: 2 lives remaining
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3461 💊 Updated lives display for player 1: 2 lives remaining
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:407 ⚡ Received charging stop: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:413 🛑 Stopped pearl animation for tube 2 at 0%
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 34 -> 33
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:482 🎯 Player choice update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:891 🎯 Updating player choice: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:908 ✅ Updated player 2 choice to: heads
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:482 🎯 Player choice update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:891 🎯 Updating player choice: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:908 ✅ Updated player 2 choice to: heads
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:393 ⚡ Received charging start: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:400 🌊 Started pearl animation for tube 2
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 33 -> 32
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 32 -> 31
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:407 ⚡ Received charging stop: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:413 🛑 Stopped pearl animation for tube 2 at 46.20000000000007%
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:500 💥 Glass shatter: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3059 💥 Shattering glass for tube 2 at 46% power
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3172 💥 Glass shattered! 47 shards + 80 liquid particles at 46% power
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1049 Audio play prevented: NotSupportedError: The element has no supported sources.
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:377 🪙 Coin flip started: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:691 🎁 Received flip reward data: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:692 🎁 Full data object: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1007 🎬 Starting visual coin flip for slot 1: duration=4772.000000000004ms, speed=0.33100000000000035
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3214 💰 Player 2 earned 50 FLIP!
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 31 -> 30
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 30 -> 29
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5148 📐 Resized to 1920x877
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 29 -> 28
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 28 -> 27
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 27 -> 26
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:1029 🎬 Visual flip animation complete for slot 1
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:382 🎲 Coin flip result: Object
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:726 ✅ Coin 2 landed on heads facing camera (server-side)
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:3505 🎉 Player 2 WON! Lives remain: 3
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:5148 📐 Resized to 1543x877
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 26 -> 60
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 60 -> 59
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 59 -> 58
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 58 -> 57
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 57 -> 56
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 56 -> 55
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 55 -> 54
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 54 -> 53
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 53 -> 52
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 52 -> 51
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 51 -> 50
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 50 -> 49
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 49 -> 48
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 48 -> 47
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 47 -> 46
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 46 -> 45
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 45 -> 44
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 44 -> 43
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 43 -> 42
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 42 -> 41
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 41 -> 40
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 40 -> 39
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 39 -> 38
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 38 -> 37
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:371 📊 Received physics state update: {gameId: 'physics_1761045602185_69a03a7471fc10a8', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:541 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:975 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761045602185_69a03a7471fc10a8:593 ⏱️ Server timer update: 37 -> 36

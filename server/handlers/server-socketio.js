@@ -374,6 +374,7 @@ initialize(server, dbService) {
             return
           }
           this.physicsGameManager.startGame(gameId, (room, event, payload) => {
+            console.log(`📡 Broadcasting to room ${room}:`, { event, payload: { phase: payload?.phase, currentRound: payload?.currentRound } })
             this.io.to(room).emit(event, payload)
           })
           return
@@ -735,6 +736,7 @@ initialize(server, dbService) {
           return
         }
         this.physicsGameManager.startGame(gameId, (room, event, payload) => {
+          console.log(`📡 Broadcasting to room ${room}:`, { event, payload: { phase: payload?.phase, currentRound: payload?.currentRound } })
           this.io.to(room).emit(event, payload)
         })
       }))
