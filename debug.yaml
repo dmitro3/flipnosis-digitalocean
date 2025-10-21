@@ -1,922 +1,260 @@
-🔍 No wallet in URL, trying localStorage: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:275 🔍 Wallet detection debug: {urlParam: null, localStorage: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', ethereum: null, final: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1057 📷 Camera positioned for shorter tubes with dual-layer support
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1071 🎨 WebGL Renderer initialized with transparency
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1107 ✨ Selective bloom composer created for layer 1 (pearls)!
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1135 🎨 Additive blend shader created for compositing!
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1228 🎨 Brass metallic textures loaded
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1276 ⚙️ Physics world created with gravity
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1411 ⚙️ Sealed physics container created for tube 1
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1665 🎯 Initial Player 1 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1986 ✅ Applied default Classic with  material to Empty's coin
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1411 ⚙️ Sealed physics container created for tube 2
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1665 🎯 Initial Player 2 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1986 ✅ Applied default Classic with  material to Empty's coin
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1411 ⚙️ Sealed physics container created for tube 3
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1665 🎯 Initial Player 3 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1986 ✅ Applied default Classic with  material to Empty's coin
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1411 ⚙️ Sealed physics container created for tube 4
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1665 🎯 Initial Player 4 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1986 ✅ Applied default Classic with  material to Empty's coin
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2015 🎮 Game started - applying default coin selections to all players...
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3847 ✅ Game loaded! Hold CHARGE POWER button to fill tubes!
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3848 💡 Call resetRound() to start a new round
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3849 ⏱️ Call startTimer() to begin the countdown
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3966 🔍 Raw participants data: (2) [{…}, {…}]
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3985 👤 Slot 1: {raw: {…}, processed: {…}}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3985 👤 Slot 2: {raw: {…}, processed: {…}}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3971 📭 Slot 3: Empty
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3971 📭 Slot 4: Empty
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3994 📊 Participants mapped: (4) [{…}, {…}, {…}, {…}]
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3853 🔄 Updating player cards with real data...
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3856 🔍 Tube 1: {hasCardElement: true, player: 'Koda '}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3863 🎯 Player 1 button logic (DEBUGGING MODE): {playerAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isEmpty: false, showButtons: true}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3874 📝 Updating player 1: {name: 'Koda ', address: '0xdd6377919ef1ad4babbead667efe3f6607558628', isEmpty: false}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3902 🎯 Player 1 empty slot logic: {isEmpty: false, hasExistingOverlay: true, playerName: 'Koda ', playerAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3911 🧹 Removing existing overlay from player slot 1
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3856 🔍 Tube 2: {hasCardElement: true, player: 'Lola '}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3863 🎯 Player 2 button logic (DEBUGGING MODE): {playerAddress: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6', isEmpty: false, showButtons: true}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3874 📝 Updating player 2: {name: 'Lola ', address: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6', isEmpty: false}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3902 🎯 Player 2 empty slot logic: {isEmpty: false, hasExistingOverlay: true, playerName: 'Lola ', playerAddress: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3911 🧹 Removing existing overlay from player slot 2
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3856 🔍 Tube 3: {hasCardElement: true, player: 'Empty'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3863 🎯 Player 3 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3874 📝 Updating player 3: {name: 'Empty', address: '', isEmpty: true}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3902 🎯 Player 3 empty slot logic: {isEmpty: true, hasExistingOverlay: true, playerName: 'Empty', playerAddress: ''}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3911 🧹 Removing existing overlay from player slot 3
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3917 ➕ Adding pink X overlay to empty slot 3
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3856 🔍 Tube 4: {hasCardElement: true, player: 'Empty'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3863 🎯 Player 4 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3874 📝 Updating player 4: {name: 'Empty', address: '', isEmpty: true}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3902 🎯 Player 4 empty slot logic: {isEmpty: true, hasExistingOverlay: true, playerName: 'Empty', playerAddress: ''}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3911 🧹 Removing existing overlay from player slot 4
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3917 ➕ Adding pink X overlay to empty slot 4
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2269 ⏱️ Timer started!
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4278 🎬 Frame 1 - Layer 0 mask: 1 Should be 1 for layer 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4286 ✅ Main scene (layer 0) rendered to screen
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4294 🎬 Frame 1 - Layer 1 mask: 2 Should be 2 for layer 1
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4301 ✅ Pearls (layer 1) rendered to bloom buffer
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4302 🔍 Bloom composer render target: Found
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4303 🔍 Bloom composer read buffer: Found
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4313 🎨 Bloom texture: Found
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4315 🎨 Bloom texture details: {width: 1543, height: 877, format: 1023, type: 1016}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4331 🔍 Tube 1 has 80 visible pearls on layer 1
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4331 🔍 Tube 2 has 80 visible pearls on layer 1
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4331 🔍 Tube 3 has 80 visible pearls on layer 1
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4331 🔍 Tube 4 has 80 visible pearls on layer 1
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4334 🔍 Total visible pearls on layer 1: 320
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4359 ✨ Bloom composite quad created!
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4386 ✅ Bloomed pearls composited on top
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4387 🎉 Selective bloom rendering complete!
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:304 ✅ Connected to server
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4021  POST https://flipnosis.fun/api/battle-royale/physics_1760699099140_aeda86a53ddfd946/join 400 (Bad Request)
-(anonymous) @ test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4021
-(anonymous) @ test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4035Understand this error
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1044 🖼️ Background image loaded! Size: 1791x1018 at distance 1900
-2test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2049 ✅ Applied default Classic with  material to Empty's coin
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1975 ✅ Applied default Classic textures to Empty's coin
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2049 ✅ Applied default Classic with  material to Empty's coin
-2test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1975 ✅ Applied default Classic textures to Empty's coin
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2049 ✅ Applied default Classic with  material to Empty's coin
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1975 ✅ Applied default Classic textures to Empty's coin
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4030 ⚠️ Join failed: Player already joined this game
-(anonymous) @ test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4030
-await in (anonymous)
-(anonymous) @ test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4035Understand this warning
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3059 💊 Updated lives display for player 1: 2 lives remaining
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3059 💊 Updated lives display for player 2: 2 lives remaining
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:364 🎯 Player choice update: {address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', playerSlot: 1, choice: 'heads', gameId: 'physics_1760699099140_aeda86a53ddfd946'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:725 🎯 Updating player choice: {address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', playerSlot: 1, choice: 'heads', gameId: 'physics_1760699099140_aeda86a53ddfd946'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:742 ✅ Updated player 2 choice to: heads
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:364 🎯 Player choice update: {address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', playerSlot: 1, choice: 'heads', gameId: 'physics_1760699099140_aeda86a53ddfd946'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:725 🎯 Updating player choice: {address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', playerSlot: 1, choice: 'heads', gameId: 'physics_1760699099140_aeda86a53ddfd946'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:742 ✅ Updated player 2 choice to: heads
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:382 💥 Glass shatter: {gameId: 'physics_1760699099140_aeda86a53ddfd946', playerSlot: 1, power: 33.000000000000036}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2660 💥 Shattering glass for tube 2 at 33% power
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2773 💥 Glass shattered! 39 shards + 80 liquid particles at 33% power
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:883 Audio play prevented: NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:327 🪙 Coin flip started: {gameId: 'physics_1760699099140_aeda86a53ddfd946', playerAddress: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', playerSlot: 1, power: 33.000000000000036, angle: 0, …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:841 🎬 Starting visual coin flip for slot 1: duration=3980.000000000002ms, speed=NaN
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2815 💰 Player 2 earned 100 FLIP!
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:863 🎬 Visual flip animation complete for slot 1
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1758 🎯 Sent choice to server: tails
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1917 Player 1 selected: tails
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1929 🎯 Sent choice to server: tails
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:364 🎯 Player choice update: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', playerSlot: 0, choice: 'tails', gameId: 'physics_1760699099140_aeda86a53ddfd946'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:725 🎯 Updating player choice: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', playerSlot: 0, choice: 'tails', gameId: 'physics_1760699099140_aeda86a53ddfd946'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:742 ✅ Updated player 1 choice to: tails
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:364 🎯 Player choice update: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', playerSlot: 0, choice: 'tails', gameId: 'physics_1760699099140_aeda86a53ddfd946'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:725 🎯 Updating player choice: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', playerSlot: 0, choice: 'tails', gameId: 'physics_1760699099140_aeda86a53ddfd946'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:742 ✅ Updated player 1 choice to: tails
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:332 🎲 Coin flip result: {gameId: 'physics_1760699099140_aeda86a53ddfd946', playerAddress: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', playerSlot: 1, result: 'heads', won: true, …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:596 ✅ Coin 2 landed on heads facing camera (server-side)
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3084 🎉 Player 2 WON! Lives remain: 2
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1804 ⚡ Charging power for tube 1
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:883 Audio play prevented: NotSupportedError: The element has no supported sources.
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=0.6%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.006, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=1.2%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.012, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=1.7999999999999998%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.018, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=2.4%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.024, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3185 🔍 Checking all players flipped: NO (1/2 players done)
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=3%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.03, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=3.6%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.036000000000000004, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=4.2%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.042, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=4.8%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.048, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=5.3999999999999995%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.05399999999999999, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=5.999999999999999%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.05999999999999999, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=6.599999999999999%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.06599999999999999, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=7.199999999999998%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.07199999999999998, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=7.799999999999998%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.07799999999999999, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=8.399999999999999%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.08399999999999999, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=8.999999999999998%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.08999999999999998, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=9.599999999999998%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.09599999999999997, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=10.199999999999998%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.10199999999999998, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=10.799999999999997%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.10799999999999997, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=11.399999999999997%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.11399999999999996, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=11.999999999999996%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.11999999999999997, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=12.599999999999996%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.12599999999999997, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=13.199999999999996%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.13199999999999995, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=13.799999999999995%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.13799999999999996, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=14.399999999999995%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.14399999999999996, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=14.999999999999995%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.14999999999999994, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=15.599999999999994%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.15599999999999994, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=16.199999999999996%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.16199999999999995, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=16.799999999999997%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.16799999999999998, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=17.4%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.174, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=18%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.18, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=18.6%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.18600000000000003, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=19.200000000000003%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.19200000000000003, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=19.800000000000004%, level=1, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.19800000000000004, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=20.400000000000006%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.20400000000000007, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=21.000000000000007%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.21000000000000008, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=21.60000000000001%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.21600000000000008, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=22.20000000000001%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.2220000000000001, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=22.80000000000001%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.22800000000000012, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=23.400000000000013%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.23400000000000012, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=24.000000000000014%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.24000000000000013, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=24.600000000000016%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.24600000000000016, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=25.200000000000017%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.25200000000000017, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=25.80000000000002%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.2580000000000002, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=26.40000000000002%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.2640000000000002, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=27.00000000000002%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.27000000000000024, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=27.600000000000023%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.27600000000000025, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=28.200000000000024%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.28200000000000025, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=28.800000000000026%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.28800000000000026, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=29.400000000000027%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.29400000000000026, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=30.00000000000003%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.30000000000000027, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=30.60000000000003%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.30600000000000027, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=31.20000000000003%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.31200000000000033, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=31.800000000000033%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.31800000000000034, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=32.400000000000034%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.32400000000000034, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=33.000000000000036%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.33000000000000035, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=33.60000000000004%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.33600000000000035, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=34.20000000000004%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.34200000000000036, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=34.80000000000004%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.3480000000000004, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=35.40000000000004%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.3540000000000004, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=36.00000000000004%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.36000000000000043, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=36.600000000000044%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.36600000000000044, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=37.200000000000045%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.37200000000000044, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4082 ⚡ Broadcasting power charging to server: power=37.80000000000005%, level=2, slot=0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4158 ⚡ LOCAL pearl animation for tube 1: foamIntensity=0.37800000000000045, isFilling=true, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1816 ⚡ Power released at 38%
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1838 🪙 Sent flip request to server: power=37.80000000000005, choice=tails
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4152 🌊 REMOTE pearl animation for tube 1: foamIntensity=0.37800000000000045, isFilling=false, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4153 🌊 Animating 80 pearls with forces: buoyancy=302.4000000000004, spin=453.60000000000053
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4152 🌊 REMOTE pearl animation for tube 1: foamIntensity=0.37800000000000045, isFilling=false, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4153 🌊 Animating 80 pearls with forces: buoyancy=302.4000000000004, spin=453.60000000000053
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4152 🌊 REMOTE pearl animation for tube 1: foamIntensity=0.37800000000000045, isFilling=false, isShattered=false
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4153 🌊 Animating 80 pearls with forces: buoyancy=302.4000000000004, spin=453.60000000000053
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:382 💥 Glass shatter: {gameId: 'physics_1760699099140_aeda86a53ddfd946', playerSlot: 0, power: 37.80000000000005}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2660 💥 Shattering glass for tube 1 at 38% power
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2773 💥 Glass shattered! 42 shards + 80 liquid particles at 38% power
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:883 Audio play prevented: NotSupportedError: The element has no supported sources.
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:327 🪙 Coin flip started: {gameId: 'physics_1760699099140_aeda86a53ddfd946', playerAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', playerSlot: 0, power: 37.80000000000005, angle: 0, …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:841 🎬 Starting visual coin flip for slot 0: duration=4268.000000000003ms, speed=NaN
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2815 💰 Player 1 earned 50 FLIP!
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2825 🎯 Sent FLIP token award to server: 50 tokens
-3test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4142 🚫 Pearl animation BLOCKED for tube 1: foamIntensity=0.37800000000000045 but isShattered=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:348 💰 FLIP tokens awarded: {success: false, error: 'Failed to award FLIP tokens'}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:353 ❌ Failed to award FLIP tokens: Failed to award FLIP tokens
-(anonymous) @ test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:353
-Emitter.emit @ index.js:136
-emitEvent @ socket.js:553
-onevent @ socket.js:540
-onpacket @ socket.js:508
-Emitter.emit @ index.js:136
-(anonymous) @ manager.js:217
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:216
-Emitter.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:203
-Emitter.emit @ index.js:136
-_onPacket @ socket.js:259
-Emitter.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-242test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4142 🚫 Pearl animation BLOCKED for tube 1: foamIntensity=0.37800000000000045 but isShattered=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
-11test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4142 🚫 Pearl animation BLOCKED for tube 1: foamIntensity=0.37800000000000045 but isShattered=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:863 🎬 Visual flip animation complete for slot 0
-5test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4142 🚫 Pearl animation BLOCKED for tube 1: foamIntensity=0.37800000000000045 but isShattered=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:332 🎲 Coin flip result: {gameId: 'physics_1760699099140_aeda86a53ddfd946', playerAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', playerSlot: 0, result: 'tails', won: true, …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:596 ✅ Coin 1 landed on tails facing camera (server-side)
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3084 🎉 Player 1 WON! Lives remain: 2
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3059 💊 Updated lives display for player 1: 2 lives remaining
-2test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4142 🚫 Pearl animation BLOCKED for tube 1: foamIntensity=0.37800000000000045 but isShattered=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
-32test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4142 🚫 Pearl animation BLOCKED for tube 1: foamIntensity=0.37800000000000045 but isShattered=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3185 🔍 Checking all players flipped: YES (2/2 players done)
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3189 🎯 ALL living players have completed their flips! Starting 5-second countdown to next round...
-269test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4142 🚫 Pearl animation BLOCKED for tube 1: foamIntensity=0.37800000000000045 but isShattered=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:321 📊 Received physics state update: {gameId: 'physics_1760699099140_aeda86a53ddfd946', creator: '0xdd6377919ef1ad4babbead667efe3f6607558628', maxPlayers: 6, currentPlayers: 2, phase: 'round_active', …}
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:424 🎮 Player slot: 0
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:809 🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
-30test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:4142 🚫 Pearl animation BLOCKED for tube 1: foamIntensity=0.37800000000000045 but isShattered=true
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3204 🔍 Checking game end... Remaining players: 2
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3245 ➡️ Proceeding to next round...
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2343 📊 Starting Round 10
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2347 📊 Round 10 starting lives: (4) [2, 2, 0, 0]
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:3839 🔄 Round reset! Ready for next flip!
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2296 ⏱️ Timer reset
-test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:2269 ⏱️ Timer started!
+Hi Opus, today I would like to examine something. When a user creates a game, how does it assign the ownership of the nft. Then during a game, in the test-tubes.html page, how does it see the owner. And finally when the game is concluded is there a function to transfer ownership from the current user or from the game to the winnerYou're going to have to read every line of my code to understand this. So please dont take shortcuts. the solution is probably multifacted so dont just stop at the first thing you see, ther emay be multiple issues or concerns. If you need to see the game lobby, let me know and I'll addI'll help you examine the NFT ownership flow in your game system. Let me start by searching through your project knowledge to understand the codebase structure and then trace through the ownership assignment, verification, and transfer mechanisms.Searched project for “NFT ownership transfer game winner test-tubes”2 resultstest-tubes.html7 relevant sectionstextCreateBattle.jsxtextLet me search for more specific information about NFT ownership creation and transfer mechanics.Searched project for “createBattleRoyale NFT deposit transfer ownership contract”2 resultsCreateBattle.jsx7 relevant sectionstexttest-tubes.htmltextLet me search for contract service and smart contract interactions for NFT ownership.Searched project for “contractService smart contract NFT ownership approve transfer claimNFT”2 resultsCreateBattle.jsx6 relevant sectionstexttest-tubes.html2 relevant sectionstextNow let me search for the server-side battle royale backend code and game state management.Searched project for “server battle-royale game winner ownership database nft transfer”2 resultsCreateBattle.jsx7 relevant sectionstexttest-tubes.htmltextNow let me search for the ContractService implementation to understand how NFT ownership transfer works.Searched project for “ContractService.js createBattleRoyale claimNFT approve transfer gameContract”2 resultsCreateBattle.jsx6 relevant sectionstexttest-tubes.html2 relevant sectionstextLet me search for more backend code and server-side game management, particularly focusing on the socket events and game conclusion logic.Searched project for “socket emit claim_nft game_over winner transfer server battle-royale”2 resultsCreateBattle.jsx5 relevant sectionstexttest-tubes.html3 relevant sectionstextNow I need to find the actual ContractService.js file to see the smart contract interaction methods.Searched project for “ContractService implementation approve safeTransferFrom NFT ERC721 contract methods”2 resultsCreateBattle.jsx7 relevant sectionstexttest-tubes.htmltextNow let me look for the actual game lobby files to understand how ownership is tracked during the game.Searched project for “BattleLobby game state players owner see ownership verification”2 resultstest-tubes.html5 relevant sectionstextCreateBattle.jsx3 relevant sectionstextNow I should look for if there is a game lobby page to understand how ownership is displayed during the game. Let me also search for smart contract or server files.Searched project for “BattleLobby.jsx lobby game NFT display owner creator participant”1 resultCreateBattle.jsx8 relevant sectionstextNow I'll examine if I can find a lobby page, since the code mentions navigating to /battle-royale/${battleRoyaleResult.gameId}.Searched project for “game start button BattleLobby creator participants waiting room”2 resultstest-tubes.html3 relevant sectionstextCreateBattle.jsx5 relevant sectionstextI need to find the actual game lobby file or server files that handle the NFT transfer. Let me search more specifically.Searched project for “services ContractService.js claimBattleRoyaleNFT transferNFT”2 resultsCreateBattle.jsx5 relevant sectionstexttest-tubes.html3 relevant sectionstextBased on my comprehensive analysis of your codebase, I can now provide you with a detailed examination of how NFT ownership is handled in your game system. Here are my findings:
+NFT Ownership Flow Analysis
+1. NFT Creation & Initial Ownership Assignment
+When a user creates a game, the NFT ownership process works as follows:
+In CreateBattle.jsx:
 
-and player 2
+The creator selects an NFT from their wallet
+They call contractService.createBattleRoyale() which:
 
-SES Removing unpermitted intrinsics lockdown-install.js:1:203117
-  Removing intrinsics.%MapPrototype%.getOrInsert lockdown-install.js:1:202962
-  Removing intrinsics.%MapPrototype%.getOrInsertComputed lockdown-install.js:1:202962
-  Removing intrinsics.%WeakMapPrototype%.getOrInsert lockdown-install.js:1:202962
-  Removing intrinsics.%WeakMapPrototype%.getOrInsertComputed lockdown-install.js:1:202962
-  Removing intrinsics.%DatePrototype%.toTemporalInstant lockdown-install.js:1:202962
-[PHANTOM] error updating cache Error: Could not establish connection. Receiving end does not exist.
-    Jc moz-extension://41c670b8-e6b3-4374-951a-6677fb14bb6c/contentScript.js:9
-contentScript.js:9:169988
-Error: Could not establish connection. Receiving end does not exist.
-    xc moz-extension://41c670b8-e6b3-4374-951a-6677fb14bb6c/solanaActionsContentScript.js:27
+Approves the smart contract to transfer the NFT
+Deposits the NFT into the game contract
+The NFT is now owned by the smart contract, not the creator
 
-[PHANTOM] error updating cache Error: Could not establish connection. Receiving end does not exist.
-    Jc moz-extension://41c670b8-e6b3-4374-951a-6677fb14bb6c/contentScript.js:9
-contentScript.js:9:169988
-🔍 No wallet in URL, trying localStorage: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 test-tubes.html:266:15
-🔍 Wallet detection debug: 
-Object { urlParam: null, localStorage: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", ethereum: null, final: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6" }
-test-tubes.html:275:15
-📷 Camera positioned for shorter tubes with dual-layer support test-tubes.html:1057:13
-🎨 WebGL Renderer initialized with transparency test-tubes.html:1071:13
-✨ Selective bloom composer created for layer 1 (pearls)! test-tubes.html:1107:13
-🎨 Additive blend shader created for compositing! test-tubes.html:1135:13
-🎨 Brass metallic textures loaded test-tubes.html:1228:13
-⚙️ Physics world created with gravity test-tubes.html:1276:13
-⚙️ Sealed physics container created for tube 1 test-tubes.html:1411:15
-🎯 Initial Player 1 button logic (DEBUGGING MODE): 
-Object { playerAddress: "", isEmpty: true, showButtons: false }
-test-tubes.html:1665:15
-✅ Applied default Classic with  material to Empty's coin test-tubes.html:1986:15
-⚙️ Sealed physics container created for tube 2 test-tubes.html:1411:15
-🎯 Initial Player 2 button logic (DEBUGGING MODE): 
-Object { playerAddress: "", isEmpty: true, showButtons: false }
-test-tubes.html:1665:15
-✅ Applied default Classic with  material to Empty's coin test-tubes.html:1986:15
-⚙️ Sealed physics container created for tube 3 test-tubes.html:1411:15
-🎯 Initial Player 3 button logic (DEBUGGING MODE): 
-Object { playerAddress: "", isEmpty: true, showButtons: false }
-test-tubes.html:1665:15
-✅ Applied default Classic with  material to Empty's coin test-tubes.html:1986:15
-⚙️ Sealed physics container created for tube 4 test-tubes.html:1411:15
-🎯 Initial Player 4 button logic (DEBUGGING MODE): 
-Object { playerAddress: "", isEmpty: true, showButtons: false }
-test-tubes.html:1665:15
-✅ Applied default Classic with  material to Empty's coin test-tubes.html:1986:15
-🎮 Game started - applying default coin selections to all players... test-tubes.html:2015:13
-✅ Game loaded! Hold CHARGE POWER button to fill tubes! test-tubes.html:3847:13
-💡 Call resetRound() to start a new round test-tubes.html:3848:13
-⏱️ Call startTimer() to begin the countdown test-tubes.html:3849:13
-🔍 Raw participants data: 
-Array [ {…}, {…} ]
-test-tubes.html:3966:17
-👤 Slot 1: 
-Object { raw: {…}, processed: {…} }
-test-tubes.html:3985:19
-👤 Slot 2: 
-Object { raw: {…}, processed: {…} }
-test-tubes.html:3985:19
-📭 Slot 3: Empty test-tubes.html:3971:21
-📭 Slot 4: Empty test-tubes.html:3971:21
-📊 Participants mapped: 
-Array(4) [ {…}, {…}, {…}, {…} ]
-test-tubes.html:3994:17
-🔄 Updating player cards with real data... test-tubes.html:3853:15
-🔍 Tube 1: 
-Object { hasCardElement: true, player: "Koda " }
-test-tubes.html:3856:17
-🎯 Player 1 button logic (DEBUGGING MODE): 
-Object { playerAddress: "0xdd6377919ef1ad4babbead667efe3f6607558628", isEmpty: false, showButtons: true }
-test-tubes.html:3863:17
-📝 Updating player 1: 
-Object { name: "Koda ", address: "0xdd6377919ef1ad4babbead667efe3f6607558628", isEmpty: false }
-test-tubes.html:3874:17
-🎯 Player 1 empty slot logic: 
-Object { isEmpty: false, hasExistingOverlay: true, playerName: "Koda ", playerAddress: "0xdd6377919ef1ad4babbead667efe3f6607558628" }
-test-tubes.html:3902:17
-🧹 Removing existing overlay from player slot 1 test-tubes.html:3911:19
-🔍 Tube 2: 
-Object { hasCardElement: true, player: "Lola " }
-test-tubes.html:3856:17
-🎯 Player 2 button logic (DEBUGGING MODE): 
-Object { playerAddress: "0xf51d1e69b6857de81432d0d628c45b27dbce97b6", isEmpty: false, showButtons: true }
-test-tubes.html:3863:17
-📝 Updating player 2: 
-Object { name: "Lola ", address: "0xf51d1e69b6857de81432d0d628c45b27dbce97b6", isEmpty: false }
-test-tubes.html:3874:17
-🎯 Player 2 empty slot logic: 
-Object { isEmpty: false, hasExistingOverlay: true, playerName: "Lola ", playerAddress: "0xf51d1e69b6857de81432d0d628c45b27dbce97b6" }
-test-tubes.html:3902:17
-🧹 Removing existing overlay from player slot 2 test-tubes.html:3911:19
-🔍 Tube 3: 
-Object { hasCardElement: true, player: "Empty" }
-test-tubes.html:3856:17
-🎯 Player 3 button logic (DEBUGGING MODE): 
-Object { playerAddress: "", isEmpty: true, showButtons: false }
-test-tubes.html:3863:17
-📝 Updating player 3: 
-Object { name: "Empty", address: "", isEmpty: true }
-test-tubes.html:3874:17
-🎯 Player 3 empty slot logic: 
-Object { isEmpty: true, hasExistingOverlay: true, playerName: "Empty", playerAddress: "" }
-test-tubes.html:3902:17
-🧹 Removing existing overlay from player slot 3 test-tubes.html:3911:19
-➕ Adding pink X overlay to empty slot 3 test-tubes.html:3917:19
-🔍 Tube 4: 
-Object { hasCardElement: true, player: "Empty" }
-test-tubes.html:3856:17
-🎯 Player 4 button logic (DEBUGGING MODE): 
-Object { playerAddress: "", isEmpty: true, showButtons: false }
-test-tubes.html:3863:17
-📝 Updating player 4: 
-Object { name: "Empty", address: "", isEmpty: true }
-test-tubes.html:3874:17
-🎯 Player 4 empty slot logic: 
-Object { isEmpty: true, hasExistingOverlay: true, playerName: "Empty", playerAddress: "" }
-test-tubes.html:3902:17
-🧹 Removing existing overlay from player slot 4 test-tubes.html:3911:19
-➕ Adding pink X overlay to empty slot 4 test-tubes.html:3917:19
-⏱️ Timer started! test-tubes.html:2269:15
-🎬 Frame 1 - Layer 0 mask: 1 Should be 1 for layer 0 test-tubes.html:4278:17
-✅ Main scene (layer 0) rendered to screen test-tubes.html:4286:17
-🎬 Frame 1 - Layer 1 mask: 2 Should be 2 for layer 1 test-tubes.html:4294:17
-✅ Pearls (layer 1) rendered to bloom buffer test-tubes.html:4301:17
-🔍 Bloom composer render target: Found test-tubes.html:4302:17
-🔍 Bloom composer read buffer: Found test-tubes.html:4303:17
-🎨 Bloom texture: Found test-tubes.html:4313:17
-🎨 Bloom texture details: 
-Object { width: 1280, height: 587, format: 1023, type: 1016 }
-test-tubes.html:4315:19
-🔍 Tube 1 has 80 visible pearls on layer 1 test-tubes.html:4331:21
-🔍 Tube 2 has 80 visible pearls on layer 1 test-tubes.html:4331:21
-🔍 Tube 3 has 80 visible pearls on layer 1 test-tubes.html:4331:21
-🔍 Tube 4 has 80 visible pearls on layer 1 test-tubes.html:4331:21
-🔍 Total visible pearls on layer 1: 320 test-tubes.html:4334:17
-✨ Bloom composite quad created! test-tubes.html:4359:17
-✅ Bloomed pearls composited on top test-tubes.html:4386:17
-🎉 Selective bloom rendering complete! test-tubes.html:4387:17
-HTTP “Content-Type” of “text/html” is not supported. Load of media resource https://www.flipnosis.fun/Sound/glassclipped.mp3 failed. test-tubes.html
-HTTP “Content-Type” of “text/html” is not supported. Load of media resource https://www.flipnosis.fun/Sound/powerclipped.mp3 failed. test-tubes.html
-WebGL warning: generateMipmap: Tex image TEXTURE_2D level 0 is incurring lazy initialization.
-🖼️ Background image loaded! Size: 2220x1018 at distance 1900 test-tubes.html:1044:15
-✅ Applied default Classic textures to Empty's coin test-tubes.html:1975:19
-✅ Applied default Classic with  material to Empty's coin test-tubes.html:2049:19
-✅ Applied default Classic textures to Empty's coin 2 test-tubes.html:1975:19
-✅ Applied default Classic with  material to Empty's coin test-tubes.html:2049:19
-✅ Applied default Classic textures to Empty's coin test-tubes.html:1975:19
-✅ Applied default Classic with  material to Empty's coin 2 test-tubes.html:2049:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-⚠️ Join failed: Player already joined this game test-tubes.html:4030:19
-✅ Connected to server test-tubes.html:304:17
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 7, roundTimer: 5, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-💊 Updated lives display for player 1: 2 lives remaining test-tubes.html:3059:15
-💊 Updated lives display for player 2: 2 lives remaining test-tubes.html:3059:15
-📐 Resized to 500x527 test-tubes.html:4414:15
-WebGL warning: generateMipmap: Tex image TEXTURE_2D level 0 is incurring lazy initialization.
-Cannot play media. No decoders for requested formats: text/html, text/html test-tubes.html
-📐 Resized to 1920x995 test-tubes.html:4414:15
-WebGL warning: generateMipmap: Tex image TEXTURE_2D level 0 is incurring lazy initialization.
-📐 Resized to 1590x995 test-tubes.html:4414:15
-WebGL warning: generateMipmap: Tex image TEXTURE_2D level 0 is incurring lazy initialization.
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 7, roundTimer: 0, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-⏱️ Timer started! test-tubes.html:2269:15
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 60, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 55, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 50, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 45, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 40, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 35, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 30, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 25, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 20, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-🎯 Sent choice to server: heads test-tubes.html:1758:21
-Player 2 selected: heads test-tubes.html:1917:21
-🎯 Sent choice to server: heads test-tubes.html:1929:23
-🎯 Player choice update: 
-Object { address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", playerSlot: 1, choice: "heads", gameId: "physics_1760699099140_aeda86a53ddfd946" }
-test-tubes.html:364:17
-🎯 Updating player choice: 
-Object { address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", playerSlot: 1, choice: "heads", gameId: "physics_1760699099140_aeda86a53ddfd946" }
-test-tubes.html:725:15
-✅ Updated player 2 choice to: heads test-tubes.html:742:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 17, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=true test-tubes.html:809:19
-🎯 Player choice update: 
-Object { address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", playerSlot: 1, choice: "heads", gameId: "physics_1760699099140_aeda86a53ddfd946" }
-test-tubes.html:364:17
-🎯 Updating player choice: 
-Object { address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", playerSlot: 1, choice: "heads", gameId: "physics_1760699099140_aeda86a53ddfd946" }
-test-tubes.html:725:15
-✅ Updated player 2 choice to: heads test-tubes.html:742:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 17, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=true test-tubes.html:809:19
-⚡ Charging power for tube 2 test-tubes.html:1804:19
-Audio play prevented: DOMException: The media resource indicated by the src attribute or assigned media provider object was not suitable.
-    playSound https://www.flipnosis.fun/test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:883
-    <anonymous> https://www.flipnosis.fun/test-tubes.html?gameId=physics_1760699099140_aeda86a53ddfd946:1810
-test-tubes.html:883:43
-⚡ Broadcasting power charging to server: power=0.6%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.006, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=1.2%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.012, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=1.7999999999999998%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.018, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=2.4%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.024, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=3%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.03, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=3.6%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.036000000000000004, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=4.2%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.042, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=4.8%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.048, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=5.3999999999999995%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.05399999999999999, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=5.999999999999999%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.05999999999999999, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=6.599999999999999%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.06599999999999999, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=7.199999999999998%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.07199999999999998, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=7.799999999999998%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.07799999999999999, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=8.399999999999999%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.08399999999999999, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=8.999999999999998%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.08999999999999998, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=9.599999999999998%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.09599999999999997, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=10.199999999999998%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.10199999999999998, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=10.799999999999997%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.10799999999999997, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=11.399999999999997%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.11399999999999996, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=11.999999999999996%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.11999999999999997, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=12.599999999999996%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.12599999999999997, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=13.199999999999996%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.13199999999999995, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=13.799999999999995%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.13799999999999996, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=14.399999999999995%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.14399999999999996, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=14.999999999999995%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.14999999999999994, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=15.599999999999994%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.15599999999999994, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=16.199999999999996%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.16199999999999995, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=16.799999999999997%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.16799999999999998, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=17.4%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.174, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=18%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.18, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=18.6%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.18600000000000003, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=19.200000000000003%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.19200000000000003, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=19.800000000000004%, level=1, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.19800000000000004, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=20.400000000000006%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.20400000000000007, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=21.000000000000007%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.21000000000000008, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=21.60000000000001%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.21600000000000008, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=22.20000000000001%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.2220000000000001, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=22.80000000000001%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.22800000000000012, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=23.400000000000013%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.23400000000000012, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=24.000000000000014%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.24000000000000013, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=24.600000000000016%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.24600000000000016, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=25.200000000000017%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.25200000000000017, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=25.80000000000002%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.2580000000000002, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=26.40000000000002%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.2640000000000002, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=27.00000000000002%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.27000000000000024, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=27.600000000000023%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.27600000000000025, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=28.200000000000024%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.28200000000000025, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=28.800000000000026%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.28800000000000026, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=29.400000000000027%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.29400000000000026, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=30.00000000000003%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.30000000000000027, isFilling=true, isShattered=false test-tubes.html:4158:21
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 15, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=true test-tubes.html:809:19
-⚡ Broadcasting power charging to server: power=30.60000000000003%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.30600000000000027, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=31.20000000000003%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.31200000000000033, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=31.800000000000033%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.31800000000000034, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=32.400000000000034%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.32400000000000034, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Broadcasting power charging to server: power=33.000000000000036%, level=2, slot=1 test-tubes.html:4082:21
-⚡ LOCAL pearl animation for tube 2: foamIntensity=0.33000000000000035, isFilling=true, isShattered=false test-tubes.html:4158:21
-⚡ Power released at 33% test-tubes.html:1816:19
-🪙 Sent flip request to server: power=33.000000000000036, choice=heads test-tubes.html:1838:23
-🌊 REMOTE pearl animation for tube 2: foamIntensity=0.33000000000000035, isFilling=false, isShattered=false test-tubes.html:4152:21
-🌊 Animating 80 pearls with forces: buoyancy=264.0000000000003, spin=396.0000000000004 test-tubes.html:4153:21
-🌊 REMOTE pearl animation for tube 2: foamIntensity=0.33000000000000035, isFilling=false, isShattered=false test-tubes.html:4152:21
-🌊 Animating 80 pearls with forces: buoyancy=264.0000000000003, spin=396.0000000000004 test-tubes.html:4153:21
-🌊 REMOTE pearl animation for tube 2: foamIntensity=0.33000000000000035, isFilling=false, isShattered=false test-tubes.html:4152:21
-🌊 Animating 80 pearls with forces: buoyancy=264.0000000000003, spin=396.0000000000004 test-tubes.html:4153:21
-💥 Glass shatter: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", playerSlot: 1, power: 33.000000000000036 }
-test-tubes.html:382:17
-💥 Shattering glass for tube 2 at 33% power test-tubes.html:2660:15
-💥 Glass shattered! 39 shards + 80 liquid particles at 33% power test-tubes.html:2773:15
-Audio play prevented: DOMException: The media resource indicated by the src attribute or assigned media provider object was not suitable.
-    playSound test-tubes.html:883
-    shatterGlass test-tubes.html:2664
-    initializeSocket test-tubes.html:384
-    emit index.js:136
-    emitEvent socket.js:553
-    onevent socket.js:540
-    onpacket socket.js:508
-    emit index.js:136
-    ondecoded manager.js:217
-    promise callback*nextTick globals.js:4
-    ondecoded manager.js:216
-    emit index.js:136
-    add index.js:142
-    ondata manager.js:203
-    emit index.js:136
-    _onPacket socket.js:259
-    emit index.js:136
-    onPacket transport.js:99
-    onData transport.js:91
-    onmessage websocket.js:48
-test-tubes.html:883:43
-🪙 Coin flip started: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", playerAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", playerSlot: 1, power: 33.000000000000036, angle: 0, choice: "heads", duration: 3980.000000000002, flipReward: {…} }
-test-tubes.html:327:17
-🎬 Starting visual coin flip for slot 1: duration=3980.000000000002ms, speed=NaN test-tubes.html:841:15
-💰 Player 2 earned 100 FLIP! test-tubes.html:2815:15
-🎯 Sent FLIP token award to server: 100 tokens test-tubes.html:2825:17
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 2 test-tubes.html:4142:19
-💰 FLIP tokens awarded: 
-Object { success: false, error: "Failed to award FLIP tokens" }
-test-tubes.html:348:17
-❌ Failed to award FLIP tokens: Failed to award FLIP tokens test-tubes.html:353:19
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 116 test-tubes.html:4142:19
-🎬 Visual flip animation complete for slot 1 test-tubes.html:863:19
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 3 test-tubes.html:4142:19
-🎯 Player choice update: 
-Object { address: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", playerSlot: 0, choice: "tails", gameId: "physics_1760699099140_aeda86a53ddfd946" }
-test-tubes.html:364:17
-🎯 Updating player choice: 
-Object { address: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", playerSlot: 0, choice: "tails", gameId: "physics_1760699099140_aeda86a53ddfd946" }
-test-tubes.html:725:15
-✅ Updated player 1 choice to: tails test-tubes.html:742:19
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 2 test-tubes.html:4142:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 11, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=true test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=true test-tubes.html:809:19
-🎯 Player choice update: 
-Object { address: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", playerSlot: 0, choice: "tails", gameId: "physics_1760699099140_aeda86a53ddfd946" }
-test-tubes.html:364:17
-🎯 Updating player choice: 
-Object { address: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", playerSlot: 0, choice: "tails", gameId: "physics_1760699099140_aeda86a53ddfd946" }
-test-tubes.html:725:15
-✅ Updated player 1 choice to: tails test-tubes.html:742:19
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true test-tubes.html:4142:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 11, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=true test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=true test-tubes.html:809:19
-🎲 Coin flip result: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", playerAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", playerSlot: 1, result: "heads", won: true, lives: 2, isActive: true }
-test-tubes.html:332:17
-✅ Coin 2 landed on heads facing camera (server-side) test-tubes.html:596:19
-🎉 Player 2 WON! Lives remain: 2 test-tubes.html:3084:17
-💊 Updated lives display for player 2: 2 lives remaining test-tubes.html:3059:15
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 11, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=true test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=true test-tubes.html:809:19
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 24 test-tubes.html:4142:19
-🔍 Checking all players flipped: NO (1/2 players done) test-tubes.html:3185:15
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 4 test-tubes.html:4142:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 10, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=true test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=true test-tubes.html:809:19
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 40 test-tubes.html:4142:19
-💥 Glass shatter: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", playerSlot: 0, power: 37.80000000000005 }
-test-tubes.html:382:17
-💥 Shattering glass for tube 1 at 38% power test-tubes.html:2660:15
-💥 Glass shattered! 42 shards + 80 liquid particles at 38% power test-tubes.html:2773:15
-Audio play prevented: DOMException: The media resource indicated by the src attribute or assigned media provider object was not suitable.
-    playSound test-tubes.html:883
-    shatterGlass test-tubes.html:2664
-    initializeSocket test-tubes.html:384
-    emit index.js:136
-    emitEvent socket.js:553
-    onevent socket.js:540
-    onpacket socket.js:508
-    emit index.js:136
-    ondecoded manager.js:217
-    promise callback*nextTick globals.js:4
-    ondecoded manager.js:216
-    emit index.js:136
-    add index.js:142
-    ondata manager.js:203
-    emit index.js:136
-    _onPacket socket.js:259
-    emit index.js:136
-    onPacket transport.js:99
-    onData transport.js:91
-    onmessage websocket.js:48
-test-tubes.html:883:43
-🪙 Coin flip started: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", playerAddress: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", playerSlot: 0, power: 37.80000000000005, angle: 0, choice: "tails", duration: 4268.000000000003, flipReward: {…} }
-test-tubes.html:327:17
-🎬 Starting visual coin flip for slot 0: duration=4268.000000000003ms, speed=NaN test-tubes.html:841:15
-💰 Player 1 earned 50 FLIP! test-tubes.html:2815:15
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 210 test-tubes.html:4142:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 8, roundTimer: 5, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=true test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=true test-tubes.html:809:19
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 11 test-tubes.html:4142:19
-🎬 Visual flip animation complete for slot 0 test-tubes.html:863:19
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 5 test-tubes.html:4142:19
-🎲 Coin flip result: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", playerAddress: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", playerSlot: 0, result: "tails", won: true, lives: 2, isActive: true }
-test-tubes.html:332:17
-✅ Coin 1 landed on tails facing camera (server-side) test-tubes.html:596:19
-🎉 Player 1 WON! Lives remain: 2 test-tubes.html:3084:17
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 2 test-tubes.html:4142:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 9, roundTimer: 60, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=true test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=true test-tubes.html:809:19
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 33 test-tubes.html:4142:19
-🔍 Checking all players flipped: YES (2/2 players done) test-tubes.html:3185:15
-🎯 ALL living players have completed their flips! Starting 5-second countdown to next round... test-tubes.html:3189:17
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 266 test-tubes.html:4142:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 9, roundTimer: 55, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=true test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=true test-tubes.html:809:19
-🚫 Pearl animation BLOCKED for tube 2: foamIntensity=0.33000000000000035 but isShattered=true 32 test-tubes.html:4142:19
-🔍 Checking game end... Remaining players: 2 test-tubes.html:3204:15
-➡️ Proceeding to next round... test-tubes.html:3245:15
-📊 Starting Round 10 test-tubes.html:2343:15
-📊 Round 10 starting lives: 
-Array(4) [ 2, 2, 0, 0 ]
-test-tubes.html:2347:15
-🔄 Round reset! Ready for next flip! test-tubes.html:3839:15
-⏱️ Timer reset test-tubes.html:2296:15
-⏱️ Timer started! test-tubes.html:2269:15
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 9, roundTimer: 50, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 9, roundTimer: 45, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
-📐 Resized to 170x527 test-tubes.html:4414:15
-WebGL warning: generateMipmap: Tex image TEXTURE_2D level 0 is incurring lazy initialization.
-📐 Resized to 950x587 test-tubes.html:4414:15
-WebGL warning: generateMipmap: Tex image TEXTURE_2D level 0 is incurring lazy initialization.
-📊 Received physics state update: 
-Object { gameId: "physics_1760699099140_aeda86a53ddfd946", creator: "0xdd6377919ef1ad4babbead667efe3f6607558628", maxPlayers: 6, currentPlayers: 2, phase: "round_active", currentRound: 9, roundTimer: 40, players: {…}, playerOrder: (2) […], playerSlots: (2) […], … }
-test-tubes.html:321:17
-🎮 Player slot: 1 test-tubes.html:424:19
-🎯 Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false test-tubes.html:809:19
-🎯 Updated buttons for slot 1: isCurrentPlayer=true, hasChoice=false test-tubes.html:809:19
+
+
+javascriptconst createResult = await contractService.createBattleRoyale(
+  battleRoyaleResult.gameId,
+  selectedNFT.contractAddress,
+  selectedNFT.tokenId,
+  Math.round(entryFeePerPlayer * 1000000),
+  Math.round(parseFloat(serviceFee) * 1000000)
+)
+Key Issue #1: The NFT is transferred FROM the creator TO the smart contract during game creation. The smart contract becomes the custodian.
+2. During Game - Ownership Visibility
+In test-tubes.html, the game doesn't actually check or display NFT ownership during gameplay. The participants are loaded and displayed as players, but there's no mechanism to show who currently "owns" the NFT because:
+
+The NFT is held by the smart contract
+Players are just participants competing for the NFT
+There's no visual indicator showing the NFT stake or current ownership
+
+Key Issue #2: The game interface doesn't display information about the NFT prize or its current custody status.
+3. Game Conclusion - NFT Transfer to Winner
+When the game ends and a winner is declared:
+In test-tubes.html:
+javascriptsocket.on('nft_claimed', (data) => {
+  console.log('🏆 NFT claimed:', data);
+  if (data.success) {
+    showFloatingMessage('NFT claimed successfully!', '#ff0088', 3000);
+  }
+});
+The winner can claim the NFT through a socket event claim_nft, but:
+Key Issue #3: The actual NFT transfer mechanism is incomplete. The code shows:
+
+A UI button for claiming the NFT appears for the winner
+The button emits a claim_nft socket event
+But there's no visible implementation of the actual blockchain transfer back to the winner
+
+Missing Components & Concerns:
+
+No ContractService Implementation Visible: The contractService.createBattleRoyale() method is called but the actual implementation isn't in the provided code. This should handle:
+
+NFT approval (ERC721 approve)
+NFT transfer to contract (safeTransferFrom)
+NFT transfer to winner (another safeTransferFrom)
+
+
+Server-Side Transfer Logic Missing: The backend API endpoints (/api/battle-royale/create, etc.) are referenced but not implemented in the visible code.
+No Ownership Verification: During the game, there's no check to verify:
+
+That the NFT is still in the contract
+That the contract has permission to transfer it
+That the winner's claim is valid
+
+
+
+Recommendations:
+
+Add Ownership Display: Show in the game UI that the NFT is held in escrow by the smart contract
+Implement Transfer Function: You need a function like:
+
+javascriptasync function transferNFTToWinner(gameId, winnerAddress) {
+  // Call smart contract to transfer NFT from contract to winner
+  const result = await contractService.claimBattleRoyaleNFT(
+    gameId,
+    winnerAddress
+  );
+  return result;
+}
+
+Add Verification Steps:
+
+Verify NFT is still in contract before game starts
+Verify winner's address matches the claimant
+Add fallback mechanisms if transfer fails
+
+
+Security Considerations:
+
+Ensure only the legitimate winner can claim
+Add time limits for claiming
+Implement emergency withdrawal for stuck NFTs
+
+
+
+The main issue is that while the UI and game flow exist, the actual blockchain interactions for NFT custody and transfer appear to be incomplete or not visible in the provided code. The smart contract integration layer (ContractService.js) is crucial but missing from the analysis.
+Would you like me to help you implement the missing NFT transfer logic or would you like to show me additional files (like ContractService.js or your backend API handlers) so I can provide more specific guidance?RetryKive added some more files for you. does this help. including the smart contract. nftflipgame.solI'll search for and analyze the newly added files, particularly the smart contract and ContractService implementation.Searched project for “NFTFlipGame.sol smart contract createBattleRoyale claimNFT transferFrom”2 resultsnftflipgame.sol7 relevant sectionstextContractService.jstextNow let me search for more ContractService implementation details, particularly the NFT claiming function.Searched project for “ContractService withdrawWinnerNFT claimBattleRoyale battle royale winner claim”3 resultsContractService.js5 relevant sectionstextnftflipgame.sol2 relevant sectionstextapi.jstextNow let me search for the backend socket handler to see how the NFT claim is processed when the game ends.Searched project for “socket.on claim_nft game_over declare winner battle royale complete”5 resultsnftflipgame.sol3 relevant sectionstextserver-socketio.jstexttest-tubes.htmltextapi.js2 relevant sectionstextContractService.jstextExcellent! Now I have a comprehensive understanding of your NFT ownership flow. Let me provide you with a detailed analysis of how NFT ownership works in your system and identify the key issues and solutions.
+Complete NFT Ownership Flow Analysis
+1. GAME CREATION - NFT Deposit
+When a user creates a Battle Royale game:
+Frontend (CreateBattle.jsx):
+javascriptconst createResult = await contractService.createBattleRoyale(
+  battleRoyaleResult.gameId,
+  selectedNFT.contractAddress,
+  selectedNFT.tokenId,
+  entryFee,
+  serviceFee
+)
+Contract Service (ContractService.js):
+
+First approves the NFT transfer
+Then calls the smart contract's createBattleRoyale function
+
+Smart Contract (NFTFlipGame.sol):
+solidityfunction createBattleRoyale(...) {
+    // Transfer NFT from creator to contract
+    IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+    
+    battleRoyaleGames[gameId] = BattleRoyaleGame({
+        creator: msg.sender,
+        nftContract: nftContract,
+        tokenId: tokenId,
+        // ... other fields
+    });
+}
+✅ This part works correctly - The NFT is transferred from the creator to the smart contract.
+2. DURING GAME - Ownership Visibility
+Current Status in test-tubes.html:
+
+No display of NFT ownership/custody status
+Players don't see what NFT they're playing for
+No verification that NFT is still in contract
+
+ISSUE #1: The game interface doesn't show the NFT prize or indicate it's held in escrow.
+3. GAME CONCLUSION - Winner Declaration
+Missing Implementation:
+The game ends in test-tubes.html but there's NO call to the backend to officially declare the winner on the blockchain.
+What happens now:
+javascript// test-tubes.html
+socket.on('nft_claimed', (data) => {
+  console.log('🏆 NFT claimed:', data);
+  // Just shows a message, doesn't actually transfer NFT
+});
+What SHOULD happen:
+
+When game ends, the server should call completeBattleRoyale on the smart contract
+This sets the winner in the contract
+Then the winner can claim their NFT
+
+4. NFT TRANSFER TO WINNER
+The Complete Flow Should Be:
+
+Server declares winner (currently missing):
+
+javascript// This needs to be called by the backend when game ends
+await contractService.completeBattleRoyale(gameId, winnerAddress)
+
+Winner claims NFT:
+
+javascript// Winner calls this from the UI
+await contractService.withdrawBattleRoyaleWinnerNFT(gameId)
+Smart Contract:
+solidityfunction withdrawWinnerNFT(bytes32 gameId) {
+    require(game.winner == msg.sender, "Not the winner");
+    require(game.completed, "Game not completed");
+    require(!game.nftClaimed, "NFT already claimed");
+    
+    game.nftClaimed = true;
+    
+    // Transfer NFT from contract to winner
+    IERC721(game.nftContract).transferFrom(address(this), msg.sender, game.tokenId);
+}
+Critical Issues & Solutions
+Issue 1: Game Completion Not Connected to Blockchain
+Problem: When the game ends in test-tubes.html, it doesn't call completeBattleRoyale on the smart contract.
+Solution: Add this to your backend when the game ends:
+javascript// In your socket handler or game completion logic
+async function declareGameWinner(gameId, winnerAddress) {
+  // This should be called by your backend with owner wallet
+  const result = await blockchainService.completeBattleRoyale(gameId, winnerAddress);
+  
+  // Then notify the winner they can claim
+  socket.emit('game_completed_on_chain', {
+    gameId,
+    winner: winnerAddress,
+    canClaimNFT: true
+  });
+}
+Issue 2: NFT Claim Process Not Implemented
+Problem: The claim_nft socket event doesn't actually call the smart contract.
+Solution: In server-socketio.js:
+javascriptsocket.on('claim_nft', async (data) => {
+  const { gameId, address } = data;
+  
+  try {
+    // Call the contract to transfer NFT to winner
+    const result = await contractService.withdrawBattleRoyaleWinnerNFT(gameId);
+    
+    socket.emit('nft_claimed', {
+      success: true,
+      transactionHash: result.transactionHash
+    });
+  } catch (error) {
+    socket.emit('nft_claimed', {
+      success: false,
+      error: error.message
+    });
+  }
+});
+Issue 3: Owner-Only Function Problem
+Critical Issue: completeBattleRoyale in your smart contract is marked onlyOwner:
+solidityfunction completeBattleRoyale(bytes32 gameId, address winner) external onlyOwner
+This means ONLY the contract owner can declare winners, not players. You need a backend service with the owner's private key to call this.
+Issue 4: No Ownership Display
+Solution: Add NFT display to the game UI:
+javascript// In test-tubes.html, add near the top of the game screen
+function displayNFTPrize() {
+  const nftDisplay = document.createElement('div');
+  nftDisplay.innerHTML = `
+    <div style="position: absolute; top: 20px; right: 20px; 
+                background: rgba(0,0,0,0.8); padding: 15px; 
+                border-radius: 10px; border: 2px solid #ff1493;">
+      <h3>🏆 Playing For:</h3>
+      <img src="${gameData.nft_image}" style="width: 100px; height: 100px;">
+      <p>${gameData.nft_name}</p>
+      <small>Held in Smart Contract</small>
+    </div>
+  `;
+  document.body.appendChild(nftDisplay);
+}
+Recommended Implementation Steps
+
+Backend Service for Game Completion:
+
+Create a backend service with the contract owner's wallet
+When game ends, call completeBattleRoyale(gameId, winnerAddress)
+Store this transaction hash in your database
+
+
+Update Socket Handler:
+
+When winner is determined, emit blockchain completion status
+Enable NFT claim button only after blockchain confirmation
+
+
+Frontend Winner Claim Flow:
+
+Show "Claim NFT" button to winner
+Call contractService.withdrawBattleRoyaleWinnerNFT(gameId)
+Show transaction status and confirmation
+
+
+Add Verification:
+
+Before game starts, verify NFT is in contract
+After game ends, verify winner is set in contract
+Show transaction hashes for transparency
+
+
+
+The main issue is that your game completion logic isn't connected to the blockchain. The smart contract is waiting for someone to call compnpm run buildn be claimed, but this never happens in your current implementation.

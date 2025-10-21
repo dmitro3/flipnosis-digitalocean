@@ -316,6 +316,56 @@
         console.log('❌ Disconnected from server');
       });
       
+      // Handle reconnection
+      socket.on('reconnect', () => {
+        console.log('🔄 Reconnecting to server...');
+        
+        // Rejoin the game room with saved state
+        if (gameIdParam && walletParam) {
+          socket.emit('physics_rejoin_room', {
+            roomId: `game_${gameIdParam}`,
+            address: walletParam,
+            lastKnownSlot: playerSlot
+          });
+        }
+      });
+
+      socket.on('game_state_restored', (data) => {
+        console.log('✅ Game state restored:', data);
+        
+        // Restore player choices
+        if (data.playerChoices) {
+          Object.keys(data.playerChoices).forEach(slot => {
+            const slotIndex = parseInt(slot);
+            if (players[slotIndex]) {
+              players[slotIndex].choice = data.playerChoices[slot];
+              updatePlayerCardChoice(slotIndex, data.playerChoices[slot]);
+            }
+          });
+        }
+        
+        // Restore coin selections
+        if (data.coinSelections) {
+          data.coinSelections.forEach((selection, index) => {
+            if (selection && tubes[index]) {
+              tubes[index].selectedCoin = coinOptions.find(c => c.id === selection.coinId) || coinOptions[0];
+              tubes[index].selectedMaterial = coinMaterials.find(m => m.id === selection.materialId) || coinMaterials[0];
+              // Apply the coin textures
+              applyCoinSelection(index, tubes[index].selectedCoin, tubes[index].selectedMaterial);
+            }
+          });
+        }
+        
+        // Restore game phase
+        if (data.phase) {
+          gameState = { ...gameState, phase: data.phase };
+          if (data.phase === 'game_over') {
+            gameOver = true;
+            handleGameEnd(data);
+          }
+        }
+      });
+      
       // Server-side physics events
       socket.on('physics_state_update', (state) => {
         console.log('📊 Received physics state update:', state);
@@ -384,8 +434,10 @@
       // Handle collection session creation
       socket.on('flip_collection_created', (data) => {
         console.log('🎁 FLIP collection created:', data);
-        if (data.success) {
-          showCollectionUI(data.collectionId, data.totalFlip, data.gameResult, data.expiresAt);
+        if (data.success && data.collectionId) {
+          currentCollectionId = data.collectionId;
+          // Collection UI is already shown in showGameOverScreen
+          showFloatingMessage('Collection session created!', '#00ff00', 2000);
         }
       });
 
@@ -393,17 +445,27 @@
       socket.on('flip_tokens_collected', (data) => {
         console.log('💎 FLIP tokens collected:', data);
         if (data.success) {
-          updateXPCounter(data.collected);
-          showFloatingMessage(`+${data.collected} XP collected!`, '#00ff00', 3000);
-          hideCollectionUI();
+          const claimBtn = document.getElementById('claim-flip-btn');
+          if (claimBtn) {
+            claimBtn.textContent = `✅ Claimed ${data.amount} FLIP!`;
+            claimBtn.style.background = 'linear-gradient(135deg, #888, #666)';
+            claimBtn.disabled = true;
+          }
+          showFloatingMessage(`Successfully claimed ${data.amount} FLIP!`, '#00ff00', 3000);
         }
       });
 
       // Handle NFT claim confirmation
-      socket.on('nft_claimed', (data) => {
-        console.log('🏆 NFT claimed:', data);
+      socket.on('nft_prize_claimed', (data) => {
+        console.log('🏆 NFT prize claimed:', data);
         if (data.success) {
-          showFloatingMessage('NFT claimed successfully!', '#ff0088', 3000);
+          const nftBtn = document.getElementById('claim-nft-btn');
+          if (nftBtn) {
+            nftBtn.textContent = '✅ NFT Claimed!';
+            nftBtn.style.background = 'linear-gradient(135deg, #888, #666)';
+            nftBtn.disabled = true;
+          }
+          showFloatingMessage('NFT successfully transferred to your wallet!', '#FFD700', 3000);
         }
       });
       
@@ -475,6 +537,12 @@
           const oldPlayerSlot = playerSlot;
           playerSlot = player.slotNumber;
           console.log(`🎮 Player slot: ${playerSlot}`);
+          
+          // Mark this as the current player's tube
+          if (playerSlot >= 0 && playerSlot < 4) {
+            tubes[playerSlot].isCurrentPlayer = true;
+            players[playerSlot].isCurrentPlayer = true;
+          }
           
           // Update button visibility for all player cards
           updatePlayerCardButtons();
@@ -2663,6 +2731,9 @@
       
       console.log('⏱️ Timer started!');
       
+      // Show game in progress indicator
+      showGamePhaseIndicator('in_progress', `Round ${currentRound} - Choose your side!`);
+      
       timerInterval = setInterval(() => {
         timeRemaining--;
         updateTimerDisplay();
@@ -4119,20 +4190,146 @@
       }, 3000);
     }
 
+    // Show game phase indicator
+    function showGamePhaseIndicator(phase, message) {
+      // Remove existing phase indicator
+      const existing = document.getElementById('game-phase-indicator');
+      if (existing) {
+        existing.remove();
+      }
+      
+      const indicator = document.createElement('div');
+      indicator.id = 'game-phase-indicator';
+      indicator.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        border: 2px solid ${phase === 'waiting' ? '#ffaa00' : phase === 'starting' ? '#00ff00' : phase === 'in_progress' ? '#0088ff' : '#ff0000'};
+        border-radius: 15px;
+        padding: 15px 30px;
+        text-align: center;
+        font-family: 'Orbitron', sans-serif;
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        box-shadow: 0 0 30px ${phase === 'waiting' ? 'rgba(255, 170, 0, 0.5)' : phase === 'starting' ? 'rgba(0, 255, 0, 0.5)' : phase === 'in_progress' ? 'rgba(0, 136, 255, 0.5)' : 'rgba(255, 0, 0, 0.5)'};
+        z-index: 9998;
+        animation: phaseIndicatorPulse 0.5s ease-out;
+      `;
+      
+      const phaseIcon = phase === 'waiting' ? '⏳' : phase === 'starting' ? '🎮' : phase === 'in_progress' ? '⚔️' : '🏁';
+      indicator.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">${phaseIcon}</span>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      // Add animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes phaseIndicatorPulse {
+            0% { transform: translateX(-50%) scale(0.8); opacity: 0; }
+            100% { transform: translateX(-50%) scale(1); opacity: 1; }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      document.body.appendChild(indicator);
+    }
+
+    // Show game start notification
+    function showGameStartNotification() {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #00ff00, #39ff14);
+        border: 3px solid #00ff00;
+        border-radius: 20px;
+        padding: 40px 60px;
+        text-align: center;
+        font-family: 'Orbitron', sans-serif;
+        color: #000;
+        font-size: 32px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        box-shadow: 0 0 60px rgba(0, 255, 0, 0.8);
+        z-index: 10001;
+        animation: gameStartPulse 0.5s ease-out;
+      `;
+      
+      notification.innerHTML = `
+        <div style="margin-bottom: 10px;">🎮</div>
+        <div>GAME STARTED!</div>
+        <div style="font-size: 18px; margin-top: 10px;">Round 1 Beginning</div>
+      `;
+      
+      // Add animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes gameStartPulse {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      document.body.appendChild(notification);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        notification.style.animation = 'gameStartPulse 0.5s ease-out reverse';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 500);
+      }, 3000);
+    }
+
     // Show game over screen
     function showGameOverScreen(winnerIndex, winnerName) {
-      // Create collection session for the current player only
+      console.log('🏁 GAME OVER - Showing end screen');
+      
+      // Stop any ongoing game mechanics
+      gameOver = true;
+      stopTimer();
+      
+      // Show game ended phase indicator
+      showGamePhaseIndicator('ended', 'Game Over - Claim your rewards!');
+      
+      // Determine if current player won
+      const didCurrentPlayerWin = (playerSlot === winnerIndex);
+      const currentPlayerLives = players[playerSlot]?.lives || 0;
+      
+      // Create collection session via server
       if (isServerSideMode && socket && gameIdParam && walletParam) {
-        const gameResult = playerSlot === winnerIndex ? 'won' : 'lost';
+        const gameResult = didCurrentPlayerWin ? 'won' : 'lost';
+        
+        // Request FLIP collection session creation
         socket.emit('create_flip_collection', {
           gameId: gameIdParam,
           address: walletParam,
-          gameResult: gameResult
+          gameResult: gameResult,
+          finalLives: currentPlayerLives,
+          totalFlip: currentPlayerXP
         });
-        console.log(`🎁 Creating collection session for player ${playerSlot + 1} (${gameResult})`);
+        
+        console.log(`🎁 Requesting collection session: ${gameResult}, ${currentPlayerXP} FLIP`);
       }
-
+      
+      // Show immediate game over overlay
       const gameOverDiv = document.createElement('div');
+      gameOverDiv.id = 'game-over-overlay';
       gameOverDiv.style.cssText = `
         position: fixed;
         top: 0;
@@ -4150,44 +4347,154 @@
       const contentDiv = document.createElement('div');
       contentDiv.style.cssText = `
         background: linear-gradient(135deg, #1a1a2e, #16213e);
-        border: 4px solid ${winnerIndex >= 0 ? '#00ff00' : '#ff0000'};
+        border: 4px solid ${didCurrentPlayerWin ? '#FFD700' : '#ff0000'};
         border-radius: 25px;
         padding: 50px;
         text-align: center;
-        box-shadow: 0 0 50px ${winnerIndex >= 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)'};
+        box-shadow: 0 0 50px ${didCurrentPlayerWin ? 'rgba(255, 215, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)'};
         max-width: 600px;
         width: 90%;
       `;
       
-      // Always show winner (there should always be a winner now)
-      const displayWinnerName = winnerName || 'Unknown Player';
-      contentDiv.innerHTML = `
-        <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
-        <div style="font-size: 48px; font-weight: bold; color: #00ff00; margin-bottom: 20px; text-transform: uppercase;">
-          GAME OVER
-        </div>
-        <div style="font-size: 36px; color: #ffffff; margin-bottom: 30px;">
-          WINNER: ${displayWinnerName}
-        </div>
-        <button onclick="location.reload()" style="
-          background: linear-gradient(135deg, #00ff00, #39ff14);
-          border: none;
-          border-radius: 15px;
-          padding: 15px 30px;
-          font-family: 'Orbitron', sans-serif;
-          font-size: 18px;
-          font-weight: bold;
-          color: #000;
-          cursor: pointer;
-          text-transform: uppercase;
-          letter-spacing: 2px;
+      // Show different content based on win/lose
+      if (didCurrentPlayerWin) {
+        contentDiv.innerHTML = `
+            <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
+            <div style="font-size: 48px; font-weight: bold; color: #FFD700; margin-bottom: 20px;">
+                VICTORY!
+            </div>
+            <div style="font-size: 24px; color: #ffffff; margin-bottom: 30px;">
+                You earned ${currentPlayerXP} FLIP tokens!
+            </div>
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
+                <button id="claim-flip-btn" style="
+                    background: linear-gradient(135deg, #00ff00, #39ff14);
+                    border: none;
+                    border-radius: 15px;
+                    padding: 15px 30px;
+                    font-family: 'Orbitron', sans-serif;
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #000;
+                    cursor: pointer;
+                    text-transform: uppercase;
+                    letter-spacing: 2px;
+                ">
+                    💎 Claim ${currentPlayerXP} FLIP
+                </button>
+                <button id="claim-nft-btn" style="
+                    background: linear-gradient(135deg, #ff0088, #ff1493);
+                    border: none;
+                    border-radius: 15px;
+                    padding: 15px 30px;
+                    font-family: 'Orbitron', sans-serif;
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #fff;
+                    cursor: pointer;
+                    text-transform: uppercase;
+                    letter-spacing: 2px;
+                ">
+                    🎨 Claim NFT Prize
+                </button>
+            </div>
+        `;
+      } else {
+        contentDiv.innerHTML = `
+            <div style="font-size: 60px; margin-bottom: 20px;">💔</div>
+            <div style="font-size: 36px; font-weight: bold; color: #ff0000; margin-bottom: 20px;">
+                DEFEATED
+            </div>
+            <div style="font-size: 24px; color: #ffffff; margin-bottom: 20px;">
+                Winner: ${winnerName || 'Unknown'}
+            </div>
+            <div style="font-size: 20px; color: #00ff00; margin-bottom: 30px;">
+                You earned ${currentPlayerXP} FLIP tokens!
+            </div>
+            <button id="claim-flip-btn" style="
+                background: linear-gradient(135deg, #00ff00, #39ff14);
+                border: none;
+                border-radius: 15px;
+                padding: 15px 30px;
+                font-family: 'Orbitron', sans-serif;
+                font-size: 18px;
+                font-weight: bold;
+                color: #000;
+                cursor: pointer;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            ">
+                💎 Claim ${currentPlayerXP} FLIP
+            </button>
+        `;
+      }
+      
+      // Add return to lobby button
+      contentDiv.innerHTML += `
+        <button id="return-lobby-btn" style="
+            background: linear-gradient(135deg, #666, #888);
+            border: none;
+            border-radius: 15px;
+            padding: 12px 25px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 20px;
+            display: block;
+            width: 200px;
+            margin-left: auto;
+            margin-right: auto;
         ">
-          Play Again
+            Return to Lobby
         </button>
       `;
       
       gameOverDiv.appendChild(contentDiv);
       document.body.appendChild(gameOverDiv);
+      
+      // Add button handlers
+      setTimeout(() => {
+        const claimFlipBtn = document.getElementById('claim-flip-btn');
+        const claimNftBtn = document.getElementById('claim-nft-btn');
+        const returnLobbyBtn = document.getElementById('return-lobby-btn');
+        
+        if (claimFlipBtn) {
+            claimFlipBtn.addEventListener('click', () => {
+                if (socket && currentCollectionId) {
+                    socket.emit('collect_flip_tokens', {
+                        collectionId: currentCollectionId,
+                        address: walletParam,
+                        amount: currentPlayerXP
+                    });
+                    claimFlipBtn.disabled = true;
+                    claimFlipBtn.textContent = 'Claiming...';
+                }
+            });
+        }
+        
+        if (claimNftBtn && didCurrentPlayerWin) {
+            claimNftBtn.addEventListener('click', () => {
+                if (socket && gameIdParam && walletParam) {
+                    socket.emit('claim_nft_prize', {
+                        gameId: gameIdParam,
+                        address: walletParam
+                    });
+                    claimNftBtn.disabled = true;
+                    claimNftBtn.textContent = 'Claiming...';
+                }
+            });
+        }
+        
+        if (returnLobbyBtn) {
+            returnLobbyBtn.addEventListener('click', () => {
+                window.location.href = `/battle-royale/${gameIdParam}`;
+            });
+        }
+      }, 100);
     }
 
     // ===== RESET ROUND (Clear results and prepare for next round) =====
@@ -4526,8 +4833,16 @@
         // Update player cards with real data
         updatePlayerCards();
         
+        // Show waiting phase indicator
+        showGamePhaseIndicator('waiting', 'Waiting for players to join...');
+        
         // Start timer when players are set
         startTimer();
+        
+        // Show game start notification
+        if (!gameOver) {
+          showGameStartNotification();
+        }
       } catch (err) {
         console.warn('Participants load failed:', err);
         // Fallback: start timer anyway
