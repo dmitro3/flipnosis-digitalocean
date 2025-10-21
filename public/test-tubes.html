@@ -1756,13 +1756,17 @@
           glassOpacity: 0.2,
           glassEmissive: 0x1a3a5c,
           glassEmissiveIntensity: 0.1,
-          capColor: 0x2c3e50, // Dark steel
-          capMetalness: 0.9,
-          capRoughness: 0.3,
+          capColor: 0x8B4513, // Cork brown
+          capMetalness: 0.1, // Low metalness for cork
+          capRoughness: 0.8, // High roughness for cork texture
           rimColor: 0x00ff88, // Neon green (scientific)
           backingColor: 0x34495e, // Dark steel backing
           backingMetalness: 0.8,
-          backingRoughness: 0.4
+          backingRoughness: 0.4,
+          // Lab-specific geometry
+          tubeShape: 'lab', // Different shape for lab tubes
+          tubeRadius: TUBE_RADIUS * 0.8, // Slightly narrower
+          tubeHeight: TUBE_HEIGHT * 1.1 // Slightly taller
         };
       } else {
         // Default potion room style
@@ -1777,7 +1781,11 @@
           rimColor: 0xff8800, // Orange
           backingColor: 0xe0e0e0, // Chrome
           backingMetalness: 0.98,
-          backingRoughness: 0.1
+          backingRoughness: 0.1,
+          // Default geometry
+          tubeShape: 'potion',
+          tubeRadius: TUBE_RADIUS,
+          tubeHeight: TUBE_HEIGHT
         };
       }
     }
@@ -1793,7 +1801,24 @@
       const player = players[i];
 
       // Glass tube - ROOM-SPECIFIC STYLING with RECTANGULAR CUTOUT around coin
-      const tubeGeometry = new THREE.CylinderGeometry(TUBE_RADIUS, TUBE_RADIUS, TUBE_HEIGHT, 64, 1, true);
+      let tubeGeometry;
+      if (tubeStyle.tubeShape === 'lab') {
+        // Lab tubes: Slightly tapered, more scientific look
+        tubeGeometry = new THREE.CylinderGeometry(
+          tubeStyle.tubeRadius * 0.9, // Top slightly narrower
+          tubeStyle.tubeRadius, // Bottom wider
+          tubeStyle.tubeHeight, 
+          64, 1, true
+        );
+      } else {
+        // Potion tubes: Standard cylinder
+        tubeGeometry = new THREE.CylinderGeometry(
+          tubeStyle.tubeRadius, 
+          tubeStyle.tubeRadius, 
+          tubeStyle.tubeHeight, 
+          64, 1, true
+        );
+      }
       
       const glassMaterial = new THREE.MeshStandardMaterial({
         color: tubeStyle.glassColor,
@@ -1812,7 +1837,12 @@
       scene.add(tube);
 
       // ===== ROOM-SPECIFIC BACKING PANEL - Creates contrast with background image =====
-      const backingGeometry = new THREE.CylinderGeometry(TUBE_RADIUS + 5, TUBE_RADIUS + 5, TUBE_HEIGHT + 20, 32, 1, false);
+      const backingGeometry = new THREE.CylinderGeometry(
+        tubeStyle.tubeRadius + 5, 
+        tubeStyle.tubeRadius + 5, 
+        tubeStyle.tubeHeight + 20, 
+        32, 1, false
+      );
       const backingMaterial = new THREE.MeshStandardMaterial({
         color: tubeStyle.backingColor,
         roughness: tubeStyle.backingRoughness,
@@ -1836,7 +1866,11 @@
       });
 
       // Top cap with transparent circle cutout for coin viewing
-      const capGeometry = new THREE.CylinderGeometry(TUBE_RADIUS + 10, TUBE_RADIUS + 10, 15, 64);
+      const capGeometry = new THREE.CylinderGeometry(
+        tubeStyle.tubeRadius + 10, 
+        tubeStyle.tubeRadius + 10, 
+        15, 64
+      );
       
       // Create alpha map with transparent circle
       const capCanvas = document.createElement('canvas');
@@ -1862,16 +1896,16 @@
       topCapMaterial.transparent = true;
       
       const topCap = new THREE.Mesh(capGeometry, topCapMaterial);
-      topCap.position.set(x, 200 + (TUBE_HEIGHT / 2) + 7.5, 0);
+      topCap.position.set(x, 200 + (tubeStyle.tubeHeight / 2) + 7.5, 0);
       scene.add(topCap);
 
       // Bottom cap (solid room-specific metallic disc)
       const bottomCap = new THREE.Mesh(capGeometry, capMaterial.clone());
-      bottomCap.position.set(x, 200 - (TUBE_HEIGHT / 2) - 7.5, 0);
+      bottomCap.position.set(x, 200 - (tubeStyle.tubeHeight / 2) - 7.5, 0);
       scene.add(bottomCap);
 
       // Decorative rims (ROOM-SPECIFIC COLOR - SMOOTH & GLOSSY)
-      const rimGeometry = new THREE.TorusGeometry(TUBE_RADIUS + 5, 8, 32, 64);
+      const rimGeometry = new THREE.TorusGeometry(tubeStyle.tubeRadius + 5, 8, 32, 64);
       const rimMaterial = new THREE.MeshStandardMaterial({
         color: tubeStyle.rimColor,
         metalness: 0.95,
@@ -1879,12 +1913,12 @@
       });
       
       const topRim = new THREE.Mesh(rimGeometry, rimMaterial);
-      topRim.position.set(x, 200 + TUBE_HEIGHT / 2, 0);
+      topRim.position.set(x, 200 + tubeStyle.tubeHeight / 2, 0);
       topRim.rotation.x = Math.PI / 2;
       scene.add(topRim);
 
       const bottomRim = topRim.clone();
-      bottomRim.position.y = 200 - TUBE_HEIGHT / 2;
+      bottomRim.position.y = 200 - tubeStyle.tubeHeight / 2;
       scene.add(bottomRim);
 
       // ===== PHYSICS-BASED LIQUID SYSTEM =====
@@ -1896,13 +1930,13 @@
       });
       
       // SOLID BOTTOM CAP - thick box to seal bottom completely
-      const bottomCapShape = new CANNON.Box(new CANNON.Vec3(TUBE_RADIUS + 5, 20, TUBE_RADIUS + 5));
-      const bottomCapOffset = new CANNON.Vec3(0, -(TUBE_HEIGHT / 2) - 15, 0);
+      const bottomCapShape = new CANNON.Box(new CANNON.Vec3(tubeStyle.tubeRadius + 5, 20, tubeStyle.tubeRadius + 5));
+      const bottomCapOffset = new CANNON.Vec3(0, -(tubeStyle.tubeHeight / 2) - 15, 0);
       glassBody.addShape(bottomCapShape, bottomCapOffset);
       
       // SOLID TOP CAP - VERY THICK box to seal top completely (prevents all escape!)
-      const topCapShape = new CANNON.Box(new CANNON.Vec3(TUBE_RADIUS + 5, 30, TUBE_RADIUS + 5));
-      const topCapOffset = new CANNON.Vec3(0, (TUBE_HEIGHT / 2) + 20, 0);
+      const topCapShape = new CANNON.Box(new CANNON.Vec3(tubeStyle.tubeRadius + 5, 30, tubeStyle.tubeRadius + 5));
+      const topCapOffset = new CANNON.Vec3(0, (tubeStyle.tubeHeight / 2) + 20, 0);
       glassBody.addShape(topCapShape, topCapOffset);
       
       // Cylindrical walls - 16 segments for smooth circular containment
@@ -1910,10 +1944,10 @@
       const wallThickness = 3;
       for (let w = 0; w < numWalls; w++) {
         const angle = (w / numWalls) * Math.PI * 2;
-        const wallX = Math.cos(angle) * (TUBE_RADIUS - 6);
-        const wallZ = Math.sin(angle) * (TUBE_RADIUS - 6);
+        const wallX = Math.cos(angle) * (tubeStyle.tubeRadius - 6);
+        const wallZ = Math.sin(angle) * (tubeStyle.tubeRadius - 6);
         
-        const wallShape = new CANNON.Box(new CANNON.Vec3(wallThickness, (TUBE_HEIGHT - 10) / 2, wallThickness));
+        const wallShape = new CANNON.Box(new CANNON.Vec3(wallThickness, (tubeStyle.tubeHeight - 10) / 2, wallThickness));
         const wallOffset = new CANNON.Vec3(wallX, 0, wallZ);
         glassBody.addShape(wallShape, wallOffset);
       }
@@ -1932,10 +1966,10 @@
       for (let p = 0; p < maxLayers; p++) {
         // Random position inside cylinder at bottom
         const angle = Math.random() * Math.PI * 2;
-        const radius = Math.random() * (TUBE_RADIUS - 25);
+        const radius = Math.random() * (tubeStyle.tubeRadius - 25);
         const pearlX = x + Math.cos(angle) * radius;
         const pearlZ = Math.sin(angle) * radius;
-        const pearlY = 200 - (TUBE_HEIGHT / 2) + 30 + Math.random() * 60; // Start at bottom
+        const pearlY = 200 - (tubeStyle.tubeHeight / 2) + 30 + Math.random() * 60; // Start at bottom
         
         // Create physics body - BOUNCY!
         const particleShape = new CANNON.Sphere(particleRadius);

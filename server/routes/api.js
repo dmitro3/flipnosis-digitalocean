@@ -1866,8 +1866,11 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         nft_chain,
         entry_fee,
         service_fee,
-        creator_participates
+        creator_participates,
+        room_type
       } = req.body
+
+      console.log('🎨 Room type received:', room_type)
 
       // Validate required fields
       if (!creator || !nft_contract || !nft_token_id || !entry_fee) {
@@ -1892,7 +1895,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         entry_fee: parseFloat(entry_fee),
         service_fee: parseFloat(service_fee || 0.50),
         max_players: 6,
-        creator_participates: creator_participates || false
+        creator_participates: creator_participates || false,
+        room_type: room_type || 'potion'
       }
 
       // Create physics game in manager FIRST (to generate obstacles)
