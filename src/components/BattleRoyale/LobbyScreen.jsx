@@ -39,15 +39,22 @@ const Container = styled.div`
 `
 
 const NFTPanel = styled.div`
-  background: rgba(0, 0, 40, 0.8);
-  border: 2px solid #FF1493;
-  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+  border: 3px solid #9d00ff;
+  border-radius: 20px;
   padding: 2rem;
   backdrop-filter: blur(15px);
+  box-shadow: 0 0 40px rgba(157, 0, 255, 0.4);
   height: fit-content;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: #00ffff;
+    box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+  }
 `
 
 const NFTImageContainer = styled.div`
@@ -62,25 +69,35 @@ const NFTImageContainer = styled.div`
 
 const NFTImage = styled.img`
   width: 100%;
-  border-radius: 0.5rem;
-  border: 2px solid rgba(255, 20, 147, 0.3);
+  border-radius: 12px;
+  border: 2px solid #00ffff;
   transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
   
   &:hover {
-    border-color: #FF1493;
-    box-shadow: 0 0 20px rgba(255, 20, 147, 0.4);
+    border-color: #9d00ff;
+    box-shadow: 0 0 30px rgba(157, 0, 255, 0.6);
   }
 `
 
 const InfoRow = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
   color: white;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(157, 0, 255, 0.05));
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1));
+    border-bottom-color: rgba(0, 255, 255, 0.4);
+  }
   
   &:last-child {
-    border-bottom: none;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
   }
 `
 
@@ -93,9 +110,9 @@ const ShareButtonsGrid = styled.div`
 
 const ActionButton = styled.button`
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.5rem;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1));
+  border: 2px solid #00ffff;
+  border-radius: 12px;
   color: white;
   font-size: 0.9rem;
   font-weight: 500;
@@ -107,31 +124,38 @@ const ActionButton = styled.button`
   gap: 0.5rem;
   min-height: 48px;
   width: 100%;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
   
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
+    background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+    border-color: #9d00ff;
+    box-shadow: 0 0 25px rgba(157, 0, 255, 0.4);
     transform: translateY(-2px);
   }
   
   &.share-x {
     background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 50%, #1da1f2 100%);
     border-color: #1da1f2;
+    box-shadow: 0 0 20px rgba(29, 161, 242, 0.4);
   }
   
   &.share-tg {
     background: linear-gradient(135deg, #0088cc 0%, #006699 50%, #0088cc 100%);
     border-color: #0088cc;
+    box-shadow: 0 0 20px rgba(0, 136, 204, 0.4);
   }
   
   &.opensea {
     background: linear-gradient(135deg, #2081e2 0%, #1a6bb8 50%, #2081e2 100%);
     border-color: #2081e2;
+    box-shadow: 0 0 20px rgba(32, 129, 226, 0.4);
   }
   
   &.explorer {
     background: linear-gradient(135deg, #6c757d 0%, #7a8288 50%, #6c757d 100%);
     border-color: #6c757d;
+    box-shadow: 0 0 20px rgba(108, 117, 125, 0.4);
   }
 `
 
@@ -142,16 +166,26 @@ const GamePanel = styled.div`
 `
 
 const StatusBar = styled.div`
-  background: rgba(0, 0, 0, 0.8);
-  border: 2px solid #00ff88;
-  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(157, 0, 255, 0.2));
+  border: 3px solid #00ffff;
+  border-radius: 20px;
   padding: 1.5rem;
   text-align: center;
   color: white;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: #9d00ff;
+    box-shadow: 0 0 50px rgba(157, 0, 255, 0.5);
+  }
   
   h2 {
-    color: #00ff88;
+    color: #00ffff;
     margin: 0 0 0.5rem 0;
+    font-family: 'Orbitron', sans-serif;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
   }
 `
 
@@ -160,11 +194,19 @@ const PlayerGrid = styled.div`
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: 1fr;
   gap: 1rem;
-  background: rgba(0, 0, 0, 0.8);
-  border: 2px solid #FF1493;
-  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+  border: 3px solid #9d00ff;
+  border-radius: 20px;
   padding: 1.5rem;
   min-height: 200px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 40px rgba(157, 0, 255, 0.3);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: #00ffff;
+    box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+  }
 `
 
 const PlayerSlot = styled.div`
@@ -174,31 +216,44 @@ const PlayerSlot = styled.div`
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
-  border-radius: 0.8rem;
+  border-radius: 12px;
   padding: 0.8rem;
   background: ${props => {
     if (props.occupied) {
       return props.isCurrentUser 
         ? 'linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 204, 106, 0.2))'
-        : 'linear-gradient(135deg, rgba(0, 191, 255, 0.2), rgba(138, 43, 226, 0.2))'
+        : 'linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(157, 0, 255, 0.15))'
     }
-    return 'rgba(255, 255, 255, 0.05)'
+    return 'linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(157, 0, 255, 0.05))'
   }};
   border: 2px solid ${props => {
     if (props.occupied) {
-      return props.isCurrentUser ? '#00ff88' : '#00bfff'
+      return props.isCurrentUser ? '#00ff88' : '#00ffff'
     }
-    return 'rgba(255, 255, 255, 0.2)'
+    return 'rgba(0, 255, 255, 0.3)'
   }};
   cursor: ${props => props.canJoin ? 'pointer' : 'default'};
   transition: all 0.3s ease;
   position: relative;
+  backdrop-filter: blur(5px);
+  box-shadow: ${props => {
+    if (props.occupied) {
+      return props.isCurrentUser 
+        ? '0 0 20px rgba(0, 255, 136, 0.3)' 
+        : '0 0 20px rgba(0, 255, 255, 0.3)'
+    }
+    return '0 0 10px rgba(0, 255, 255, 0.1)'
+  }};
   
   &:hover {
     ${props => props.canJoin && `
-      border-color: #ff1493;
-      background: rgba(255, 20, 147, 0.1);
+      border-color: #9d00ff;
+      background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+      box-shadow: 0 0 30px rgba(157, 0, 255, 0.5);
       transform: translateY(-3px);
+    `}
+    ${props => !props.canJoin && props.occupied && `
+      box-shadow: 0 0 30px ${props.isCurrentUser ? 'rgba(0, 255, 136, 0.5)' : 'rgba(0, 255, 255, 0.5)'};
     `}
   }
 `
@@ -223,17 +278,20 @@ const CoinDisplay = styled.div`
 const JoinActionButton = styled.button`
   background: linear-gradient(135deg, #ff1493, #ff69b4);
   color: white;
-  border: none;
+  border: 2px solid #ff1493;
   padding: 1rem 2rem;
-  border-radius: 2rem;
+  border-radius: 12px;
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-family: 'Orbitron', sans-serif;
+  box-shadow: 0 0 20px rgba(255, 20, 147, 0.4);
   
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(255, 20, 147, 0.3);
+    box-shadow: 0 0 30px rgba(255, 20, 147, 0.6);
+    background: linear-gradient(135deg, #ff69b4, #ff1493);
   }
   
   &:disabled {
@@ -273,6 +331,7 @@ const Modal = styled.div`
   z-index: 9999;
   padding: 2rem;
   animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(10px);
   
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -281,38 +340,48 @@ const Modal = styled.div`
 `
 
 const ModalContent = styled.div`
-  background: rgba(0, 0, 0, 0.95);
-  border: 2px solid #FFD700;
-  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(10, 15, 35, 0.98), rgba(16, 33, 62, 0.98));
+  border: 3px solid #00ffff;
+  border-radius: 20px;
   padding: 2rem;
   max-width: 90vw;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  box-shadow: 0 0 60px rgba(0, 255, 255, 0.6);
+  backdrop-filter: blur(15px);
 `
 
 const CloseButton = styled.button`
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: none;
-  border: none;
-  color: #FFD700;
+  background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+  border: 2px solid #00ffff;
+  border-radius: 8px;
+  color: #00ffff;
   font-size: 2rem;
   cursor: pointer;
   padding: 0.5rem;
   z-index: 10;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
   
   &:hover {
     color: #ff6b6b;
+    border-color: #ff6b6b;
+    box-shadow: 0 0 25px rgba(255, 107, 107, 0.5);
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 0, 0, 0.2));
   }
 `
 
 const EnlargedImage = styled.img`
   max-width: 100%;
   max-height: 80vh;
-  border-radius: 0.5rem;
+  border-radius: 12px;
   display: block;
+  border: 2px solid #00ffff;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
 `
 
 const LobbyScreen = () => {
@@ -531,7 +600,7 @@ const LobbyScreen = () => {
     <Container>
       {/* LEFT: NFT INFO */}
       <NFTPanel>
-        <h2 style={{ color: '#FF1493', marginTop: 0 }}>🎨 NFT Prize</h2>
+        <h2 style={{ color: '#00ffff', marginTop: 0, fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 10px rgba(0, 255, 255, 0.5)' }}>🎨 NFT Prize</h2>
         
         <NFTImageContainer onClick={() => setShowImageModal(true)}>
           <NFTImage src={gameState.nftImage} alt={gameState.nftName} />
@@ -705,7 +774,7 @@ const LobbyScreen = () => {
                     </div>
                   </>
                 ) : (
-                  <div style={{ color: '#FF1493', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center' }}>
+                  <div style={{ color: '#9d00ff', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center', textShadow: '0 0 10px rgba(157, 0, 255, 0.5)' }}>
                     {canJoin ? '➕ Click to Join' : 'Empty'}
                   </div>
                 )}

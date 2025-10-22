@@ -670,9 +670,69 @@
       
       // Update round
       if (state.currentRound !== undefined) {
+        const oldRound = currentRound;
         currentRound = state.currentRound;
         updateRoundDisplay();
-        saveGameState(); // ← ADD THIS
+        saveGameState();
+        
+        // 🎯 ROUND RESET: Reset player states for new round
+        if (currentRound > oldRound) {
+          console.log(`🔄 Round ${currentRound} started - resetting player states`);
+          tubes.forEach((tube, i) => {
+            // Reset power usage flag
+            tube.hasUsedPower = false;
+            
+            // Reset power state
+            tube.power = 0;
+            tube.isFilling = false;
+            tube.foamIntensity = 0;
+            
+            // Reset pearl colors to neutral
+            updatePearlColors(tube, 0, i);
+            
+            // Reset power button state
+            if (tube.cardElement) {
+              const powerButton = tube.cardElement.querySelectorAll('.action-btn')[1];
+              if (powerButton) {
+                powerButton.style.background = 'linear-gradient(135deg, #9d00ff, #c44aff)';
+                powerButton.style.color = '#ffffff';
+                powerButton.style.borderColor = '#9d00ff';
+                powerButton.disabled = false;
+              }
+              
+              // Reset power bar
+              const powerBar = tube.cardElement.querySelector('.power-bar');
+              const powerText = tube.cardElement.querySelector('.power-text');
+              if (powerBar) {
+                powerBar.style.width = '0%';
+              }
+              if (powerText) {
+                powerText.textContent = '0%';
+              }
+            }
+          });
+          
+          // Reset player choices for new round
+          players.forEach((player, i) => {
+            if (!player.isEmpty) {
+              player.choice = null;
+              
+              // Update UI to show choice buttons again
+              const tube = tubes[i];
+              if (tube && tube.cardElement) {
+                const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
+                const choiceBadge = tube.cardElement.querySelector('.choice-badge');
+                
+                if (choiceButtons && choiceBadge) {
+                  choiceButtons.style.display = 'block';
+                  choiceBadge.style.display = 'none';
+                }
+              }
+            }
+          });
+          
+          console.log(`✅ Round ${currentRound} reset complete - players can charge and choose again`);
+        }
       }
       
       // Update coin states from server physics
@@ -4537,6 +4597,15 @@
           }
           
           // 🎯 UNIFIED PEARL COLOR UPDATE - Same for local and remote
+          updatePearlColors(tube, powerPercent, i);
+        }
+        
+        // 🎯 FALLBACK: Ensure pearls are visible for any charging tube (in case server broadcast fails)
+        if (tube.isFilling && !tube.isShattered) {
+          const powerPercent = tube.power / 100;
+          tube.foamIntensity = powerPercent;
+          
+          // Always update pearl colors for any charging tube
           updatePearlColors(tube, powerPercent, i);
         }
         
