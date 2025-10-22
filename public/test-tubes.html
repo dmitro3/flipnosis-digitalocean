@@ -3315,13 +3315,23 @@
 
       // Fetch player data from server
       if (isServerSideMode && socket && walletParam) {
+        console.log('🔍 Fetching profile for wallet:', walletParam);
         socket.emit('get_player_profile', { address: walletParam });
         socket.once('player_profile_data', (profileData) => {
+          console.log('📊 Received profile data:', profileData);
           playerFlipBalance = profileData.flip_balance || 0;
           unlockedCoins = JSON.parse(profileData.unlocked_coins || '["plain"]');
           customCoinHeads = profileData.custom_coin_heads;
           customCoinTails = profileData.custom_coin_tails;
+          console.log('💰 Updated FLIP balance:', playerFlipBalance);
+          console.log('🔓 Updated unlocked coins:', unlockedCoins);
           updateCoinDisplay();
+        });
+      } else {
+        console.log('⚠️ Cannot fetch profile - missing:', {
+          isServerSideMode,
+          hasSocket: !!socket,
+          walletParam
         });
       }
 

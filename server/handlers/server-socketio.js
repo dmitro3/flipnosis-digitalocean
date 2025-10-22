@@ -595,6 +595,7 @@ initialize(server, dbService) {
           }
 
           const profile = await this.dbService.getProfileByAddress(address)
+          console.log(`📊 Raw profile from DB:`, profile)
           if (!profile) {
             // Create default profile if doesn't exist
             const defaultProfile = {
@@ -605,9 +606,20 @@ initialize(server, dbService) {
               custom_coin_tails: null
             }
             await this.dbService.createOrUpdateProfile(defaultProfile)
+            console.log(`✅ Created new profile:`, defaultProfile)
             socket.emit('player_profile_data', defaultProfile)
           } else {
-            socket.emit('player_profile_data', profile)
+            // Ensure the profile has the new fields with defaults
+            // NOTE: FLIP tokens are stored in the 'xp' field, not 'flip_balance'
+            const profileWithDefaults = {
+              ...profile,
+              flip_balance: profile.xp || 0, // Use xp field as FLIP balance
+              unlocked_coins: profile.unlocked_coins || '["plain"]',
+              custom_coin_heads: profile.custom_coin_heads || null,
+              custom_coin_tails: profile.custom_coin_tails || null
+            }
+            console.log(`📊 Profile with defaults:`, profileWithDefaults)
+            socket.emit('player_profile_data', profileWithDefaults)
           }
         } catch (error) {
           console.error('❌ Error getting player profile:', error)
@@ -631,7 +643,7 @@ initialize(server, dbService) {
             return
           }
 
-          const currentBalance = profile.flip_balance || 0
+          const currentBalance = profile.xp || 0 // FLIP tokens are stored in xp field
           const unlockedCoins = JSON.parse(profile.unlocked_coins || '["plain"]')
 
           // Check if already unlocked
@@ -650,9 +662,9 @@ initialize(server, dbService) {
           const newBalance = currentBalance - cost
           unlockedCoins.push(coinId)
 
-          // Update profile
+          // Update profile - use xp field for FLIP balance
           await this.dbService.updateProfile(address, {
-            flip_balance: newBalance,
+            xp: newBalance, // Update xp field with new FLIP balance
             unlocked_coins: JSON.stringify(unlockedCoins)
           })
 
