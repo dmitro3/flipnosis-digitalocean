@@ -50,6 +50,7 @@ class GameServer {
     this.socketData = new Map() // socketId -> { address, gameId, roomId, role }
     this.userSockets = new Map() // address -> socketId
     this.battleRoyaleRooms = new Map() // gameId -> Set of socketIds
+    this.flipCollectionServiceReady = false // Track if service is ready
     
     console.log('✅ SocketService: Managers initialized:', {
       battleRoyaleManager: !!this.battleRoyaleManager,
@@ -75,12 +76,18 @@ initialize(server, dbService) {
     if (this.flipCollectionService && this.dbService) {
       this.flipCollectionService.databasePath = this.dbService.databasePath
       this.flipCollectionService.initialize()
-        .then(() => console.log('✅ FLIP Collection Service initialized'))
+        .then(() => {
+          console.log('✅ FLIP Collection Service initialized')
+          this.flipCollectionServiceReady = true
+        })
         .catch(error => {
           console.error('❌ Failed to initialize FLIP Collection Service:', error)
           // Don't fail the entire server, just disable FLIP features
           this.flipCollectionService = null
+          this.flipCollectionServiceReady = false
         })
+    } else {
+      this.flipCollectionServiceReady = false
     }
     this.io = socketIO(server, {
       cors: { 
@@ -608,6 +615,16 @@ initialize(server, dbService) {
         console.log(`🎁 create_flip_collection from ${socket.id}`, data)
         const { gameId, address, gameResult } = data
         
+        // Check if service is ready
+        if (!this.flipCollectionService || !this.flipCollectionServiceReady) {
+          console.error('❌ FlipCollectionService not ready')
+          socket.emit('flip_collection_created', {
+            success: false,
+            error: 'FLIP collection service not available'
+          })
+          return
+        }
+        
         try {
           const collection = await this.flipCollectionService.createCollectionSession(gameId, address, gameResult)
           
@@ -634,6 +651,16 @@ initialize(server, dbService) {
       socket.on('collect_flip_tokens', safeHandler(async (data) => {
         console.log(`💎 collect_flip_tokens from ${socket.id}`, data)
         const { collectionId, address } = data
+        
+        // Check if service is ready
+        if (!this.flipCollectionService || !this.flipCollectionServiceReady) {
+          console.error('❌ FlipCollectionService not ready for collection')
+          socket.emit('flip_tokens_collected', {
+            success: false,
+            error: 'FLIP collection service not available'
+          })
+          return
+        }
         
         try {
           const result = await this.flipCollectionService.collectFlipTokens(collectionId, address)

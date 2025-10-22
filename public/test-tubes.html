@@ -135,8 +135,16 @@
     }
 
     @keyframes trophyShine {
-      0%, 100% { transform: scale(1); filter: grayscale(0%) brightness(1); }
-      50% { transform: scale(1.1); filter: grayscale(0%) brightness(1.3); }
+      0%, 100% { 
+        transform: scale(1); 
+        filter: grayscale(0%) brightness(1);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      }
+      50% { 
+        transform: scale(1.1); 
+        filter: grayscale(0%) brightness(1.3);
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.9);
+      }
     }
 
     @keyframes heartbeat {
@@ -2684,18 +2692,19 @@
                   height: 54px; 
                   display: flex; 
                   align-items: center; 
-                  justify-content: center; 
-                  font-size: 16px;
+                  justify-content: center;
+                  font-size: 12px;
                   font-weight: bold;
                   font-family: 'Orbitron', sans-serif;
                   color: ${idx < player.wins ? '#ffd700' : '#666'};
-                  background: ${idx < player.wins ? 'linear-gradient(135deg, #ffd700, #ffed4e)' : 'rgba(100, 100, 100, 0.3)'};
-                  border: ${idx < player.wins ? '2px solid #ffd700' : '2px solid #666'};
-                  border-radius: 8px;
+                  background: ${idx < player.wins ? '#0a0f2e' : 'rgba(100, 100, 100, 0.3)'};
+                  border: ${idx < player.wins ? '3px solid #ffd700' : '2px solid #666'};
+                  border-radius: 12px;
                   opacity: ${idx < player.wins ? '1' : '0.3'};
-                  box-shadow: ${idx < player.wins ? '0 0 15px rgba(255, 215, 0, 0.4)' : 'none'};
+                  box-shadow: ${idx < player.wins ? '0 0 20px rgba(255, 215, 0, 0.6)' : 'none'};
                   transition: all 0.3s ease;
-                  text-shadow: ${idx < player.wins ? '1px 1px 2px rgba(0,0,0,0.5)' : 'none'};
+                  text-shadow: ${idx < player.wins ? '1px 1px 2px rgba(0,0,0,0.8)' : 'none'};
+                  backdrop-filter: ${idx < player.wins ? 'blur(10px)' : 'none'};
                 ">
                   ${idx < player.wins ? 'WIN' : ''}
                 </div>`
@@ -4348,11 +4357,11 @@
         
         console.log(`🎁 Requesting collection session: ${gameResult}, ${currentPlayerXP} FLIP`);
         
-        // Set a fallback collection ID if server fails
+        // Don't set fallback collection ID - let the user know the service is unavailable
         setTimeout(() => {
           if (!currentCollectionId) {
-            console.log('⚠️ Server collection session failed, using fallback');
-            currentCollectionId = `fallback_${Date.now()}`;
+            console.log('⚠️ Server collection session failed - FLIP collection service unavailable');
+            showFloatingMessage('FLIP collection service unavailable', '#ff0000', 3000);
           }
         }, 2000);
       }
@@ -4493,6 +4502,13 @@
         const returnLobbyBtn = document.getElementById('return-lobby-btn');
         
         if (claimFlipBtn) {
+            // Disable button if no collection ID available
+            if (!currentCollectionId) {
+                claimFlipBtn.disabled = true;
+                claimFlipBtn.style.background = 'linear-gradient(135deg, #666, #888)';
+                claimFlipBtn.textContent = '❌ Service Unavailable';
+            }
+            
             claimFlipBtn.addEventListener('click', () => {
                 if (socket && currentCollectionId) {
                     console.log(`💰 Claiming ${currentPlayerXP} FLIP tokens for ${walletParam}`);
@@ -4505,6 +4521,7 @@
                     claimFlipBtn.textContent = 'Claiming...';
                 } else {
                     console.error('❌ Cannot claim FLIP: missing socket, collectionId, or walletParam');
+                    showFloatingMessage('FLIP collection service unavailable', '#ff0000', 3000);
                 }
             });
         }
