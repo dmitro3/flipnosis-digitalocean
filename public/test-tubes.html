@@ -1671,14 +1671,15 @@
       `;
     document.body.appendChild(xpCounter);
 
-    // Create separate change coin box
+    // Create separate change coin box - positioned beside earnings box
     const changeCoinBox = document.createElement('div');
     changeCoinBox.id = 'change-coin-box';
     changeCoinBox.style.cssText = `
       position: fixed;
       top: 20px;
-      right: 20px;
+      right: 240px;
       width: 200px;
+      height: 120px;
       padding: 15px;
       background: linear-gradient(135deg, #ffd700, #ffed4e);
       border: 2px solid #ffd700;
@@ -1718,12 +1719,22 @@
         globalChangeCoinBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           console.log('🎨 Global change coin button clicked');
-          // Use playerSlot directly instead of searching
-          if (playerSlot !== undefined && playerSlot >= 0) {
-            console.log(`🎨 Opening coin selector for player slot ${playerSlot}`);
-            showCoinSelector(playerSlot);
+          
+          // Try to find current player slot
+          let currentPlayerSlot = playerSlot;
+          
+          // Fallback: search for current player if playerSlot is not set
+          if (currentPlayerSlot === undefined || currentPlayerSlot < 0) {
+            currentPlayerSlot = players.findIndex(p => p.address === walletParam);
+            console.log(`🔍 Fallback search found player slot: ${currentPlayerSlot}`);
+          }
+          
+          if (currentPlayerSlot !== undefined && currentPlayerSlot >= 0) {
+            console.log(`🎨 Opening coin selector for player slot ${currentPlayerSlot}`);
+            showCoinSelector(currentPlayerSlot);
           } else {
-            console.log('❌ Player slot not found for coin selection');
+            console.log('❌ Player slot not found for coin selection. PlayerSlot:', playerSlot, 'WalletParam:', walletParam);
+            console.log('Available players:', players.map((p, i) => ({ slot: i, address: p.address, name: p.name })));
           }
         });
       }
