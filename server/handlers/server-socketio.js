@@ -627,6 +627,25 @@ initialize(server, dbService) {
         }
       }))
 
+      // Check Master Field balance
+      socket.on('get_master_field_balance', safeHandler(async (data) => {
+        console.log(`💰 get_master_field_balance from ${socket.id}`)
+        try {
+          const MASTER_ADDRESS = '0x0000000000000000000000000000000000000000'
+          const masterProfile = await this.dbService.getProfileByAddress(MASTER_ADDRESS)
+          const masterBalance = masterProfile ? (masterProfile.xp || 0) : 0
+          
+          socket.emit('master_field_balance', { 
+            balance: masterBalance,
+            address: MASTER_ADDRESS
+          })
+          console.log(`💰 Master Field balance: ${masterBalance} FLIP`)
+        } catch (error) {
+          console.error('❌ Error getting Master Field balance:', error)
+          socket.emit('error', { message: 'Failed to get Master Field balance' })
+        }
+      }))
+
       socket.on('unlock_coin', safeHandler(async (data) => {
         console.log(`🔓 unlock_coin from ${socket.id}`, data)
         try {
@@ -669,6 +688,14 @@ initialize(server, dbService) {
             unlocked_coins: JSON.stringify(unlockedCoins)
           })
           console.log(`✅ Profile updated successfully`)
+
+          // Send FLIP to Master Field (master account)
+          const MASTER_ADDRESS = '0x0000000000000000000000000000000000000000' // Master Field address
+          console.log(`💰 Sending ${cost} FLIP to Master Field`)
+          await this.dbService.updateProfile(MASTER_ADDRESS, {
+            xp: cost // Add the spent FLIP to master account
+          })
+          console.log(`✅ Master Field received ${cost} FLIP`)
 
           // Record transaction
           console.log(`🔄 Recording transaction for ${address}: ${coinId} cost ${cost}`)
