@@ -2875,49 +2875,6 @@
           tubes[i].isFilling = false;
         });
         
-        // Add choice button handlers (only for current player)
-        const choiceButtons = cardElement.querySelectorAll('.choice-btn');
-        choiceButtons.forEach(btn => {
-          btn.style.pointerEvents = 'auto';
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            // Don't allow choices if player has no lives
-            if (players[i].lives <= 0) {
-              console.log(`❌ Player ${i + 1} has no lives - cannot make choice`);
-              return;
-            }
-            
-            const choice = btn.textContent.toLowerCase();
-            players[i].choice = choice;
-            updateCoinRotationsFromPlayerChoices();
-            saveGameState(); // ← ADD THIS
-            console.log(`Player ${i + 1} selected: ${choice}`);
-            
-            // Update coin rotation immediately
-            updateCoinRotationsFromPlayerChoices();
-            
-            // Send choice to server
-            if (isServerSideMode && socket && gameIdParam && walletParam) {
-              socket.emit('physics_set_choice', {
-                gameId: gameIdParam,
-                address: walletParam,
-                choice: choice
-              });
-              console.log(`🎯 Sent choice to server: ${choice}`);
-            }
-            
-            // Replace buttons with choice badge
-            const choiceButtonContainer = cardElement.querySelector('.choice-buttons');
-            if (choiceButtonContainer) {
-              choiceButtonContainer.outerHTML = `
-                <div class="choice-badge ${choice}">
-                  ${choice.toUpperCase()}
-                </div>
-              `;
-            }
-          });
-        });
       }
 
       const cssObject = new CSS3DObject(cardElement);
