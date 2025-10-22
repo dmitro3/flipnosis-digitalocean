@@ -2691,20 +2691,18 @@
                   display: flex; 
                   align-items: center; 
                   justify-content: center;
-                  font-size: 12px;
-                  font-weight: bold;
-                  font-family: 'Orbitron', sans-serif;
-                  color: ${idx < player.wins ? '#ffd700' : '#666'};
+                  background-image: url('/images/Win.png');
+                  background-size: 40px 40px;
+                  background-position: center;
+                  background-repeat: no-repeat;
                   background: ${idx < player.wins ? '#0a0f2e' : 'rgba(100, 100, 100, 0.3)'};
                   border: ${idx < player.wins ? '3px solid #ffd700' : '2px solid #666'};
                   border-radius: 12px;
                   opacity: ${idx < player.wins ? '1' : '0.3'};
                   box-shadow: ${idx < player.wins ? '0 0 20px rgba(255, 215, 0, 0.6)' : 'none'};
                   transition: all 0.3s ease;
-                  text-shadow: ${idx < player.wins ? '1px 1px 2px rgba(0,0,0,0.8)' : 'none'};
                   backdrop-filter: ${idx < player.wins ? 'blur(10px)' : 'none'};
                 ">
-                  ${idx < player.wins ? 'WIN' : ''}
                 </div>`
               ).join('')}
             </div>
