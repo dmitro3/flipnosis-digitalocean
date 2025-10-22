@@ -1,14 +1,17 @@
 const socketIO = require('socket.io')
-const BattleRoyaleGameManager = require('../BattleRoyaleGameManager')
 const PhysicsGameManager = require('../PhysicsGameManager')
-const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
 const SocketTracker = require('./SocketTracker')
 const { FlipCollectionService } = require('../services/FlipCollectionService')
 // const FlipService = require('../services/FlipService') // Temporarily disabled for debugging
 
-// ===== CLEAN SERVER ARCHITECTURE =====
+  // ===== CLEAN SERVER ARCHITECTURE =====
 
 // Server handles ALL game logic - clients only send actions and render state
+
+// Helper function to check if battle royale handlers are available
+function isBattleRoyaleAvailable(handlers) {
+  return handlers && handlers.battleRoyaleHandlers && handlers.battleRoyaleManager
+}
 
 class GameServer {
   constructor(io, dbService) {
@@ -18,9 +21,9 @@ class GameServer {
     // Initialize managers FIRST
     // this.gameManager = new GameManager() // TODO: Not implemented yet - for 1v1 games
     
-    // ⚠️ DEPRECATED: Old battle royale system - kept for backward compatibility
+    // ⚠️ DEPRECATED: Old battle royale system - removed broken imports
     // Current client (test-tubes.html) uses ONLY PhysicsGameManager
-    this.battleRoyaleManager = new BattleRoyaleGameManager()
+    this.battleRoyaleManager = null
     
     // ✅ ACTIVE: Physics-based game system (current implementation)
     this.physicsGameManager = new PhysicsGameManager()
@@ -36,11 +39,10 @@ class GameServer {
     
     // Then instantiate handlers (FIXED: They are classes, not modules)
     // this.oneVOneHandlers = require('./1v1SocketHandlers') // TODO: Not implemented yet
-    const BattleRoyaleSocketHandlersClass = require('./BattleRoyaleSocketHandlers')
     const PhysicsSocketHandlersClass = require('./PhysicsSocketHandlers')
     
-    // ⚠️ DEPRECATED: Old handlers - kept for backward compatibility
-    this.battleRoyaleHandlers = new BattleRoyaleSocketHandlersClass()
+    // ⚠️ DEPRECATED: Old handlers - removed broken imports
+    this.battleRoyaleHandlers = null
     
     // ✅ ACTIVE: Physics handlers (current implementation)
     this.physicsHandlers = new PhysicsSocketHandlersClass()
@@ -64,9 +66,9 @@ initialize(server, dbService) {
     
     this.dbService = dbService
     
-    // Add Battle Royale DB service
+    // Add Battle Royale DB service - removed broken import
     if (dbService && dbService.db) {
-      this.battleRoyaleDBService = new BattleRoyaleDBService(dbService.db)
+      this.battleRoyaleDBService = null
     }
     
     // Initialize FLIP collection service with proper error handling
@@ -167,7 +169,11 @@ initialize(server, dbService) {
           return
         }
         
-        // Old battle royale games
+        // Old battle royale games - disabled (missing handlers)
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
         return this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(
           socket, 
           data, 
@@ -203,6 +209,10 @@ initialize(server, dbService) {
           }
           return
         }
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
         return this.battleRoyaleHandlers.handleJoinBattleRoyale(
           socket, 
           data, 
@@ -217,6 +227,10 @@ initialize(server, dbService) {
 
       socket.on('spectate_battle_royale', safeHandler((data) => {
         console.log(`📥 spectate_battle_royale from ${socket.id}`)
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
         return this.battleRoyaleHandlers.handleSpectateBattleRoyale(
           socket, 
           data, 
@@ -252,6 +266,10 @@ initialize(server, dbService) {
           }
         } else {
           // Old battle royale games
+          if (!isBattleRoyaleAvailable(this)) {
+            socket.emit('error', { message: 'Battle Royale system not available' })
+            return
+          }
           return this.battleRoyaleHandlers.handleRequestBattleRoyaleState(
             socket, 
             data, 
@@ -263,6 +281,10 @@ initialize(server, dbService) {
 
       socket.on('battle_royale_player_choice', safeHandler((data) => {
         console.log(`📥 battle_royale_player_choice from ${socket.id}`, data)
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
         return this.battleRoyaleHandlers.handleBattleRoyalePlayerChoice(
           socket, 
           data, 
@@ -276,6 +298,10 @@ initialize(server, dbService) {
       // Shield deploy
       socket.on('battle_royale_deploy_shield', safeHandler((data) => {
         console.log(`📥 battle_royale_deploy_shield from ${socket.id}`, data)
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
         return this.battleRoyaleHandlers.handleBattleRoyaleDeployShield(
           socket,
           data,
@@ -287,6 +313,10 @@ initialize(server, dbService) {
       // Lightning round activate
       socket.on('battle_royale_activate_lightning', safeHandler((data) => {
         console.log(`📥 battle_royale_activate_lightning from ${socket.id}`, data)
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
         return this.battleRoyaleHandlers.handleBattleRoyaleActivateLightning(
           socket,
           data,
@@ -377,6 +407,10 @@ initialize(server, dbService) {
             console.log(`📡 Broadcasting to room ${room}:`, { event, payload: { phase: payload?.phase, currentRound: payload?.currentRound } })
             this.io.to(room).emit(event, payload)
           })
+          return
+        }
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
           return
         }
         return this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(
@@ -760,6 +794,10 @@ initialize(server, dbService) {
       
       // Skip old handler for physics games - they use request_battle_royale_state instead
       if (!gameId.startsWith('physics_')) {
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
         this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(
           socket, 
           { roomId, address }, 
