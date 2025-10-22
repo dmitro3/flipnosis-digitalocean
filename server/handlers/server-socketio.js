@@ -692,10 +692,41 @@ initialize(server, dbService) {
           // Send FLIP to Master Field (master account)
           const MASTER_ADDRESS = '0x0000000000000000000000000000000000000000' // Master Field address
           console.log(`💰 Sending ${cost} FLIP to Master Field`)
-          await this.dbService.updateProfile(MASTER_ADDRESS, {
-            xp: cost // Add the spent FLIP to master account
-          })
-          console.log(`✅ Master Field received ${cost} FLIP`)
+          
+          // Get current Master Field balance
+          const masterProfile = await this.dbService.getProfileByAddress(MASTER_ADDRESS)
+          const currentMasterBalance = masterProfile ? (masterProfile.xp || 0) : 0
+          const newMasterBalance = currentMasterBalance + cost
+          
+          if (masterProfile) {
+            // Update existing Master Field profile
+            await this.dbService.updateProfile(MASTER_ADDRESS, {
+              xp: newMasterBalance // Add the spent FLIP to master account
+            })
+          } else {
+            // Create new Master Field profile
+            await this.dbService.createOrUpdateProfile({
+              address: MASTER_ADDRESS,
+              name: 'Master Field',
+              avatar: null,
+              headsImage: null,
+              tailsImage: null,
+              twitter: null,
+              telegram: null,
+              xp: newMasterBalance,
+              xp_name_earned: false,
+              xp_avatar_earned: false,
+              xp_heads_earned: false,
+              xp_tails_earned: false,
+              xp_twitter_earned: false,
+              xp_telegram_earned: false,
+              flip_balance: 0,
+              unlocked_coins: '["plain"]',
+              custom_coin_heads: null,
+              custom_coin_tails: null
+            })
+          }
+          console.log(`✅ Master Field received ${cost} FLIP (balance: ${currentMasterBalance} → ${newMasterBalance})`)
 
           // Record transaction
           console.log(`🔄 Recording transaction for ${address}: ${coinId} cost ${cost}`)

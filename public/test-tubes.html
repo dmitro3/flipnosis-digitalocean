@@ -123,8 +123,8 @@
     }
 
     .win-trophy {
-      opacity: 0.3;
-      filter: grayscale(100%) brightness(0.5);
+      opacity: 0.8;
+      filter: grayscale(50%) brightness(0.8);
       transition: all 0.3s ease;
     }
 
@@ -2694,12 +2694,12 @@
                   background: ${idx < player.wins ? '#0a0f2e' : 'rgba(100, 100, 100, 0.3)'} url('/images/Win.png') center/40px 40px no-repeat;
                   border: ${idx < player.wins ? '3px solid #ffd700' : '2px solid #666'};
                   border-radius: 12px;
-                  opacity: ${idx < player.wins ? '1' : '0.3'};
+                  opacity: ${idx < player.wins ? '1' : '0.8'};
                   box-shadow: ${idx < player.wins ? '0 0 20px rgba(255, 215, 0, 0.6)' : 'none'};
                   transition: all 0.3s ease;
                   backdrop-filter: ${idx < player.wins ? 'blur(10px)' : 'none'};
                   position: relative;
-                  z-index: 100;
+                  z-index: 10000;
                 ">
                 </div>`
               ).join('')}
@@ -3514,20 +3514,16 @@
               if (!isUnlocked && cost > 0) {
                 // Try to unlock the coin
                 if (playerFlipBalance >= cost) {
-                  // Direct unlock - bypass server for now
-                  console.log(`🔓 Unlocking ${coin.name} for ${cost} FLIP (direct method)`);
+                  console.log(`🔓 Unlocking ${coin.name} for ${cost} FLIP`);
                   
-                  // Update local state immediately
-                  playerFlipBalance -= cost;
-                  unlockedCoins.push(coinId);
+                  // Show loading state
+                  const coinElement = content.querySelector(`[data-coin-id="${coinId}"]`);
+                  if (coinElement) {
+                    coinElement.style.opacity = '0.5';
+                    coinElement.style.pointerEvents = 'none';
+                  }
                   
-                  // Update UI immediately
-                  document.getElementById('flip-balance').textContent = playerFlipBalance;
-                  updateCoinDisplay();
-                  selectedCoin = coin;
-                  updateCoinSelection();
-                  
-                  // Try to update server in background (non-blocking)
+                  // Send unlock request to server
                   if (isServerSideMode && socket && walletParam) {
                     socket.emit('unlock_coin', {
                       address: walletParam,
@@ -3535,18 +3531,36 @@
                       cost: cost
                     });
                     
-                    // Don't wait for response - just log it
+                    // Wait for server response
                     socket.once('coin_unlocked', (result) => {
                       if (result.success) {
                         console.log(`✅ Server confirmed unlock: ${coin.name}`);
+                        
+                        // Update local state with server response
+                        playerFlipBalance = result.newBalance;
+                        unlockedCoins = result.unlockedCoins;
+                        
+                        // Update UI
+                        document.getElementById('flip-balance').textContent = playerFlipBalance;
+                        updateCoinDisplay();
+                        selectedCoin = coin;
+                        updateCoinSelection();
+                        
+                        alert(`🎉 ${coin.name} unlocked for ${cost} FLIP!`);
                       } else {
-                        console.warn(`⚠️ Server unlock failed, but local unlock succeeded: ${result.error}`);
+                        console.error(`❌ Server unlock failed: ${result.error}`);
+                        alert(`❌ Failed to unlock ${coin.name}: ${result.error}`);
+                        
+                        // Restore coin element
+                        if (coinElement) {
+                          coinElement.style.opacity = '1';
+                          coinElement.style.pointerEvents = 'auto';
+                        }
                       }
                     });
+                  } else {
+                    alert(`❌ Cannot unlock coin: Server connection required`);
                   }
-                  
-                  console.log(`✅ Unlocked ${coin.name} for ${cost} FLIP`);
-                  alert(`🎉 ${coin.name} unlocked for ${cost} FLIP!`);
                 } else {
                   alert(`Not enough FLIP! You need ${cost} FLIP to unlock ${coin.name}.`);
                   return;
