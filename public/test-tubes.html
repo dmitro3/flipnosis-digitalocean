@@ -2586,7 +2586,9 @@
             socket.emit('physics_power_charging_start', {
               gameId: gameIdParam,
               address: walletParam,
-              playerSlot: i
+              playerSlot: i,
+              power: 0,  // ⚡ ADD THIS
+              isFilling: true  // ⚡ ADD THIS
             });
             console.log(`📢 Broadcast: Player ${i + 1} started charging`);
           }
