@@ -1664,26 +1664,52 @@
       backdrop-filter: blur(10px);
       pointer-events: auto;
     `;
-    xpCounter.innerHTML = `
-      <div style="font-size: 12px; color: #ffffff; opacity: 0.8; margin-bottom: 4px;">Total Earnings</div>
-      <div style="font-size: 18px; margin-bottom: 2px;">${currentPlayerXP} FLIP</div>
-      <div style="font-size: 10px; color: #ffffff; opacity: 0.8;">This Game</div>
+      xpCounter.innerHTML = `
+        <div style="font-size: 12px; color: #ffffff; opacity: 0.8; margin-bottom: 4px;">Total Earnings</div>
+        <div style="font-size: 18px; margin-bottom: 2px;">${currentPlayerXP} FLIP</div>
+        <div style="font-size: 10px; color: #ffffff; opacity: 0.8;">This Game</div>
+      `;
+    document.body.appendChild(xpCounter);
+
+    // Create separate change coin box
+    const changeCoinBox = document.createElement('div');
+    changeCoinBox.id = 'change-coin-box';
+    changeCoinBox.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 200px;
+      padding: 15px;
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      border: 2px solid #ffd700;
+      border-radius: 12px;
+      color: #000;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: bold;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+      z-index: 1000;
+    `;
+    changeCoinBox.innerHTML = `
+      <div style="font-size: 14px; margin-bottom: 10px; font-weight: bold;">COIN SELECTOR</div>
       <button id="global-change-coin-btn" style="
-        margin-top: 10px;
-        padding: 8px 16px;
-        background: linear-gradient(135deg, #ffd700, #ffed4e);
-        border: 2px solid #ffd700;
+        width: 100%;
+        padding: 10px 16px;
+        background: linear-gradient(135deg, #000, #333);
+        border: 2px solid #000;
         border-radius: 8px;
-        color: #000;
+        color: #ffd700;
         font-family: 'Orbitron', sans-serif;
         font-weight: bold;
         font-size: 12px;
         cursor: pointer;
-        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
         transition: all 0.3s ease;
-      " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 20px rgba(255, 215, 0, 0.6)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 15px rgba(255, 215, 0, 0.4)'">CHANGE COIN</button>
+      " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 15px rgba(0, 0, 0, 0.5)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 10px rgba(0, 0, 0, 0.3)'">CHANGE COIN</button>
     `;
-    document.body.appendChild(xpCounter);
+    document.body.appendChild(changeCoinBox);
 
     // Add global change coin button handler
     setTimeout(() => {
@@ -1692,12 +1718,12 @@
         globalChangeCoinBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           console.log('🎨 Global change coin button clicked');
-          // Find the current player's slot
-          const currentPlayerSlot = players.findIndex(p => p.address === walletParam);
-          if (currentPlayerSlot !== -1) {
-            showCoinSelector(currentPlayerSlot);
+          // Use playerSlot directly instead of searching
+          if (playerSlot !== undefined && playerSlot >= 0) {
+            console.log(`🎨 Opening coin selector for player slot ${playerSlot}`);
+            showCoinSelector(playerSlot);
           } else {
-            console.log('❌ Current player not found for coin selection');
+            console.log('❌ Player slot not found for coin selection');
           }
         });
       }
