@@ -2721,7 +2721,7 @@
 
       // Add power charge button handler (HOLD TO CHARGE) - always add, visibility controlled by CSS
       const flipButtons = cardElement.querySelectorAll('.action-btn');
-      const powerButton = flipButtons[1]; // The second action button
+      const powerButton = flipButtons[0]; // The first action button (CHARGE POWER)
       const powerBar = cardElement.querySelector('.power-bar');
       
       if (powerButton) {
