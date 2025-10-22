@@ -2724,9 +2724,9 @@
           
           // Update local UI immediately
           const choiceBadge = cardElement.querySelector('.choice-badge');
-          const choiceButtons = cardElement.querySelector('.choice-buttons');
-          if (choiceButtons && choiceBadge) {
-            choiceButtons.style.display = 'none';
+          const choiceButtonsContainer = cardElement.querySelector('.choice-buttons');
+          if (choiceButtonsContainer && choiceBadge) {
+            choiceButtonsContainer.style.display = 'none';
             choiceBadge.style.display = 'inline-block';
             choiceBadge.textContent = choice.toUpperCase();
             choiceBadge.className = `choice-badge ${choice}`;
