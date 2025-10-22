@@ -285,7 +285,12 @@ class PhysicsGameManager {
     const player = game.players[normalizedAddress]
     
     if (!player || !player.isActive || player.hasFired) {
-      console.warn(`❌ Player ${address} cannot fire in game ${gameId}`)
+      console.warn(`❌ Player ${address} cannot fire in game ${gameId}`, {
+        player: !!player,
+        isActive: player?.isActive,
+        hasFired: player?.hasFired,
+        lives: player?.lives
+      })
       return false
     }
 
@@ -584,6 +589,7 @@ class PhysicsGameManager {
             player.isActive = true
             player.choice = null
             player.hasFired = false
+            console.log(`🔄 Reset player state: isActive=${player.isActive}, choice=${player.choice}, hasFired=${player.hasFired}`)
           }
         })
         

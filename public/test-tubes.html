@@ -455,6 +455,14 @@
             tube.power = 0;
             tube.chargingStartTime = Date.now();
             console.log(`🌊 Started pearl animation for tube ${data.playerSlot + 1}`);
+            
+            // 🎯 FORCE PEARL VISIBILITY: Ensure pearls are visible when charging starts
+            if (tube.liquidParticleMeshes) {
+              tube.liquidParticleMeshes.forEach(mesh => {
+                mesh.visible = true;
+              });
+              console.log(`🌊 Forced pearl visibility on charging start for tube ${data.playerSlot + 1}`);
+            }
           }
         }
       });
@@ -882,7 +890,7 @@
         const powerPercent = tube.power / 100;
         tube.foamIntensity = powerPercent;
         
-        console.log(`⚡ Updated power visual for player ${data.playerSlot + 1}: ${data.power}% (level ${tube.powerLevel}, foamIntensity: ${tube.foamIntensity})`);
+        console.log(`⚡ Updated power visual for player ${data.playerSlot + 1}: ${data.power}% (level ${tube.powerLevel}, foamIntensity: ${tube.foamIntensity}, isFilling: ${tube.isFilling})`);
         
         // 🎯 UNIFIED ANIMATION - Same code for charger and viewers!
         updatePearlColors(tube, powerPercent, data.playerSlot);
@@ -891,6 +899,14 @@
         if (tube.liquidParticleMeshes && tube.liquidParticleMeshes.length > 0) {
           const visibleCount = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
           console.log(`🔍 Tube ${data.playerSlot + 1} has ${tube.liquidParticleMeshes.length} pearls, ${visibleCount} visible`);
+        }
+        
+        // 🎯 FORCE PEARL VISIBILITY: Ensure pearls are always visible when charging
+        if (tube.isFilling && tube.liquidParticleMeshes) {
+          tube.liquidParticleMeshes.forEach(mesh => {
+            mesh.visible = true;
+          });
+          console.log(`🌊 Forced pearl visibility for tube ${data.playerSlot + 1}`);
         }
       }
     }
@@ -4571,7 +4587,7 @@
                 power: tube.power,
                 powerLevel: powerLevel,
                 playerSlot: i,
-                isFilling: tube.isFilling
+                isFilling: tube.isFilling  // ✅ FIXED: Include isFilling property
               });
             }
           }

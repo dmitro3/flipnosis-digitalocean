@@ -383,8 +383,8 @@ class PhysicsSocketHandlers {
 
   // Handle power charging (for visual feedback)
   async handlePhysicsChargePower(socket, data, gameManager, io) {
-    const { gameId, address, power, powerLevel } = data
-    console.log(`⚡ ${address} charging power to ${power}% (level ${powerLevel})`)
+    const { gameId, address, power, powerLevel, isFilling } = data
+    console.log(`⚡ ${address} charging power to ${power}% (level ${powerLevel}, isFilling: ${isFilling})`)
     
     // Get player slot from game state
     const game = gameManager.getGame(gameId)
@@ -407,7 +407,7 @@ class PhysicsSocketHandlers {
       playerSlot: playerSlot,
       power: power,
       powerLevel: finalPowerLevel,
-      isFilling: power > 0  // ✅ ADD THIS LINE - critical for pearl animation sync
+      isFilling: isFilling !== undefined ? isFilling : (power > 0)  // ✅ FIXED: Use provided isFilling or default to power > 0
     })
   }
 
