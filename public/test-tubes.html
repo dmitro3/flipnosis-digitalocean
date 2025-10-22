@@ -4499,6 +4499,9 @@
             }
           }
           
+          // 🎯 UNIFIED PEARL COLOR UPDATE - Same for local and remote
+          updatePearlColors(tube, powerPercent, i);
+          
           // Send to server every 5 frames for validation
           if (isServerSideMode && socket && gameIdParam && walletParam) {
             if (frameCount % 5 === 0) {
