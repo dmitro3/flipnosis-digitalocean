@@ -663,13 +663,17 @@ initialize(server, dbService) {
           unlockedCoins.push(coinId)
 
           // Update profile - use xp field for FLIP balance
+          console.log(`🔄 Updating profile for ${address}: xp=${newBalance}, unlocked_coins=${JSON.stringify(unlockedCoins)}`)
           await this.dbService.updateProfile(address, {
             xp: newBalance, // Update xp field with new FLIP balance
             unlocked_coins: JSON.stringify(unlockedCoins)
           })
+          console.log(`✅ Profile updated successfully`)
 
           // Record transaction
+          console.log(`🔄 Recording transaction for ${address}: ${coinId} cost ${cost}`)
           await this.dbService.recordCoinUnlockTransaction(address, coinId, cost, currentBalance, newBalance)
+          console.log(`✅ Transaction recorded successfully`)
 
           console.log(`✅ Unlocked ${coinId} for ${address} at cost ${cost} FLIP`)
           socket.emit('coin_unlocked', { 
