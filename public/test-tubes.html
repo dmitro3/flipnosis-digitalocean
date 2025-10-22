@@ -144,6 +144,24 @@
       50% { transform: scale(1.1); }
     }
 
+    @keyframes puffWin {
+      0% { 
+        transform: scale(0.3); 
+        opacity: 0; 
+        box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+      }
+      50% { 
+        transform: scale(1.3); 
+        opacity: 1; 
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+      }
+      100% { 
+        transform: scale(1); 
+        opacity: 1; 
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+      }
+    }
+
     .choice-badge {
       padding: 12px;
       margin: 15px 0;
@@ -670,7 +688,7 @@
                       // Hide choice badge, show buttons for current player
                       choiceBadge.style.display = 'none';
                       if (playerSlot === serverPlayer.slotNumber) {
-                        choiceButtons.style.display = 'block';
+                        choiceButtons.style.display = 'flex';
                       } else {
                         choiceButtons.style.display = 'none';
                       }
@@ -1176,7 +1194,7 @@
           if (isCurrentPlayer && !player.choice) {
             // Show choice buttons for current player
             if (choiceBadge) choiceBadge.style.display = 'none';
-            if (choiceButtons) choiceButtons.style.display = 'block';
+            if (choiceButtons) choiceButtons.style.display = 'flex';
           } else if (player.choice) {
             // Show choice badge
             if (choiceButtons) choiceButtons.style.display = 'none';
@@ -1644,14 +1662,46 @@
       text-align: center;
       box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
       backdrop-filter: blur(10px);
-      pointer-events: none;
+      pointer-events: auto;
     `;
     xpCounter.innerHTML = `
       <div style="font-size: 12px; color: #ffffff; opacity: 0.8; margin-bottom: 4px;">Total Earnings</div>
       <div style="font-size: 18px; margin-bottom: 2px;">${currentPlayerXP} FLIP</div>
       <div style="font-size: 10px; color: #ffffff; opacity: 0.8;">This Game</div>
+      <button id="global-change-coin-btn" style="
+        margin-top: 10px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #ffd700, #ffed4e);
+        border: 2px solid #ffd700;
+        border-radius: 8px;
+        color: #000;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: bold;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        transition: all 0.3s ease;
+      " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 20px rgba(255, 215, 0, 0.6)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 15px rgba(255, 215, 0, 0.4)'">CHANGE COIN</button>
     `;
     document.body.appendChild(xpCounter);
+
+    // Add global change coin button handler
+    setTimeout(() => {
+      const globalChangeCoinBtn = document.getElementById('global-change-coin-btn');
+      if (globalChangeCoinBtn) {
+        globalChangeCoinBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          console.log('🎨 Global change coin button clicked');
+          // Find the current player's slot
+          const currentPlayerSlot = players.findIndex(p => p.address === walletParam);
+          if (currentPlayerSlot !== -1) {
+            showCoinSelector(currentPlayerSlot);
+          } else {
+            console.log('❌ Current player not found for coin selection');
+          }
+        });
+      }
+    }, 100);
 
     // Function to update XP counter
     function updateXPCounter(amount) {
@@ -2543,8 +2593,25 @@
             <div class="player-name">${player.name}</div>
             <div class="wins-container" style="display: flex; gap: 8px; margin-top: 8px; justify-content: center;">
               ${Array.from({ length: 3 }, (_, idx) => 
-                `<div class="win-trophy ${idx < player.wins ? 'active' : ''}" style="width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; font-size: 40.5px; opacity: ${idx < player.wins ? '1' : '0.3'}; filter: ${idx < player.wins ? 'grayscale(0%) brightness(1)' : 'grayscale(100%) brightness(0.5)'}; transition: all 0.3s ease;">
-                  🏆
+                `<div class="win-trophy ${idx < player.wins ? 'active' : ''}" style="
+                  width: 54px; 
+                  height: 54px; 
+                  display: flex; 
+                  align-items: center; 
+                  justify-content: center; 
+                  font-size: 16px;
+                  font-weight: bold;
+                  font-family: 'Orbitron', sans-serif;
+                  color: ${idx < player.wins ? '#ffd700' : '#666'};
+                  background: ${idx < player.wins ? 'linear-gradient(135deg, #ffd700, #ffed4e)' : 'rgba(100, 100, 100, 0.3)'};
+                  border: ${idx < player.wins ? '2px solid #ffd700' : '2px solid #666'};
+                  border-radius: 8px;
+                  opacity: ${idx < player.wins ? '1' : '0.3'};
+                  box-shadow: ${idx < player.wins ? '0 0 15px rgba(255, 215, 0, 0.4)' : 'none'};
+                  transition: all 0.3s ease;
+                  text-shadow: ${idx < player.wins ? '1px 1px 2px rgba(0,0,0,0.5)' : 'none'};
+                ">
+                  ${idx < player.wins ? 'WIN' : ''}
                 </div>`
               ).join('')}
             </div>
@@ -2565,7 +2632,6 @@
           </div>
           <div class="power-text" style="color: #00ff00; font-size: 14px; text-align: center;">POWER: 0%</div>
         </div>
-        <button class="action-btn change-coin-btn" data-player="${i}" style="display: ${showButtons ? 'block' : 'none'};">CHANGE COIN</button>
         <button class="action-btn" style="display: ${showButtons ? 'block' : 'none'};">CHARGE POWER</button>
       `;
 
@@ -2608,16 +2674,6 @@
         });
       });
 
-      // Add change coin button handler (always add, visibility controlled by CSS)
-      const changeCoinButton = cardElement.querySelector('.change-coin-btn');
-      if (changeCoinButton) {
-        changeCoinButton.style.pointerEvents = 'auto';
-        changeCoinButton.addEventListener('click', (e) => {
-          e.stopPropagation();
-          console.log(`🎨 Change coin for player ${i + 1}`);
-          showCoinSelector(i);
-        });
-      }
 
       // Add power charge button handler (HOLD TO CHARGE) - always add, visibility controlled by CSS
       const flipButtons = cardElement.querySelectorAll('.action-btn');
@@ -3789,15 +3845,30 @@
       // Update each trophy based on current wins (3 trophies max)
       winElements.forEach((winElement, idx) => {
         if (idx < player.wins) {
-          // This trophy should be active (won)
+          // This trophy should be active (won) - apply gold styling
           winElement.classList.add('active');
           winElement.style.opacity = '1';
-          winElement.style.filter = 'grayscale(0%) brightness(1)';
+          winElement.style.color = '#ffd700';
+          winElement.style.background = 'linear-gradient(135deg, #ffd700, #ffed4e)';
+          winElement.style.border = '2px solid #ffd700';
+          winElement.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.4)';
+          winElement.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
+          winElement.textContent = 'WIN';
+          
+          // Add puff animation for newly won trophies
+          if (idx === player.wins - 1) {
+            winElement.style.animation = 'puffWin 0.6s ease-out';
+          }
         } else {
           // This trophy should be inactive (not won yet)
           winElement.classList.remove('active');
           winElement.style.opacity = '0.3';
-          winElement.style.filter = 'grayscale(100%) brightness(0.5)';
+          winElement.style.color = '#666';
+          winElement.style.background = 'rgba(100, 100, 100, 0.3)';
+          winElement.style.border = '2px solid #666';
+          winElement.style.boxShadow = 'none';
+          winElement.style.textShadow = 'none';
+          winElement.textContent = '';
         }
       });
       
