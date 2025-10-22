@@ -701,22 +701,70 @@
         updateRoundDisplay();
         saveGameState();
         
-        // 🎯 ROUND RESET: Reset player states for new round
+        // 🎯 ROUND RESET: Reset ALL player states for new round
         if (currentRound > oldRound) {
-          console.log(`🔄 Round ${currentRound} started - resetting player states`);
+          console.log(`🔄 Round ${currentRound} started - FULL RESET`);
           tubes.forEach((tube, i) => {
-            // Reset power usage flag
+            // 1. Reset power usage
             tube.hasUsedPower = false;
-            
-            // Reset power state
             tube.power = 0;
             tube.isFilling = false;
             tube.foamIntensity = 0;
             
-            // Reset pearl colors to neutral
+            // 2. Reset glass shatter state
+            tube.isShattered = false;
+            tube.isFlipping = false;
+            
+            // 3. Show glass tube and rims again
+            tube.tube.visible = true;
+            tube.backing.visible = true;
+            tube.topRim.visible = true;
+            tube.bottomRim.visible = true;
+            tube.liquid.visible = true;
+            tube.coinShadow.visible = false;
+            
+            // 4. Clear glass shards
+            if (tube.glassShards && tube.glassShards.length > 0) {
+              tube.glassShards.forEach(shard => {
+                scene.remove(shard.mesh);
+              });
+              tube.glassShards = [];
+            }
+            
+            // 5. Re-add physics container
+            if (!physicsWorld.bodies.includes(tube.glassBody)) {
+              physicsWorld.addBody(tube.glassBody);
+            }
+            
+            // 6. Reset pearl colors to neutral
             updatePearlColors(tube, 0, i);
             
-            // Reset power button state
+            // 7. Reset coin to default position
+            const coin = coins[i];
+            if (coin) {
+              coin.position.set(tube.tube.position.x, 200, 0);
+              coin.rotation.x = Math.PI / 2;
+              coin.rotation.y = Math.PI / 2;
+              coin.rotation.z = 0;
+              
+              // Remove any result lights
+              if (tube.winLight) {
+                coin.remove(tube.winLight);
+                tube.winLight = null;
+              }
+              if (tube.loseLight) {
+                coin.remove(tube.loseLight);
+                tube.loseLight = null;
+              }
+            }
+            
+            // 8. Remove result box
+            if (tube.resultBox) {
+              scene.remove(tube.resultBox);
+              tube.resultBox = null;
+            }
+            
+            // 9. Reset UI - Power button
             if (tube.cardElement) {
               const powerButton = tube.cardElement.querySelectorAll('.action-btn')[1];
               if (powerButton) {
@@ -724,6 +772,8 @@
                 powerButton.style.color = '#ffffff';
                 powerButton.style.borderColor = '#9d00ff';
                 powerButton.disabled = false;
+                powerButton.style.opacity = '1';
+                powerButton.style.cursor = 'pointer';
               }
               
               // Reset power bar
@@ -731,14 +781,15 @@
               const powerText = tube.cardElement.querySelector('.power-text');
               if (powerBar) {
                 powerBar.style.width = '0%';
+                powerBar.style.background = 'linear-gradient(90deg, #00ff00, #39ff14)';
               }
               if (powerText) {
-                powerText.textContent = '0%';
+                powerText.textContent = 'POWER: 0%';
               }
             }
           });
           
-          // Reset player choices for new round
+          // 10. Reset player choices for new round
           players.forEach((player, i) => {
             if (!player.isEmpty) {
               player.choice = null;
@@ -750,8 +801,13 @@
                 const choiceBadge = tube.cardElement.querySelector('.choice-badge');
                 
                 if (choiceButtons && choiceBadge) {
-                  choiceButtons.style.display = 'block';
                   choiceBadge.style.display = 'none';
+                  // Only show buttons for current player
+                  if (playerSlot === i) {
+                    choiceButtons.style.display = 'flex';
+                  } else {
+                    choiceButtons.style.display = 'none';
+                  }
                 }
               }
             }
