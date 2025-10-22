@@ -165,12 +165,38 @@ class PhysicsSocketHandlers {
   // Player flips coin with server-side physics
   async handlePhysicsFlipCoin(socket, data, gameManager, io) {
     const { gameId, address, power, angle = 0 } = data
-    console.log(`🪙 ${address} flipping coin with power ${power} in physics game`)
+    console.log(`🪙 ${address} flipping coin with power ${power} in physics game`, {
+      gameId,
+      address,
+      power,
+      angle,
+      socketId: socket.id
+    })
     
     // Validate power range
     if (power < 0 || power > 100) {
+      console.warn(`❌ Invalid power level: ${power}`)
       socket.emit('physics_error', { message: 'Invalid power level' })
       return
+    }
+    
+    // Check game state before attempting flip
+    const game = gameManager.getGame(gameId)
+    if (game) {
+      console.log(`🎮 Game state before flip:`, {
+        phase: game.phase,
+        currentRound: game.currentRound,
+        players: Object.keys(game.players),
+        playerStates: Object.entries(game.players).map(([addr, p]) => ({
+          address: addr,
+          isActive: p.isActive,
+          hasFired: p.hasFired,
+          lives: p.lives,
+          choice: p.choice
+        }))
+      })
+    } else {
+      console.warn(`❌ Game ${gameId} not found in manager`)
     }
     
     const success = gameManager.serverFlipCoin(gameId, address, null, power, angle, (room, event, payload) => {
@@ -178,7 +204,10 @@ class PhysicsSocketHandlers {
     })
     
     if (!success) {
+      console.warn(`❌ serverFlipCoin failed for ${address} in game ${gameId}`)
       socket.emit('physics_error', { message: 'Cannot flip coin now' })
+    } else {
+      console.log(`✅ serverFlipCoin succeeded for ${address} in game ${gameId}`)
     }
   }
 

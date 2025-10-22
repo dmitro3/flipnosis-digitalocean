@@ -277,7 +277,11 @@ class PhysicsGameManager {
   serverFlipCoin(gameId, address, choice, power, angle = 0, broadcast) {
     const game = this.games.get(gameId)
     if (!game || game.phase !== 'round_active') {
-      console.warn(`❌ Game ${gameId} not in active round`)
+      console.warn(`❌ Game ${gameId} not in active round`, {
+        gameExists: !!game,
+        phase: game?.phase,
+        currentRound: game?.currentRound
+      })
       return false
     }
 
@@ -289,7 +293,17 @@ class PhysicsGameManager {
         player: !!player,
         isActive: player?.isActive,
         hasFired: player?.hasFired,
-        lives: player?.lives
+        lives: player?.lives,
+        slotNumber: player?.slotNumber,
+        choice: player?.choice,
+        allPlayers: Object.keys(game.players),
+        allPlayerStates: Object.entries(game.players).map(([addr, p]) => ({
+          address: addr,
+          isActive: p.isActive,
+          hasFired: p.hasFired,
+          lives: p.lives,
+          choice: p.choice
+        }))
       })
       return false
     }
