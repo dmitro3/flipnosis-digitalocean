@@ -814,6 +814,9 @@
           });
           
           console.log(`✅ Round ${currentRound} reset complete - players can charge and choose again`);
+          
+          // 🎯 CRITICAL: Update button visibility after reset
+          updatePlayerCardButtons();
         }
       }
       
