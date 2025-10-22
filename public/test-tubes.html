@@ -784,7 +784,7 @@
             
             // 9. Reset UI - Power button
             if (tube.cardElement) {
-              const powerButton = tube.cardElement.querySelectorAll('.action-btn')[1];
+              const powerButton = tube.cardElement.querySelectorAll('.action-btn')[0]; // Fixed: was [1], now [0]
               if (powerButton) {
                 powerButton.style.background = 'linear-gradient(135deg, #9d00ff, #c44aff)';
                 powerButton.style.color = '#ffffff';
@@ -823,6 +823,14 @@
                   // Only show buttons for current player
                   if (playerSlot === i) {
                     choiceButtons.style.display = 'flex';
+                    
+                    // Reset choice button styles
+                    const choiceBtnElements = tube.cardElement.querySelectorAll('.choice-btn');
+                    choiceBtnElements.forEach(btn => {
+                      btn.style.opacity = '1';
+                      btn.style.transform = 'scale(1)';
+                      btn.style.boxShadow = '';
+                    });
                   } else {
                     choiceButtons.style.display = 'none';
                   }
@@ -2687,6 +2695,15 @@
         button.addEventListener('click', (e) => {
           e.stopPropagation();
           const choice = button.classList.contains('heads') ? 'heads' : 'tails';
+          
+          // Add visual feedback - highlight the selected button
+          choiceButtons.forEach(btn => {
+            btn.style.opacity = '0.5';
+            btn.style.transform = 'scale(0.95)';
+          });
+          button.style.opacity = '1';
+          button.style.transform = 'scale(1.1)';
+          button.style.boxShadow = '0 0 25px rgba(255, 255, 255, 0.8)';
           
           // Update local player choice immediately
           players[i].choice = choice;
