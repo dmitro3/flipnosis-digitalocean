@@ -539,6 +539,24 @@
       
       socket.on('physics_error', (error) => {
         console.error('❌ Physics error:', error);
+        
+        // 🎯 NEW: Reset the tube state on error
+        const playerIndex = players.findIndex(p => p.address === walletParam);
+        if (playerIndex !== -1 && tubes[playerIndex]) {
+          tubes[playerIndex].isFilling = false;
+          tubes[playerIndex].power = 0;
+          tubes[playerIndex].powerLevel = 0;
+          isCharging = false;
+          
+          // Stop charging sound if playing
+          if (powerChargeSound && !powerChargeSound.paused) {
+            powerChargeSound.pause();
+            powerChargeSound.currentTime = 0;
+          }
+          
+          console.log(`🔄 Reset tube ${playerIndex + 1} state after error`);
+        }
+        
         alert(`Game Error: ${error.message}`);
       });
       
@@ -4554,76 +4572,49 @@
       tubes.forEach((tube, i) => {
         const offset = i * 0.4;
         
-        // 🎯 CLIENT PREDICTION: Local power increment for instant feel (server validates)
-        if (tube.isFilling && !tube.isShattered && playerSlot === i) {
-          // CLIENT PREDICTION: Local power increment for instant feel
+        // 🎯 REFACTORED: POWER CHARGING SYSTEM - REAL-TIME SYNC
+        if (tube.isFilling && !tube.isShattered) {
+          // Increase power (0-100 over ~3 seconds)
           tube.power = Math.min(tube.power + 0.6, 100);
           const powerPercent = tube.power / 100;
+          
+          // Update foam intensity
           tube.foamIntensity = powerPercent;
           
           // Calculate power level (1-5) based on power percentage
           const powerLevel = Math.min(5, Math.max(1, Math.ceil(tube.power / 20)));
           
-          // Update UI elements for local player
-          if (tube.cardElement) {
-            const powerBar = tube.cardElement.querySelector('.power-bar');
-            const powerText = tube.cardElement.querySelector('.power-text');
-            if (powerBar) {
-              powerBar.style.width = `${tube.power}%`;
-              powerBar.style.background = `linear-gradient(90deg, #00ff00 0%, #ffff00 50%, #ff0000 100%)`;
-            }
-            if (powerText) {
-              powerText.textContent = `${Math.round(tube.power)}%`;
-            }
-          }
-          
-          // 🎯 UNIFIED PEARL COLOR UPDATE - Same for local and remote
-          updatePearlColors(tube, powerPercent, i);
-          
-          // Send to server every 5 frames for validation
-          if (isServerSideMode && socket && gameIdParam && walletParam) {
-            if (frameCount % 5 === 0) {
+          // 🎯 FASTER BROADCAST - Every 5 frames = 12 updates/second (was every frame)
+          if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === i) {
+            if (frameCount % 5 === 0) { // Changed from every frame to every 5 frames
               socket.emit('physics_power_charging', {
                 gameId: gameIdParam,
                 address: walletParam,
                 power: tube.power,
                 powerLevel: powerLevel,
                 playerSlot: i,
-                isFilling: tube.isFilling  // ✅ FIXED: Include isFilling property
+                isFilling: tube.isFilling
               });
+              // Removed console.log to reduce spam - only log on start/stop
             }
           }
-        }
-        
-        // 🎯 SERVER-DRIVEN: Update visuals for OTHER players charging
-        if (tube.isFilling && !tube.isShattered && playerSlot !== i) {
-          // SERVER-DRIVEN: Update visuals for OTHER players charging
-          const powerPercent = tube.power / 100;
-          tube.foamIntensity = powerPercent;
           
-          // Update UI elements for remote players
+          // Update UI elements
           if (tube.cardElement) {
             const powerBar = tube.cardElement.querySelector('.power-bar');
             const powerText = tube.cardElement.querySelector('.power-text');
-            if (powerBar) {
-              powerBar.style.width = `${tube.power}%`;
-              powerBar.style.background = `linear-gradient(90deg, #00ff00 0%, #ffff00 50%, #ff0000 100%)`;
-            }
-            if (powerText) {
-              powerText.textContent = `${Math.round(tube.power)}%`;
+            if (powerBar) powerBar.style.width = `${tube.power}%`;
+            if (powerText) powerText.textContent = `POWER: ${tube.power.toFixed(0)}%`;
+            
+            // Change bar color as it charges (pink theme)
+            if (tube.power > 75) {
+              powerBar.style.background = 'linear-gradient(90deg, #ff1493, #ff69b4)';
+            } else if (tube.power > 50) {
+              powerBar.style.background = 'linear-gradient(90deg, #ff69b4, #ffb6c1)';
             }
           }
           
           // 🎯 UNIFIED PEARL COLOR UPDATE - Same for local and remote
-          updatePearlColors(tube, powerPercent, i);
-        }
-        
-        // 🎯 FALLBACK: Ensure pearls are visible for any charging tube (in case server broadcast fails)
-        if (tube.isFilling && !tube.isShattered) {
-          const powerPercent = tube.power / 100;
-          tube.foamIntensity = powerPercent;
-          
-          // Always update pearl colors for any charging tube
           updatePearlColors(tube, powerPercent, i);
         }
         
