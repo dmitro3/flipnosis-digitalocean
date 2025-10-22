@@ -610,39 +610,70 @@ initialize(server, dbService) {
         }
       }))
 
-      // Create collection session when game ends
-      socket.on('create_flip_collection', safeHandler(async (data) => {
-        console.log(`🎁 create_flip_collection from ${socket.id}`, data)
-        const { gameId, address, gameResult } = data
-        
-        // Check if service is ready
-        if (!this.flipCollectionService || !this.flipCollectionServiceReady) {
-          console.error('❌ FlipCollectionService not ready')
-          socket.emit('flip_collection_created', {
-            success: false,
-            error: 'FLIP collection service not available'
-          })
-          return
-        }
+      // Award FLIP tokens directly when game ends
+      socket.on('award_flip_tokens_final', safeHandler(async (data) => {
+        console.log(`🎁 award_flip_tokens_final from ${socket.id}`, data)
+        const { gameId, address, totalFlip, gameResult } = data
         
         try {
-          const collection = await this.flipCollectionService.createCollectionSession(gameId, address, gameResult)
-          
-          // Send collection session to client
-          socket.emit('flip_collection_created', {
-            success: true,
-            collectionId: collection.collectionId,
-            totalFlip: collection.totalFlip,
-            gameResult: collection.gameResult,
-            expiresAt: collection.expiresAt
+          // Award XP directly to player's profile
+          const result = await new Promise((resolve, reject) => {
+            this.dbService.db.run(
+              `UPDATE profiles 
+               SET xp = xp + ?, updated_at = CURRENT_TIMESTAMP
+               WHERE address = ?`,
+              [totalFlip, address.toLowerCase()],
+              function(err) {
+                if (err) {
+                  reject(err)
+                } else {
+                  resolve({ changes: this.changes })
+                }
+              }
+            )
           })
           
-          console.log(`✅ Created collection session for ${address}: ${collection.totalFlip} FLIP`)
+          if (result.changes > 0) {
+            // Send success confirmation to client
+            socket.emit('flip_tokens_awarded_final', {
+              success: true,
+              totalFlip: totalFlip,
+              gameResult: gameResult,
+              message: `+${totalFlip} FLIP tokens added to your profile!`
+            })
+            
+            console.log(`✅ Awarded ${totalFlip} FLIP tokens directly to ${address}`)
+          } else {
+            // Player profile doesn't exist, create one
+            await new Promise((resolve, reject) => {
+              this.dbService.db.run(
+                `INSERT INTO profiles (address, xp, created_at, updated_at)
+                 VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [address.toLowerCase(), totalFlip],
+                function(err) {
+                  if (err) {
+                    reject(err)
+                  } else {
+                    resolve()
+                  }
+                }
+              )
+            })
+            
+            socket.emit('flip_tokens_awarded_final', {
+              success: true,
+              totalFlip: totalFlip,
+              gameResult: gameResult,
+              message: `+${totalFlip} FLIP tokens added to your new profile!`
+            })
+            
+            console.log(`✅ Created new profile and awarded ${totalFlip} FLIP tokens to ${address}`)
+          }
         } catch (error) {
-          console.error('Error creating collection session:', error)
-          socket.emit('flip_collection_created', {
+          console.error('Error awarding FLIP tokens directly:', error)
+          socket.emit('flip_tokens_awarded_final', {
             success: false,
-            error: 'Failed to create collection session'
+            error: 'Failed to award FLIP tokens'
           })
         }
       }))

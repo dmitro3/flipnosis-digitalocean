@@ -522,16 +522,14 @@
         }
       });
 
-      // Handle collection session creation
-      socket.on('flip_collection_created', (data) => {
-        console.log('🎁 FLIP collection created:', data);
-        if (data.success && data.collectionId) {
-          currentCollectionId = data.collectionId;
-          // Collection UI is already shown in showGameOverScreen
-          showFloatingMessage('Collection session created!', '#00ff00', 2000);
+      // Handle direct FLIP token award
+      socket.on('flip_tokens_awarded_final', (data) => {
+        console.log('🎁 FLIP tokens awarded:', data);
+        if (data.success) {
+          showFloatingMessage(`+${data.totalFlip} FLIP tokens added to your profile!`, '#00ff00', 4000);
         } else {
-          console.error('❌ Collection session creation failed:', data.error);
-          showFloatingMessage(`Collection failed: ${data.error}`, '#ff0000', 3000);
+          console.error('❌ FLIP token award failed:', data.error);
+          showFloatingMessage(`Failed to award FLIP tokens: ${data.error}`, '#ff0000', 3000);
         }
       });
 
@@ -4342,12 +4340,12 @@
         winnerName
       });
       
-      // Create collection session via server
+      // Award FLIP tokens directly via server
       if (isServerSideMode && socket && gameIdParam && walletParam) {
         const gameResult = didCurrentPlayerWin ? 'won' : 'lost';
         
-        // Request FLIP collection session creation
-        socket.emit('create_flip_collection', {
+        // Request direct FLIP token award
+        socket.emit('award_flip_tokens_final', {
           gameId: gameIdParam,
           address: walletParam,
           gameResult: gameResult,
@@ -4355,15 +4353,7 @@
           totalFlip: currentPlayerXP
         });
         
-        console.log(`🎁 Requesting collection session: ${gameResult}, ${currentPlayerXP} FLIP`);
-        
-        // Don't set fallback collection ID - let the user know the service is unavailable
-        setTimeout(() => {
-          if (!currentCollectionId) {
-            console.log('⚠️ Server collection session failed - FLIP collection service unavailable');
-            showFloatingMessage('FLIP collection service unavailable', '#ff0000', 3000);
-          }
-        }, 2000);
+        console.log(`🎁 Awarding FLIP tokens directly: ${gameResult}, ${currentPlayerXP} FLIP`);
       }
       
       // Show immediate game over overlay
@@ -4406,21 +4396,6 @@
                 You earned ${currentPlayerXP} FLIP tokens!
             </div>
             <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
-                <button id="claim-flip-btn" style="
-                    background: linear-gradient(135deg, #00ff00, #39ff14);
-                    border: none;
-                    border-radius: 15px;
-                    padding: 15px 30px;
-                    font-family: 'Orbitron', sans-serif;
-                    font-size: 18px;
-                    font-weight: bold;
-                    color: #000;
-                    cursor: pointer;
-                    text-transform: uppercase;
-                    letter-spacing: 2px;
-                ">
-                    💎 Claim ${currentPlayerXP} FLIP
-                </button>
                 <button id="claim-nft-btn" style="
                     background: linear-gradient(135deg, #ff0088, #ff1493);
                     border: none;
@@ -4450,21 +4425,6 @@
             <div style="font-size: 20px; color: #00ff00; margin-bottom: 30px;">
                 You earned ${currentPlayerXP} FLIP tokens!
             </div>
-            <button id="claim-flip-btn" style="
-                background: linear-gradient(135deg, #00ff00, #39ff14);
-                border: none;
-                border-radius: 15px;
-                padding: 15px 30px;
-                font-family: 'Orbitron', sans-serif;
-                font-size: 18px;
-                font-weight: bold;
-                color: #000;
-                cursor: pointer;
-                text-transform: uppercase;
-                letter-spacing: 2px;
-            ">
-                💎 Claim ${currentPlayerXP} FLIP
-            </button>
         `;
       }
       
@@ -4497,34 +4457,8 @@
       
       // Add button handlers
       setTimeout(() => {
-        const claimFlipBtn = document.getElementById('claim-flip-btn');
         const claimNftBtn = document.getElementById('claim-nft-btn');
         const returnLobbyBtn = document.getElementById('return-lobby-btn');
-        
-        if (claimFlipBtn) {
-            // Disable button if no collection ID available
-            if (!currentCollectionId) {
-                claimFlipBtn.disabled = true;
-                claimFlipBtn.style.background = 'linear-gradient(135deg, #666, #888)';
-                claimFlipBtn.textContent = '❌ Service Unavailable';
-            }
-            
-            claimFlipBtn.addEventListener('click', () => {
-                if (socket && currentCollectionId) {
-                    console.log(`💰 Claiming ${currentPlayerXP} FLIP tokens for ${walletParam}`);
-                    socket.emit('collect_flip_tokens', {
-                        collectionId: currentCollectionId,
-                        address: walletParam,
-                        amount: currentPlayerXP
-                    });
-                    claimFlipBtn.disabled = true;
-                    claimFlipBtn.textContent = 'Claiming...';
-                } else {
-                    console.error('❌ Cannot claim FLIP: missing socket, collectionId, or walletParam');
-                    showFloatingMessage('FLIP collection service unavailable', '#ff0000', 3000);
-                }
-            });
-        }
         
         if (claimNftBtn && didCurrentPlayerWin) {
             claimNftBtn.addEventListener('click', () => {
