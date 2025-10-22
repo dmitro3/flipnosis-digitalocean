@@ -1384,16 +1384,16 @@
 
     // Coin options - MUST be defined before tubes are created
     const coinOptions = [
-      { id: 'plain', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png' },
-      { id: 'skull', name: 'Skull', headsImage: '/coins/skullh.png', tailsImage: '/coins/skullt.png' },
-      { id: 'trump', name: 'Trump', headsImage: '/coins/trumpheads.webp', tailsImage: '/coins/trumptails.webp' },
-      { id: 'mario', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png' },
-      { id: 'jestress', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png' },
-      { id: 'dragon', name: '龙', headsImage: '/coins/dragonh.png', tailsImage: '/coins/dragont.png' },
-      { id: 'stinger', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png' },
-      { id: 'manga', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png' },
-      { id: 'pharaoh', name: 'Pharaoh', headsImage: '/coins/pharaohh.png', tailsImage: '/coins/pharaoht.png' },
-      { id: 'calavera', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png' }
+      { id: 'plain', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png', cost: 0, category: 'free' },
+      { id: 'skull', name: 'Skull', headsImage: '/coins/skullh.png', tailsImage: '/coins/skullt.png', cost: 200, category: 'premium' },
+      { id: 'trump', name: 'Trump', headsImage: '/coins/trumpheads.webp', tailsImage: '/coins/trumptails.webp', cost: 300, category: 'premium' },
+      { id: 'mario', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png', cost: 300, category: 'premium' },
+      { id: 'stinger', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png', cost: 300, category: 'premium' },
+      { id: 'dragon', name: '龙', headsImage: '/coins/dragonh.png', tailsImage: '/coins/dragont.png', cost: 300, category: 'premium' },
+      { id: 'jestress', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png', cost: 500, category: 'epic' },
+      { id: 'manga', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png', cost: 500, category: 'epic' },
+      { id: 'pharaoh', name: 'Pharaoh', headsImage: '/coins/pharaohh.png', tailsImage: '/coins/pharaoht.png', cost: 1000, category: 'legendary' },
+      { id: 'calavera', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png', cost: 1000, category: 'legendary' }
     ];
 
     // Coin material options with physics properties - MUST be defined before tubes are created
@@ -3307,14 +3307,75 @@
         overflow-y: auto;
       `;
 
-      content.innerHTML = `
-        <h2 style="color: #FFD700; text-align: center; margin-bottom: 35px; font-family: 'Orbitron', sans-serif; font-size: 1.8rem;">Customize Your Coin</h2>
-        
-        <!-- Coin Design Section -->
-        <h3 style="color: #FFD700; margin-bottom: 20px; font-family: 'Orbitron', sans-serif; font-size: 1.2rem;">Coin Design</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 15px; margin-bottom: 40px;">
-          ${coinOptions.map(coin => `
-            <div class="coin-option" data-coin-id="${coin.id}" style="
+      // Get current player's flip balance and unlocked coins (placeholder for now)
+      let playerFlipBalance = 0; // Will be fetched from server
+      let unlockedCoins = ['plain']; // Will be fetched from server
+      let customCoinHeads = null;
+      let customCoinTails = null;
+
+      // Fetch player data from server
+      if (isServerSideMode && socket && walletParam) {
+        socket.emit('get_player_profile', { address: walletParam });
+        socket.once('player_profile_data', (profileData) => {
+          playerFlipBalance = profileData.flip_balance || 0;
+          unlockedCoins = JSON.parse(profileData.unlocked_coins || '["plain"]');
+          customCoinHeads = profileData.custom_coin_heads;
+          customCoinTails = profileData.custom_coin_tails;
+          updateCoinDisplay();
+        });
+      }
+
+      function updateCoinDisplay() {
+        const coinGrid = content.querySelector('.coin-grid');
+        if (!coinGrid) return;
+
+        coinGrid.innerHTML = `
+          ${coinOptions.map(coin => {
+            const isUnlocked = unlockedCoins.includes(coin.id);
+            const canAfford = playerFlipBalance >= coin.cost;
+            const isLocked = !isUnlocked && coin.cost > 0;
+            
+            let borderColor = 'rgba(255, 215, 0, 0.25)';
+            let backgroundColor = 'rgba(255, 215, 0, 0.08)';
+            let opacity = '1';
+            let cursor = 'pointer';
+            
+            if (isLocked) {
+              borderColor = 'rgba(255, 0, 0, 0.5)';
+              backgroundColor = 'rgba(255, 0, 0, 0.1)';
+              opacity = '0.6';
+              cursor = canAfford ? 'pointer' : 'not-allowed';
+            }
+            
+            return `
+              <div class="coin-option" data-coin-id="${coin.id}" data-cost="${coin.cost}" data-unlocked="${isUnlocked}" style="
+                background: ${backgroundColor};
+                border: 2px solid ${borderColor};
+                border-radius: 12px;
+                padding: 15px;
+                text-align: center;
+                cursor: ${cursor};
+                transition: all 0.3s ease;
+                opacity: ${opacity};
+                position: relative;
+              ">
+                ${isLocked ? `
+                  <div style="position: absolute; top: 5px; right: 5px; background: rgba(255, 0, 0, 0.8); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">🔒</div>
+                ` : ''}
+                <img src="${coin.headsImage}" style="width: 65px; height: 65px; object-fit: contain; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;" />
+                <div style="color: #FFD700; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; margin-bottom: 4px;">${coin.name}</div>
+                ${coin.cost > 0 ? `
+                  <div style="color: ${isUnlocked ? '#00ff00' : canAfford ? '#FFD700' : '#ff4444'}; font-size: 0.75rem; font-weight: bold;">
+                    ${isUnlocked ? 'UNLOCKED' : `${coin.cost} FLIP`}
+                  </div>
+                ` : '<div style="color: #00ff00; font-size: 0.75rem; font-weight: bold;">FREE</div>'}
+              </div>
+            `;
+          }).join('')}
+          
+          <!-- Custom Coin Option -->
+          ${customCoinHeads && customCoinTails ? `
+            <div class="coin-option" data-coin-id="custom" data-cost="0" data-unlocked="true" style="
               background: rgba(255, 215, 0, 0.08);
               border: 2px solid rgba(255, 215, 0, 0.25);
               border-radius: 12px;
@@ -3322,11 +3383,33 @@
               text-align: center;
               cursor: pointer;
               transition: all 0.3s ease;
+              position: relative;
             ">
-              <img src="${coin.headsImage}" style="width: 65px; height: 65px; object-fit: contain; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;" />
-              <div style="color: #FFD700; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.85rem;">${coin.name}</div>
+              <img src="${customCoinHeads}" style="width: 65px; height: 65px; object-fit: contain; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;" />
+              <div style="color: #FFD700; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; margin-bottom: 4px;">Custom</div>
+              <div style="color: #00ff00; font-size: 0.75rem; font-weight: bold;">YOURS</div>
             </div>
-          `).join('')}
+          ` : ''}
+        `;
+        
+        // Re-attach event listeners
+        attachCoinEventListeners();
+      }
+
+      content.innerHTML = `
+        <h2 style="color: #FFD700; text-align: center; margin-bottom: 35px; font-family: 'Orbitron', sans-serif; font-size: 1.8rem;">Customize Your Coin</h2>
+        
+        <!-- Flip Balance Display -->
+        <div style="text-align: center; margin-bottom: 30px; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.3);">
+          <div style="color: #FFD700; font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: bold;">
+            Your FLIP Balance: <span id="flip-balance">${playerFlipBalance}</span>
+          </div>
+        </div>
+        
+        <!-- Coin Design Section -->
+        <h3 style="color: #FFD700; margin-bottom: 20px; font-family: 'Orbitron', sans-serif; font-size: 1.2rem;">Coin Design</h3>
+        <div class="coin-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 15px; margin-bottom: 40px;">
+          <!-- Coins will be populated here -->
         </div>
         
         <!-- Material Selection Section -->
@@ -3383,89 +3466,115 @@
       document.body.appendChild(modal);
       
       let selectedCoin = tubes[tubeIndex].selectedCoin || coinOptions[0];
-      let selectedMaterial = tubes[tubeIndex].selectedMaterial || coinMaterials[0]; // Default to graphite
+      let selectedMaterial = tubes[tubeIndex].selectedMaterial || coinMaterials[0];
       
       // Force reset to Graphite if material is invalid
       if (!selectedMaterial || !selectedMaterial.id || selectedMaterial.id !== 'graphite') {
-        selectedMaterial = coinMaterials[0]; // Force to Graphite
-        tubes[tubeIndex].selectedMaterial = selectedMaterial; // Update the stored material
+        selectedMaterial = coinMaterials[0];
+        tubes[tubeIndex].selectedMaterial = selectedMaterial;
         console.log(`🔧 Forced material reset to: ${selectedMaterial.name}`);
       }
       
-      console.log(`🎨 Auto-selecting: Coin="${selectedCoin.name}", Material="${selectedMaterial.name}" (ID: ${selectedMaterial.id})`);
+      // Initial coin display
+      updateCoinDisplay();
       
-      // Auto-select the current coin and material in the modal - VISUALLY HIGHLIGHTED
-      // Use setTimeout to ensure DOM elements are ready
-      setTimeout(() => {
-        const currentCoinOption = content.querySelector(`[data-coin-id="${selectedCoin.id}"]`);
-        if (currentCoinOption) {
-          currentCoinOption.style.background = 'rgba(255, 215, 0, 0.3)';
-          currentCoinOption.style.borderColor = '#FFD700';
-          currentCoinOption.style.transform = 'scale(1.05)'; // Make it slightly bigger to show it's selected
-          console.log(`✅ Auto-selected coin: ${selectedCoin.name}`);
-        } else {
-          console.log(`❌ Could not find coin option for ID: ${selectedCoin.id}`);
-        }
-        
-        const currentMaterialOption = content.querySelector(`[data-material-id="${selectedMaterial.id}"]`);
-        if (currentMaterialOption) {
-          currentMaterialOption.style.background = 'rgba(255, 215, 0, 0.2)';
-          currentMaterialOption.style.borderColor = '#FFD700';
-          currentMaterialOption.style.transform = 'scale(1.05)'; // Make it slightly bigger to show it's selected
-          console.log(`✅ Auto-selected material: ${selectedMaterial.name}`);
-        } else {
-          console.log(`❌ Could not find material option for ID: ${selectedMaterial.id}`);
-          console.log(`Available material IDs: ${coinMaterials.map(m => m.id).join(', ')}`);
-        }
-      }, 10); // Small delay to ensure DOM is ready
-
-      // Add click handlers to coin design options
-      content.querySelectorAll('.coin-option').forEach(option => {
-        option.addEventListener('click', () => {
-          const coinId = option.dataset.coinId;
-          selectedCoin = coinOptions.find(c => c.id === coinId);
-          
-          // Update visual selection
-          content.querySelectorAll('.coin-option').forEach(opt => {
-            opt.style.background = 'rgba(255, 215, 0, 0.1)';
-            opt.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+      function attachCoinEventListeners() {
+        content.querySelectorAll('.coin-option').forEach(option => {
+          option.addEventListener('click', () => {
+            const coinId = option.dataset.coinId;
+            const cost = parseInt(option.dataset.cost);
+            const isUnlocked = option.dataset.unlocked === 'true';
+            
+            if (coinId === 'custom') {
+              // Handle custom coin selection
+              selectedCoin = {
+                id: 'custom',
+                name: 'Custom',
+                headsImage: customCoinHeads,
+                tailsImage: customCoinTails,
+                cost: 0,
+                category: 'custom'
+              };
+            } else {
+              const coin = coinOptions.find(c => c.id === coinId);
+              if (!coin) return;
+              
+              if (!isUnlocked && cost > 0) {
+                // Try to unlock the coin
+                if (playerFlipBalance >= cost) {
+                  // Unlock the coin
+                  if (isServerSideMode && socket && walletParam) {
+                    socket.emit('unlock_coin', {
+                      address: walletParam,
+                      coinId: coinId,
+                      cost: cost
+                    });
+                    
+                    socket.once('coin_unlocked', (result) => {
+                      if (result.success) {
+                        playerFlipBalance -= cost;
+                        unlockedCoins.push(coinId);
+                        document.getElementById('flip-balance').textContent = playerFlipBalance;
+                        updateCoinDisplay();
+                        selectedCoin = coin;
+                        updateCoinSelection();
+                        console.log(`✅ Unlocked ${coin.name} for ${cost} FLIP`);
+                      } else {
+                        console.error('❌ Failed to unlock coin:', result.error);
+                        alert(`Failed to unlock ${coin.name}: ${result.error}`);
+                      }
+                    });
+                  }
+                } else {
+                  alert(`Not enough FLIP! You need ${cost} FLIP to unlock ${coin.name}.`);
+                  return;
+                }
+              } else {
+                selectedCoin = coin;
+              }
+            }
+            
+            updateCoinSelection();
           });
-          option.style.background = 'rgba(255, 215, 0, 0.3)';
-          option.style.borderColor = '#FFD700';
           
-          console.log(`Coin design selected:`, selectedCoin.name);
+          // Hover effects
+          option.addEventListener('mouseenter', () => {
+            if (selectedCoin.id !== option.dataset.coinId) {
+              option.style.transform = 'scale(1.05)';
+            } else {
+              option.style.transform = 'scale(1.1)';
+            }
+          });
+          option.addEventListener('mouseleave', () => {
+            if (selectedCoin.id !== option.dataset.coinId) {
+              option.style.transform = 'scale(1)';
+            } else {
+              option.style.transform = 'scale(1.05)';
+            }
+          });
+        });
+      }
+      
+      function updateCoinSelection() {
+        content.querySelectorAll('.coin-option').forEach(opt => {
+          opt.style.background = opt.dataset.unlocked === 'true' ? 'rgba(255, 215, 0, 0.08)' : 'rgba(255, 0, 0, 0.1)';
+          opt.style.borderColor = opt.dataset.unlocked === 'true' ? 'rgba(255, 215, 0, 0.25)' : 'rgba(255, 0, 0, 0.5)';
         });
         
-        // Hover effect
-        option.addEventListener('mouseenter', () => {
-          if (selectedCoin.id !== option.dataset.coinId) {
-            option.style.background = 'rgba(255, 215, 0, 0.2)';
-            option.style.transform = 'scale(1.05)';
-          } else {
-            // Already selected - make it even more prominent on hover
-            option.style.background = 'rgba(255, 215, 0, 0.4)';
-            option.style.transform = 'scale(1.1)';
-          }
-        });
-        option.addEventListener('mouseleave', () => {
-          if (selectedCoin.id !== option.dataset.coinId) {
-            option.style.background = 'rgba(255, 215, 0, 0.1)';
-            option.style.transform = 'scale(1)';
-          } else {
-            // Already selected - return to selected state
-            option.style.background = 'rgba(255, 215, 0, 0.3)';
-            option.style.transform = 'scale(1.05)';
-          }
-        });
-      });
+        const selectedOption = content.querySelector(`[data-coin-id="${selectedCoin.id}"]`);
+        if (selectedOption) {
+          selectedOption.style.background = 'rgba(255, 215, 0, 0.3)';
+          selectedOption.style.borderColor = '#FFD700';
+          selectedOption.style.transform = 'scale(1.05)';
+        }
+      }
       
-      // Add click handlers to material options
+      // Material selection handlers (unchanged)
       content.querySelectorAll('.material-option').forEach(option => {
         option.addEventListener('click', () => {
           const materialId = option.dataset.materialId;
           selectedMaterial = coinMaterials.find(m => m.id === materialId);
           
-          // Update visual selection
           content.querySelectorAll('.material-option').forEach(opt => {
             opt.style.background = 'rgba(255, 255, 255, 0.05)';
             opt.style.borderColor = 'rgba(255, 255, 255, 0.2)';
@@ -3476,13 +3585,11 @@
           console.log(`Material selected:`, selectedMaterial.name);
         });
         
-        // Hover effect
         option.addEventListener('mouseenter', () => {
           if (selectedMaterial.id !== option.dataset.materialId) {
             option.style.background = 'rgba(255, 255, 255, 0.1)';
             option.style.transform = 'scale(1.05)';
           } else {
-            // Already selected - make it even more prominent on hover
             option.style.background = 'rgba(255, 215, 0, 0.3)';
             option.style.transform = 'scale(1.1)';
           }
@@ -3492,7 +3599,6 @@
             option.style.background = 'rgba(255, 255, 255, 0.05)';
             option.style.transform = 'scale(1)';
           } else {
-            // Already selected - return to selected state
             option.style.background = 'rgba(255, 215, 0, 0.2)';
             option.style.transform = 'scale(1.05)';
           }

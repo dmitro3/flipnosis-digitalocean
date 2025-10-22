@@ -584,6 +584,94 @@ initialize(server, dbService) {
         )
       }))
 
+      // ===== COIN UNLOCKING SYSTEM =====
+      socket.on('get_player_profile', safeHandler(async (data) => {
+        console.log(`👤 get_player_profile from ${socket.id}`, data)
+        try {
+          const { address } = data
+          if (!address) {
+            socket.emit('error', { message: 'Address is required' })
+            return
+          }
+
+          const profile = await this.dbService.getProfileByAddress(address)
+          if (!profile) {
+            // Create default profile if doesn't exist
+            const defaultProfile = {
+              address: address,
+              flip_balance: 0,
+              unlocked_coins: '["plain"]',
+              custom_coin_heads: null,
+              custom_coin_tails: null
+            }
+            await this.dbService.createOrUpdateProfile(defaultProfile)
+            socket.emit('player_profile_data', defaultProfile)
+          } else {
+            socket.emit('player_profile_data', profile)
+          }
+        } catch (error) {
+          console.error('❌ Error getting player profile:', error)
+          socket.emit('error', { message: 'Failed to get player profile' })
+        }
+      }))
+
+      socket.on('unlock_coin', safeHandler(async (data) => {
+        console.log(`🔓 unlock_coin from ${socket.id}`, data)
+        try {
+          const { address, coinId, cost } = data
+          if (!address || !coinId || cost === undefined) {
+            socket.emit('coin_unlocked', { success: false, error: 'Missing required fields' })
+            return
+          }
+
+          // Get current profile
+          const profile = await this.dbService.getProfileByAddress(address)
+          if (!profile) {
+            socket.emit('coin_unlocked', { success: false, error: 'Profile not found' })
+            return
+          }
+
+          const currentBalance = profile.flip_balance || 0
+          const unlockedCoins = JSON.parse(profile.unlocked_coins || '["plain"]')
+
+          // Check if already unlocked
+          if (unlockedCoins.includes(coinId)) {
+            socket.emit('coin_unlocked', { success: false, error: 'Coin already unlocked' })
+            return
+          }
+
+          // Check if has enough FLIP
+          if (currentBalance < cost) {
+            socket.emit('coin_unlocked', { success: false, error: 'Insufficient FLIP balance' })
+            return
+          }
+
+          // Deduct FLIP and unlock coin
+          const newBalance = currentBalance - cost
+          unlockedCoins.push(coinId)
+
+          // Update profile
+          await this.dbService.updateProfile(address, {
+            flip_balance: newBalance,
+            unlocked_coins: JSON.stringify(unlockedCoins)
+          })
+
+          // Record transaction
+          await this.dbService.recordCoinUnlockTransaction(address, coinId, cost, currentBalance, newBalance)
+
+          console.log(`✅ Unlocked ${coinId} for ${address} at cost ${cost} FLIP`)
+          socket.emit('coin_unlocked', { 
+            success: true, 
+            newBalance: newBalance,
+            unlockedCoins: unlockedCoins
+          })
+
+        } catch (error) {
+          console.error('❌ Error unlocking coin:', error)
+          socket.emit('coin_unlocked', { success: false, error: 'Failed to unlock coin' })
+        }
+      }))
+
       // Award FLIP tokens for coin flips
       socket.on('award_flip_tokens', safeHandler(async (data) => {
         console.log(`💰 award_flip_tokens from ${socket.id}`, data)

@@ -349,20 +349,60 @@ class DatabaseService {
         address, name, avatar, headsImage, tailsImage, twitter, telegram,
         xp = 0, xp_name_earned = false, xp_avatar_earned = false,
         xp_heads_earned = false, xp_tails_earned = false,
-        xp_twitter_earned = false, xp_telegram_earned = false
+        xp_twitter_earned = false, xp_telegram_earned = false,
+        flip_balance = 0, unlocked_coins = '["plain"]',
+        custom_coin_heads = null, custom_coin_tails = null
       } = profileData
 
       this.db.run(`
         INSERT OR REPLACE INTO profiles (
           address, name, avatar, headsImage, tailsImage, twitter, telegram,
           xp, xp_name_earned, xp_avatar_earned, xp_heads_earned, xp_tails_earned,
-          xp_twitter_earned, xp_telegram_earned, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          xp_twitter_earned, xp_telegram_earned, flip_balance, unlocked_coins,
+          custom_coin_heads, custom_coin_tails, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `, [
         address.toLowerCase(), name, avatar, headsImage, tailsImage, twitter, telegram,
         xp, xp_name_earned, xp_avatar_earned, xp_heads_earned, xp_tails_earned,
-        xp_twitter_earned, xp_telegram_earned
+        xp_twitter_earned, xp_telegram_earned, flip_balance, unlocked_coins,
+        custom_coin_heads, custom_coin_tails
       ], function(err) {
+        if (err) reject(err)
+        else resolve(this.lastID)
+      })
+    })
+  }
+
+  async updateProfile(address, updateData) {
+    return new Promise((resolve, reject) => {
+      const fields = []
+      const values = []
+      
+      Object.keys(updateData).forEach(key => {
+        fields.push(`${key} = ?`)
+        values.push(updateData[key])
+      })
+      
+      values.push(address.toLowerCase())
+      
+      this.db.run(`
+        UPDATE profiles 
+        SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP
+        WHERE address = ?
+      `, values, function(err) {
+        if (err) reject(err)
+        else resolve(this.changes)
+      })
+    })
+  }
+
+  async recordCoinUnlockTransaction(playerAddress, coinId, cost, balanceBefore, balanceAfter) {
+    return new Promise((resolve, reject) => {
+      this.db.run(`
+        INSERT INTO coin_unlock_transactions (
+          player_address, coin_id, flip_cost, flip_balance_before, flip_balance_after
+        ) VALUES (?, ?, ?, ?, ?)
+      `, [playerAddress.toLowerCase(), coinId, cost, balanceBefore, balanceAfter], function(err) {
         if (err) reject(err)
         else resolve(this.lastID)
       })
