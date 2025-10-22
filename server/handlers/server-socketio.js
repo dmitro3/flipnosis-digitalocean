@@ -615,8 +615,8 @@ initialize(server, dbService) {
               ...profile,
               flip_balance: profile.xp || 0, // Use xp field as FLIP balance
               unlocked_coins: profile.unlocked_coins || '["plain"]',
-              custom_coin_heads: profile.custom_coin_heads || null,
-              custom_coin_tails: profile.custom_coin_tails || null
+              custom_coin_heads: profile.headsImage || profile.custom_coin_heads || null,
+              custom_coin_tails: profile.tailsImage || profile.custom_coin_tails || null
             }
             console.log(`📊 Profile with defaults:`, profileWithDefaults)
             socket.emit('player_profile_data', profileWithDefaults)

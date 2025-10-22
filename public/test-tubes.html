@@ -2691,11 +2691,7 @@
                   display: flex; 
                   align-items: center; 
                   justify-content: center;
-                  background-image: url('/images/Win.png');
-                  background-size: 40px 40px;
-                  background-position: center;
-                  background-repeat: no-repeat;
-                  background: ${idx < player.wins ? '#0a0f2e' : 'rgba(100, 100, 100, 0.3)'};
+                  background: ${idx < player.wins ? '#0a0f2e' : 'rgba(100, 100, 100, 0.3)'} url('/images/Win.png') center/40px 40px no-repeat;
                   border: ${idx < player.wins ? '3px solid #ffd700' : '2px solid #666'};
                   border-radius: 12px;
                   opacity: ${idx < player.wins ? '1' : '0.3'};
@@ -3337,6 +3333,12 @@
         const coinGrid = content.querySelector('.coin-grid');
         if (!coinGrid) return;
 
+        // Update FLIP balance display
+        const flipBalanceElement = document.getElementById('flip-balance');
+        if (flipBalanceElement) {
+          flipBalanceElement.textContent = playerFlipBalance;
+        }
+
         coinGrid.innerHTML = `
           ${coinOptions.map(coin => {
             const isUnlocked = unlockedCoins.includes(coin.id);
@@ -3410,7 +3412,7 @@
         <!-- Flip Balance Display -->
         <div style="text-align: center; margin-bottom: 30px; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.3);">
           <div style="color: #FFD700; font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: bold;">
-            Your FLIP Balance: <span id="flip-balance">${playerFlipBalance}</span>
+            Your FLIP Balance: <span id="flip-balance">Loading...</span>
           </div>
         </div>
         
