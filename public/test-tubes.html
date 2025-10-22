@@ -1191,16 +1191,16 @@
           const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
           const choiceBadge = tube.cardElement.querySelector('.choice-badge');
           
-          if (isCurrentPlayer && !player.choice) {
-            // Show choice buttons for current player
+          if (isCurrentPlayer) {
+            // Show choice buttons for current player (always visible so they can change)
             if (choiceBadge) choiceBadge.style.display = 'none';
             if (choiceButtons) choiceButtons.style.display = 'flex';
           } else if (player.choice) {
-            // Show choice badge
+            // Show choice badge for other players
             if (choiceButtons) choiceButtons.style.display = 'none';
             if (choiceBadge) choiceBadge.style.display = 'block';
           } else {
-            // Hide everything for other players
+            // Hide everything for other players without choices
             if (choiceButtons) choiceButtons.style.display = 'none';
             if (choiceBadge) choiceBadge.style.display = 'none';
           }
@@ -1683,8 +1683,8 @@
       top: 20px;
       right: 240px;
       width: 200px;
-      height: 80px;
-      padding: 15px;
+      height: 60px;
+      padding: 0;
       background: linear-gradient(135deg, #ffd700, #ffed4e);
       border: 2px solid #ffd700;
       border-radius: 12px;
@@ -1698,21 +1698,24 @@
       z-index: 1000;
     `;
     changeCoinBox.innerHTML = `
-      <div style="font-size: 14px; margin-bottom: 10px; font-weight: bold;">COIN SELECTOR</div>
       <button id="global-change-coin-btn" style="
         width: 100%;
-        padding: 10px 16px;
-        background: linear-gradient(135deg, #000, #333);
-        border: 2px solid #000;
+        height: 100%;
+        padding: 0;
+        background: linear-gradient(135deg, #ffd700, #ffed4e);
+        border: 2px solid #ffd700;
         border-radius: 8px;
-        color: #ffd700;
+        color: #000;
         font-family: 'Orbitron', sans-serif;
         font-weight: bold;
-        font-size: 12px;
+        font-size: 14px;
         cursor: pointer;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
         transition: all 0.3s ease;
-      " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 15px rgba(0, 0, 0, 0.5)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 10px rgba(0, 0, 0, 0.3)'">CHANGE COIN</button>
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 20px rgba(255, 215, 0, 0.6)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 15px rgba(255, 215, 0, 0.4)'">CHANGE COIN</button>
     `;
     document.body.appendChild(changeCoinBox);
 
