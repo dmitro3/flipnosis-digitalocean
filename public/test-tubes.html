@@ -1210,7 +1210,11 @@
           
           if (isCurrentPlayer) {
             // Show action buttons for current player
-            actionButtons.forEach(btn => btn.style.display = 'block');
+            actionButtons.forEach(btn => {
+              btn.style.display = 'block';
+              btn.style.pointerEvents = 'auto';
+            });
+            console.log(`🎯 Power button for slot ${i}: display=block, pointerEvents=auto`);
           } else {
             // Hide action buttons for other players
             actionButtons.forEach(btn => btn.style.display = 'none');
@@ -1679,7 +1683,7 @@
       top: 20px;
       right: 240px;
       width: 200px;
-      height: 120px;
+      height: 80px;
       padding: 15px;
       background: linear-gradient(135deg, #ffd700, #ffed4e);
       border: 2px solid #ffd700;
@@ -2725,6 +2729,7 @@
         
         powerButton.addEventListener('mousedown', (e) => {
           e.stopPropagation();
+          console.log(`🖱️ Power button mousedown for player ${i + 1}`);
           
           // Prevent charging if player has no lives
           if (players[i].lives <= 0) {
@@ -2740,7 +2745,10 @@
           }
           
           // Prevent charging if already used this round
-          if (tubes[i].hasUsedPower) return;
+          if (tubes[i].hasUsedPower) {
+            console.log(`❌ Player ${i + 1} already used power this round`);
+            return;
+          }
           
           console.log(`⚡ Charging power for tube ${i + 1}`);
           isCharging = true;
