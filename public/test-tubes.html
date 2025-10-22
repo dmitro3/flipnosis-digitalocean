@@ -668,7 +668,7 @@
             if (localPlayer && !localPlayer.isEmpty) {
               // Update choice if it changed (including reset to null)
               if (serverPlayer.choice !== localPlayer.choice) {
-                console.log(`🔄 Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice || 'null'}`);
+                console.log(`🔄 Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice || 'null'} (was: ${localPlayer.choice || 'null'})`);
                 localPlayer.choice = serverPlayer.choice;
                 
                 // Update UI for this player
@@ -1200,9 +1200,20 @@
           const choiceBadge = tube.cardElement.querySelector('.choice-badge');
           
           if (isCurrentPlayer) {
-            // Show choice buttons for current player (always visible so they can change)
-            if (choiceBadge) choiceBadge.style.display = 'none';
-            if (choiceButtons) choiceButtons.style.display = 'flex';
+            // Show choice buttons for current player only if they haven't made a choice yet
+            if (player.choice) {
+              // Player has made a choice - show the badge
+              if (choiceButtons) choiceButtons.style.display = 'none';
+              if (choiceBadge) {
+                choiceBadge.style.display = 'inline-block';
+                choiceBadge.textContent = player.choice.toUpperCase();
+                choiceBadge.className = `choice-badge ${player.choice}`;
+              }
+            } else {
+              // Player hasn't made a choice yet - show buttons
+              if (choiceBadge) choiceBadge.style.display = 'none';
+              if (choiceButtons) choiceButtons.style.display = 'flex';
+            }
           } else if (player.choice) {
             // Show choice badge for other players
             if (choiceButtons) choiceButtons.style.display = 'none';
@@ -2707,6 +2718,7 @@
           
           // Update local player choice immediately
           players[i].choice = choice;
+          console.log(`🎯 Local choice set for player ${i + 1}: ${choice}`);
           updateCoinRotationsFromPlayerChoices();
           saveGameState(); // ← ADD THIS
           
@@ -2732,6 +2744,9 @@
             });
             console.log(`🎯 Sent choice to server: ${choice}`);
           }
+          
+          // Update button visibility after choice is made
+          updatePlayerCardButtons();
         });
       });
 
