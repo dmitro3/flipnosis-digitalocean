@@ -226,43 +226,17 @@ const SearchInput = styled.input`
   }
 `
 
-const ViewToggleContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-`
-
-const ViewToggleButton = styled.button`
-  background: ${props => props.active ? props.theme.colors.neonGreen : 'transparent'};
-  border: 1px solid ${props => props.theme.colors.neonGreen};
-  color: ${props => props.active ? '#000B1A' : props.theme.colors.textPrimary};
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: bold;
-
-  &:hover {
-    background: ${props => props.active ? props.theme.colors.neonGreen : 'rgba(0, 255, 65, 0.1)'};
-    transform: scale(1.05);
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-  }
-`
+// View toggle components removed - using list view only for mobile optimization
 
 const ListViewContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
+
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+  }
 `
 
 const ListViewItem = styled.div`
@@ -286,10 +260,13 @@ const ListViewItem = styled.div`
   }
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
     gap: 0.75rem;
     padding: 0.75rem;
+    min-height: 80px;
+    width: 100%;
+    justify-content: space-between;
   }
 `
 
@@ -302,8 +279,9 @@ const ListViewImage = styled.div`
   flex-shrink: 0;
 
   @media (max-width: 768px) {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
+    border-radius: 0.4rem;
   }
 `
 
@@ -313,6 +291,12 @@ const ListViewContent = styled.div`
   gap: 0.5rem;
   flex: 1;
   min-width: 0;
+
+  @media (max-width: 768px) {
+    gap: 0.25rem;
+    flex: 1;
+    justify-content: space-between;
+  }
 `
 
 const ListViewHeader = styled.div`
@@ -322,7 +306,9 @@ const ListViewHeader = styled.div`
   gap: 1rem;
 
   @media (max-width: 768px) {
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     gap: 0.5rem;
   }
 `
@@ -337,8 +323,9 @@ const ListViewTitle = styled.div`
   max-width: 200px;
 
   @media (max-width: 768px) {
-    font-size: 1rem;
-    max-width: 100%;
+    font-size: 0.9rem;
+    max-width: 120px;
+    flex: 1;
   }
 `
 
@@ -351,7 +338,8 @@ const ListViewCollection = styled.div`
   max-width: 200px;
 
   @media (max-width: 768px) {
-    max-width: 100%;
+    font-size: 0.8rem;
+    max-width: 120px;
   }
 `
 
@@ -363,6 +351,9 @@ const ListViewStats = styled.div`
 
   @media (max-width: 768px) {
     gap: 0.5rem;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
   }
 `
 
@@ -374,7 +365,10 @@ const ListViewStat = styled.div`
   color: ${props => props.theme.colors.textSecondary};
 
   @media (max-width: 768px) {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
   }
 `
 
@@ -387,6 +381,8 @@ const ListViewPrice = styled.div`
   @media (max-width: 768px) {
     font-size: 1rem;
     margin-left: 0;
+    text-align: right;
+    flex-shrink: 0;
   }
 `
 
@@ -403,7 +399,7 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState(null)
   const [selectedFlip, setSelectedFlip] = useState(null)
-  const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('list') // Always use list view for mobile optimization
 
   // Fetch data from database
   const fetchData = async () => {
@@ -967,30 +963,7 @@ const Home = () => {
             </FilterContainer>
           </TransparentCard>
 
-          {/* View Toggle */}
-          <ViewToggleContainer>
-            <ViewToggleButton
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              active={viewMode === 'list'}
-            >
-              {viewMode === 'grid' ? (
-                <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M4 6h16M4 10h16M4 14h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  Switch to List View
-                </>
-              ) : (
-                <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 6H6a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zM18 6h-2a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zM8 16H6a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2zM18 16h-2a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  Switch to Grid View
-                </>
-              )}
-            </ViewToggleButton>
-            
-          </ViewToggleContainer>
+          {/* View Toggle removed - using list view only for mobile optimization */}
 
           {filteredItems.length === 0 ? (
             <GlassCard style={{ textAlign: 'center', padding: '3rem', border: `2px solid ${theme.colors.neonPink}` }}>
@@ -1451,245 +1424,7 @@ const Home = () => {
                   />
                 </div>
 
-                {viewMode === 'grid' ? (
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 
-                                       window.innerWidth <= 1200 ? 'repeat(auto-fill, minmax(220px, 1fr))' :
-                                       window.innerWidth <= 1600 ? 'repeat(auto-fill, minmax(240px, 1fr))' :
-                                       window.innerWidth <= 2000 ? 'repeat(auto-fill, minmax(260px, 1fr))' :
-                                       'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: window.innerWidth <= 768 ? '0.5rem' : 
-                         window.innerWidth <= 1200 ? '1rem' : 
-                         window.innerWidth <= 1600 ? '1.25rem' : '1.5rem',
-                    margin: '1rem 0',
-                    width: '100%',
-                    overflowX: 'hidden',
-                    padding: window.innerWidth <= 768 ? '0 0.5rem' : '0',
-                    gridAutoRows: 'minmax(auto, auto)',
-                    gridAutoFlow: 'row'
-                  }}>
-                    {filteredItems.length > 0 ? (
-                      filteredItems.map(item => (
-                      <div
-                        key={item.id}
-                        className="flip-card-animated-border"
-                        onClick={() => {
-                          handleItemClick(item)
-                        }}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.08)',
-                          borderRadius: window.innerWidth <= 768 ? '0.75rem' : '1rem',
-                          padding: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
-                          cursor: isGameJoinable(item.status) ? 'pointer' : 'default',
-                          transition: 'all 0.2s ease',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
-                          height: window.innerWidth <= 768 ? 'auto' : 
-                                  window.innerWidth <= 1200 ? '240px' : '250px',
-                          width: '100%',
-                          opacity: isGameJoinable(item.status) ? 1 : 0.85
-                        }}
-                        onMouseEnter={(e) => {
-                          if (isGameJoinable(item.status)) {
-                            e.currentTarget.style.transform = 'scale(1.02)';
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                            e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.2)';
-                            // Enhance image on hover
-                            const image = e.currentTarget.querySelector('img');
-                            if (image) {
-                              image.style.filter = 'brightness(1.3) contrast(1.2) saturate(1.4)';
-                            }
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'scale(1)';
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                          e.currentTarget.style.boxShadow = 'none';
-                          // Reset image filter
-                          const image = e.currentTarget.querySelector('img');
-                          if (image) {
-                            image.style.filter = 'brightness(1.1) contrast(1.1) saturate(1.2)';
-                          }
-                        }}
-                      >
-                        <div style={{ 
-                          position: 'relative',
-                          aspectRatio: '1',
-                          borderRadius: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
-                          overflow: 'hidden',
-                          width: '100%',
-                          height: window.innerWidth <= 768 ? 'auto' : '135px',
-                          minHeight: window.innerWidth <= 768 ? '80px' : '135px'
-                        }}>
-                          <GameImage 
-                            src={item.nft?.image || '/placeholder-nft.svg'} 
-                            alt={item.nft?.name || 'NFT'}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                              objectPosition: 'center',
-                              filter: 'brightness(1.1) contrast(1.1) saturate(1.2)',
-                              transition: 'all 0.3s ease'
-                            }}
-                            onError={(e) => {
-                              e.target.src = '/placeholder-nft.svg'
-                            }}
-                          />
-                          <div style={{
-                            position: 'absolute',
-                            bottom: '0.25rem',
-                            right: '0.25rem',
-                            background: item.gameType === 'nft-vs-nft' ? 
-                              'linear-gradient(45deg, #00FF41, #39FF14)' : 
-                              item.gameType === 'battle-royale' ?
-                              'linear-gradient(45deg, #00BFFF, #0080FF)' :
-                              'linear-gradient(45deg, #FF1493, #FF69B4)',
-                            color: item.gameType === 'nft-vs-nft' ? '#000' : '#fff',
-                            padding: window.innerWidth <= 768 ? '0.1rem 0.25rem' : '0.15rem 0.35rem',
-                            borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
-                            fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
-                            fontWeight: 'bold'
-                          }}>
-                            {item.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : 
-                             item.gameType === 'battle-royale' ? '🏆 BATTLE ROYALE' : 
-                             '💰 CRYPTO'}
-                          </div>
-                          
-                          {/* Status indicator */}
-                          <div style={{
-                            position: 'absolute',
-                            top: '0.25rem',
-                            left: '0.25rem',
-                            background: `rgba(${getStatusColor(item.status).replace('#', '')}, 0.9)`,
-                            color: '#fff',
-                            padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
-                            borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
-                            fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.1rem'
-                          }}>
-                            <span>{getStatusIcon(item.status)}</span>
-                            <span>{getStatusText(item.status)}</span>
-                          </div>
-                          {item.nft?.needsMetadataUpdate && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateNFTMetadata(item.id);
-                              }}
-                              style={{
-                                position: 'absolute',
-                                top: '0.25rem',
-                                right: '0.25rem',
-                                background: 'rgba(255, 193, 7, 0.9)',
-                                color: '#000',
-                                border: 'none',
-                                padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
-                                borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
-                                fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'rgba(255, 193, 7, 1)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'rgba(255, 193, 7, 0.9)';
-                              }}
-                            >
-                              🔄 Update
-                            </button>
-                          )}
-                          
-                          {/* NFT Deposit Badge */}
-                          <div style={{
-                            position: 'absolute',
-                            bottom: '0.25rem',
-                            left: '0.25rem'
-                          }}>
-                            <NFTDepositBadge 
-                              gameId={item.id}
-                              isListing={item.isListing}
-                              nftDeposited={item.nft_deposited}
-                              nftDepositVerified={item.nft_deposit_verified}
-                            />
-                          </div>
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
-                          padding: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
-                          height: window.innerWidth <= 768 ? 'auto' : 
-                                  window.innerWidth <= 1200 ? '75px' : '80px',
-                          justifyContent: 'space-between'
-                        }}>
-                          <div style={{ 
-                            fontSize: window.innerWidth <= 768 ? '0.7rem' : '0.8rem',
-                            fontWeight: 'bold',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}>
-                            {item.nft?.name || 'Unknown NFT'}
-                          </div>
-                          <div style={{ 
-                            fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem',
-                            color: theme.colors.textSecondary,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}>
-                            {item.nft?.collection || 'Unknown Collection'}
-                          </div>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: window.innerWidth <= 768 ? '0.7rem' : '0.8rem'
-                          }}>
-                            <div style={{ 
-                              fontWeight: 'bold',
-                              color: theme.colors.neonPink,
-                              fontSize: '1.2rem'
-                            }}>
-                              ${(item.priceUSD || 0).toFixed(2)}
-                            </div>
-                            <div style={{
-                              background: 'rgba(255, 255, 255, 0.1)',
-                              padding: '0.2rem 0.4rem',
-                              borderRadius: '0.2rem',
-                              fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.2rem'
-                            }}>
-                              <span>{getChainIcon(item.nft?.chain || 'base')}</span>
-                              <span>{getChainName(item.nft?.chain || 'base')}</span>
-                            </div>
-                          </div>
-
-                        </div>
-                      </div>
-                    ))) : (
-                      <div style={{
-                        gridColumn: '1 / -1',
-                        textAlign: 'center',
-                        padding: '2rem',
-                        color: theme.colors.textSecondary
-                      }}>
-                        No games or listings available
-                      </div>
-                    )}
-                  </div>
-                ) : (
+                {/* Mobile-optimized list view only */}
                   <ListViewContainer>
                     {filteredItems.length > 0 ? (
                       filteredItems.map(item => (

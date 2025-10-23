@@ -4855,14 +4855,32 @@
       tubes.forEach((tube, i) => {
         const offset = i * 0.4;
         
-        // 🎯 CLIENT PREDICTION: Local power increment for instant feel (server validates)
-        if (tube.isFilling && !tube.isShattered && playerSlot === i) {
-          // Increase power locally (client prediction)
+        // 🎯 REFACTORED: POWER CHARGING SYSTEM - REAL-TIME SYNC
+        if (tube.isFilling && !tube.isShattered) {
+          // Increase power (0-100 over ~3 seconds) - FOR ALL PLAYERS
           tube.power = Math.min(tube.power + 0.6, 100);
           const powerPercent = tube.power / 100;
           
           // Update foam intensity
           tube.foamIntensity = powerPercent;
+          
+          // Calculate power level (1-5) based on power percentage
+          const powerLevel = Math.min(5, Math.max(1, Math.ceil(tube.power / 20)));
+          
+          // 🎯 FASTER BROADCAST - Every 5 frames = 12 updates/second (was every frame)
+          if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === i) {
+            if (frameCount % 5 === 0) { // Changed from every frame to every 5 frames
+              socket.emit('physics_power_charging', {
+                gameId: gameIdParam,
+                address: walletParam,
+                power: tube.power,
+                powerLevel: powerLevel,
+                playerSlot: i,
+                isFilling: tube.isFilling
+              });
+              // Removed console.log to reduce spam - only log on start/stop
+            }
+          }
           
           // Update UI elements
           if (tube.cardElement) {
@@ -4879,22 +4897,8 @@
             }
           }
           
-          // Update pearl colors
+          // 🎯 UNIFIED PEARL COLOR UPDATE - Same for local and remote
           updatePearlColors(tube, powerPercent, i);
-        }
-
-        // 🎯 SERVER-DRIVEN: Update visuals for OTHER players charging
-        if (tube.isFilling && !tube.isShattered && playerSlot !== i) {
-          const powerPercent = tube.power / 100;
-          updatePearlColors(tube, powerPercent, i);
-          
-          // Update UI for other players
-          if (tube.cardElement) {
-            const powerBar = tube.cardElement.querySelector('.power-bar');
-            const powerText = tube.cardElement.querySelector('.power-text');
-            if (powerBar) powerBar.style.width = `${tube.power}%`;
-            if (powerText) powerText.textContent = `POWER: ${tube.power.toFixed(0)}%`;
-          }
         }
         
         // 🎯 UNIFIED PEARL PHYSICS - Runs for BOTH local charging AND remote viewing
