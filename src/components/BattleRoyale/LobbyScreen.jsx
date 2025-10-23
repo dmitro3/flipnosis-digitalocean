@@ -597,6 +597,7 @@ const LobbyScreen = () => {
   }
 
   const [isCancelling, setIsCancelling] = useState(false)
+  const [isLeaving, setIsLeaving] = useState(false)
   
   const handleCancelGame = async () => {
     if (!confirm('Are you sure you want to cancel this game? You will be able to reclaim your NFT from your profile.')) {
@@ -628,6 +629,36 @@ const LobbyScreen = () => {
       showToast(error.message || 'Failed to cancel game', 'error')
     } finally {
       setIsCancelling(false)
+    }
+  }
+
+  const handleLeaveGame = async () => {
+    if (!confirm('Are you sure you want to leave this game? You will get your entry fee back (service fee is non-refundable).')) {
+      return
+    }
+    
+    try {
+      setIsLeaving(true)
+      showToast('Withdrawing your entry fee...', 'info')
+      
+      const result = await contractService.withdrawBattleRoyaleEntry(gameState.gameId)
+      
+      if (result.success) {
+        showToast('Successfully left the game! Your entry fee has been refunded.', 'success')
+        
+        // Refresh the page to update player list
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
+      } else {
+        showToast(result.error || 'Failed to leave game', 'error')
+      }
+      
+    } catch (error) {
+      console.error('Leave game error:', error)
+      showToast(error.message || 'Failed to leave game', 'error')
+    } finally {
+      setIsLeaving(false)
     }
   }
 
@@ -744,10 +775,21 @@ const LobbyScreen = () => {
       {/* RIGHT: GAME AREA */}
       <GamePanel>
         <StatusBar>
-          <h2>⏳ Waiting for Players</h2>
-          <p style={{ fontSize: '1.2rem', margin: 0 }}>
-            {gameState.currentPlayers} / 4 Players
-          </p>
+          {gameState.status === 'cancelled' ? (
+            <>
+              <h2 style={{ color: '#ff6b6b' }}>❌ Game Cancelled</h2>
+              <p style={{ fontSize: '1.2rem', margin: 0, color: '#ffaa00' }}>
+                Players can withdraw their entry fees below
+              </p>
+            </>
+          ) : (
+            <>
+              <h2>⏳ Waiting for Players</h2>
+              <p style={{ fontSize: '1.2rem', margin: 0 }}>
+                {gameState.currentPlayers} / 4 Players
+              </p>
+            </>
+          )}
           {isCreator && gameState.currentPlayers >= 2 && (
             <JoinActionButton
               onClick={handleStartEarly}
@@ -756,7 +798,7 @@ const LobbyScreen = () => {
               🚀 Start Game Early ({gameState.currentPlayers}/4)
             </JoinActionButton>
           )}
-          {isCreator && gameState.status !== 'cancelled' && (
+          {isCreator && gameState.status !== 'cancelled' && gameState.currentPlayers < 4 && (
             <JoinActionButton
               onClick={handleCancelGame}
               disabled={isCancelling}
@@ -830,6 +872,34 @@ const LobbyScreen = () => {
         {!userInGame && canJoin && (
           <JoinActionButton onClick={handleJoinGame} disabled={isJoining}>
             {isJoining ? 'Joining...' : '🎮 Join Battle Royale'}
+          </JoinActionButton>
+        )}
+        
+        {userInGame && !isCreator && gameState.currentPlayers < 4 && (
+          <JoinActionButton 
+            onClick={handleLeaveGame} 
+            disabled={isLeaving}
+            style={{ 
+              marginTop: '1rem', 
+              background: 'linear-gradient(135deg, #ff6b6b, #ee5a52)',
+              border: '2px solid #ff4444'
+            }}
+          >
+            {isLeaving ? 'Leaving...' : '🚪 Leave Game'}
+          </JoinActionButton>
+        )}
+        
+        {userInGame && !isCreator && gameState.status === 'cancelled' && (
+          <JoinActionButton 
+            onClick={handleLeaveGame} 
+            disabled={isLeaving}
+            style={{ 
+              marginTop: '1rem', 
+              background: 'linear-gradient(135deg, #ffa500, #ff8c00)',
+              border: '2px solid #ff6b00'
+            }}
+          >
+            {isLeaving ? 'Withdrawing...' : '💰 Withdraw Entry Fee'}
           </JoinActionButton>
         )}
       </GamePanel>

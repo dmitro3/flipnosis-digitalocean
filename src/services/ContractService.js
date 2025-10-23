@@ -140,6 +140,13 @@ const CONTRACT_ABI = [
   },
   {
     "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}],
+    "name": "reclaimBattleRoyaleNFT",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}],
     "name": "cancelBattleRoyale",
     "outputs": [],
     "stateMutability": "nonpayable",
