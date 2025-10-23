@@ -288,6 +288,12 @@ const ListViewItem = styled.div`
     `}
   }
 
+  /* Desktop improvements - larger spacing and padding */
+  @media (min-width: 769px) {
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+
   @media (max-width: 768px) {
     flex-direction: row;
     align-items: center;
@@ -321,6 +327,11 @@ const ListViewContent = styled.div`
   flex: 1;
   min-width: 0;
 
+  /* Desktop improvements - larger spacing between content sections */
+  @media (min-width: 769px) {
+    gap: 0.75rem;
+  }
+
   @media (max-width: 768px) {
     gap: 0.25rem;
     flex: 1;
@@ -333,6 +344,11 @@ const ListViewHeader = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
+
+  /* Desktop improvements - larger spacing in header */
+  @media (min-width: 769px) {
+    gap: 1.5rem;
+  }
 
   @media (max-width: 768px) {
     flex-direction: row;
@@ -351,6 +367,12 @@ const ListViewTitle = styled.div`
   text-overflow: ellipsis;
   max-width: 200px;
 
+  /* Desktop improvements - larger text size */
+  @media (min-width: 769px) {
+    font-size: 1.3rem;
+    max-width: 300px;
+  }
+
   @media (max-width: 768px) {
     font-size: 0.9rem;
     max-width: 120px;
@@ -366,6 +388,12 @@ const ListViewCollection = styled.div`
   text-overflow: ellipsis;
   max-width: 200px;
 
+  /* Desktop improvements - larger text size */
+  @media (min-width: 769px) {
+    font-size: 1.1rem;
+    max-width: 300px;
+  }
+
   @media (max-width: 768px) {
     font-size: 0.8rem;
     max-width: 120px;
@@ -377,6 +405,11 @@ const ListViewStats = styled.div`
   gap: 1rem;
   align-items: center;
   flex-wrap: wrap;
+
+  /* Desktop improvements - larger spacing between stats */
+  @media (min-width: 769px) {
+    gap: 1.5rem;
+  }
 
   @media (max-width: 768px) {
     gap: 0.5rem;
@@ -393,6 +426,12 @@ const ListViewStat = styled.div`
   font-size: 0.9rem;
   color: ${props => props.theme.colors.textSecondary};
 
+  /* Desktop improvements - larger text size and spacing */
+  @media (min-width: 769px) {
+    font-size: 1rem;
+    gap: 0.75rem;
+  }
+
   @media (max-width: 768px) {
     font-size: 0.75rem;
     flex-direction: column;
@@ -406,6 +445,11 @@ const ListViewPrice = styled.div`
   font-weight: bold;
   color: ${props => props.theme.colors.neonBlue};
   margin-left: auto;
+
+  /* Desktop improvements - larger price text */
+  @media (min-width: 769px) {
+    font-size: 1.4rem;
+  }
 
   @media (max-width: 768px) {
     font-size: 1rem;

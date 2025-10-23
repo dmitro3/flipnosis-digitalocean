@@ -31,6 +31,13 @@ const BattleContainer = styled.div`
   backdrop-filter: blur(10px);
   min-height: 90vh;
   padding: 1.5rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    min-height: auto;
+    border-radius: 15px;
+    overflow: visible;
+  }
 `
 
 // New 4-box layout components
@@ -41,6 +48,14 @@ const FourBoxGrid = styled.div`
   gap: 1.5rem;
   margin-top: 1.5rem;
   max-height: 50vh;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+    gap: 1rem;
+    margin-top: 1rem;
+    max-height: none;
+  }
 `
 
 const Box = styled.div`
@@ -67,6 +82,18 @@ const Box = styled.div`
     min-height: 375px;
     max-height: 475px;
   }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    min-height: auto;
+    max-height: none;
+    
+    /* Reset height constraints on mobile */
+    &:nth-child(3) {
+      min-height: auto;
+      max-height: none;
+    }
+  }
 `
 
 const BoxTitle = styled.h3`
@@ -77,6 +104,11 @@ const BoxTitle = styled.h3`
   text-align: center;
   text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
   font-family: 'Orbitron', sans-serif;
+
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+    margin: 0 0 0.5rem 0;
+  }
 `
 
 // NFT Upload Box
@@ -87,6 +119,10 @@ const NFTUploadArea = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 120px;
+
+  @media (max-width: 768px) {
+    min-height: 100px;
+  }
 `
 
 const SquareUploadZone = styled.div`
@@ -98,6 +134,12 @@ const SquareUploadZone = styled.div`
   align-items: center;
   justify-content: center;
   cursor: pointer;
+
+  @media (max-width: 768px) {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+  }
   transition: all 0.3s ease;
   background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1));
   margin-bottom: 0.8rem;
@@ -159,6 +201,11 @@ const RoomGrid = styled.div`
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0.6rem;
   flex: 1;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
 `
 
 const RoomOption = styled.div`
@@ -371,6 +418,12 @@ const BattleHeader = styled.div`
   border: 3px solid #00ffff;
   backdrop-filter: blur(10px);
   box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 15px;
+  }
 `
 
 const BattleTitle = styled.h1`
@@ -382,6 +435,11 @@ const BattleTitle = styled.h1`
   margin: 0 0 0.8rem 0;
   font-family: 'Orbitron', sans-serif;
   text-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
+
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+    margin: 0 0 0.5rem 0;
+  }
 `
 
 const BattleSubtitle = styled.p`
@@ -747,8 +805,8 @@ const CreateBattle = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container>
-        <ContentWrapper>
+      <Container style={{ paddingTop: '0.5rem', paddingBottom: '2rem' }}>
+        <ContentWrapper style={{ paddingTop: '0.5rem', paddingBottom: '1rem' }}>
           <BattleContainer>
             <BattleHeader>
               <BattleTitle>Create Flip</BattleTitle>
