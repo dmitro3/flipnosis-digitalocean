@@ -241,7 +241,7 @@ const PortalMenu = ({ isOpen, onClose }) => {
           <MenuSectionTitle>Features</MenuSectionTitle>
           <MenuButtonItem disabled>
             <Palette size={16} />
-            Coin Minter
+            Coin Factory
             <ComingSoonBadge>Coming Soon</ComingSoonBadge>
           </MenuButtonItem>
           <MenuButtonItem disabled>

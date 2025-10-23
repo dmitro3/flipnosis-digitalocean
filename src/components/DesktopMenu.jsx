@@ -250,7 +250,7 @@ const DesktopMenu = () => {
                 <SectionTitle>Features</SectionTitle>
                 <ComingSoonItem>
                   <Palette size={20} />
-                  Coin Minter
+                  Coin Factory
                   <ComingSoonBadge>Coming Soon</ComingSoonBadge>
                 </ComingSoonItem>
                 <ComingSoonItem>
