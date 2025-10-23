@@ -223,10 +223,6 @@ const PortalMenu = ({ isOpen, onClose }) => {
             <Plus size={16} />
             🏆 Create Battle
           </MenuItem>
-          <MenuItem to="/leaderboard" onClick={onClose}>
-            <Trophy size={16} />
-            Leaderboard
-          </MenuItem>
           {isConnected && (
             <MenuItem to="/profile" onClick={onClose}>
               <User size={16} />

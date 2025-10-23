@@ -993,7 +993,7 @@ const Profile = () => {
           active={activeTab === 'battleRoyale'} 
           onClick={() => setActiveTab('battleRoyale')}
         >
-          ⚔️ Battle Royale
+          Games
         </TabButton>
       </TabContainer>
 
@@ -1137,7 +1137,7 @@ const Profile = () => {
         {activeTab === 'battleRoyale' && (
           <div>
             <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-              ⚔️ My Battle Royale Games
+              My Games
             </h3>
 
             {loadingBattleRoyales ? (

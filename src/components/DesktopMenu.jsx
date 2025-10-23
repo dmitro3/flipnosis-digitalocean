@@ -158,6 +158,34 @@ const ComingSoonBadge = styled.span`
   margin-left: auto;
 `;
 
+const MenuButtonItem = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  color: #ffffff;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+  background: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  
+  &:hover {
+    background: rgba(0, 255, 65, 0.1);
+    border-color: rgba(0, 255, 65, 0.3);
+    color: #00FF41;
+    transform: translateY(-2px);
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
 const Divider = styled.div`
   height: 1px;
   background: rgba(255, 255, 255, 0.1);
@@ -203,16 +231,19 @@ const DesktopMenu = () => {
                   <Plus size={20} />
                   🏆 Create Battle
                 </MenuItem>
-                <MenuItem to="/leaderboard" onClick={closeMenu}>
-                  <Trophy size={20} />
-                  Leaderboard
-                </MenuItem>
                 {isConnected && (
                   <MenuItem to="/profile" onClick={closeMenu}>
                     <User size={20} />
                     My Profile
                   </MenuItem>
                 )}
+                <MenuButtonItem onClick={() => {
+                  alert('About FLIPNOSIS\n\nFLIPNOSIS is a revolutionary NFT flipping game where players can create and participate in coin flip games with their NFTs and cryptocurrency.');
+                  closeMenu();
+                }}>
+                  <Info size={20} />
+                  About FLIPNOSIS
+                </MenuButtonItem>
               </MenuSection>
 
               <MenuSection>
