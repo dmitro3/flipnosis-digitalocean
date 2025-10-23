@@ -45,6 +45,12 @@ const Container = styled.div`
     grid-template-columns: 1fr;
     gap: 1rem;
   }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    gap: 0.75rem;
+    min-height: auto;
+  }
 `
 
 const NFTPanel = styled.div`
@@ -63,6 +69,12 @@ const NFTPanel = styled.div`
   &:hover {
     border-color: #00ffff;
     box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    gap: 1rem;
+    border-radius: 15px;
   }
 `
 
@@ -115,6 +127,12 @@ const ShareButtonsGrid = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
   margin-top: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+  }
 `
 
 const ActionButton = styled.button`
@@ -166,12 +184,23 @@ const ActionButton = styled.button`
     border-color: #6c757d;
     box-shadow: 0 0 20px rgba(108, 117, 125, 0.4);
   }
+
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    border-radius: 8px;
+    min-height: 40px;
+  }
 `
 
 const GamePanel = styled.div`
   display: flex;
   flex-direction: column;
   gap: 2rem;
+
+  @media (max-width: 768px) {
+    gap: 1rem;
+  }
 `
 
 const StatusBar = styled.div`
@@ -188,6 +217,11 @@ const StatusBar = styled.div`
   &:hover {
     border-color: #9d00ff;
     box-shadow: 0 0 50px rgba(157, 0, 255, 0.5);
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 15px;
   }
   
   h2 {
@@ -215,6 +249,15 @@ const PlayerGrid = styled.div`
   &:hover {
     border-color: #00ffff;
     box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 0.75rem;
+    padding: 1rem;
+    min-height: 300px;
+    border-radius: 15px;
   }
 `
 
@@ -264,6 +307,13 @@ const PlayerSlot = styled.div`
     ${props => !props.canJoin && props.occupied && `
       box-shadow: 0 0 30px ${props.isCurrentUser ? 'rgba(0, 255, 136, 0.5)' : 'rgba(0, 255, 255, 0.5)'};
     `}
+  }
+
+  @media (max-width: 768px) {
+    aspect-ratio: 1;
+    padding: 0.5rem;
+    gap: 0.2rem;
+    border-radius: 8px;
   }
 `
 
