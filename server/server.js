@@ -49,7 +49,7 @@ app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // ===== STATIC FILES =====
-const distPath = path.join(__dirname, '..', 'dist')
+const distPath = path.join(__dirname, '..')
 console.log('📁 Checking dist path:', distPath)
 console.log('📁 Dist exists:', fs.existsSync(distPath))
 
