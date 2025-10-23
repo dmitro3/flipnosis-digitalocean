@@ -1,3 +1,29 @@
+# Fix MIME Type Issue - Deploy to Hetzner Server
+# This script fixes the JSX MIME type issue by updating server configuration
+
+Write-Host "🔧 Fixing MIME Type Issue on Hetzner Server..." -ForegroundColor Green
+
+# Server details
+$SERVER_IP = "159.69.123.123"  # Replace with your actual Hetzner server IP
+$SERVER_USER = "root"
+$APP_PATH = "/opt/flipnosis/app"
+
+Write-Host "📡 Connecting to server $SERVER_IP..." -ForegroundColor Yellow
+
+# Create SSH connection
+$sshCommand = @"
+# Navigate to app directory
+cd $APP_PATH
+
+# Backup current server.js
+echo "📦 Backing up current server.js..."
+cp server/server.js server/server.js.backup.$(date +%Y%m%d_%H%M%S)
+
+# Update server.js with MIME type fixes
+echo "🔧 Updating server.js with MIME type fixes..."
+
+# Create the updated server.js content
+cat > server/server.js << 'EOF'
 // CryptoFlipz Server - Clean WebSocket-only implementation
 const express = require('express')
 const http = require('http')
@@ -281,3 +307,151 @@ process.on('SIGINT', () => {
     process.exit(0)
   })
 })
+EOF
+
+echo "✅ Server.js updated with MIME type fixes"
+
+# Update nginx configuration
+echo "🔧 Updating nginx configuration..."
+
+# Backup current nginx config
+cp /etc/nginx/sites-available/flipnosis /etc/nginx/sites-available/flipnosis.backup.$(date +%Y%m%d_%H%M%S)
+
+# Update nginx config with proper MIME types
+cat > /etc/nginx/sites-available/flipnosis << 'EOF'
+# Nginx configuration for Cloudflare Flexible SSL mode
+# Cloudflare handles SSL termination and sends HTTP to your server
+
+server {
+    listen 80;
+    server_name flipnosis.fun www.flipnosis.fun;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options DENY always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # CRITICAL: Socket.io WebSocket support with proper headers
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        
+        # Essential WebSocket upgrade headers
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $server_name;
+        
+        # Timeout settings for long-lived connections
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+        proxy_connect_timeout 60;
+        
+        # Disable caching for WebSocket connections
+        proxy_cache_bypass $http_upgrade;
+        proxy_no_cache $http_upgrade;
+        
+        # Buffer settings for WebSocket
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+
+    # API routes
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $server_name;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+        proxy_connect_timeout 60;
+        proxy_cache_bypass $http_upgrade;
+        proxy_no_cache $http_upgrade;
+    }
+
+    # Serve static files directly from dist directory
+    location /assets/ {
+        alias /opt/flipnosis/app/dist/assets/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        
+        # Ensure proper MIME types for JavaScript files
+        location ~* \.js$ {
+            add_header Content-Type "application/javascript; charset=utf-8";
+        }
+        location ~* \.jsx$ {
+            add_header Content-Type "application/javascript; charset=utf-8";
+        }
+        location ~* \.css$ {
+            add_header Content-Type "text/css; charset=utf-8";
+        }
+    }
+
+    # Serve other static files
+    location ~* \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webm|mp4|glb)$ {
+        root /opt/flipnosis/app/dist;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Main application - proxy to Node.js
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+EOF
+
+echo "✅ Nginx configuration updated"
+
+# Test nginx configuration
+echo "🧪 Testing nginx configuration..."
+nginx -t
+
+if [ $? -eq 0 ]; then
+    echo "✅ Nginx configuration is valid"
+    
+    # Reload nginx
+    echo "🔄 Reloading nginx..."
+    systemctl reload nginx
+    
+    # Restart the application
+    echo "🔄 Restarting application..."
+    pm2 restart flipnosis-app
+    
+    echo "✅ MIME type fix deployed successfully!"
+    echo "🌐 Your application should now work correctly at https://flipnosis.fun"
+else
+    echo "❌ Nginx configuration test failed!"
+    echo "🔄 Restoring backup configuration..."
+    cp /etc/nginx/sites-available/flipnosis.backup.$(date +%Y%m%d_%H%M%S) /etc/nginx/sites-available/flipnosis
+    echo "⚠️ Please check the nginx configuration manually"
+fi
+
+echo "📊 Checking application status..."
+pm2 status
+"@
+
+# Execute the SSH command
+ssh $SERVER_USER@$SERVER_IP $sshCommand
+
+Write-Host "✅ MIME Type Fix Deployment Complete!" -ForegroundColor Green
+Write-Host "🌐 Your application should now work correctly at https://flipnosis.fun" -ForegroundColor Cyan
