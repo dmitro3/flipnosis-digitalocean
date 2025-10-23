@@ -4456,26 +4456,29 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: linear-gradient(135deg, #00ff00, #39ff14);
+        background: linear-gradient(135deg, rgba(10, 10, 20, 0.95), rgba(5, 5, 15, 0.98)), linear-gradient(135deg, #00ff0044, #00ff0022);
         border: 3px solid #00ff00;
-        border-radius: 20px;
-        padding: 40px 60px;
+        border-radius: 12px;
+        padding: 30px 40px;
         text-align: center;
         font-family: 'Orbitron', sans-serif;
-        color: #000;
-        font-size: 32px;
+        color: #ffffff;
+        font-size: 28px;
         font-weight: bold;
         text-transform: uppercase;
-        letter-spacing: 3px;
-        box-shadow: 0 0 60px rgba(0, 255, 0, 0.8);
+        letter-spacing: 2px;
+        box-shadow: 0 0 40px #00ff0099;
+        backdrop-filter: blur(10px);
         z-index: 10001;
         animation: gameStartPulse 0.5s ease-out;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       `;
       
       notification.innerHTML = `
-        <div style="margin-bottom: 10px;">🎮</div>
-        <div>GAME STARTED!</div>
-        <div style="font-size: 18px; margin-top: 10px;">Round 1 Beginning</div>
+        <div style="margin-bottom: 10px; font-size: 32px;">🎮</div>
+        <div style="color: #00ff00; margin-bottom: 8px;">GAME STARTED!</div>
+        <div style="font-size: 18px; color: #ffffff; opacity: 0.9; letter-spacing: 1px;">Round 1 Beginning</div>
       `;
       
       // Add animation
@@ -4898,13 +4901,16 @@
       tubes.forEach((tube, i) => {
         const offset = i * 0.4;
         
-        // 🎯 CLIENT PREDICTION: Local power increment for instant feel (server validates)
-        if (tube.isFilling && !tube.isShattered && playerSlot === i) {
-          // Increase power locally (client prediction)
-          tube.power = Math.min(tube.power + 0.6, 100);
+        // 🎯 POWER CHARGING: Show pearls for ALL players when they charge
+        if (tube.isFilling && !tube.isShattered) {
+          // For current player: local power increment (client prediction)
+          if (playerSlot === i) {
+            tube.power = Math.min(tube.power + 0.6, 100);
+          }
+          
           const powerPercent = tube.power / 100;
           
-          // Update foam intensity
+          // Update foam intensity for ALL players
           tube.foamIntensity = powerPercent;
           
           // Update UI elements
@@ -4922,22 +4928,8 @@
             }
           }
           
-          // Update pearl colors
+          // 🎯 CRITICAL: Update pearl colors for ALL players
           updatePearlColors(tube, powerPercent, i);
-        }
-
-        // 🎯 SERVER-DRIVEN: Update visuals for OTHER players charging
-        if (tube.isFilling && !tube.isShattered && playerSlot !== i) {
-          const powerPercent = tube.power / 100;
-          updatePearlColors(tube, powerPercent, i);
-          
-          // Update UI for other players
-          if (tube.cardElement) {
-            const powerBar = tube.cardElement.querySelector('.power-bar');
-            const powerText = tube.cardElement.querySelector('.power-text');
-            if (powerBar) powerBar.style.width = `${tube.power}%`;
-            if (powerText) powerText.textContent = `POWER: ${tube.power.toFixed(0)}%`;
-          }
         }
         
         // 🎯 UNIFIED PEARL PHYSICS - Runs for BOTH local charging AND remote viewing

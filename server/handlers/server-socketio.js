@@ -691,11 +691,22 @@ initialize(server, dbService) {
           // Update profile - use xp field for FLIP balance
           console.log(`🔄 Updating profile for ${address}: xp=${newBalance}, unlocked_coins=${JSON.stringify(unlockedCoins)}`)
           try {
-            await this.dbService.updateProfile(address, {
+            const updateResult = await this.dbService.updateProfile(address, {
               xp: newBalance, // Update xp field with new FLIP balance
               unlocked_coins: JSON.stringify(unlockedCoins)
             })
-            console.log(`✅ Profile updated successfully`)
+            console.log(`✅ Profile updated successfully, changes: ${updateResult}`)
+            
+            // If no rows were updated, the profile might not exist
+            if (updateResult === 0) {
+              console.log(`⚠️ No profile found for ${address}, creating new profile...`)
+              await this.dbService.createOrUpdateProfile({
+                address: address,
+                xp: newBalance,
+                unlocked_coins: JSON.stringify(unlockedCoins)
+              })
+              console.log(`✅ Created new profile for ${address}`)
+            }
           } catch (updateError) {
             console.error(`❌ Failed to update profile:`, updateError)
             socket.emit('coin_unlocked', { success: false, error: 'Failed to update profile' })
