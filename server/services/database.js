@@ -346,26 +346,19 @@ class DatabaseService {
   async createOrUpdateProfile(profileData) {
     return new Promise((resolve, reject) => {
       const {
-        address, name, avatar, headsImage, tailsImage, twitter, telegram,
-        xp = 0, xp_name_earned = false, xp_avatar_earned = false,
-        xp_heads_earned = false, xp_tails_earned = false,
-        xp_twitter_earned = false, xp_telegram_earned = false,
-        flip_balance = 0, unlocked_coins = '["plain"]',
-        custom_coin_heads = null, custom_coin_tails = null
+        address, username = null, profile_picture = null,
+        xp = 0, level = 1, total_flips = 0, wins = 0, losses = 0,
+        unlocked_coins = '["plain"]'
       } = profileData
 
       this.db.run(`
         INSERT OR REPLACE INTO profiles (
-          address, name, avatar, headsImage, tailsImage, twitter, telegram,
-          xp, xp_name_earned, xp_avatar_earned, xp_heads_earned, xp_tails_earned,
-          xp_twitter_earned, xp_telegram_earned, flip_balance, unlocked_coins,
-          custom_coin_heads, custom_coin_tails, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          address, username, profile_picture, xp, level, total_flips, wins, losses,
+          unlocked_coins, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `, [
-        address.toLowerCase(), name, avatar, headsImage, tailsImage, twitter, telegram,
-        xp, xp_name_earned, xp_avatar_earned, xp_heads_earned, xp_tails_earned,
-        xp_twitter_earned, xp_telegram_earned, flip_balance, unlocked_coins,
-        custom_coin_heads, custom_coin_tails
+        address.toLowerCase(), username, profile_picture, xp, level, total_flips, wins, losses,
+        unlocked_coins
       ], function(err) {
         if (err) reject(err)
         else resolve(this.lastID)

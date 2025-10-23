@@ -728,26 +728,12 @@ initialize(server, dbService) {
               xp: newMasterBalance // Add the spent FLIP to master account
             })
           } else {
-            // Create new Master Field profile
+            // Create new Master Field profile with only existing fields
             await this.dbService.createOrUpdateProfile({
               address: MASTER_ADDRESS,
-              name: 'Master Field',
-              avatar: null,
-              headsImage: null,
-              tailsImage: null,
-              twitter: null,
-              telegram: null,
+              username: 'Master Field',
               xp: newMasterBalance,
-              xp_name_earned: false,
-              xp_avatar_earned: false,
-              xp_heads_earned: false,
-              xp_tails_earned: false,
-              xp_twitter_earned: false,
-              xp_telegram_earned: false,
-              flip_balance: 0,
-              unlocked_coins: '["plain"]',
-              custom_coin_heads: null,
-              custom_coin_tails: null
+              unlocked_coins: '["plain"]'
             })
           }
           console.log(`✅ Master Field received ${cost} FLIP (balance: ${currentMasterBalance} → ${newMasterBalance})`)
