@@ -122,9 +122,52 @@
       animation: heartbeat 2s ease-in-out infinite;
     }
 
+    .win-trophy {
+      opacity: 0.8;
+      filter: grayscale(50%) brightness(0.8);
+      transition: all 0.3s ease;
+    }
+
+    .win-trophy.active {
+      opacity: 1;
+      filter: grayscale(0%) brightness(1);
+      animation: trophyShine 2s ease-in-out infinite;
+    }
+
+    @keyframes trophyShine {
+      0%, 100% { 
+        transform: scale(1); 
+        filter: grayscale(0%) brightness(1);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      }
+      50% { 
+        transform: scale(1.1); 
+        filter: grayscale(0%) brightness(1.3);
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.9);
+      }
+    }
+
     @keyframes heartbeat {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.1); }
+    }
+
+    @keyframes puffWin {
+      0% { 
+        transform: scale(0.3); 
+        opacity: 0; 
+        box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+      }
+      50% { 
+        transform: scale(1.3); 
+        opacity: 1; 
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+      }
+      100% { 
+        transform: scale(1); 
+        opacity: 1; 
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+      }
     }
 
     .choice-badge {
@@ -329,11 +372,15 @@
       socket.on('connect', () => {
         console.log('âœ… Connected to server');
         
+        // Load saved state and send to server
+        const savedState = loadGameState();
+        
         // Join physics room
         if (gameIdParam && walletParam) {
           socket.emit('physics_join_room', {
             roomId: `game_${gameIdParam}`,
-            address: walletParam
+            address: walletParam,
+            savedState: savedState // â† Send saved state to server
           });
         }
       });
@@ -346,12 +393,17 @@
       socket.on('reconnect', () => {
         console.log('ðŸ”„ Reconnecting to server...');
         
+        // Load saved state and send to server
+        const savedState = loadGameState();
+        
         // Rejoin the game room with saved state
         if (gameIdParam && walletParam) {
           socket.emit('physics_rejoin_room', {
             roomId: `game_${gameIdParam}`,
             address: walletParam,
-            lastKnownSlot: playerSlot
+            lastKnownSlot: playerSlot,
+            savedState: savedState, // â† Send saved state to server
+            disconnectTime: savedState?.timestamp || Date.now() // â† Send disconnect time
           });
         }
       });
@@ -429,6 +481,14 @@
             tube.power = 0;
             tube.chargingStartTime = Date.now();
             console.log(`ðŸŒŠ Started pearl animation for tube ${data.playerSlot + 1}`);
+            
+            // ðŸŽ¯ FORCE PEARL VISIBILITY: Ensure pearls are visible when charging starts
+            if (tube.liquidParticleMeshes) {
+              tube.liquidParticleMeshes.forEach(mesh => {
+                mesh.visible = true;
+              });
+              console.log(`ðŸŒŠ Forced pearl visibility on charging start for tube ${data.playerSlot + 1}`);
+            }
           }
         }
       });
@@ -462,16 +522,14 @@
         }
       });
 
-      // Handle collection session creation
-      socket.on('flip_collection_created', (data) => {
-        console.log('ðŸŽ FLIP collection created:', data);
-        if (data.success && data.collectionId) {
-          currentCollectionId = data.collectionId;
-          // Collection UI is already shown in showGameOverScreen
-          showFloatingMessage('Collection session created!', '#00ff00', 2000);
+      // Handle direct FLIP token award
+      socket.on('flip_tokens_awarded_final', (data) => {
+        console.log('ðŸŽ FLIP tokens awarded:', data);
+        if (data.success) {
+          showFloatingMessage(`+${data.totalFlip} FLIP tokens added to your profile!`, '#00ff00', 4000);
         } else {
-          console.error('âŒ Collection session creation failed:', data.error);
-          showFloatingMessage(`Collection failed: ${data.error}`, '#ff0000', 3000);
+          console.error('âŒ FLIP token award failed:', data.error);
+          showFloatingMessage(`Failed to award FLIP tokens: ${data.error}`, '#ff0000', 3000);
         }
       });
 
@@ -505,6 +563,24 @@
       
       socket.on('physics_error', (error) => {
         console.error('âŒ Physics error:', error);
+        
+        // ðŸŽ¯ NEW: Reset the tube state on error
+        const playerIndex = players.findIndex(p => p.address === walletParam);
+        if (playerIndex !== -1 && tubes[playerIndex]) {
+          tubes[playerIndex].isFilling = false;
+          tubes[playerIndex].power = 0;
+          tubes[playerIndex].powerLevel = 0;
+          isCharging = false;
+          
+          // Stop charging sound if playing
+          if (powerChargeSound && !powerChargeSound.paused) {
+            powerChargeSound.pause();
+            powerChargeSound.currentTime = 0;
+          }
+          
+          console.log(`ðŸ”„ Reset tube ${playerIndex + 1} state after error`);
+        }
+        
         alert(`Game Error: ${error.message}`);
       });
       
@@ -598,7 +674,7 @@
             if (localPlayer && !localPlayer.isEmpty) {
               // Update choice if it changed (including reset to null)
               if (serverPlayer.choice !== localPlayer.choice) {
-                console.log(`ðŸ”„ Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice || 'null'}`);
+                console.log(`ðŸ”„ Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice || 'null'} (was: ${localPlayer.choice || 'null'})`);
                 localPlayer.choice = serverPlayer.choice;
                 
                 // Update UI for this player
@@ -618,7 +694,7 @@
                       // Hide choice badge, show buttons for current player
                       choiceBadge.style.display = 'none';
                       if (playerSlot === serverPlayer.slotNumber) {
-                        choiceButtons.style.display = 'block';
+                        choiceButtons.style.display = 'flex';
                       } else {
                         choiceButtons.style.display = 'none';
                       }
@@ -627,30 +703,176 @@
                 }
               }
               
-              // Update lives if changed
-              if (serverPlayer.lives !== undefined && localPlayer.lives !== serverPlayer.lives) {
-                localPlayer.lives = serverPlayer.lives;
-                updateLivesDisplay(serverPlayer.slotNumber);
+              // Update wins if changed
+              if (serverPlayer.wins !== undefined && localPlayer.wins !== serverPlayer.wins) {
+                localPlayer.wins = serverPlayer.wins;
+                updateWinsDisplay(serverPlayer.slotNumber);
               }
             }
           }
         });
       }
       
-      // SERVER-AUTHORITATIVE: Always update timer from server state
+      // SERVER-AUTHORITATIVE: Display server timer only
       if (state.roundTimer !== undefined) {
-        // Always sync with server timer - server is the single source of truth
-        if (state.roundTimer !== timeRemaining) {
-          console.log(`â±ï¸ Server timer update: ${timeRemaining} -> ${state.roundTimer}`);
-          timeRemaining = state.roundTimer;
-          updateTimerDisplay();
-        }
+        updateTimerDisplay(state.roundTimer);
       }
       
       // Update round
       if (state.currentRound !== undefined) {
+        const oldRound = currentRound;
         currentRound = state.currentRound;
         updateRoundDisplay();
+        saveGameState();
+        
+        // ðŸŽ¯ ROUND RESET: Reset ALL player states for new round
+        if (currentRound > oldRound) {
+          console.log(`ðŸ”„ Round ${currentRound} started - FULL RESET`);
+          tubes.forEach((tube, i) => {
+            // 1. Reset power usage
+            tube.hasUsedPower = false;
+            tube.power = 0;
+            tube.isFilling = false;
+            tube.foamIntensity = 0;
+            
+            // 2. Reset glass shatter state
+            tube.isShattered = false;
+            tube.isFlipping = false;
+            
+            // 3. Show glass tube and rims again
+            tube.tube.visible = true;
+            tube.backing.visible = true;
+            tube.topRim.visible = true;
+            tube.bottomRim.visible = true;
+            tube.liquid.visible = true;
+            tube.coinShadow.visible = false;
+            
+            // 4. Clear glass shards
+            if (tube.glassShards && tube.glassShards.length > 0) {
+              tube.glassShards.forEach(shard => {
+                scene.remove(shard.mesh);
+              });
+              tube.glassShards = [];
+            }
+            
+            // 5. Re-add physics container
+            if (!physicsWorld.bodies.includes(tube.glassBody)) {
+              physicsWorld.addBody(tube.glassBody);
+            }
+            
+            // 6. Reset pearl colors to neutral
+            updatePearlColors(tube, 0, i);
+            
+            // 6.5. Reset pearl positions to bottom of tube
+            tube.liquidParticles.forEach((particleBody, idx) => {
+              // Reset position to bottom of tube
+              const angle = Math.random() * Math.PI * 2;
+              const radius = Math.random() * (TUBE_RADIUS - 25);
+              const pearlX = tube.tube.position.x + Math.cos(angle) * radius;
+              const pearlZ = Math.sin(angle) * radius;
+              const pearlY = 200 - (TUBE_HEIGHT / 2) + 30 + Math.random() * 60;
+              
+              particleBody.position.set(pearlX, pearlY, pearlZ);
+              particleBody.velocity.set(0, 0, 0);
+              particleBody.angularVelocity.set(0, 0, 0);
+              
+              // Make sure pearl is visible
+              if (tube.liquidParticleMeshes[idx]) {
+                tube.liquidParticleMeshes[idx].visible = true;
+              }
+            });
+            
+            // 6.6. Reset liquid light to neutral
+            tube.liquidLight.color.setHex(0x1a1a2e); // Dark blue-grey
+            tube.liquidLight.intensity = 0.3;
+            
+            // 7. Reset coin to default position
+            const coin = coins[i];
+            if (coin) {
+              coin.position.set(tube.tube.position.x, 200, 0);
+              coin.rotation.x = Math.PI / 2;
+              coin.rotation.y = Math.PI / 2;
+              coin.rotation.z = 0;
+              
+              // Remove any result lights
+              if (tube.winLight) {
+                coin.remove(tube.winLight);
+                tube.winLight = null;
+              }
+              if (tube.loseLight) {
+                coin.remove(tube.loseLight);
+                tube.loseLight = null;
+              }
+            }
+            
+            // 8. Remove result box
+            if (tube.resultBox) {
+              scene.remove(tube.resultBox);
+              tube.resultBox = null;
+            }
+            
+            // 9. Reset UI - Power button
+            if (tube.cardElement) {
+              const powerButton = tube.cardElement.querySelectorAll('.action-btn')[0]; // Fixed: was [1], now [0]
+              if (powerButton) {
+                powerButton.style.background = 'linear-gradient(135deg, #9d00ff, #c44aff)';
+                powerButton.style.color = '#ffffff';
+                powerButton.style.borderColor = '#9d00ff';
+                powerButton.disabled = false;
+                powerButton.style.opacity = '1';
+                powerButton.style.cursor = 'pointer';
+              }
+              
+              // Reset power bar
+              const powerBar = tube.cardElement.querySelector('.power-bar');
+              const powerText = tube.cardElement.querySelector('.power-text');
+              if (powerBar) {
+                powerBar.style.width = '0%';
+                powerBar.style.background = 'linear-gradient(90deg, #00ff00, #39ff14)';
+              }
+              if (powerText) {
+                powerText.textContent = 'POWER: 0%';
+              }
+            }
+          });
+          
+          // 10. Reset player choices for new round
+          players.forEach((player, i) => {
+            if (!player.isEmpty) {
+              player.choice = null;
+              
+              // Update UI to show choice buttons again
+              const tube = tubes[i];
+              if (tube && tube.cardElement) {
+                const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
+                const choiceBadge = tube.cardElement.querySelector('.choice-badge');
+                
+                if (choiceButtons && choiceBadge) {
+                  choiceBadge.style.display = 'none';
+                  // Only show buttons for current player
+                  if (playerSlot === i) {
+                    choiceButtons.style.display = 'flex';
+                    
+                    // Reset choice button styles
+                    const choiceBtnElements = tube.cardElement.querySelectorAll('.choice-btn');
+                    choiceBtnElements.forEach(btn => {
+                      btn.style.opacity = '1';
+                      btn.style.transform = 'scale(1)';
+                      btn.style.boxShadow = '';
+                    });
+                  } else {
+                    choiceButtons.style.display = 'none';
+                  }
+                }
+              }
+            }
+          });
+          
+          console.log(`âœ… Round ${currentRound} reset complete - players can charge and choose again`);
+          
+          // ðŸŽ¯ CRITICAL: Update button visibility after reset
+          updatePlayerCardButtons();
+        }
       }
       
       // Update coin states from server physics
@@ -800,7 +1022,7 @@
         const powerPercent = tube.power / 100;
         tube.foamIntensity = powerPercent;
         
-        console.log(`âš¡ Updated power visual for player ${data.playerSlot + 1}: ${data.power}% (level ${tube.powerLevel}, foamIntensity: ${tube.foamIntensity})`);
+        console.log(`âš¡ Updated power visual for player ${data.playerSlot + 1}: ${data.power}% (level ${tube.powerLevel}, foamIntensity: ${tube.foamIntensity}, isFilling: ${tube.isFilling})`);
         
         // ðŸŽ¯ UNIFIED ANIMATION - Same code for charger and viewers!
         updatePearlColors(tube, powerPercent, data.playerSlot);
@@ -809,6 +1031,14 @@
         if (tube.liquidParticleMeshes && tube.liquidParticleMeshes.length > 0) {
           const visibleCount = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
           console.log(`ðŸ” Tube ${data.playerSlot + 1} has ${tube.liquidParticleMeshes.length} pearls, ${visibleCount} visible`);
+        }
+        
+        // ðŸŽ¯ FORCE PEARL VISIBILITY: Ensure pearls are always visible when charging
+        if (tube.isFilling && tube.liquidParticleMeshes) {
+          tube.liquidParticleMeshes.forEach(mesh => {
+            mesh.visible = true;
+          });
+          console.log(`ðŸŒŠ Forced pearl visibility for tube ${data.playerSlot + 1}`);
         }
       }
     }
@@ -998,16 +1228,27 @@
           const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
           const choiceBadge = tube.cardElement.querySelector('.choice-badge');
           
-          if (isCurrentPlayer && !player.choice) {
-            // Show choice buttons for current player
-            if (choiceBadge) choiceBadge.style.display = 'none';
-            if (choiceButtons) choiceButtons.style.display = 'block';
+          if (isCurrentPlayer) {
+            // Show choice buttons for current player only if they haven't made a choice yet
+            if (player.choice) {
+              // Player has made a choice - show the badge
+              if (choiceButtons) choiceButtons.style.display = 'none';
+              if (choiceBadge) {
+                choiceBadge.style.display = 'inline-block';
+                choiceBadge.textContent = player.choice.toUpperCase();
+                choiceBadge.className = `choice-badge ${player.choice}`;
+              }
+            } else {
+              // Player hasn't made a choice yet - show buttons
+              if (choiceBadge) choiceBadge.style.display = 'none';
+              if (choiceButtons) choiceButtons.style.display = 'flex';
+            }
           } else if (player.choice) {
-            // Show choice badge
+            // Show choice badge for other players
             if (choiceButtons) choiceButtons.style.display = 'none';
             if (choiceBadge) choiceBadge.style.display = 'block';
           } else {
-            // Hide everything for other players
+            // Hide everything for other players without choices
             if (choiceButtons) choiceButtons.style.display = 'none';
             if (choiceBadge) choiceBadge.style.display = 'none';
           }
@@ -1017,7 +1258,11 @@
           
           if (isCurrentPlayer) {
             // Show action buttons for current player
-            actionButtons.forEach(btn => btn.style.display = 'block');
+            actionButtons.forEach(btn => {
+              btn.style.display = 'block';
+              btn.style.pointerEvents = 'auto';
+            });
+            console.log(`ðŸŽ¯ Power button for slot ${i}: display=block, pointerEvents=auto`);
           } else {
             // Hide action buttons for other players
             actionButtons.forEach(btn => btn.style.display = 'none');
@@ -1131,24 +1376,24 @@
     };
 
     let players = [
-      { id: 1, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true },
-      { id: 2, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true },
-      { id: 3, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true },
-      { id: 4, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true }
+      { id: 1, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true },
+      { id: 2, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true },
+      { id: 3, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true },
+      { id: 4, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true }
     ];
 
     // Coin options - MUST be defined before tubes are created
     const coinOptions = [
-      { id: 'plain', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png' },
-      { id: 'skull', name: 'Skull', headsImage: '/coins/skullh.png', tailsImage: '/coins/skullt.png' },
-      { id: 'trump', name: 'Trump', headsImage: '/coins/trumpheads.webp', tailsImage: '/coins/trumptails.webp' },
-      { id: 'mario', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png' },
-      { id: 'jestress', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png' },
-      { id: 'dragon', name: 'é¾™', headsImage: '/coins/dragonh.png', tailsImage: '/coins/dragont.png' },
-      { id: 'stinger', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png' },
-      { id: 'manga', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png' },
-      { id: 'pharaoh', name: 'Pharaoh', headsImage: '/coins/pharaohh.png', tailsImage: '/coins/pharaoht.png' },
-      { id: 'calavera', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png' }
+      { id: 'plain', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png', cost: 0, category: 'free' },
+      { id: 'skull', name: 'Skull', headsImage: '/coins/skullh.png', tailsImage: '/coins/skullt.png', cost: 200, category: 'premium' },
+      { id: 'trump', name: 'Trump', headsImage: '/coins/trumpheads.webp', tailsImage: '/coins/trumptails.webp', cost: 300, category: 'premium' },
+      { id: 'mario', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png', cost: 300, category: 'premium' },
+      { id: 'stinger', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png', cost: 300, category: 'premium' },
+      { id: 'dragon', name: 'é¾™', headsImage: '/coins/dragonh.png', tailsImage: '/coins/dragont.png', cost: 300, category: 'premium' },
+      { id: 'jestress', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png', cost: 500, category: 'epic' },
+      { id: 'manga', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png', cost: 500, category: 'epic' },
+      { id: 'pharaoh', name: 'Pharaoh', headsImage: '/coins/pharaohh.png', tailsImage: '/coins/pharaoht.png', cost: 1000, category: 'legendary' },
+      { id: 'calavera', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png', cost: 1000, category: 'legendary' }
     ];
 
     // Coin material options with physics properties - MUST be defined before tubes are created
@@ -1202,13 +1447,63 @@
 
     // Game state
     let currentRound = 1;
-    let timeRemaining = 30;
-    // SERVER-AUTHORITATIVE: No client-side timers
+    // SERVER-AUTHORITATIVE: Timer comes from server only
     let roundCounterElement = null;
-    // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
     let timerElement = null;
+    // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
     let gameOver = false;
-    let roundStartLives = []; // Track lives at start of each round
+    let roundStartWins = []; // Track wins at start of each round
+
+    // LocalStorage persistence with expiry
+    function saveGameState() {
+      if (!gameIdParam || !walletParam) return;
+      
+      const gameState = {
+        gameId: gameIdParam,
+        playerSlot: playerSlot,
+        currentRound: currentRound,
+        playerWins: players[playerSlot]?.wins || 0,
+        playerChoice: players[playerSlot]?.choice || null,
+        selectedCoin: tubes[playerSlot]?.selectedCoin?.id || 'plain',
+        selectedMaterial: tubes[playerSlot]?.selectedMaterial?.id || 'graphite',
+        timestamp: Date.now(),
+        expiresAt: Date.now() + (30 * 60 * 1000) // 30 minutes
+      };
+      
+      const storageKey = `game_${gameIdParam}_${walletParam}`;
+      localStorage.setItem(storageKey, JSON.stringify(gameState));
+      console.log('ðŸ’¾ Game state saved to localStorage:', gameState);
+    }
+
+    function loadGameState() {
+      if (!gameIdParam || !walletParam) return null;
+      
+      const storageKey = `game_${gameIdParam}_${walletParam}`;
+      const savedData = localStorage.getItem(storageKey);
+      
+      if (!savedData) {
+        console.log('ðŸ“‚ No saved game state found');
+        return null;
+      }
+      
+      try {
+        const gameState = JSON.parse(savedData);
+        
+        // Check if expired
+        if (Date.now() > gameState.expiresAt) {
+          console.log('â° Saved game state expired, clearing...');
+          localStorage.removeItem(storageKey);
+          return null;
+        }
+        
+        console.log('âœ… Loaded game state from localStorage:', gameState);
+        return gameState;
+      } catch (err) {
+        console.error('âŒ Failed to parse saved game state:', err);
+        localStorage.removeItem(storageKey);
+        return null;
+      }
+    }
 
     // Color Management - ENABLED for proper emissive glow
     THREE.ColorManagement.enabled = true;
@@ -1419,14 +1714,86 @@
       text-align: center;
       box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
       backdrop-filter: blur(10px);
-      pointer-events: none;
+      pointer-events: auto;
     `;
-    xpCounter.innerHTML = `
-      <div style="font-size: 12px; color: #ffffff; opacity: 0.8; margin-bottom: 4px;">Total Earnings</div>
-      <div style="font-size: 18px; margin-bottom: 2px;">${currentPlayerXP} FLIP</div>
-      <div style="font-size: 10px; color: #ffffff; opacity: 0.8;">This Game</div>
-    `;
+      xpCounter.innerHTML = `
+        <div style="font-size: 12px; color: #ffffff; opacity: 0.8; margin-bottom: 4px;">Total Earnings</div>
+        <div style="font-size: 18px; margin-bottom: 2px;">${currentPlayerXP} FLIP</div>
+        <div style="font-size: 10px; color: #ffffff; opacity: 0.8;">This Game</div>
+      `;
     document.body.appendChild(xpCounter);
+
+    // Create separate change coin box - positioned beside earnings box
+    const changeCoinBox = document.createElement('div');
+    changeCoinBox.id = 'change-coin-box';
+    changeCoinBox.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 240px;
+      width: 160px;
+      height: 50px;
+      padding: 0;
+      background: linear-gradient(135deg, #b8860b, #daa520);
+      border: 4px solid #8b6914;
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: bold;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(184, 134, 11, 0.6);
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+      z-index: 1000;
+    `;
+    changeCoinBox.innerHTML = `
+      <button id="global-change-coin-btn" style="
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        background: linear-gradient(135deg, #b8860b, #daa520);
+        border: 4px solid #8b6914;
+        border-radius: 8px;
+        color: #fff;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: bold;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow: 0 0 15px rgba(184, 134, 11, 0.6);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 25px rgba(184, 134, 11, 0.8)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 15px rgba(184, 134, 11, 0.6)'">CHANGE COIN</button>
+    `;
+    document.body.appendChild(changeCoinBox);
+
+    // Add global change coin button handler
+    setTimeout(() => {
+      const globalChangeCoinBtn = document.getElementById('global-change-coin-btn');
+      if (globalChangeCoinBtn) {
+        globalChangeCoinBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          console.log('ðŸŽ¨ Global change coin button clicked');
+          
+          // Try to find current player slot
+          let currentPlayerSlot = playerSlot;
+          
+          // Fallback: search for current player if playerSlot is not set
+          if (currentPlayerSlot === undefined || currentPlayerSlot < 0) {
+            currentPlayerSlot = players.findIndex(p => p.address === walletParam);
+            console.log(`ðŸ” Fallback search found player slot: ${currentPlayerSlot}`);
+          }
+          
+          if (currentPlayerSlot !== undefined && currentPlayerSlot >= 0) {
+            console.log(`ðŸŽ¨ Opening coin selector for player slot ${currentPlayerSlot}`);
+            showCoinSelector(currentPlayerSlot);
+          } else {
+            console.log('âŒ Player slot not found for coin selection. PlayerSlot:', playerSlot, 'WalletParam:', walletParam);
+            console.log('Available players:', players.map((p, i) => ({ slot: i, address: p.address, name: p.name })));
+          }
+        });
+      }
+    }, 100);
 
     // Function to update XP counter
     function updateXPCounter(amount) {
@@ -2316,10 +2683,24 @@
           <img src="${player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png')}" class="player-avatar" alt="${player.name}" style="width: 80px; height: 100px;" />
           <div class="player-info">
             <div class="player-name">${player.name}</div>
-            <div class="lives-container" style="display: flex; gap: 8px; margin-top: 8px;">
+            <div class="wins-container" style="display: flex; gap: 8px; margin-top: 8px; justify-content: center;">
               ${Array.from({ length: 3 }, (_, idx) => 
-                `<div class="life ${idx < player.lives ? 'active' : ''}" style="width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; font-size: 40.5px; color: ${idx < player.lives ? '#ff4444' : '#666'};">
-                  â¤ï¸
+                `<div class="win-trophy ${idx < player.wins ? 'active' : ''}" style="
+                  width: 54px; 
+                  height: 54px; 
+                  display: flex; 
+                  align-items: center; 
+                  justify-content: center;
+                  background: ${idx < player.wins ? '#0a0f2e' : 'rgba(100, 100, 100, 0.3)'} url('/images/Win.png') center/40px 40px no-repeat;
+                  border: ${idx < player.wins ? '3px solid #ffd700' : '2px solid #666'};
+                  border-radius: 12px;
+                  opacity: ${idx < player.wins ? '1' : '0.8'};
+                  box-shadow: ${idx < player.wins ? '0 0 20px rgba(255, 215, 0, 0.6)' : 'none'};
+                  transition: all 0.3s ease;
+                  backdrop-filter: ${idx < player.wins ? 'blur(10px)' : 'none'};
+                  position: relative;
+                  z-index: 10000;
+                ">
                 </div>`
               ).join('')}
             </div>
@@ -2340,7 +2721,6 @@
           </div>
           <div class="power-text" style="color: #00ff00; font-size: 14px; text-align: center;">POWER: 0%</div>
         </div>
-        <button class="action-btn change-coin-btn" data-player="${i}" style="display: ${showButtons ? 'block' : 'none'};">CHANGE COIN</button>
         <button class="action-btn" style="display: ${showButtons ? 'block' : 'none'};">CHARGE POWER</button>
       `;
 
@@ -2353,14 +2733,26 @@
           e.stopPropagation();
           const choice = button.classList.contains('heads') ? 'heads' : 'tails';
           
+          // Add visual feedback - highlight the selected button
+          choiceButtons.forEach(btn => {
+            btn.style.opacity = '0.5';
+            btn.style.transform = 'scale(0.95)';
+          });
+          button.style.opacity = '1';
+          button.style.transform = 'scale(1.1)';
+          button.style.boxShadow = '0 0 25px rgba(255, 255, 255, 0.8)';
+          
           // Update local player choice immediately
           players[i].choice = choice;
+          console.log(`ðŸŽ¯ Local choice set for player ${i + 1}: ${choice}`);
+          updateCoinRotationsFromPlayerChoices();
+          saveGameState(); // â† ADD THIS
           
           // Update local UI immediately
           const choiceBadge = cardElement.querySelector('.choice-badge');
-          const choiceButtons = cardElement.querySelector('.choice-buttons');
-          if (choiceButtons && choiceBadge) {
-            choiceButtons.style.display = 'none';
+          const choiceButtonsContainer = cardElement.querySelector('.choice-buttons');
+          if (choiceButtonsContainer && choiceBadge) {
+            choiceButtonsContainer.style.display = 'none';
             choiceBadge.style.display = 'inline-block';
             choiceBadge.textContent = choice.toUpperCase();
             choiceBadge.className = `choice-badge ${choice}`;
@@ -2378,23 +2770,16 @@
             });
             console.log(`ðŸŽ¯ Sent choice to server: ${choice}`);
           }
+          
+          // Update button visibility after choice is made
+          updatePlayerCardButtons();
         });
       });
 
-      // Add change coin button handler (always add, visibility controlled by CSS)
-      const changeCoinButton = cardElement.querySelector('.change-coin-btn');
-      if (changeCoinButton) {
-        changeCoinButton.style.pointerEvents = 'auto';
-        changeCoinButton.addEventListener('click', (e) => {
-          e.stopPropagation();
-          console.log(`ðŸŽ¨ Change coin for player ${i + 1}`);
-          showCoinSelector(i);
-        });
-      }
 
       // Add power charge button handler (HOLD TO CHARGE) - always add, visibility controlled by CSS
       const flipButtons = cardElement.querySelectorAll('.action-btn');
-      const powerButton = flipButtons[1]; // The second action button
+      const powerButton = flipButtons[0]; // The first action button (CHARGE POWER)
       const powerBar = cardElement.querySelector('.power-bar');
       
       if (powerButton) {
@@ -2405,6 +2790,7 @@
         
         powerButton.addEventListener('mousedown', (e) => {
           e.stopPropagation();
+          console.log(`ðŸ–±ï¸ Power button mousedown for player ${i + 1}`);
           
           // Prevent charging if player has no lives
           if (players[i].lives <= 0) {
@@ -2420,7 +2806,10 @@
           }
           
           // Prevent charging if already used this round
-          if (tubes[i].hasUsedPower) return;
+          if (tubes[i].hasUsedPower) {
+            console.log(`âŒ Player ${i + 1} already used power this round`);
+            return;
+          }
           
           console.log(`âš¡ Charging power for tube ${i + 1}`);
           isCharging = true;
@@ -2436,7 +2825,9 @@
             socket.emit('physics_power_charging_start', {
               gameId: gameIdParam,
               address: walletParam,
-              playerSlot: i
+              playerSlot: i,
+              power: 0,  // âš¡ ADD THIS
+              isFilling: true  // âš¡ ADD THIS
             });
             console.log(`ðŸ“¢ Broadcast: Player ${i + 1} started charging`);
           }
@@ -2553,47 +2944,6 @@
           tubes[i].isFilling = false;
         });
         
-        // Add choice button handlers (only for current player)
-        const choiceButtons = cardElement.querySelectorAll('.choice-btn');
-        choiceButtons.forEach(btn => {
-          btn.style.pointerEvents = 'auto';
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            // Don't allow choices if player has no lives
-            if (players[i].lives <= 0) {
-              console.log(`âŒ Player ${i + 1} has no lives - cannot make choice`);
-              return;
-            }
-            
-            const choice = btn.textContent.toLowerCase();
-            players[i].choice = choice;
-            console.log(`Player ${i + 1} selected: ${choice}`);
-            
-            // Update coin rotation immediately
-            updateCoinRotationsFromPlayerChoices();
-            
-            // Send choice to server
-            if (isServerSideMode && socket && gameIdParam && walletParam) {
-              socket.emit('physics_set_choice', {
-                gameId: gameIdParam,
-                address: walletParam,
-                choice: choice
-              });
-              console.log(`ðŸŽ¯ Sent choice to server: ${choice}`);
-            }
-            
-            // Replace buttons with choice badge
-            const choiceButtonContainer = cardElement.querySelector('.choice-buttons');
-            if (choiceButtonContainer) {
-              choiceButtonContainer.outerHTML = `
-                <div class="choice-badge ${choice}">
-                  ${choice.toUpperCase()}
-                </div>
-              `;
-            }
-          });
-        });
       }
 
       const cssObject = new CSS3DObject(cardElement);
@@ -2665,45 +3015,62 @@
       });
     }
 
-    // ===== APPLY DEFAULT COIN SELECTIONS ON GAME START =====
-    console.log('ðŸŽ® Game started - applying default coin selections to all players...');
-    
-    tubes.forEach((tube, tubeIndex) => {
-      const player = players[tubeIndex];
-      const defaultCoin = tube.selectedCoin;
-      const defaultMaterial = tube.selectedMaterial;
-      
-      // Apply default material edge color
-      const edgeColor = new THREE.Color(defaultMaterial.edgeColor);
-      tube.coin.material[0].color.copy(edgeColor);
-      tube.coin.material[0].emissive.copy(edgeColor);
-      tube.coin.material[0].emissiveIntensity = 0.3;
-      tube.coin.material[0].needsUpdate = true;
-      
-      // Load and apply default coin textures
-      const textureLoader = new THREE.TextureLoader();
-      textureLoader.load(defaultCoin.headsImage, (headsTex) => {
-        headsTex.minFilter = THREE.LinearFilter;
-        headsTex.magFilter = THREE.LinearFilter;
-        headsTex.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
-        headsTex.generateMipmaps = false;
-        
-        textureLoader.load(defaultCoin.tailsImage, (tailsTex) => {
-          tailsTex.minFilter = THREE.LinearFilter;
-          tailsTex.magFilter = THREE.LinearFilter;
-          tailsTex.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
-          tailsTex.generateMipmaps = false;
-          
-          // Update both textures
-          tube.coin.material[1].uniforms.map.value = headsTex;
-          tube.coin.material[1].needsUpdate = true;
-          tube.coin.material[2].uniforms.map.value = tailsTex;
-          tube.coin.material[2].needsUpdate = true;
-          
-          console.log(`âœ… Applied default ${defaultCoin.name} with ${defaultMaterial.name} material to ${player.name}'s coin`);
-        });
-      });
+    // ===== SHADER PRE-WARMING (Prevent first-charge freeze) =====
+    console.log('ðŸ”¥ Warming up pearl shaders...');
+    tubes.forEach((tube, i) => {
+      // Minimal power update to trigger shader compilation
+      tube.power = 1;
+      tube.foamIntensity = 0.01;
+      updatePearlColors(tube, 0.01, i);
     });
+
+    // 🆕 GLASS SHATTER SHADER PRE-WARMING
+    console.log('🔥 Warming up glass shatter shaders...');
+    tubes.forEach((tube, i) => {
+      // Create a temporary glass shard off-screen to pre-compile shaders
+      const tempShardGeometry = new THREE.BufferGeometry();
+      const vertices = new Float32Array([
+        0, 0, 0,
+        10, 0, 0,
+        5, 10, 0
+      ]);
+      tempShardGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      
+      const tempShardMaterial = new THREE.MeshStandardMaterial({
+        color: 0xe0e0e0, // Bright silver (matches shatterGlass function)
+        metalness: 0.95, // Very metallic silver (matches shatterGlass function)
+        roughness: 0.1,
+        emissive: 0xc0c0c0, // Silver glow (matches shatterGlass function)
+        emissiveIntensity: 0.4,
+        side: THREE.DoubleSide
+      });
+      
+      const tempShard = new THREE.Mesh(tempShardGeometry, tempShardMaterial);
+      tempShard.position.set(9999, 9999, 9999); // Way off-screen
+      scene.add(tempShard);
+      
+      // Force a render to compile the shader
+      webglRenderer.render(scene, camera);
+      
+      // Clean up immediately
+      scene.remove(tempShard);
+      tempShardGeometry.dispose();
+      tempShardMaterial.dispose();
+    });
+    console.log('✅ Glass shatter shaders pre-warmed!');
+    
+    // Reset after warmup
+    setTimeout(() => {
+      tubes.forEach((tube, i) => {
+        tube.power = 0;
+        tube.foamIntensity = 0;
+        updatePearlColors(tube, 0, i);
+      });
+      console.log('âœ… Shader warmup complete');
+    }, 100);
+
+    // ===== COIN TEXTURES ALREADY APPLIED DURING CREATION =====
+    console.log('ðŸŽ® Game started - coin textures already applied during tube creation');
 
     // ===== CREATE GAME INFO CONTAINER (Round + Timer + Controls) =====
     const gameInfoDiv = document.createElement('div');
@@ -2919,20 +3286,21 @@
     // ===== SERVER-AUTHORITATIVE: NO CLIENT TIMER FUNCTIONS =====
     // All timer management is handled by the server
 
-    function updateTimerDisplay() {
-      // SERVER-AUTHORITATIVE: Timer display is now purely reactive to server state
-      // The server will broadcast the timer value via physics_state_update
-      // This function will be called when server sends timer updates
-      if (timerDisplay) {
-        timerDisplay.textContent = timeRemaining;
-        
-        // Change color based on time remaining
-        if (timeRemaining <= 5) {
-          timerDisplay.style.color = '#ff0000';
-        } else if (timeRemaining <= 10) {
-          timerDisplay.style.color = '#ffaa00';
-        } else {
-          timerDisplay.style.color = '#00ff00';
+    function updateTimerDisplay(serverTime) {
+      // Pure display - server is single source of truth
+      if (timerElement) {
+        const timerDisplay = timerElement.querySelector('#timer-display');
+        if (timerDisplay) {
+          timerDisplay.textContent = serverTime;
+          
+          // Change color based on time remaining
+          if (serverTime <= 5) {
+            timerDisplay.style.color = '#ff0000';
+          } else if (serverTime <= 10) {
+            timerDisplay.style.color = '#ffaa00';
+          } else {
+            timerDisplay.style.color = '#00ff00';
+          }
         }
       }
     }
@@ -2970,14 +3338,91 @@
         overflow-y: auto;
       `;
 
-      content.innerHTML = `
-        <h2 style="color: #FFD700; text-align: center; margin-bottom: 35px; font-family: 'Orbitron', sans-serif; font-size: 1.8rem;">Customize Your Coin</h2>
-        
-        <!-- Coin Design Section -->
-        <h3 style="color: #FFD700; margin-bottom: 20px; font-family: 'Orbitron', sans-serif; font-size: 1.2rem;">Coin Design</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 15px; margin-bottom: 40px;">
-          ${coinOptions.map(coin => `
-            <div class="coin-option" data-coin-id="${coin.id}" style="
+      // Get current player's flip balance and unlocked coins (placeholder for now)
+      let playerFlipBalance = 0; // Will be fetched from server
+      let unlockedCoins = ['plain']; // Will be fetched from server
+      let customCoinHeads = null;
+      let customCoinTails = null;
+
+      // Fetch player data from server
+      if (isServerSideMode && socket && walletParam) {
+        console.log('ðŸ” Fetching profile for wallet:', walletParam);
+        socket.emit('get_player_profile', { address: walletParam });
+        socket.once('player_profile_data', (profileData) => {
+          console.log('ðŸ“Š Received profile data:', profileData);
+          playerFlipBalance = profileData.flip_balance || 0;
+          unlockedCoins = JSON.parse(profileData.unlocked_coins || '["plain"]');
+          customCoinHeads = profileData.custom_coin_heads;
+          customCoinTails = profileData.custom_coin_tails;
+          console.log('ðŸ’° Updated FLIP balance:', playerFlipBalance);
+          console.log('ðŸ”“ Updated unlocked coins:', unlockedCoins);
+          updateCoinDisplay();
+        });
+      } else {
+        console.log('âš ï¸ Cannot fetch profile - missing:', {
+          isServerSideMode,
+          hasSocket: !!socket,
+          walletParam
+        });
+      }
+
+      function updateCoinDisplay() {
+        const coinGrid = content.querySelector('.coin-grid');
+        if (!coinGrid) return;
+
+        // Update FLIP balance display
+        const flipBalanceElement = document.getElementById('flip-balance');
+        if (flipBalanceElement) {
+          flipBalanceElement.textContent = playerFlipBalance;
+        }
+
+        coinGrid.innerHTML = `
+          ${coinOptions.map(coin => {
+            const isUnlocked = unlockedCoins.includes(coin.id);
+            const canAfford = playerFlipBalance >= coin.cost;
+            const isLocked = !isUnlocked && coin.cost > 0;
+            
+            let borderColor = 'rgba(255, 215, 0, 0.25)';
+            let backgroundColor = 'rgba(255, 215, 0, 0.08)';
+            let opacity = '1';
+            let cursor = 'pointer';
+            
+            if (isLocked) {
+              borderColor = 'rgba(255, 0, 0, 0.5)';
+              backgroundColor = 'rgba(255, 0, 0, 0.1)';
+              opacity = '0.6';
+              cursor = canAfford ? 'pointer' : 'not-allowed';
+            }
+            
+            return `
+              <div class="coin-option" data-coin-id="${coin.id}" data-cost="${coin.cost}" data-unlocked="${isUnlocked}" style="
+                background: ${backgroundColor};
+                border: 2px solid ${borderColor};
+                border-radius: 12px;
+                padding: 15px;
+                text-align: center;
+                cursor: ${cursor};
+                transition: all 0.3s ease;
+                opacity: ${opacity};
+                position: relative;
+              ">
+                ${isLocked ? `
+                  <div style="position: absolute; top: 5px; right: 5px; background: rgba(255, 0, 0, 0.8); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">ðŸ”’</div>
+                ` : ''}
+                <img src="${coin.headsImage}" style="width: 65px; height: 65px; object-fit: contain; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;" />
+                <div style="color: #FFD700; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; margin-bottom: 4px;">${coin.name}</div>
+                ${coin.cost > 0 ? `
+                  <div style="color: ${isUnlocked ? '#00ff00' : canAfford ? '#FFD700' : '#ff4444'}; font-size: 0.75rem; font-weight: bold;">
+                    ${isUnlocked ? 'UNLOCKED' : `${coin.cost} FLIP`}
+                  </div>
+                ` : '<div style="color: #00ff00; font-size: 0.75rem; font-weight: bold;">FREE</div>'}
+              </div>
+            `;
+          }).join('')}
+          
+          <!-- Custom Coin Option -->
+          ${customCoinHeads && customCoinTails ? `
+            <div class="coin-option" data-coin-id="custom" data-cost="0" data-unlocked="true" style="
               background: rgba(255, 215, 0, 0.08);
               border: 2px solid rgba(255, 215, 0, 0.25);
               border-radius: 12px;
@@ -2985,11 +3430,33 @@
               text-align: center;
               cursor: pointer;
               transition: all 0.3s ease;
+              position: relative;
             ">
-              <img src="${coin.headsImage}" style="width: 65px; height: 65px; object-fit: contain; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;" />
-              <div style="color: #FFD700; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.85rem;">${coin.name}</div>
+              <img src="${customCoinHeads}" style="width: 65px; height: 65px; object-fit: contain; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;" />
+              <div style="color: #FFD700; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; margin-bottom: 4px;">Custom</div>
+              <div style="color: #00ff00; font-size: 0.75rem; font-weight: bold;">YOURS</div>
             </div>
-          `).join('')}
+          ` : ''}
+        `;
+        
+        // Re-attach event listeners
+        attachCoinEventListeners();
+      }
+
+      content.innerHTML = `
+        <h2 style="color: #FFD700; text-align: center; margin-bottom: 35px; font-family: 'Orbitron', sans-serif; font-size: 1.8rem;">Customize Your Coin</h2>
+        
+        <!-- Flip Balance Display -->
+        <div style="text-align: center; margin-bottom: 30px; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.3);">
+          <div style="color: #FFD700; font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: bold;">
+            Your FLIP Balance: <span id="flip-balance">Loading...</span>
+          </div>
+        </div>
+        
+        <!-- Coin Design Section -->
+        <h3 style="color: #FFD700; margin-bottom: 20px; font-family: 'Orbitron', sans-serif; font-size: 1.2rem;">Coin Design</h3>
+        <div class="coin-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 15px; margin-bottom: 40px;">
+          <!-- Coins will be populated here -->
         </div>
         
         <!-- Material Selection Section -->
@@ -3046,89 +3513,139 @@
       document.body.appendChild(modal);
       
       let selectedCoin = tubes[tubeIndex].selectedCoin || coinOptions[0];
-      let selectedMaterial = tubes[tubeIndex].selectedMaterial || coinMaterials[0]; // Default to graphite
+      let selectedMaterial = tubes[tubeIndex].selectedMaterial || coinMaterials[0];
       
       // Force reset to Graphite if material is invalid
       if (!selectedMaterial || !selectedMaterial.id || selectedMaterial.id !== 'graphite') {
-        selectedMaterial = coinMaterials[0]; // Force to Graphite
-        tubes[tubeIndex].selectedMaterial = selectedMaterial; // Update the stored material
+        selectedMaterial = coinMaterials[0];
+        tubes[tubeIndex].selectedMaterial = selectedMaterial;
         console.log(`ðŸ”§ Forced material reset to: ${selectedMaterial.name}`);
       }
       
-      console.log(`ðŸŽ¨ Auto-selecting: Coin="${selectedCoin.name}", Material="${selectedMaterial.name}" (ID: ${selectedMaterial.id})`);
+      // Initial coin display
+      updateCoinDisplay();
       
-      // Auto-select the current coin and material in the modal - VISUALLY HIGHLIGHTED
-      // Use setTimeout to ensure DOM elements are ready
-      setTimeout(() => {
-        const currentCoinOption = content.querySelector(`[data-coin-id="${selectedCoin.id}"]`);
-        if (currentCoinOption) {
-          currentCoinOption.style.background = 'rgba(255, 215, 0, 0.3)';
-          currentCoinOption.style.borderColor = '#FFD700';
-          currentCoinOption.style.transform = 'scale(1.05)'; // Make it slightly bigger to show it's selected
-          console.log(`âœ… Auto-selected coin: ${selectedCoin.name}`);
-        } else {
-          console.log(`âŒ Could not find coin option for ID: ${selectedCoin.id}`);
-        }
-        
-        const currentMaterialOption = content.querySelector(`[data-material-id="${selectedMaterial.id}"]`);
-        if (currentMaterialOption) {
-          currentMaterialOption.style.background = 'rgba(255, 215, 0, 0.2)';
-          currentMaterialOption.style.borderColor = '#FFD700';
-          currentMaterialOption.style.transform = 'scale(1.05)'; // Make it slightly bigger to show it's selected
-          console.log(`âœ… Auto-selected material: ${selectedMaterial.name}`);
-        } else {
-          console.log(`âŒ Could not find material option for ID: ${selectedMaterial.id}`);
-          console.log(`Available material IDs: ${coinMaterials.map(m => m.id).join(', ')}`);
-        }
-      }, 10); // Small delay to ensure DOM is ready
-
-      // Add click handlers to coin design options
-      content.querySelectorAll('.coin-option').forEach(option => {
-        option.addEventListener('click', () => {
-          const coinId = option.dataset.coinId;
-          selectedCoin = coinOptions.find(c => c.id === coinId);
-          
-          // Update visual selection
-          content.querySelectorAll('.coin-option').forEach(opt => {
-            opt.style.background = 'rgba(255, 215, 0, 0.1)';
-            opt.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+      function attachCoinEventListeners() {
+        content.querySelectorAll('.coin-option').forEach(option => {
+          option.addEventListener('click', () => {
+            const coinId = option.dataset.coinId;
+            const cost = parseInt(option.dataset.cost);
+            const isUnlocked = option.dataset.unlocked === 'true';
+            
+            if (coinId === 'custom') {
+              // Handle custom coin selection
+              selectedCoin = {
+                id: 'custom',
+                name: 'Custom',
+                headsImage: customCoinHeads,
+                tailsImage: customCoinTails,
+                cost: 0,
+                category: 'custom'
+              };
+            } else {
+              const coin = coinOptions.find(c => c.id === coinId);
+              if (!coin) return;
+              
+              if (!isUnlocked && cost > 0) {
+                // Try to unlock the coin
+                if (playerFlipBalance >= cost) {
+                  console.log(`ðŸ”“ Unlocking ${coin.name} for ${cost} FLIP`);
+                  
+                  // Show loading state
+                  const coinElement = content.querySelector(`[data-coin-id="${coinId}"]`);
+                  if (coinElement) {
+                    coinElement.style.opacity = '0.5';
+                    coinElement.style.pointerEvents = 'none';
+                  }
+                  
+                  // Send unlock request to server
+                  if (isServerSideMode && socket && walletParam) {
+                    socket.emit('unlock_coin', {
+                      address: walletParam,
+                      coinId: coinId,
+                      cost: cost
+                    });
+                    
+                    // Wait for server response
+                    socket.once('coin_unlocked', (result) => {
+                      if (result.success) {
+                        console.log(`âœ… Server confirmed unlock: ${coin.name}`);
+                        
+                        // Update local state with server response
+                        playerFlipBalance = result.newBalance;
+                        unlockedCoins = result.unlockedCoins;
+                        
+                        // Update UI
+                        document.getElementById('flip-balance').textContent = playerFlipBalance;
+                        updateCoinDisplay();
+                        selectedCoin = coin;
+                        updateCoinSelection();
+                        
+                        alert(`ðŸŽ‰ ${coin.name} unlocked for ${cost} FLIP!`);
+                      } else {
+                        console.error(`âŒ Server unlock failed: ${result.error}`);
+                        alert(`âŒ Failed to unlock ${coin.name}: ${result.error}`);
+                        
+                        // Restore coin element
+                        if (coinElement) {
+                          coinElement.style.opacity = '1';
+                          coinElement.style.pointerEvents = 'auto';
+                        }
+                      }
+                    });
+                  } else {
+                    alert(`âŒ Cannot unlock coin: Server connection required`);
+                  }
+                } else {
+                  alert(`Not enough FLIP! You need ${cost} FLIP to unlock ${coin.name}.`);
+                  return;
+                }
+              } else {
+                selectedCoin = coin;
+              }
+            }
+            
+            updateCoinSelection();
           });
-          option.style.background = 'rgba(255, 215, 0, 0.3)';
-          option.style.borderColor = '#FFD700';
           
-          console.log(`Coin design selected:`, selectedCoin.name);
+          // Hover effects
+          option.addEventListener('mouseenter', () => {
+            if (selectedCoin.id !== option.dataset.coinId) {
+              option.style.transform = 'scale(1.05)';
+            } else {
+              option.style.transform = 'scale(1.1)';
+            }
+          });
+          option.addEventListener('mouseleave', () => {
+            if (selectedCoin.id !== option.dataset.coinId) {
+              option.style.transform = 'scale(1)';
+            } else {
+              option.style.transform = 'scale(1.05)';
+            }
+          });
+        });
+      }
+      
+      function updateCoinSelection() {
+        content.querySelectorAll('.coin-option').forEach(opt => {
+          opt.style.background = opt.dataset.unlocked === 'true' ? 'rgba(255, 215, 0, 0.08)' : 'rgba(255, 0, 0, 0.1)';
+          opt.style.borderColor = opt.dataset.unlocked === 'true' ? 'rgba(255, 215, 0, 0.25)' : 'rgba(255, 0, 0, 0.5)';
         });
         
-        // Hover effect
-        option.addEventListener('mouseenter', () => {
-          if (selectedCoin.id !== option.dataset.coinId) {
-            option.style.background = 'rgba(255, 215, 0, 0.2)';
-            option.style.transform = 'scale(1.05)';
-          } else {
-            // Already selected - make it even more prominent on hover
-            option.style.background = 'rgba(255, 215, 0, 0.4)';
-            option.style.transform = 'scale(1.1)';
-          }
-        });
-        option.addEventListener('mouseleave', () => {
-          if (selectedCoin.id !== option.dataset.coinId) {
-            option.style.background = 'rgba(255, 215, 0, 0.1)';
-            option.style.transform = 'scale(1)';
-          } else {
-            // Already selected - return to selected state
-            option.style.background = 'rgba(255, 215, 0, 0.3)';
-            option.style.transform = 'scale(1.05)';
-          }
-        });
-      });
+        const selectedOption = content.querySelector(`[data-coin-id="${selectedCoin.id}"]`);
+        if (selectedOption) {
+          selectedOption.style.background = 'rgba(255, 215, 0, 0.3)';
+          selectedOption.style.borderColor = '#FFD700';
+          selectedOption.style.transform = 'scale(1.05)';
+        }
+      }
       
-      // Add click handlers to material options
+      // Material selection handlers (unchanged)
       content.querySelectorAll('.material-option').forEach(option => {
         option.addEventListener('click', () => {
           const materialId = option.dataset.materialId;
           selectedMaterial = coinMaterials.find(m => m.id === materialId);
           
-          // Update visual selection
           content.querySelectorAll('.material-option').forEach(opt => {
             opt.style.background = 'rgba(255, 255, 255, 0.05)';
             opt.style.borderColor = 'rgba(255, 255, 255, 0.2)';
@@ -3139,13 +3656,11 @@
           console.log(`Material selected:`, selectedMaterial.name);
         });
         
-        // Hover effect
         option.addEventListener('mouseenter', () => {
           if (selectedMaterial.id !== option.dataset.materialId) {
             option.style.background = 'rgba(255, 255, 255, 0.1)';
             option.style.transform = 'scale(1.05)';
           } else {
-            // Already selected - make it even more prominent on hover
             option.style.background = 'rgba(255, 215, 0, 0.3)';
             option.style.transform = 'scale(1.1)';
           }
@@ -3155,7 +3670,6 @@
             option.style.background = 'rgba(255, 255, 255, 0.05)';
             option.style.transform = 'scale(1)';
           } else {
-            // Already selected - return to selected state
             option.style.background = 'rgba(255, 215, 0, 0.2)';
             option.style.transform = 'scale(1.05)';
           }
@@ -3528,36 +4042,26 @@
       
       tube.isFlipping = true;
       
+      // PRE-CALCULATE: How many full rotations to do before landing
+      const startRotation = coin.rotation.x;
+      const rotationsPerSecond = baseFlipSpeed * 60;
+      const totalRotations = (rotationsPerSecond * (flipDuration / 1000)) / (Math.PI * 2);
+      const fullRotations = Math.floor(totalRotations);
+      const finalTarget = startRotation + (fullRotations * Math.PI * 2) + (targetRotationX - (startRotation % (Math.PI * 2)));
+      
       const animateFlip = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / flipDuration, 1);
         
-        if (progress < 0.7) {
-          // Fast spinning phase (first 70%)
-          coin.rotation.x += baseFlipSpeed;
-        } else {
-          // Deceleration phase (last 30%) - slow down gradually
-          const decelProgress = (progress - 0.7) / 0.3; // 0 to 1 over last 30%
-          
-          // Gradually reduce flip speed to zero
-          const currentSpeed = baseFlipSpeed * (1 - decelProgress);
-          coin.rotation.x += currentSpeed;
-          
-          // In final moments, lock to target rotation
-          if (decelProgress > 0.8) {
-            const lockProgress = (decelProgress - 0.8) / 0.2;
-            const currentCycles = Math.floor(coin.rotation.x / (Math.PI * 2));
-            const targetX = currentCycles * (Math.PI * 2) + targetRotationX;
-            coin.rotation.x = coin.rotation.x + (targetX - coin.rotation.x) * lockProgress;
-          }
-        }
+        // EASE-OUT CUBIC: Smooth deceleration to exact target
+        const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+        coin.rotation.x = startRotation + (finalTarget - startRotation) * easeOutCubic;
         
         if (progress < 1) {
           requestAnimationFrame(animateFlip);
         } else {
           // Final landing - ensure exact position
-          const finalCycles = Math.floor(coin.rotation.x / (Math.PI * 2));
-          coin.rotation.x = finalCycles * (Math.PI * 2) + targetRotationX;
+          coin.rotation.x = finalTarget;
           coin.rotation.y = Math.PI / 2;
           coin.rotation.z = 0;
           
@@ -3573,76 +4077,46 @@
     }
 
     // ===== UPDATE LIVES DISPLAY =====
-    function updateLivesDisplay(tubeIndex) {
+    function updateWinsDisplay(tubeIndex) {
       const player = players[tubeIndex];
       const tube = tubes[tubeIndex];
       
       if (!tube.cardElement) return;
       
-      // Find all life elements in the card
-      const lifeElements = tube.cardElement.querySelectorAll('.life');
+      // Find all win trophy elements in the card
+      const winElements = tube.cardElement.querySelectorAll('.win-trophy');
       
-      // Update each life element based on current lives
-      lifeElements.forEach((lifeElement, idx) => {
-        const heartDiv = lifeElement.querySelector('div');
-        if (idx < player.lives) {
-          // This life should be active
-          lifeElement.classList.add('active');
-          if (heartDiv) heartDiv.style.color = '#ff4444'; // Red heart
+      // Update each trophy based on current wins (3 trophies max)
+      winElements.forEach((winElement, idx) => {
+        if (idx < player.wins) {
+          // This trophy should be active (won) - apply gold styling
+          winElement.classList.add('active');
+          winElement.style.opacity = '1';
+          winElement.style.color = '#ffd700';
+          winElement.style.background = 'linear-gradient(135deg, #ffd700, #ffed4e)';
+          winElement.style.border = '2px solid #ffd700';
+          winElement.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.4)';
+          winElement.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
+          winElement.textContent = 'WIN';
+          
+          // Add puff animation for newly won trophies
+          if (idx === player.wins - 1) {
+            winElement.style.animation = 'puffWin 0.6s ease-out';
+          }
         } else {
-          // This life should be inactive (lost)
-          lifeElement.classList.remove('active');
-          if (heartDiv) heartDiv.style.color = '#666'; // Gray heart
+          // This trophy should be inactive (not won yet)
+          winElement.classList.remove('active');
+          winElement.style.opacity = '0.3';
+          winElement.style.color = '#666';
+          winElement.style.background = 'rgba(100, 100, 100, 0.3)';
+          winElement.style.border = '2px solid #666';
+          winElement.style.boxShadow = 'none';
+          winElement.style.textShadow = 'none';
+          winElement.textContent = '';
         }
       });
       
-      // Handle eliminated player (0 lives)
-      if (player.lives <= 0) {
-        // Replace choice area with eliminated indicator
-        const choiceContainer = tube.cardElement.querySelector('.choice-buttons, .choice-badge');
-        if (choiceContainer) {
-          choiceContainer.outerHTML = `
-            <div style="
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              width: 100%;
-              height: 60px;
-              background: linear-gradient(135deg, #ff1493, #ff69b4);
-              border: 3px solid #ff1493;
-              border-radius: 12px;
-              box-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
-              animation: pulse 2s infinite;
-            ">
-              <div style="
-                font-size: 36px;
-                font-weight: bold;
-                color: white;
-                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-                font-family: 'Orbitron', sans-serif;
-              ">
-                âŒ
-              </div>
-            </div>
-          `;
-        }
-        
-        // Disable power button
-        const powerButton = tube.cardElement.querySelector('.action-btn');
-        if (powerButton) {
-          powerButton.disabled = true;
-          powerButton.style.opacity = '0.3';
-          powerButton.style.cursor = 'not-allowed';
-          powerButton.style.background = '#666666';
-          powerButton.style.color = '#999999';
-          powerButton.style.borderColor = '#666666';
-          powerButton.textContent = 'ELIMINATED';
-        }
-        
-        console.log(`âŒ Player ${tubeIndex + 1} ELIMINATED - showing neon pink X`);
-      }
-      
-      console.log(`ðŸ’Š Updated lives display for player ${tubeIndex + 1}: ${player.lives} lives remaining`);
+      console.log(`ðŸ† Updated wins display for player ${tubeIndex + 1}: ${player.wins} wins`);
     }
 
     // ===== UPDATE PLAYER CARD CHOICE =====
@@ -3686,7 +4160,18 @@
           }
         });
         
-        console.log(`ðŸŽ‰ Player ${tubeIndex + 1} WON! Lives remain: ${player.lives}`);
+        // Award win point
+        player.wins++;
+        console.log(`ðŸŽ‰ Player ${tubeIndex + 1} WON! Wins: ${player.wins}/3`);
+        
+        // Update wins display
+        updateWinsDisplay(tubeIndex);
+        
+        // Check for game over (first to 3 wins)
+        if (player.wins >= 3) {
+          console.log(`ðŸ† Player ${tubeIndex + 1} reached 3 wins!`);
+          // Server will handle tiebreaker logic
+        }
       } else {
         // Red glow for loss
         const loseLight = new THREE.PointLight(0xff0000, 6, 200);
@@ -3694,14 +4179,7 @@
         coin.add(loseLight);
         tube.loseLight = loseLight;
         
-        // Decrease lives when player loses
-        if (player.lives > 0) {
-          player.lives--;
-          console.log(`ðŸ’” Player ${tubeIndex + 1} LOST - Lives remaining: ${player.lives}`);
-          
-          // Update lives display in card
-          updateLivesDisplay(tubeIndex);
-        }
+        console.log(`âŒ Player ${tubeIndex + 1} LOST this round`);
       }
       
       // Create result text box (CSS3D)
@@ -4039,12 +4517,12 @@
         winnerName
       });
       
-      // Create collection session via server
+      // Award FLIP tokens directly via server
       if (isServerSideMode && socket && gameIdParam && walletParam) {
         const gameResult = didCurrentPlayerWin ? 'won' : 'lost';
         
-        // Request FLIP collection session creation
-        socket.emit('create_flip_collection', {
+        // Request direct FLIP token award
+        socket.emit('award_flip_tokens_final', {
           gameId: gameIdParam,
           address: walletParam,
           gameResult: gameResult,
@@ -4052,15 +4530,7 @@
           totalFlip: currentPlayerXP
         });
         
-        console.log(`ðŸŽ Requesting collection session: ${gameResult}, ${currentPlayerXP} FLIP`);
-        
-        // Set a fallback collection ID if server fails
-        setTimeout(() => {
-          if (!currentCollectionId) {
-            console.log('âš ï¸ Server collection session failed, using fallback');
-            currentCollectionId = `fallback_${Date.now()}`;
-          }
-        }, 2000);
+        console.log(`ðŸŽ Awarding FLIP tokens directly: ${gameResult}, ${currentPlayerXP} FLIP`);
       }
       
       // Show immediate game over overlay
@@ -4103,21 +4573,6 @@
                 You earned ${currentPlayerXP} FLIP tokens!
             </div>
             <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
-                <button id="claim-flip-btn" style="
-                    background: linear-gradient(135deg, #00ff00, #39ff14);
-                    border: none;
-                    border-radius: 15px;
-                    padding: 15px 30px;
-                    font-family: 'Orbitron', sans-serif;
-                    font-size: 18px;
-                    font-weight: bold;
-                    color: #000;
-                    cursor: pointer;
-                    text-transform: uppercase;
-                    letter-spacing: 2px;
-                ">
-                    ðŸ’Ž Claim ${currentPlayerXP} FLIP
-                </button>
                 <button id="claim-nft-btn" style="
                     background: linear-gradient(135deg, #ff0088, #ff1493);
                     border: none;
@@ -4147,21 +4602,6 @@
             <div style="font-size: 20px; color: #00ff00; margin-bottom: 30px;">
                 You earned ${currentPlayerXP} FLIP tokens!
             </div>
-            <button id="claim-flip-btn" style="
-                background: linear-gradient(135deg, #00ff00, #39ff14);
-                border: none;
-                border-radius: 15px;
-                padding: 15px 30px;
-                font-family: 'Orbitron', sans-serif;
-                font-size: 18px;
-                font-weight: bold;
-                color: #000;
-                cursor: pointer;
-                text-transform: uppercase;
-                letter-spacing: 2px;
-            ">
-                ðŸ’Ž Claim ${currentPlayerXP} FLIP
-            </button>
         `;
       }
       
@@ -4194,26 +4634,8 @@
       
       // Add button handlers
       setTimeout(() => {
-        const claimFlipBtn = document.getElementById('claim-flip-btn');
         const claimNftBtn = document.getElementById('claim-nft-btn');
         const returnLobbyBtn = document.getElementById('return-lobby-btn');
-        
-        if (claimFlipBtn) {
-            claimFlipBtn.addEventListener('click', () => {
-                if (socket && currentCollectionId) {
-                    console.log(`ðŸ’° Claiming ${currentPlayerXP} FLIP tokens for ${walletParam}`);
-                    socket.emit('collect_flip_tokens', {
-                        collectionId: currentCollectionId,
-                        address: walletParam,
-                        amount: currentPlayerXP
-                    });
-                    claimFlipBtn.disabled = true;
-                    claimFlipBtn.textContent = 'Claiming...';
-                } else {
-                    console.error('âŒ Cannot claim FLIP: missing socket, collectionId, or walletParam');
-                }
-            });
-        }
         
         if (claimNftBtn && didCurrentPlayerWin) {
             claimNftBtn.addEventListener('click', () => {
@@ -4282,16 +4704,17 @@
           playerAvatarElement.alt = player.name;
         }
         
-        // Update lives display
-        const lifeElements = tube.cardElement.querySelectorAll('.life');
-        lifeElements.forEach((lifeElement, idx) => {
-          const heartDiv = lifeElement.querySelector('div');
-          if (idx < player.lives) {
-            lifeElement.classList.add('active');
-            if (heartDiv) heartDiv.style.color = '#ff4444'; // Red heart
+        // Update wins display
+        const winElements = tube.cardElement.querySelectorAll('.win-trophy');
+        winElements.forEach((winElement, idx) => {
+          if (idx < player.wins) {
+            winElement.classList.add('active');
+            winElement.style.opacity = '1';
+            winElement.style.filter = 'grayscale(0%) brightness(1)';
           } else {
-            lifeElement.classList.remove('active');
-            if (heartDiv) heartDiv.style.color = '#666'; // Gray heart
+            winElement.classList.remove('active');
+            winElement.style.opacity = '0.3';
+            winElement.style.filter = 'grayscale(100%) brightness(0.5)';
           }
         });
         
@@ -4367,13 +4790,13 @@
           const p = parts[idx];
           if (!p) {
             console.log(`ðŸ“­ Slot ${idx+1}: Empty`);
-            return { id: idx+1, name: 'Empty', lives: 0, address: '', choice: null, avatar: '', isEmpty: true };
+            return { id: idx+1, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true };
           }
           
           const playerData = {
             id: idx+1,
             name: p.username || p.name || `Player ${idx+1}`,
-            lives: 3,
+            wins: 0,
             address: p.player_address || '',
             choice: null,
             avatar: p.avatar || '/images/default-avatar.png',
@@ -4387,8 +4810,8 @@
           
           return playerData;
         });
-        // Update initial lives tracking
-        roundStartLives = players.map(player => player.lives);
+        // Update initial wins tracking
+        roundStartWins = players.map(player => player.wins);
         console.log('ðŸ“Š Participants mapped:', players);
         
         // Update player cards with real data
@@ -4747,4 +5170,3 @@
   </script>
 </body>
 </html>
-

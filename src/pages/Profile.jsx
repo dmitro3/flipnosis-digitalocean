@@ -26,13 +26,21 @@ const ProfileContainer = styled.div`
 `;
 
 const ProfileHeader = styled.div`
-  background: linear-gradient(135deg, rgba(0, 191, 255, 0.1), rgba(30, 144, 255, 0.1));
-  border: 1px solid rgba(0, 191, 255, 0.3);
-  border-radius: 1.5rem;
+  background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+  border: 3px solid #9d00ff;
+  border-radius: 20px;
   padding: 2rem;
   margin-bottom: 2rem;
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 0 40px rgba(157, 0, 255, 0.4);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #00ffff;
+    box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+  }
 
   @media (max-width: 768px) {
     padding: 1rem;
@@ -47,7 +55,7 @@ const ProfileHeader = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(0, 191, 255, 0.05) 50%, transparent 70%);
+    background: linear-gradient(45deg, transparent 30%, rgba(157, 0, 255, 0.1) 50%, transparent 70%);
     animation: shimmer 3s infinite;
   }
 
@@ -79,19 +87,21 @@ const Avatar = styled.img`
   width: 8rem;
   height: 8rem;
   border-radius: 50%;
-  border: 4px solid rgba(0, 191, 255, 0.5);
+  border: 3px solid #00ffff;
   object-fit: cover;
   transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
 
   &:hover {
-    border-color: rgba(0, 191, 255, 0.8);
+    border-color: #9d00ff;
+    box-shadow: 0 0 30px rgba(157, 0, 255, 0.6);
     transform: scale(1.05);
   }
 
   @media (max-width: 768px) {
     width: 6rem;
     height: 6rem;
-    border-width: 3px;
+    border-width: 2px;
   }
 `;
 
@@ -100,21 +110,24 @@ const AvatarPlaceholder = styled.div`
   height: 8rem;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
-  border: 4px solid rgba(0, 191, 255, 0.5);
+  border: 3px solid #00ffff;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
 
   &:hover {
-    border-color: rgba(0, 191, 255, 0.8);
+    border-color: #9d00ff;
+    box-shadow: 0 0 30px rgba(157, 0, 255, 0.6);
     background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
   }
 
   @media (max-width: 768px) {
     width: 6rem;
     height: 6rem;
-    border-width: 3px;
+    border-width: 2px;
   }
 `;
 
@@ -142,23 +155,28 @@ const NameInput = styled.input`
 `;
 
 const SaveButton = styled.button`
-  background: linear-gradient(45deg, #00FF41, #39FF14);
-  border: none;
-  border-radius: 0.5rem;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(157, 0, 255, 0.2));
+  border: 2px solid #00ffff;
+  border-radius: 12px;
   padding: 0.5rem 1rem;
-  color: #000;
+  color: #fff;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   margin-left: 0.5rem;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
 
   &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(0, 255, 65, 0.4);
+    background: linear-gradient(135deg, rgba(157, 0, 255, 0.3), rgba(0, 255, 255, 0.3));
+    border-color: #9d00ff;
+    box-shadow: 0 0 25px rgba(157, 0, 255, 0.5);
+    transform: translateY(-2px);
   }
 
   &:disabled {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
     color: rgba(255, 255, 255, 0.5);
     cursor: not-allowed;
     transform: none;
@@ -210,28 +228,31 @@ const StatsGrid = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(0, 191, 255, 0.2);
-  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+  border: 2px solid #9d00ff;
+  border-radius: 15px;
   padding: 1.5rem;
   transition: all 0.3s ease;
   text-align: center;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 20px rgba(157, 0, 255, 0.3);
 
   &:hover {
-    border-color: rgba(0, 191, 255, 0.4);
-    box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
-    transform: translateY(-2px);
+    border-color: #00ffff;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+    transform: translateY(-3px);
   }
 
   @media (max-width: 768px) {
     padding: 1rem;
-    border-radius: 15px;
+    border-radius: 12px;
   }
 `;
 
 const StatIcon = styled.div`
-  color: #00BFFF;
+  color: #00ffff;
   margin-bottom: 0.5rem;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.5));
 `;
 
 const StatValue = styled.div`
@@ -239,10 +260,11 @@ const StatValue = styled.div`
   font-size: 2rem;
   font-weight: bold;
   margin-bottom: 0.25rem;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
 `;
 
 const StatLabel = styled.div`
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
 `;
 
@@ -250,31 +272,43 @@ const TabContainer = styled.div`
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 2px solid rgba(157, 0, 255, 0.3);
   overflow-x: auto;
+  background: linear-gradient(135deg, rgba(10, 15, 35, 0.8), rgba(16, 33, 62, 0.8));
+  border-radius: 15px 15px 0 0;
+  padding: 1rem 1rem 0 1rem;
+  backdrop-filter: blur(10px);
 
   @media (max-width: 768px) {
     gap: 0.5rem;
     margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
+    padding: 0.5rem 0.5rem 0 0.5rem;
     flex-wrap: wrap;
   }
 `;
 
 const TabButton = styled.button`
-  background: ${props => props.active ? 'rgba(0, 191, 255, 0.2)' : 'transparent'};
-  border: none;
+  background: ${props => props.active 
+    ? 'linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(157, 0, 255, 0.2))' 
+    : 'transparent'};
+  border: ${props => props.active ? '2px solid #00ffff' : '2px solid transparent'};
   color: ${props => props.active ? '#fff' : 'rgba(255, 255, 255, 0.7)'};
   font-size: 1rem;
   font-weight: ${props => props.active ? 'bold' : 'normal'};
   cursor: pointer;
   padding: 1rem 1.5rem;
   transition: all 0.3s ease;
-  border-bottom: ${props => props.active ? '2px solid #00BFFF' : 'none'};
+  border-radius: 12px;
   white-space: nowrap;
+  backdrop-filter: blur(5px);
+  box-shadow: ${props => props.active ? '0 0 20px rgba(0, 255, 255, 0.3)' : 'none'};
+  text-shadow: ${props => props.active ? '0 0 10px rgba(0, 255, 255, 0.5)' : 'none'};
 
   &:hover {
-    background: rgba(0, 191, 255, 0.1);
+    background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+    border-color: #9d00ff;
+    box-shadow: 0 0 25px rgba(157, 0, 255, 0.4);
+    color: #fff;
   }
 
   @media (max-width: 768px) {
@@ -287,15 +321,23 @@ const TabButton = styled.button`
 `;
 
 const TabContent = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(0, 191, 255, 0.2);
-  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+  border: 3px solid #9d00ff;
+  border-radius: 0 0 20px 20px;
   padding: 2rem;
   min-height: 400px;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 0 40px rgba(157, 0, 255, 0.3);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #00ffff;
+    box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+  }
 
   @media (max-width: 768px) {
     padding: 1rem;
-    border-radius: 15px;
+    border-radius: 0 0 15px 15px;
     min-height: 300px;
   }
 `;
@@ -457,18 +499,26 @@ const SocialLinksSection = styled.div`
 `;
 
 const SocialInput = styled.input`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(0, 191, 255, 0.3);
-  border-radius: 0.5rem;
+  background: linear-gradient(135deg, rgba(10, 15, 35, 0.8), rgba(16, 33, 62, 0.8));
+  border: 2px solid #9d00ff;
+  border-radius: 12px;
   padding: 0.75rem 1rem;
   color: #fff;
   font-size: 0.9rem;
   width: 100%;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 15px rgba(157, 0, 255, 0.2);
+  transition: all 0.3s ease;
 
   &:focus {
     outline: none;
-    border-color: rgba(0, 191, 255, 0.8);
-    box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
+    border-color: #00ffff;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+  }
+
+  &:hover {
+    border-color: #00ffff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
   }
 `;
 
