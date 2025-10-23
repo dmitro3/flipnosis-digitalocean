@@ -221,7 +221,7 @@ const PortalMenu = ({ isOpen, onClose }) => {
           </MenuItem>
           <MenuItem to="/create-battle" onClick={onClose}>
             <Plus size={16} />
-            🏆 Create Battle
+            Create Flip
           </MenuItem>
           {isConnected && (
             <MenuItem to="/profile" onClick={onClose}>
@@ -241,12 +241,17 @@ const PortalMenu = ({ isOpen, onClose }) => {
           <MenuSectionTitle>Features</MenuSectionTitle>
           <MenuButtonItem disabled>
             <Palette size={16} />
-            Coin Creator
+            Coin Minter
             <ComingSoonBadge>Coming Soon</ComingSoonBadge>
           </MenuButtonItem>
           <MenuButtonItem disabled>
             <Store size={16} />
             Marketplace
+            <ComingSoonBadge>Coming Soon</ComingSoonBadge>
+          </MenuButtonItem>
+          <MenuButtonItem disabled>
+            <Trophy size={16} />
+            Leaderboard
             <ComingSoonBadge>Coming Soon</ComingSoonBadge>
           </MenuButtonItem>
         </MenuSection>

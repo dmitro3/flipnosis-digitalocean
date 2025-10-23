@@ -229,7 +229,7 @@ const DesktopMenu = () => {
                 </MenuItem>
                 <MenuItem to="/create-battle" onClick={closeMenu}>
                   <Plus size={20} />
-                  🏆 Create Battle
+                  Create Flip
                 </MenuItem>
                 {isConnected && (
                   <MenuItem to="/profile" onClick={closeMenu}>
@@ -250,12 +250,17 @@ const DesktopMenu = () => {
                 <SectionTitle>Features</SectionTitle>
                 <ComingSoonItem>
                   <Palette size={20} />
-                  Coin Creator
+                  Coin Minter
                   <ComingSoonBadge>Coming Soon</ComingSoonBadge>
                 </ComingSoonItem>
                 <ComingSoonItem>
                   <Store size={20} />
                   Marketplace
+                  <ComingSoonBadge>Coming Soon</ComingSoonBadge>
+                </ComingSoonItem>
+                <ComingSoonItem>
+                  <Trophy size={20} />
+                  Leaderboard
                   <ComingSoonBadge>Coming Soon</ComingSoonBadge>
                 </ComingSoonItem>
               </MenuSection>
