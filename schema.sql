@@ -119,8 +119,20 @@ CREATE TABLE IF NOT EXISTS profiles (
     xp_telegram_earned BOOLEAN DEFAULT FALSE,
     xp_heads_earned BOOLEAN DEFAULT FALSE,
     xp_tails_earned BOOLEAN DEFAULT FALSE,
+    unlocked_coins TEXT DEFAULT '["plain"]',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Coin unlock transactions table
+CREATE TABLE IF NOT EXISTS coin_unlock_transactions (
+    id SERIAL PRIMARY KEY,
+    player_address TEXT NOT NULL,
+    coin_id TEXT NOT NULL,
+    flip_cost INTEGER NOT NULL,
+    flip_balance_before INTEGER NOT NULL,
+    flip_balance_after INTEGER NOT NULL,
+    unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes for better performance
@@ -132,3 +144,4 @@ CREATE INDEX IF NOT EXISTS idx_listings_creator ON listings(creator);
 CREATE INDEX IF NOT EXISTS idx_offers_listing_id ON offers(listing_id);
 CREATE INDEX IF NOT EXISTS idx_offers_offerer ON offers(offerer_address);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_room_id ON chat_messages(room_id);
+CREATE INDEX IF NOT EXISTS idx_coin_unlock_transactions_player ON coin_unlock_transactions(player_address);

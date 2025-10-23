@@ -651,28 +651,35 @@ initialize(server, dbService) {
         try {
           const { address, coinId, cost } = data
           if (!address || !coinId || cost === undefined) {
+            console.log(`❌ Missing required fields: address=${address}, coinId=${coinId}, cost=${cost}`)
             socket.emit('coin_unlocked', { success: false, error: 'Missing required fields' })
             return
           }
 
           // Get current profile
+          console.log(`🔍 Getting profile for address: ${address}`)
           const profile = await this.dbService.getProfileByAddress(address)
           if (!profile) {
+            console.log(`❌ Profile not found for address: ${address}`)
             socket.emit('coin_unlocked', { success: false, error: 'Profile not found' })
             return
           }
 
+          console.log(`📊 Profile data:`, profile)
           const currentBalance = profile.xp || 0 // FLIP tokens are stored in xp field
           const unlockedCoins = JSON.parse(profile.unlocked_coins || '["plain"]')
+          console.log(`💰 Current balance: ${currentBalance}, Unlocked coins: ${JSON.stringify(unlockedCoins)}`)
 
           // Check if already unlocked
           if (unlockedCoins.includes(coinId)) {
+            console.log(`❌ Coin ${coinId} already unlocked`)
             socket.emit('coin_unlocked', { success: false, error: 'Coin already unlocked' })
             return
           }
 
           // Check if has enough FLIP
           if (currentBalance < cost) {
+            console.log(`❌ Insufficient balance: ${currentBalance} < ${cost}`)
             socket.emit('coin_unlocked', { success: false, error: 'Insufficient FLIP balance' })
             return
           }
@@ -683,11 +690,17 @@ initialize(server, dbService) {
 
           // Update profile - use xp field for FLIP balance
           console.log(`🔄 Updating profile for ${address}: xp=${newBalance}, unlocked_coins=${JSON.stringify(unlockedCoins)}`)
-          await this.dbService.updateProfile(address, {
-            xp: newBalance, // Update xp field with new FLIP balance
-            unlocked_coins: JSON.stringify(unlockedCoins)
-          })
-          console.log(`✅ Profile updated successfully`)
+          try {
+            await this.dbService.updateProfile(address, {
+              xp: newBalance, // Update xp field with new FLIP balance
+              unlocked_coins: JSON.stringify(unlockedCoins)
+            })
+            console.log(`✅ Profile updated successfully`)
+          } catch (updateError) {
+            console.error(`❌ Failed to update profile:`, updateError)
+            socket.emit('coin_unlocked', { success: false, error: 'Failed to update profile' })
+            return
+          }
 
           // Send FLIP to Master Field (master account)
           const MASTER_ADDRESS = '0x0000000000000000000000000000000000000000' // Master Field address

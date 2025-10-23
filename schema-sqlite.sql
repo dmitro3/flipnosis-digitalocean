@@ -111,8 +111,20 @@ CREATE TABLE IF NOT EXISTS profiles (
     total_flips INTEGER DEFAULT 0,
     wins INTEGER DEFAULT 0,
     losses INTEGER DEFAULT 0,
+    unlocked_coins TEXT DEFAULT '["plain"]',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- COIN UNLOCK TRANSACTIONS TABLE
+CREATE TABLE IF NOT EXISTS coin_unlock_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_address TEXT NOT NULL,
+    coin_id TEXT NOT NULL,
+    flip_cost INTEGER NOT NULL,
+    flip_balance_before INTEGER NOT NULL,
+    flip_balance_after INTEGER NOT NULL,
+    unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- LISTINGS TABLE
