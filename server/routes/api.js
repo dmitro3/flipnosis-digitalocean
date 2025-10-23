@@ -2213,14 +2213,18 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           physicsGame.phase = 'cancelled'
           
           // Broadcast updated state to all players in the room
+          // Players join room as `game_${gameId}`, not `physics_${gameId}`
+          const roomId = `game_${gameId}`
           const updatedState = gameServer.physicsGameManager.getFullGameState(gameId)
-          gameServer.io.to(`physics_${gameId}`).emit('physics_state_update', updatedState)
-          gameServer.io.to(`physics_${gameId}`).emit('game_cancelled', {
+          
+          console.log(`📡 Broadcasting cancellation to room: ${roomId}`)
+          gameServer.io.to(roomId).emit('physics_state_update', updatedState)
+          gameServer.io.to(roomId).emit('game_cancelled', {
             gameId,
             message: 'This game has been cancelled by the creator'
           })
           
-          console.log(`📡 Broadcasted cancellation to room physics_${gameId}`)
+          console.log(`✅ Broadcasted cancellation to ${gameServer.io.sockets.adapter.rooms.get(roomId)?.size || 0} clients in room ${roomId}`)
         }
       }
 
@@ -2284,15 +2288,19 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           console.log(`🔄 Updated physics game: ${physicsGame.currentPlayers} players remaining`)
           
           // Broadcast updated state to all players in the room
+          // Players join room as `game_${gameId}`, not `physics_${gameId}`
+          const roomId = `game_${gameId}`
           const updatedState = gameServer.physicsGameManager.getFullGameState(gameId)
-          gameServer.io.to(`physics_${gameId}`).emit('physics_state_update', updatedState)
-          gameServer.io.to(`physics_${gameId}`).emit('player_left', {
+          
+          console.log(`📡 Broadcasting player_left to room: ${roomId}`)
+          gameServer.io.to(roomId).emit('physics_state_update', updatedState)
+          gameServer.io.to(roomId).emit('player_left', {
             gameId,
             player: playerAddr,
             currentPlayers: physicsGame.currentPlayers
           })
           
-          console.log(`📡 Broadcasted player_left to room physics_${gameId}`)
+          console.log(`✅ Broadcasted player_left to ${gameServer.io.sockets.adapter.rooms.get(roomId)?.size || 0} clients in room ${roomId}`)
         }
       }
 

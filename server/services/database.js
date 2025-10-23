@@ -884,12 +884,12 @@ class DatabaseService {
     })
   }
 
-  // Get Battle Royale participants
+  // Get Battle Royale participants (only active players)
   async getBattleRoyaleParticipants(gameId) {
     return new Promise((resolve, reject) => {
       this.db.all(
-        'SELECT * FROM battle_royale_participants WHERE game_id = ? ORDER BY slot_number',
-        [gameId],
+        'SELECT * FROM battle_royale_participants WHERE game_id = ? AND status = ? ORDER BY slot_number',
+        [gameId, 'active'],
         (err, participants) => {
           if (err) {
             console.error('❌ Error getting Battle Royale participants:', err)
@@ -1093,10 +1093,10 @@ class DatabaseService {
     })
   }
 
-  // Get Battle Royale participants
+  // Get Battle Royale participants (only active players)
   async getBattleRoyaleParticipants(gameId) {
     return new Promise((resolve, reject) => {
-      this.db.all('SELECT * FROM battle_royale_participants WHERE game_id = ? ORDER BY slot_number', [gameId], (err, participants) => {
+      this.db.all('SELECT * FROM battle_royale_participants WHERE game_id = ? AND status = ? ORDER BY slot_number', [gameId, 'active'], (err, participants) => {
         if (err) {
           console.error('❌ Error getting Battle Royale participants:', err)
           reject(err)

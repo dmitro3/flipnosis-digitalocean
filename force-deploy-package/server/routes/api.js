@@ -2246,6 +2246,146 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
+  // Cancel Battle Royale game (creator only)
+  router.post('/battle-royale/:gameId/cancel', async (req, res) => {
+    try {
+      const { gameId } = req.params
+      const { creator } = req.body
+
+      // Validate game exists
+      const game = await dbService.getBattleRoyaleGame(gameId)
+      if (!game) {
+        return res.status(404).json({ error: 'Battle Royale game not found' })
+      }
+
+      // Verify requester is the creator
+      if (game.creator?.toLowerCase() !== creator?.toLowerCase()) {
+        return res.status(403).json({ error: 'Only the creator can cancel the game' })
+      }
+
+      // Check if game can be cancelled (only in filling status)
+      if (game.status !== 'filling') {
+        return res.status(400).json({ error: 'Game can only be cancelled before it starts' })
+      }
+
+      // Update game status to cancelled
+      await dbService.updateBattleRoyaleGame(gameId, { status: 'cancelled' })
+
+      // If there's a physics game manager, update it too and broadcast
+      if (gameServer && gameServer.physicsGameManager) {
+        const physicsGame = gameServer.physicsGameManager.getGame(gameId)
+        if (physicsGame) {
+          physicsGame.status = 'cancelled'
+          physicsGame.phase = 'cancelled'
+          
+          // Broadcast updated state to all players in the room
+          // Players join room as `game_${gameId}`, not `physics_${gameId}`
+          const roomId = `game_${gameId}`
+          const updatedState = gameServer.physicsGameManager.getFullGameState(gameId)
+          
+          console.log(`📡 Broadcasting cancellation to room: ${roomId}`)
+          gameServer.io.to(roomId).emit('physics_state_update', updatedState)
+          gameServer.io.to(roomId).emit('game_cancelled', {
+            gameId,
+            message: 'This game has been cancelled by the creator'
+          })
+          
+          console.log(`✅ Broadcasted cancellation to ${gameServer.io.sockets.adapter.rooms.get(roomId)?.size || 0} clients in room ${roomId}`)
+        }
+      }
+
+      console.log(`✅ Battle Royale game cancelled: ${gameId}`)
+
+      res.json({
+        success: true,
+        message: 'Battle Royale game cancelled successfully'
+      })
+
+    } catch (error) {
+      console.error('❌ Error cancelling Battle Royale game:', error)
+      res.status(500).json({
+        error: 'Failed to cancel Battle Royale game',
+        details: error.message
+      })
+    }
+  })
+
+  // Player leaves Battle Royale game
+  router.post('/battle-royale/:gameId/leave', async (req, res) => {
+    try {
+      const { gameId } = req.params
+      const { player, transactionHash } = req.body
+
+      console.log(`👋 Player ${player} leaving game ${gameId}`)
+
+      // Update database - remove player from participants
+      await new Promise((resolve, reject) => {
+        dbService.db.run(`
+          UPDATE battle_royale_participants 
+          SET status = 'left', eliminated_at = datetime('now')
+          WHERE game_id = ? AND player_address = ?
+        `, [gameId, player.toLowerCase()], (err) => {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+
+      // Update game player count in database
+      const participants = await dbService.getBattleRoyaleParticipants(gameId)
+      const activePlayers = participants.filter(p => p.status === 'active').length
+      
+      await dbService.updateBattleRoyaleGame(gameId, {
+        current_players: activePlayers
+      })
+
+      // Update physics game manager and broadcast
+      if (gameServer && gameServer.physicsGameManager) {
+        const physicsGame = gameServer.physicsGameManager.getGame(gameId)
+        if (physicsGame) {
+          // Remove player from game state
+          const playerAddr = player.toLowerCase()
+          physicsGame.players.delete(playerAddr)
+          physicsGame.activePlayers.delete(playerAddr)
+          physicsGame.currentPlayers = physicsGame.players.size
+          
+          // Update player slots
+          physicsGame.playerSlots = Array.from(physicsGame.players.keys())
+          
+          console.log(`🔄 Updated physics game: ${physicsGame.currentPlayers} players remaining`)
+          
+          // Broadcast updated state to all players in the room
+          // Players join room as `game_${gameId}`, not `physics_${gameId}`
+          const roomId = `game_${gameId}`
+          const updatedState = gameServer.physicsGameManager.getFullGameState(gameId)
+          
+          console.log(`📡 Broadcasting player_left to room: ${roomId}`)
+          gameServer.io.to(roomId).emit('physics_state_update', updatedState)
+          gameServer.io.to(roomId).emit('player_left', {
+            gameId,
+            player: playerAddr,
+            currentPlayers: physicsGame.currentPlayers
+          })
+          
+          console.log(`✅ Broadcasted player_left to ${gameServer.io.sockets.adapter.rooms.get(roomId)?.size || 0} clients in room ${roomId}`)
+        }
+      }
+
+      console.log(`✅ Player ${player} left game ${gameId}`)
+
+      res.json({
+        success: true,
+        message: 'Player left successfully'
+      })
+
+    } catch (error) {
+      console.error('❌ Error processing player leave:', error)
+      res.status(500).json({
+        error: 'Failed to process player leave',
+        details: error.message
+      })
+    }
+  })
+
   return router
 }
 
