@@ -47,9 +47,11 @@ const Container = styled.div`
   }
 
   @media (max-width: 768px) {
-    padding: 1rem;
-    gap: 0.75rem;
+    padding: 0.5rem;
+    gap: 0.5rem;
     min-height: auto;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 `
 
@@ -72,9 +74,11 @@ const NFTPanel = styled.div`
   }
 
   @media (max-width: 768px) {
-    padding: 1rem;
-    gap: 1rem;
+    padding: 0.75rem;
+    gap: 0.75rem;
     border-radius: 15px;
+    max-width: 100%;
+    overflow: hidden;
   }
 `
 
@@ -254,12 +258,14 @@ const PlayerGrid = styled.div`
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(2, 1fr);
-    gap: 0.75rem;
-    padding: 1rem;
-    min-height: 300px;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    min-height: 250px;
+    max-height: 250px;
     border-radius: 15px;
     width: 100%;
     max-width: 100%;
+    overflow: hidden;
   }
 `
 
@@ -313,12 +319,14 @@ const PlayerSlot = styled.div`
 
   @media (max-width: 768px) {
     aspect-ratio: 1;
-    padding: 0.5rem;
-    gap: 0.2rem;
+    padding: 0.3rem;
+    gap: 0.1rem;
     border-radius: 8px;
     width: 100%;
     height: 100%;
-    min-height: 120px;
+    min-height: 100px;
+    max-height: 100px;
+    overflow: hidden;
   }
 `
 
@@ -629,11 +637,11 @@ const LobbyScreen = () => {
     
     switch (platform) {
       case 'twitter':
-        shareText = `Check out this Battle Royale NFT game! 🎮\n\n${nftName} from ${collection}\n\nJoin the game: ${gameUrl}`
+        shareText = `🎮 Win my NFT on Flipnosis!!!\n\n💎 ${nftName} from ${collection}\n\n🔥 Lobby is live! Click to join now!\n\n${gameUrl}\n\n#FLIPNOSIS #NFTGaming #Web3`
         shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`
         break
       case 'telegram':
-        shareText = `Check out this Battle Royale NFT game! 🎮\n\n${nftName} from ${collection}\n\nJoin the game: ${gameUrl}`
+        shareText = `🎮 Win my NFT on Flipnosis!!!\n\n💎 ${nftName} from ${collection}\n\n🔥 Lobby is live! Click to join now!\n\n${gameUrl}`
         shareUrl = `https://t.me/share/url?url=${encodeURIComponent(gameUrl)}&text=${encodeURIComponent(shareText)}`
         break
       default:
@@ -947,24 +955,53 @@ const LobbyScreen = () => {
                 {player ? (
                   <>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
-                      <div style={{ width: '140px', height: '140px', borderRadius: '10px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)' }}>
-                        <ProfilePicture address={playerAddr} size={140} fallbackEmoji="😊" />
+                      <div style={{ 
+                        width: window.innerWidth <= 768 ? '60px' : '140px', 
+                        height: window.innerWidth <= 768 ? '60px' : '140px', 
+                        borderRadius: '10px', 
+                        overflow: 'hidden', 
+                        border: '2px solid rgba(255,255,255,0.2)' 
+                      }}>
+                        <ProfilePicture 
+                          address={playerAddr} 
+                          size={window.innerWidth <= 768 ? 60 : 140} 
+                          fallbackEmoji="😊" 
+                        />
                       </div>
-                      <div style={{ color: '#00ffff', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center' }}>
+                      <div style={{ 
+                        color: '#00ffff', 
+                        fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.8rem', 
+                        fontWeight: 'bold', 
+                        textAlign: 'center' 
+                      }}>
                         {player?.username || player?.name || `Player ${i + 1}`}
                       </div>
-                      <div style={{ color: '#cccccc', fontSize: '0.7rem', textAlign: 'center' }}>
+                      <div style={{ 
+                        color: '#cccccc', 
+                        fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.7rem', 
+                        textAlign: 'center' 
+                      }}>
                         {formatAddress(playerAddr)}
                       </div>
                       {player.isCreator && (
-                        <div style={{ color: '#FFD700', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                        <div style={{ 
+                          color: '#FFD700', 
+                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.7rem', 
+                          fontWeight: 'bold' 
+                        }}>
                           👑 Creator
                         </div>
                       )}
                     </div>
                   </>
                 ) : (
-                  <div style={{ color: '#9d00ff', fontSize: '0.8rem', fontWeight: 'bold', textAlign: 'center', textShadow: '0 0 10px rgba(157, 0, 255, 0.5)' }}>
+                  <div style={{ 
+                    color: '#9d00ff', 
+                    fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.8rem', 
+                    fontWeight: 'bold', 
+                    textAlign: 'center', 
+                    textShadow: '0 0 10px rgba(157, 0, 255, 0.5)' 
+                  }}>
                     {canJoin ? '➕ Click to Join' : 'Empty'}
                   </div>
                 )}
