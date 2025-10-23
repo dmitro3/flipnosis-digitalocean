@@ -4084,6 +4084,49 @@
       console.log(`🏆 Updated wins display for player ${tubeIndex + 1}: ${player.wins} wins`);
     }
 
+    // ===== APPLY COIN SELECTION (Consolidated Texture Loading) =====
+    function applyCoinSelection(tubeIndex, selectedCoin, selectedMaterial) {
+      const tube = tubes[tubeIndex];
+      if (!tube || !tube.coin) return;
+      
+      console.log(`🎨 Applying coin selection for tube ${tubeIndex + 1}:`, {
+        coin: selectedCoin.id,
+        material: selectedMaterial.id
+      });
+      
+      // Apply material edge color
+      const edgeColor = new THREE.Color(selectedMaterial.edgeColor);
+      tube.coin.material[0].color.copy(edgeColor);
+      tube.coin.material[0].emissive.copy(edgeColor);
+      tube.coin.material[0].emissiveIntensity = 0.3;
+      tube.coin.material[0].needsUpdate = true;
+      
+      // Load and apply coin textures
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load(selectedCoin.headsImage, (headsTex) => {
+        headsTex.minFilter = THREE.LinearFilter;
+        headsTex.magFilter = THREE.LinearFilter;
+        headsTex.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
+        headsTex.generateMipmaps = false;
+        
+        textureLoader.load(selectedCoin.tailsImage, (tailsTex) => {
+          tailsTex.minFilter = THREE.LinearFilter;
+          tailsTex.magFilter = THREE.LinearFilter;
+          tailsTex.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
+          tailsTex.generateMipmaps = false;
+          
+          // Apply textures to coin materials
+          tube.coin.material[1].map = headsTex; // Heads side
+          tube.coin.material[1].needsUpdate = true;
+          
+          tube.coin.material[2].map = tailsTex; // Tails side
+          tube.coin.material[2].needsUpdate = true;
+          
+          console.log(`✅ Coin textures applied for tube ${tubeIndex + 1}`);
+        });
+      });
+    }
+
     // ===== UPDATE PLAYER CARD CHOICE =====
     function updatePlayerCardChoice(tubeIndex, choice) {
       const tube = tubes[tubeIndex];

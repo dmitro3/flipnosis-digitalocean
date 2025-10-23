@@ -288,11 +288,10 @@ class PhysicsGameManager {
     const normalizedAddress = address.toLowerCase()
     const player = game.players[normalizedAddress]
     
-    if (!player || !player.isActive || player.hasFired) {
+    if (!player || !player.isActive) {
       console.warn(`❌ Player ${address} cannot fire in game ${gameId}`, {
         player: !!player,
         isActive: player?.isActive,
-        hasFired: player?.hasFired,
         lives: player?.lives,
         slotNumber: player?.slotNumber,
         choice: player?.choice,
@@ -300,7 +299,6 @@ class PhysicsGameManager {
         allPlayerStates: Object.entries(game.players).map(([addr, p]) => ({
           address: addr,
           isActive: p.isActive,
-          hasFired: p.hasFired,
           lives: p.lives,
           choice: p.choice
         }))
