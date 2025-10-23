@@ -122,28 +122,28 @@
       animation: heartbeat 2s ease-in-out infinite;
     }
 
-    .win-trophy {
+    .win-heart {
       opacity: 0.8;
       filter: grayscale(50%) brightness(0.8);
       transition: all 0.3s ease;
     }
 
-    .win-trophy.active {
+    .win-heart.active {
       opacity: 1;
       filter: grayscale(0%) brightness(1);
-      animation: trophyShine 2s ease-in-out infinite;
+      animation: heartBeat 2s ease-in-out infinite;
     }
 
-    @keyframes trophyShine {
+    @keyframes heartBeat {
       0%, 100% { 
         transform: scale(1); 
         filter: grayscale(0%) brightness(1);
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        box-shadow: 0 0 20px rgba(255, 105, 180, 0.6);
       }
       50% { 
         transform: scale(1.1); 
         filter: grayscale(0%) brightness(1.3);
-        box-shadow: 0 0 30px rgba(255, 215, 0, 0.9);
+        box-shadow: 0 0 30px rgba(255, 105, 180, 0.9);
       }
     }
 
@@ -1733,14 +1733,14 @@
       width: 160px;
       height: 50px;
       padding: 0;
-      background: linear-gradient(135deg, #b8860b, #daa520);
-      border: 4px solid #8b6914;
+      background: linear-gradient(135deg, #ffeb3b, #fff176);
+      border: 4px solid #f57f17;
       border-radius: 12px;
       color: #fff;
       font-family: 'Orbitron', sans-serif;
       font-weight: bold;
       text-align: center;
-      box-shadow: 0 0 20px rgba(184, 134, 11, 0.6);
+      box-shadow: 0 0 20px rgba(255, 235, 59, 0.6);
       backdrop-filter: blur(10px);
       pointer-events: auto;
       z-index: 1000;
@@ -1750,20 +1750,20 @@
         width: 100%;
         height: 100%;
         padding: 0;
-        background: linear-gradient(135deg, #b8860b, #daa520);
-        border: 4px solid #8b6914;
+        background: linear-gradient(135deg, #ffeb3b, #fff176);
+        border: 4px solid #f57f17;
         border-radius: 8px;
-        color: #fff;
+        color: #9c27b0;
         font-family: 'Orbitron', sans-serif;
         font-weight: bold;
         font-size: 12px;
         cursor: pointer;
-        box-shadow: 0 0 15px rgba(184, 134, 11, 0.6);
+        box-shadow: 0 0 15px rgba(255, 235, 59, 0.6);
         transition: all 0.3s ease;
         display: flex;
         align-items: center;
         justify-content: center;
-      " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 25px rgba(184, 134, 11, 0.8)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 15px rgba(184, 134, 11, 0.6)'">CHANGE COIN</button>
+      " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 25px rgba(255, 235, 59, 0.8)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 15px rgba(255, 235, 59, 0.6)'">CHANGE COIN</button>
     `;
     document.body.appendChild(changeCoinBox);
 
@@ -2685,13 +2685,13 @@
             <div class="player-name">${player.name}</div>
             <div class="wins-container" style="display: flex; gap: 8px; margin-top: 8px; justify-content: center;">
               ${Array.from({ length: 3 }, (_, idx) => 
-                `<div class="win-trophy ${idx < player.wins ? 'active' : ''}" style="
+                `<div class="win-heart ${idx < player.wins ? 'active' : ''}" style="
                   width: 54px; 
                   height: 54px; 
                   display: flex; 
                   align-items: center; 
                   justify-content: center;
-                  background: ${idx < player.wins ? '#0a0f2e' : 'rgba(100, 100, 100, 0.3)'} url('/images/Win.png') center/40px 40px no-repeat;
+                  background: ${idx < player.wins ? '#0a0f2e' : 'rgba(100, 100, 100, 0.3)'} url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="red"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>') center/40px 40px no-repeat;
                   border: ${idx < player.wins ? '3px solid #ffd700' : '2px solid #666'};
                   border-radius: 12px;
                   opacity: ${idx < player.wins ? '1' : '0.8'};
@@ -4048,28 +4048,28 @@
       
       if (!tube.cardElement) return;
       
-      // Find all win trophy elements in the card
-      const winElements = tube.cardElement.querySelectorAll('.win-trophy');
+      // Find all win heart elements in the card
+      const winElements = tube.cardElement.querySelectorAll('.win-heart');
       
-      // Update each trophy based on current wins (3 trophies max)
+      // Update each heart based on current wins (3 hearts max)
       winElements.forEach((winElement, idx) => {
         if (idx < player.wins) {
-          // This trophy should be active (won) - apply gold styling
+          // This heart should be active (won) - apply pink styling
           winElement.classList.add('active');
           winElement.style.opacity = '1';
-          winElement.style.color = '#ffd700';
-          winElement.style.background = 'linear-gradient(135deg, #ffd700, #ffed4e)';
-          winElement.style.border = '2px solid #ffd700';
-          winElement.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.4)';
+          winElement.style.color = '#ff1493';
+          winElement.style.background = 'linear-gradient(135deg, #ff69b4, #ffb6c1)';
+          winElement.style.border = '2px solid #ff1493';
+          winElement.style.boxShadow = '0 0 15px rgba(255, 105, 180, 0.4)';
           winElement.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
           winElement.textContent = 'WIN';
           
-          // Add puff animation for newly won trophies
+          // Add puff animation for newly won hearts
           if (idx === player.wins - 1) {
             winElement.style.animation = 'puffWin 0.6s ease-out';
           }
         } else {
-          // This trophy should be inactive (not won yet)
+          // This heart should be inactive (not won yet)
           winElement.classList.remove('active');
           winElement.style.opacity = '0.3';
           winElement.style.color = '#666';
@@ -4670,7 +4670,7 @@
         }
         
         // Update wins display
-        const winElements = tube.cardElement.querySelectorAll('.win-trophy');
+        const winElements = tube.cardElement.querySelectorAll('.win-heart');
         winElements.forEach((winElement, idx) => {
           if (idx < player.wins) {
             winElement.classList.add('active');
