@@ -32,6 +32,15 @@ const Container = styled.div`
   margin: 0 auto;
   min-height: 100vh;
   
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(255, 0, 0, 0.9), 0 0 60px rgba(255, 0, 0, 0.5);
+    }
+  }
+  
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -641,15 +650,30 @@ const LobbyScreen = () => {
       setIsLeaving(true)
       showToast('Withdrawing your entry fee...', 'info')
       
+      // Withdraw from smart contract
       const result = await contractService.withdrawBattleRoyaleEntry(gameState.gameId)
       
       if (result.success) {
+        // Notify server to update database and broadcast
+        try {
+          await fetch(`/api/battle-royale/${gameState.gameId}/leave`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              player: address,
+              transactionHash: result.transactionHash 
+            })
+          })
+        } catch (apiError) {
+          console.warn('Database update failed, but withdrawal succeeded:', apiError)
+        }
+        
         showToast('Successfully left the game! Your entry fee has been refunded.', 'success')
         
         // Refresh the page to update player list
         setTimeout(() => {
           window.location.reload()
-        }, 2000)
+        }, 1500)
       } else {
         showToast(result.error || 'Failed to leave game', 'error')
       }
@@ -775,11 +799,36 @@ const LobbyScreen = () => {
       {/* RIGHT: GAME AREA */}
       <GamePanel>
         <StatusBar>
-          {gameState.status === 'cancelled' ? (
+          {gameState.status === 'cancelled' || gameState.phase === 'cancelled' ? (
             <>
-              <h2 style={{ color: '#ff6b6b' }}>❌ Game Cancelled</h2>
-              <p style={{ fontSize: '1.2rem', margin: 0, color: '#ffaa00' }}>
-                Players can withdraw their entry fees below
+              <div style={{
+                background: 'linear-gradient(135deg, #ff4444, #cc0000)',
+                border: '3px solid #ff0000',
+                borderRadius: '15px',
+                padding: '1.5rem',
+                marginBottom: '1rem',
+                boxShadow: '0 0 20px rgba(255, 0, 0, 0.5)',
+                animation: 'pulse 2s infinite'
+              }}>
+                <h2 style={{ 
+                  color: '#fff', 
+                  fontSize: '2rem', 
+                  margin: '0 0 0.5rem 0',
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+                }}>
+                  ⛔ GAME CANCELLED ⛔
+                </h2>
+                <p style={{ 
+                  fontSize: '1.1rem', 
+                  margin: 0, 
+                  color: '#ffee00',
+                  fontWeight: 'bold' 
+                }}>
+                  This game has been cancelled by the creator
+                </p>
+              </div>
+              <p style={{ fontSize: '1rem', color: '#ffaa00', margin: 0 }}>
+                Players: Use the "Withdraw Entry Fee" button below
               </p>
             </>
           ) : (
@@ -875,7 +924,7 @@ const LobbyScreen = () => {
           </JoinActionButton>
         )}
         
-        {userInGame && !isCreator && gameState.currentPlayers < 4 && (
+        {userInGame && !isCreator && gameState.currentPlayers < 4 && gameState.status !== 'cancelled' && gameState.phase !== 'cancelled' && (
           <JoinActionButton 
             onClick={handleLeaveGame} 
             disabled={isLeaving}
@@ -889,7 +938,7 @@ const LobbyScreen = () => {
           </JoinActionButton>
         )}
         
-        {userInGame && !isCreator && gameState.status === 'cancelled' && (
+        {userInGame && !isCreator && (gameState.status === 'cancelled' || gameState.phase === 'cancelled') && (
           <JoinActionButton 
             onClick={handleLeaveGame} 
             disabled={isLeaving}

@@ -2205,16 +2205,22 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       // Update game status to cancelled
       await dbService.updateBattleRoyaleGame(gameId, { status: 'cancelled' })
 
-      // If there's a physics game manager, update it too
+      // If there's a physics game manager, update it too and broadcast
       if (gameServer && gameServer.physicsGameManager) {
         const physicsGame = gameServer.physicsGameManager.getGame(gameId)
         if (physicsGame) {
           physicsGame.status = 'cancelled'
-          // Broadcast cancellation to all players in the room
+          physicsGame.phase = 'cancelled'
+          
+          // Broadcast updated state to all players in the room
+          const updatedState = gameServer.physicsGameManager.getFullGameState(gameId)
+          gameServer.io.to(`physics_${gameId}`).emit('physics_state_update', updatedState)
           gameServer.io.to(`physics_${gameId}`).emit('game_cancelled', {
             gameId,
             message: 'This game has been cancelled by the creator'
           })
+          
+          console.log(`📡 Broadcasted cancellation to room physics_${gameId}`)
         }
       }
 
@@ -2229,6 +2235,78 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       console.error('❌ Error cancelling Battle Royale game:', error)
       res.status(500).json({
         error: 'Failed to cancel Battle Royale game',
+        details: error.message
+      })
+    }
+  })
+
+  // Player leaves Battle Royale game
+  router.post('/battle-royale/:gameId/leave', async (req, res) => {
+    try {
+      const { gameId } = req.params
+      const { player, transactionHash } = req.body
+
+      console.log(`👋 Player ${player} leaving game ${gameId}`)
+
+      // Update database - remove player from participants
+      await new Promise((resolve, reject) => {
+        dbService.db.run(`
+          UPDATE battle_royale_participants 
+          SET status = 'left', eliminated_at = datetime('now')
+          WHERE game_id = ? AND player_address = ?
+        `, [gameId, player.toLowerCase()], (err) => {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+
+      // Update game player count in database
+      const participants = await dbService.getBattleRoyaleParticipants(gameId)
+      const activePlayers = participants.filter(p => p.status === 'active').length
+      
+      await dbService.updateBattleRoyaleGame(gameId, {
+        current_players: activePlayers
+      })
+
+      // Update physics game manager and broadcast
+      if (gameServer && gameServer.physicsGameManager) {
+        const physicsGame = gameServer.physicsGameManager.getGame(gameId)
+        if (physicsGame) {
+          // Remove player from game state
+          const playerAddr = player.toLowerCase()
+          physicsGame.players.delete(playerAddr)
+          physicsGame.activePlayers.delete(playerAddr)
+          physicsGame.currentPlayers = physicsGame.players.size
+          
+          // Update player slots
+          physicsGame.playerSlots = Array.from(physicsGame.players.keys())
+          
+          console.log(`🔄 Updated physics game: ${physicsGame.currentPlayers} players remaining`)
+          
+          // Broadcast updated state to all players in the room
+          const updatedState = gameServer.physicsGameManager.getFullGameState(gameId)
+          gameServer.io.to(`physics_${gameId}`).emit('physics_state_update', updatedState)
+          gameServer.io.to(`physics_${gameId}`).emit('player_left', {
+            gameId,
+            player: playerAddr,
+            currentPlayers: physicsGame.currentPlayers
+          })
+          
+          console.log(`📡 Broadcasted player_left to room physics_${gameId}`)
+        }
+      }
+
+      console.log(`✅ Player ${player} left game ${gameId}`)
+
+      res.json({
+        success: true,
+        message: 'Player left successfully'
+      })
+
+    } catch (error) {
+      console.error('❌ Error processing player leave:', error)
+      res.status(500).json({
+        error: 'Failed to process player leave',
         details: error.message
       })
     }

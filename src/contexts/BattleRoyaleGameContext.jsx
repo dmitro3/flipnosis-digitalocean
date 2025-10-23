@@ -186,6 +186,22 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
     }
   }, [address, showToast])
 
+  const handleGameCancelled = useCallback((data) => {
+    console.log('❌ Game cancelled:', data)
+    showToast('⛔ Game has been cancelled by the creator!', 'error')
+    // Update game state to reflect cancellation
+    setGameState(prev => ({
+      ...prev,
+      status: 'cancelled',
+      phase: 'cancelled'
+    }))
+  }, [showToast])
+
+  const handlePlayerLeft = useCallback((data) => {
+    console.log('👋 Player left:', data)
+    // State will be updated via physics_state_update
+  }, [])
+
   // ===== PHYSICS GAME EVENT HANDLERS =====
   const handlePhysicsStateUpdate = useCallback((data) => {
     console.log('🎮 Physics state update:', data)
@@ -272,6 +288,8 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
         socketService.on('battle_royale_lightning_activated', handleLightningActivated)
         socketService.on('battle_royale_lightning_earned', handleLightningEarned)
         socketService.on('battle_royale_shield_saved', handleShieldSaved)
+        socketService.on('game_cancelled', handleGameCancelled)
+        socketService.on('player_left', handlePlayerLeft)
         
         // Physics game event listeners
         socketService.on('physics_state_update', handlePhysicsStateUpdate)
@@ -316,6 +334,8 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
         socketService.off('battle_royale_lightning_activated', handleLightningActivated)
         socketService.off('battle_royale_lightning_earned', handleLightningEarned)
         socketService.off('battle_royale_shield_saved', handleShieldSaved)
+        socketService.off('game_cancelled', handleGameCancelled)
+        socketService.off('player_left', handlePlayerLeft)
         
         // Physics game event listeners
         socketService.off('physics_state_update', handlePhysicsStateUpdate)
@@ -326,7 +346,7 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
         socketInitialized.current = false
       }
     }
-  }, [gameId, address, handleStateUpdate, handleRoundStart, handlePlayerFlipped, handleRoundEnd, handleGameComplete, handleGameStarting, handleError, handleShieldDeployed, handleLightningActivated, handleLightningEarned, handleShieldSaved, handlePhysicsStateUpdate, handlePhysicsTurnStart, handlePhysicsCoinLanded, handlePhysicsGameOver, handlePhysicsGameStarting])
+  }, [gameId, address, handleStateUpdate, handleRoundStart, handlePlayerFlipped, handleRoundEnd, handleGameComplete, handleGameStarting, handleError, handleShieldDeployed, handleLightningActivated, handleLightningEarned, handleShieldSaved, handleGameCancelled, handlePlayerLeft, handlePhysicsStateUpdate, handlePhysicsTurnStart, handlePhysicsCoinLanded, handlePhysicsGameOver, handlePhysicsGameStarting])
 
   // ===== PLAYER ACTIONS =====
   const makeChoice = useCallback((choice) => {
