@@ -1169,7 +1169,21 @@ const Home = () => {
                             border: '1px solid rgba(255, 255, 255, 0.2)'
                           }}>
                             <div style={{ fontSize: '0.7rem', color: theme.colors.textSecondary }}>Price</div>
-                            <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>${(selectedFlip.priceUSD || 0).toFixed(2)}</div>
+                            <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                              ${(() => {
+                                if (selectedFlip.gameType === 'battle-royale') {
+                                  const fee = selectedFlip.entry_fee || 0
+                                  const num = parseFloat(fee)
+                                  if (num < 1) {
+                                    return (Math.ceil(num * 100) / 100).toFixed(2)
+                                  } else {
+                                    return (Math.round(num * 100) / 100).toFixed(2)
+                                  }
+                                } else {
+                                  return (selectedFlip.priceUSD || 0).toFixed(2)
+                                }
+                              })()}
+                            </div>
                           </div>
                           <div style={{
                             background: 'rgba(255, 255, 255, 0.1)',
@@ -1183,7 +1197,19 @@ const Home = () => {
                               fontWeight: 'bold',
                               color: theme.colors.neonPink
                             }}>
-                              ${(selectedFlip.priceUSD || 0).toFixed(2)}
+                              ${(() => {
+                                if (selectedFlip.gameType === 'battle-royale') {
+                                  const fee = selectedFlip.entry_fee || 0
+                                  const num = parseFloat(fee)
+                                  if (num < 1) {
+                                    return (Math.ceil(num * 100) / 100).toFixed(2)
+                                  } else {
+                                    return (Math.round(num * 100) / 100).toFixed(2)
+                                  }
+                                } else {
+                                  return (selectedFlip.priceUSD || 0).toFixed(2)
+                                }
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -1728,7 +1754,19 @@ const Home = () => {
                               color: theme.colors.neonPink,
                               fontSize: '1.2rem'
                             }}>
-                              ${(item.priceUSD || 0).toFixed(2)}
+                              ${(() => {
+                                if (item.gameType === 'battle-royale') {
+                                  const fee = item.entry_fee || 0
+                                  const num = parseFloat(fee)
+                                  if (num < 1) {
+                                    return (Math.ceil(num * 100) / 100).toFixed(2)
+                                  } else {
+                                    return (Math.round(num * 100) / 100).toFixed(2)
+                                  }
+                                } else {
+                                  return (item.priceUSD || 0).toFixed(2)
+                                }
+                              })()}
                             </div>
                             <div style={{
                               background: 'rgba(255, 255, 255, 0.1)',
@@ -1888,7 +1926,19 @@ const Home = () => {
                               <ListViewStat>
                                 <span>Price</span>
                                 <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.1rem' }}>
-                                  ${(item.priceUSD || 0).toFixed(2)}
+                                  ${(() => {
+                                    if (item.gameType === 'battle-royale') {
+                                      const fee = item.entry_fee || 0
+                                      const num = parseFloat(fee)
+                                      if (num < 1) {
+                                        return (Math.ceil(num * 100) / 100).toFixed(2)
+                                      } else {
+                                        return (Math.round(num * 100) / 100).toFixed(2)
+                                      }
+                                    } else {
+                                      return (item.priceUSD || 0).toFixed(2)
+                                    }
+                                  })()}
                                 </div>
                               </ListViewStat>
                               <ListViewStat>
@@ -1900,7 +1950,19 @@ const Home = () => {
                               <ListViewStat>
                                 <span>Price</span>
                                 <div style={{ color: theme.colors.neonBlue, fontWeight: 'bold' }}>
-                                  ${(item.priceUSD || 0).toFixed(2)}
+                                  ${(() => {
+                                    if (item.gameType === 'battle-royale') {
+                                      const fee = item.entry_fee || 0
+                                      const num = parseFloat(fee)
+                                      if (num < 1) {
+                                        return (Math.ceil(num * 100) / 100).toFixed(2)
+                                      } else {
+                                        return (Math.round(num * 100) / 100).toFixed(2)
+                                      }
+                                    } else {
+                                      return (item.priceUSD || 0).toFixed(2)
+                                    }
+                                  })()}
                                 </div>
                               </ListViewStat>
                             </ListViewStats>

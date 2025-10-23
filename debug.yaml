@@ -3024,42 +3024,6 @@
       updatePearlColors(tube, 0.01, i);
     });
 
-    // 🆕 GLASS SHATTER SHADER PRE-WARMING
-    console.log('🔥 Warming up glass shatter shaders...');
-    tubes.forEach((tube, i) => {
-      // Create a temporary glass shard off-screen to pre-compile shaders
-      const tempShardGeometry = new THREE.BufferGeometry();
-      const vertices = new Float32Array([
-        0, 0, 0,
-        10, 0, 0,
-        5, 10, 0
-      ]);
-      tempShardGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-      
-      const tempShardMaterial = new THREE.MeshStandardMaterial({
-        color: 0xe0e0e0, // Bright silver (matches shatterGlass function)
-        metalness: 0.95, // Very metallic silver (matches shatterGlass function)
-        roughness: 0.1,
-        emissive: 0xc0c0c0, // Silver glow (matches shatterGlass function)
-        emissiveIntensity: 0.4,
-        side: THREE.DoubleSide
-      });
-      
-      const tempShard = new THREE.Mesh(tempShardGeometry, tempShardMaterial);
-      tempShard.position.set(9999, 9999, 9999); // Way off-screen
-      tempShard.visible = false; // Make invisible to prevent raycasting interference
-      scene.add(tempShard);
-      
-      // Force a render to compile the shader
-      webglRenderer.render(scene, camera);
-      
-      // Clean up immediately
-      scene.remove(tempShard);
-      tempShardGeometry.dispose();
-      tempShardMaterial.dispose();
-    });
-    console.log('✅ Glass shatter shaders pre-warmed!');
-    
     // Reset after warmup
     setTimeout(() => {
       tubes.forEach((tube, i) => {
@@ -3749,10 +3713,34 @@
       });
     }
 
+    // ===== GLASS SHATTER SHADER PRE-WARMING =====
+    function preWarmGlassShaders() {
+      console.log('🔥 Pre-warming glass shatter shaders...');
+      const tempShardGeometry = new THREE.BufferGeometry();
+      const vertices = new Float32Array([0, 0, 0, 10, 0, 0, 5, 10, 0]);
+      tempShardGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      const tempShardMaterial = new THREE.MeshStandardMaterial({
+        color: 0xe0e0e0, metalness: 0.95, roughness: 0.1,
+        emissive: 0xc0c0c0, emissiveIntensity: 0.4, side: THREE.DoubleSide
+      });
+      const tempShard = new THREE.Mesh(tempShardGeometry, tempShardMaterial);
+      tempShard.position.set(9999, 9999, 9999);
+      tempShard.visible = false;
+      scene.add(tempShard);
+      webglRenderer.render(scene, camera);
+      scene.remove(tempShard);
+      tempShardGeometry.dispose();
+      tempShardMaterial.dispose();
+      console.log('✅ Glass shatter shaders pre-warmed!');
+    }
+
     // ===== GLASS SHATTERING FUNCTION (POWER-BASED) =====
     function shatterGlass(tubeIndex, powerLevel) {
       const tube = tubes[tubeIndex];
       if (tube.isShattered) return;
+      
+      // Pre-warm shaders right before shattering
+      preWarmGlassShaders();
       
       const powerPercent = powerLevel / 100;
       console.log(`ðŸ’¥ Shattering glass for tube ${tubeIndex + 1} at ${powerLevel.toFixed(0)}% power`);
