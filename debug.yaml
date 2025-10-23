@@ -247,7 +247,7 @@
       border: 2px solid #ff1493;
       border-radius: 8px;
       color: #ff1493;
-      font-weight: bold;
+      font-weight: 900;
       font-size: 18px;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -3047,6 +3047,7 @@
       
       const tempShard = new THREE.Mesh(tempShardGeometry, tempShardMaterial);
       tempShard.position.set(9999, 9999, 9999); // Way off-screen
+      tempShard.visible = false; // Make invisible to prevent raycasting interference
       scene.add(tempShard);
       
       // Force a render to compile the shader
