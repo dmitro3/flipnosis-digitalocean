@@ -258,6 +258,8 @@ const PlayerGrid = styled.div`
     padding: 1rem;
     min-height: 300px;
     border-radius: 15px;
+    width: 100%;
+    max-width: 100%;
   }
 `
 
@@ -314,6 +316,9 @@ const PlayerSlot = styled.div`
     padding: 0.5rem;
     gap: 0.2rem;
     border-radius: 8px;
+    width: 100%;
+    height: 100%;
+    min-height: 120px;
   }
 `
 
@@ -968,11 +973,7 @@ const LobbyScreen = () => {
           })}
         </PlayerGrid>
 
-        {!userInGame && canJoin && (
-          <JoinActionButton onClick={handleJoinGame} disabled={isJoining}>
-            {isJoining ? 'Joining...' : '🎮 Join Battle Royale'}
-          </JoinActionButton>
-        )}
+        {/* Join button removed - players join by clicking on empty slots */}
         
         {userInGame && !isCreator && gameState.currentPlayers < 4 && gameState.status !== 'cancelled' && gameState.phase !== 'cancelled' && (
           <JoinActionButton 
