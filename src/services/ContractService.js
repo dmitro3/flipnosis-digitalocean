@@ -139,6 +139,27 @@ const CONTRACT_ABI = [
     "type": "function"
   },
   {
+    "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}],
+    "name": "cancelBattleRoyale",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}],
+    "name": "withdrawBattleRoyaleEntry",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}, {"internalType": "address", "name": "player", "type": "address"}],
+    "name": "canWithdrawEntry",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}, {"internalType": "address", "name": "recipient", "type": "address"}],
     "name": "emergencyWithdrawETH",
     "outputs": [],
@@ -203,7 +224,7 @@ const NFT_ABI = [
 
 class ContractService {
   constructor() {
-    this.contractAddress = '0x8CE785e0EC60B3e34Ac49D4E1128683d4acc6502' // Battle Royale Contract
+    this.contractAddress = '0x1d0C6aA57c2c4c7764B9FFdd13DFB6319db02A64' // Battle Royale Contract V2 (Improved Withdrawals)
     this.walletClient = null
     this.publicClient = null
     this.userAddress = null
@@ -1627,6 +1648,125 @@ class ContractService {
     } catch (error) {
       console.error('❌ Error withdrawing winner NFT:', error)
       return { success: false, error: error.message }
+    }
+  }
+
+  // Reclaim NFT from cancelled Battle Royale (creator only)
+  async reclaimBattleRoyaleNFT(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('🔙 Reclaiming NFT from cancelled Battle Royale game:', gameId)
+      
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'reclaimBattleRoyaleNFT',
+        args: [gameIdBytes32],
+        chain: BASE_CHAIN,
+        account: this.walletClient.account
+      })
+      
+      console.log('🔙 NFT reclaim tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ NFT reclaimed successfully')
+
+      return { success: true, transactionHash: hash, receipt }
+    } catch (error) {
+      console.error('❌ Error reclaiming NFT:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Cancel Battle Royale game (creator only)
+  async cancelBattleRoyale(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('❌ Cancelling Battle Royale game:', gameId)
+      
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'cancelBattleRoyale',
+        args: [gameIdBytes32],
+        chain: BASE_CHAIN,
+        account: this.walletClient.account
+      })
+      
+      console.log('❌ Game cancellation tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Game cancelled successfully')
+
+      return { success: true, transactionHash: hash, receipt }
+    } catch (error) {
+      console.error('❌ Error cancelling game:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Player withdraws their entry fee
+  async withdrawBattleRoyaleEntry(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('💸 Withdrawing Battle Royale entry fee for game:', gameId)
+      
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'withdrawBattleRoyaleEntry',
+        args: [gameIdBytes32],
+        chain: BASE_CHAIN,
+        account: this.walletClient.account
+      })
+      
+      console.log('💸 Entry withdrawal tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Entry fee withdrawn successfully')
+
+      return { success: true, transactionHash: hash, receipt }
+    } catch (error) {
+      console.error('❌ Error withdrawing entry:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Check if player can withdraw entry (view function)
+  async canWithdrawEntry(gameId, playerAddress) {
+    if (!this.isReady()) {
+      return { success: false, canWithdraw: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const canWithdraw = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'canWithdrawEntry',
+        args: [gameIdBytes32, playerAddress]
+      })
+      
+      return { success: true, canWithdraw }
+    } catch (error) {
+      console.error('❌ Error checking withdraw eligibility:', error)
+      return { success: false, canWithdraw: false, error: error.message }
     }
   }
 }

@@ -2180,6 +2180,132 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
+  // Cancel Battle Royale game (creator only)
+  router.post('/battle-royale/:gameId/cancel', async (req, res) => {
+    try {
+      const { gameId } = req.params
+      const { creator } = req.body
+
+      // Validate game exists
+      const game = await dbService.getBattleRoyaleGame(gameId)
+      if (!game) {
+        return res.status(404).json({ error: 'Battle Royale game not found' })
+      }
+
+      // Verify requester is the creator
+      if (game.creator?.toLowerCase() !== creator?.toLowerCase()) {
+        return res.status(403).json({ error: 'Only the creator can cancel the game' })
+      }
+
+      // Check if game can be cancelled (only in filling status)
+      if (game.status !== 'filling') {
+        return res.status(400).json({ error: 'Game can only be cancelled before it starts' })
+      }
+
+      // Update game status to cancelled
+      await dbService.updateBattleRoyaleGame(gameId, { status: 'cancelled' })
+
+      // If there's a physics game manager, update it too
+      if (gameServer && gameServer.physicsGameManager) {
+        const physicsGame = gameServer.physicsGameManager.getGame(gameId)
+        if (physicsGame) {
+          physicsGame.status = 'cancelled'
+          // Broadcast cancellation to all players in the room
+          gameServer.io.to(`physics_${gameId}`).emit('game_cancelled', {
+            gameId,
+            message: 'This game has been cancelled by the creator'
+          })
+        }
+      }
+
+      console.log(`✅ Battle Royale game cancelled: ${gameId}`)
+
+      res.json({
+        success: true,
+        message: 'Battle Royale game cancelled successfully'
+      })
+
+    } catch (error) {
+      console.error('❌ Error cancelling Battle Royale game:', error)
+      res.status(500).json({
+        error: 'Failed to cancel Battle Royale game',
+        details: error.message
+      })
+    }
+  })
+
+  // Get user's created Battle Royale games
+  router.get('/users/:address/created-games', async (req, res) => {
+    try {
+      const { address } = req.params
+      
+      const games = await new Promise((resolve, reject) => {
+        const sql = `
+          SELECT * FROM battle_royale_games 
+          WHERE creator = ? 
+          ORDER BY created_at DESC
+        `
+        dbService.db.all(sql, [address.toLowerCase()], (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows || [])
+        })
+      })
+
+      console.log(`✅ Retrieved ${games.length} created games for ${address}`)
+
+      res.json({
+        success: true,
+        games
+      })
+
+    } catch (error) {
+      console.error('❌ Error fetching created games:', error)
+      res.status(500).json({
+        error: 'Failed to fetch created games',
+        details: error.message
+      })
+    }
+  })
+
+  // Get user's participated Battle Royale games
+  router.get('/users/:address/participated-games', async (req, res) => {
+    try {
+      const { address } = req.params
+      
+      const games = await new Promise((resolve, reject) => {
+        const sql = `
+          SELECT 
+            g.*,
+            p.status as player_status,
+            p.eliminated_round,
+            p.joined_at as player_joined_at
+          FROM battle_royale_participants p
+          JOIN battle_royale_games g ON p.game_id = g.id
+          WHERE p.player_address = ?
+          ORDER BY g.created_at DESC
+        `
+        dbService.db.all(sql, [address.toLowerCase()], (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows || [])
+        })
+      })
+
+      console.log(`✅ Retrieved ${games.length} participated games for ${address}`)
+
+      res.json({
+        success: true,
+        games
+      })
+
+    } catch (error) {
+      console.error('❌ Error fetching participated games:', error)
+      res.status(500).json({
+        error: 'Failed to fetch participated games',
+        details: error.message
+      })
+    }
+  })
+
   return router
 }
 

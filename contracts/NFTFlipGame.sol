@@ -635,29 +635,99 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     }
     
     /**
-     * @notice Emergency reclaim Battle Royale NFT (creator only, if game never filled)
+     * @notice Cancel Battle Royale game (creator only, before game starts)
+     * Players must withdraw their funds themselves using withdrawBattleRoyaleEntry()
+     */
+    function cancelBattleRoyale(bytes32 gameId) external nonReentrant {
+        BattleRoyaleGame storage game = battleRoyaleGames[gameId];
+        require(game.creator == msg.sender, "Not the creator");
+        require(!game.completed, "Game already completed");
+        require(!game.nftClaimed, "NFT already claimed");
+        require(game.currentPlayers < game.maxPlayers, "Game is full - cannot cancel");
+        
+        // Mark game as completed/cancelled
+        game.completed = true;
+        game.nftClaimed = true;
+        
+        // Return NFT to creator immediately (no waiting period)
+        IERC721(game.nftContract).transferFrom(address(this), msg.sender, game.tokenId);
+        
+        emit BattleRoyaleCompleted(gameId, address(0)); // address(0) = cancelled
+        emit AssetsReclaimed(gameId, msg.sender, "BR_NFT_CANCELLED");
+    }
+    
+    /**
+     * @notice Reclaim NFT if game never filled (no waiting period)
      */
     function reclaimBattleRoyaleNFT(bytes32 gameId) external nonReentrant {
         BattleRoyaleGame storage game = battleRoyaleGames[gameId];
         require(game.creator == msg.sender, "Not the creator");
         require(!game.completed, "Game completed");
         require(!game.nftClaimed, "NFT already claimed");
-        
-        // Allow reclaim if game didn't fill within 24 hours
-        require(block.timestamp > game.createdAt + 24 hours, "Too early to reclaim");
         require(game.currentPlayers < game.maxPlayers, "Game is full");
         
+        // NO WAITING PERIOD - can reclaim immediately
         game.nftClaimed = true;
         
         // Return NFT to creator
         IERC721(game.nftContract).transferFrom(address(this), msg.sender, game.tokenId);
         
-        // Refund all players who joined
-        for (uint i = 0; i < game.currentPlayers; i++) {
-            // Note: This would require tracking player addresses separately
-            // For now, players can call reclaimBattleRoyaleEntry individually
-        }
-        
         emit AssetsReclaimed(gameId, msg.sender, "BR_NFT");
+    }
+    
+    /**
+     * @notice Player withdraws their entry fee
+     * Can be called to:
+     * - Leave game voluntarily before it starts
+     * - Get refund after creator cancels
+     * - Get refund if game never fills and creator reclaims NFT
+     */
+    function withdrawBattleRoyaleEntry(bytes32 gameId) external nonReentrant {
+        BattleRoyaleGame storage game = battleRoyaleGames[gameId];
+        require(battleRoyaleEntries[gameId][msg.sender], "Not a participant");
+        
+        uint256 entryAmount = battleRoyaleEntryAmounts[gameId][msg.sender];
+        require(entryAmount > 0, "Already withdrawn");
+        
+        // Can only withdraw if:
+        // 1. Game hasn't filled yet (voluntary leave), OR
+        // 2. Game was cancelled (NFT reclaimed)
+        bool gameNotStarted = game.currentPlayers < game.maxPlayers;
+        bool gameCancelled = game.nftClaimed; // NFT reclaimed = game cancelled
+        require(gameNotStarted || gameCancelled, "Game is in progress");
+        
+        // Calculate refund amount
+        // NOTE: Service fee was already sent to platform (line 537-539 in joinBattleRoyale)
+        // So we only refund the entry fee portion
+        uint256 refundAmount = game.entryFee;
+        
+        // Mark as withdrawn
+        battleRoyaleEntryAmounts[gameId][msg.sender] = 0;
+        battleRoyaleEntries[gameId][msg.sender] = false;
+        game.currentPlayers--;
+        game.totalPool -= game.entryFee;
+        
+        // Refund entry fee to player
+        (bool success,) = msg.sender.call{value: refundAmount}("");
+        require(success, "Refund failed");
+        
+        emit AssetsReclaimed(gameId, msg.sender, "BR_ENTRY_FEE");
+    }
+    
+    /**
+     * @notice Check if player can withdraw their entry (for UI buttons)
+     */
+    function canWithdrawEntry(bytes32 gameId, address player) external view returns (bool) {
+        BattleRoyaleGame storage game = battleRoyaleGames[gameId];
+        
+        // Must be a participant with funds
+        if (!battleRoyaleEntries[gameId][player]) return false;
+        if (battleRoyaleEntryAmounts[gameId][player] == 0) return false;
+        
+        // Can withdraw if game not started OR if cancelled
+        bool gameNotStarted = game.currentPlayers < game.maxPlayers;
+        bool gameCancelled = game.nftClaimed;
+        
+        return gameNotStarted || gameCancelled;
     }
 } 

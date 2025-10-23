@@ -596,6 +596,41 @@ const LobbyScreen = () => {
     }
   }
 
+  const [isCancelling, setIsCancelling] = useState(false)
+  
+  const handleCancelGame = async () => {
+    if (!confirm('Are you sure you want to cancel this game? You will be able to reclaim your NFT from your profile.')) {
+      return
+    }
+    
+    try {
+      setIsCancelling(true)
+      const response = await fetch(`/api/battle-royale/${gameState.gameId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creator: address })
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to cancel game')
+      }
+      
+      showToast('Game cancelled successfully. You can reclaim your NFT from your profile.', 'success')
+      
+      // Redirect to profile after short delay
+      setTimeout(() => {
+        window.location.href = `/profile/${address}`
+      }, 2000)
+      
+    } catch (error) {
+      console.error('Cancel game error:', error)
+      showToast(error.message || 'Failed to cancel game', 'error')
+    } finally {
+      setIsCancelling(false)
+    }
+  }
+
   return (
     <Container>
       {/* LEFT: NFT INFO */}
@@ -719,6 +754,15 @@ const LobbyScreen = () => {
               style={{ marginTop: '1rem', background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
             >
               🚀 Start Game Early ({gameState.currentPlayers}/4)
+            </JoinActionButton>
+          )}
+          {isCreator && gameState.status !== 'cancelled' && (
+            <JoinActionButton
+              onClick={handleCancelGame}
+              disabled={isCancelling}
+              style={{ marginTop: '1rem', background: 'linear-gradient(135deg, #ff4444, #cc0000)' }}
+            >
+              {isCancelling ? 'Cancelling...' : '❌ Cancel Flip'}
             </JoinActionButton>
           )}
           {canClaim && (
