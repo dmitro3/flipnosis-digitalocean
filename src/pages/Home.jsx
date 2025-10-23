@@ -1475,8 +1475,8 @@ const Home = () => {
                   />
                 </div>
 
-                {/* Desktop: Grid/List toggle, Mobile: List only */}
-                {viewMode === 'grid' ? (
+                {/* Desktop: Grid/List toggle, Mobile: Always List view */}
+                {viewMode === 'grid' && window.innerWidth > 768 ? (
                   <div style={{ 
                     display: 'grid', 
                     gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 
