@@ -647,91 +647,115 @@ initialize(server, dbService) {
       }))
 
       socket.on('unlock_coin', safeHandler(async (data) => {
-        console.log(`🔓 unlock_coin from ${socket.id}`, data)
-        try {
-          const { address, coinId, cost } = data
-          if (!address || !coinId || cost === undefined) {
-            console.log(`❌ Missing required fields: address=${address}, coinId=${coinId}, cost=${cost}`)
-            socket.emit('coin_unlocked', { success: false, error: 'Missing required fields' })
-            return
-          }
+        console.log(`\n${'='.repeat(60)}`)
+        console.log(`🔓 COIN UNLOCK REQUEST`)
+        console.log(`Socket: ${socket.id}`)
+        console.log(`Data:`, JSON.stringify(data, null, 2))
+        
+        const { address, coinId, cost } = data
+        
+        // Validate input
+        if (!address || !coinId || cost === undefined) {
+          console.error(`❌ Missing required fields`)
+          socket.emit('coin_unlocked', { 
+            success: false, 
+            error: `Missing required fields: ${!address ? 'address' : !coinId ? 'coinId' : 'cost'}` 
+          })
+          return
+        }
 
-          // Get current profile
-          console.log(`🔍 Getting profile for address: ${address}`)
+        try {
+          // Step 1: Get profile
+          console.log(`\n1️⃣ Getting profile for: ${address}`)
           const profile = await this.dbService.getProfileByAddress(address)
+          
           if (!profile) {
-            console.log(`❌ Profile not found for address: ${address}`)
+            console.error(`❌ Profile not found`)
             socket.emit('coin_unlocked', { success: false, error: 'Profile not found' })
             return
           }
+          
+          console.log(`✅ Profile found`)
+          console.log(`   flip_balance: ${profile.flip_balance}`)
+          console.log(`   xp: ${profile.xp}`)
+          console.log(`   unlocked_coins: ${profile.unlocked_coins}`)
 
-          console.log(`📊 Profile data:`, profile)
-          const currentBalance = profile.flip_balance || profile.xp || 0 // FLIP tokens are stored in flip_balance field (fallback to xp for old profiles)
+          // Step 2: Validate unlock
+          const currentBalance = profile.flip_balance || profile.xp || 0
           const unlockedCoins = JSON.parse(profile.unlocked_coins || '["plain"]')
-          console.log(`💰 Current balance: ${currentBalance}, Unlocked coins: ${JSON.stringify(unlockedCoins)}`)
-
-          // Check if already unlocked
+          
+          console.log(`\n2️⃣ Validating unlock`)
+          console.log(`   Current balance: ${currentBalance} FLIP`)
+          console.log(`   Cost: ${cost} FLIP`)
+          console.log(`   Already unlocked: ${unlockedCoins.join(', ')}`)
+          
           if (unlockedCoins.includes(coinId)) {
-            console.log(`❌ Coin ${coinId} already unlocked`)
+            console.error(`❌ Coin already unlocked`)
             socket.emit('coin_unlocked', { success: false, error: 'Coin already unlocked' })
             return
           }
-
-          // Check if has enough FLIP
-          if (currentBalance < cost) {
-            console.log(`❌ Insufficient balance: ${currentBalance} < ${cost}`)
-            socket.emit('coin_unlocked', { success: false, error: 'Insufficient FLIP balance' })
-            return
-          }
-
-          // Deduct FLIP and unlock coin
-          const newBalance = currentBalance - cost
-          unlockedCoins.push(coinId)
-
-          // Update profile - use flip_balance field for FLIP balance
-          console.log(`🔄 Updating profile for ${address}: flip_balance=${newBalance}, unlocked_coins=${JSON.stringify(unlockedCoins)}`)
-          try {
-            const updateResult = await this.dbService.updateProfile(address, {
-              flip_balance: newBalance, // Update flip_balance field with new FLIP balance
-              xp: newBalance, // Also update xp field for backward compatibility
-              unlocked_coins: JSON.stringify(unlockedCoins)
-            })
-            console.log(`✅ Profile updated successfully, changes: ${updateResult}`)
-            
-            // If no rows were updated, the profile might not exist
-            if (updateResult === 0) {
-              console.log(`⚠️ No profile found for ${address}, creating new profile...`)
-              await this.dbService.createOrUpdateProfile({
-                address: address,
-                flip_balance: newBalance,
-                xp: newBalance,
-                unlocked_coins: JSON.stringify(unlockedCoins)
-              })
-              console.log(`✅ Created new profile for ${address}`)
-            }
-          } catch (updateError) {
-            console.error(`❌ Failed to update profile:`, updateError)
-            socket.emit('coin_unlocked', { success: false, error: 'Failed to update profile' })
-            return
-          }
-
-          // Send FLIP to Master Field (master account)
-          const MASTER_ADDRESS = '0x0000000000000000000000000000000000000000' // Master Field address
-          console.log(`💰 Sending ${cost} FLIP to Master Field`)
           
-          // Get current Master Field balance
+          if (currentBalance < cost) {
+            console.error(`❌ Insufficient balance`)
+            socket.emit('coin_unlocked', { 
+              success: false, 
+              error: `Insufficient FLIP balance. Have: ${currentBalance}, Need: ${cost}` 
+            })
+            return
+          }
+          
+          console.log(`✅ Validation passed`)
+
+          // Step 3: Update profile using direct SQL
+          const newBalance = currentBalance - cost
+          const newUnlockedCoins = [...unlockedCoins, coinId]
+          
+          console.log(`\n3️⃣ Updating profile`)
+          console.log(`   New balance: ${newBalance} FLIP`)
+          console.log(`   New unlocked coins: ${newUnlockedCoins.join(', ')}`)
+          
+          // Use direct SQL to ensure it works
+          await new Promise((resolve, reject) => {
+            this.dbService.db.run(`
+              UPDATE profiles 
+              SET flip_balance = ?, 
+                  xp = ?, 
+                  unlocked_coins = ?,
+                  updated_at = CURRENT_TIMESTAMP
+              WHERE address = ?
+            `, [newBalance, newBalance, JSON.stringify(newUnlockedCoins), address.toLowerCase()], function(err) {
+              if (err) {
+                console.error(`❌ SQL Error:`, err)
+                reject(err)
+              } else {
+                console.log(`✅ Profile updated (${this.changes} rows)`)
+                resolve(this.changes)
+              }
+            })
+          })
+
+          // Step 4: Update Master Field
+          const MASTER_ADDRESS = '0x0000000000000000000000000000000000000000'
+          
+          console.log(`\n4️⃣ Updating Master Field`)
           const masterProfile = await this.dbService.getProfileByAddress(MASTER_ADDRESS)
           const currentMasterBalance = masterProfile ? (masterProfile.flip_balance || masterProfile.xp || 0) : 0
           const newMasterBalance = currentMasterBalance + cost
           
+          console.log(`   Master balance: ${currentMasterBalance} → ${newMasterBalance}`)
+          
           if (masterProfile) {
-            // Update existing Master Field profile
-            await this.dbService.updateProfile(MASTER_ADDRESS, {
-              flip_balance: newMasterBalance, // Add the spent FLIP to master account
-              xp: newMasterBalance // Also update xp field for backward compatibility
+            await new Promise((resolve, reject) => {
+              this.dbService.db.run(`
+                UPDATE profiles 
+                SET flip_balance = ?, xp = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE address = ?
+              `, [newMasterBalance, newMasterBalance, MASTER_ADDRESS], function(err) {
+                if (err) reject(err)
+                else resolve()
+              })
             })
           } else {
-            // Create new Master Field profile with only existing fields
             await this.dbService.createOrUpdateProfile({
               address: MASTER_ADDRESS,
               username: 'Master Field',
@@ -740,23 +764,40 @@ initialize(server, dbService) {
               unlocked_coins: '["plain"]'
             })
           }
-          console.log(`✅ Master Field received ${cost} FLIP (balance: ${currentMasterBalance} → ${newMasterBalance})`)
+          
+          console.log(`✅ Master Field updated`)
 
-          // Record transaction
-          console.log(`🔄 Recording transaction for ${address}: ${coinId} cost ${cost}`)
-          await this.dbService.recordCoinUnlockTransaction(address, coinId, cost, currentBalance, newBalance)
-          console.log(`✅ Transaction recorded successfully`)
+          // Step 5: Record transaction
+          console.log(`\n5️⃣ Recording transaction`)
+          await this.dbService.recordCoinUnlockTransaction(
+            address, 
+            coinId, 
+            cost, 
+            currentBalance, 
+            newBalance
+          )
+          console.log(`✅ Transaction recorded`)
 
-          console.log(`✅ Unlocked ${coinId} for ${address} at cost ${cost} FLIP`)
+          // Step 6: Send success response
+          console.log(`\n✅ UNLOCK SUCCESSFUL`)
+          console.log(`${'='.repeat(60)}\n`)
+          
           socket.emit('coin_unlocked', { 
             success: true, 
             newBalance: newBalance,
-            unlockedCoins: unlockedCoins
+            unlockedCoins: newUnlockedCoins
           })
 
         } catch (error) {
-          console.error('❌ Error unlocking coin:', error)
-          socket.emit('coin_unlocked', { success: false, error: 'Failed to unlock coin' })
+          console.error(`\n❌ UNLOCK FAILED`)
+          console.error(`Error:`, error.message)
+          console.error(`Stack:`, error.stack)
+          console.error(`${'='.repeat(60)}\n`)
+          
+          socket.emit('coin_unlocked', { 
+            success: false, 
+            error: `Server error: ${error.message}` 
+          })
         }
       }))
 

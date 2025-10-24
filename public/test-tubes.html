@@ -244,41 +244,49 @@
         transform: scale(0.95);
       }
       
-      /* Player Cards - Fixed above bottom panel */
+      /* Player Cards - 4 boxes attached to bottom */
       .player-cards {
         position: fixed;
         bottom: 80px;
-        left: 10px;
-        right: 10px;
+        left: 0;
+        right: 0;
         height: 60px;
         display: flex;
-        gap: 8px;
+        gap: 0;
         pointer-events: auto;
         z-index: 10001;
         align-items: center;
         justify-content: space-between;
+        padding: 0 10px;
       }
       
-      /* Mobile Timer in center */
-      .mobile-timer {
-        position: fixed;
-        bottom: 140px;
-        left: 50%;
-        transform: translateX(-50%);
-        color: #00ffff;
-        font-size: 24px;
-        font-weight: bold;
-        text-align: center;
-        font-family: 'Orbitron', sans-serif;
-        text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
-        z-index: 10002;
-        background: linear-gradient(135deg, rgba(10, 15, 35, 0.9), rgba(16, 33, 62, 0.9));
+      /* Individual player boxes */
+      .player-box {
+        width: 80px;
+        height: 60px;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
         border: 2px solid #00ffff;
         border-radius: 8px;
-        padding: 8px 16px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+        padding: 4px;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        font-size: 8px;
+        backdrop-filter: blur(15px);
+        transition: all 0.3s ease;
+        font-family: 'Orbitron', sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin: 0 2px;
       }
+      
+      .player-box:hover {
+        border-color: #9d00ff;
+        box-shadow: 0 0 30px rgba(157, 0, 255, 0.5);
+        transform: translateY(-2px);
+      }
+      
       
       .player-card {
         width: 80px;
@@ -305,7 +313,7 @@
         transform: translateY(-2px);
       }
       
-      .player-avatar {
+      .player-box .player-avatar {
         width: 20px;
         height: 20px;
         border-radius: 4px;
@@ -316,7 +324,7 @@
         box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
       }
       
-      .player-name {
+      .player-box .player-name {
         font-size: 6px;
         color: #00ffff;
         font-weight: bold;
@@ -328,7 +336,7 @@
         line-height: 1;
       }
       
-      .player-wins {
+      .player-box .player-wins {
         font-size: 8px;
         color: #FFD700;
         font-weight: bold;
@@ -601,9 +609,6 @@
   
   <!-- Responsive Mobile Layout -->
   <div id="mobile-ui" class="mobile-ui">
-    <!-- Mobile Timer -->
-    <div class="mobile-timer" id="mobile-timer">30</div>
-    
     <!-- Player Cards -->
     <div class="player-cards" id="mobile-player-cards">
       <!-- Player cards will be dynamically created here -->
@@ -2092,8 +2097,8 @@
       width: 160px;
       height: 50px;
       padding: 0;
-      background: linear-gradient(135deg, #ffeb3b, #fff176);
-      border: 4px solid #f57f17;
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      border: 4px solid #ff8f00;
       border-radius: 12px;
       color: #fff;
       font-family: 'Orbitron', sans-serif;
@@ -2109,13 +2114,13 @@
         width: 100%;
         height: 100%;
         padding: 0;
-        background: linear-gradient(135deg, #ffeb3b, #fff176);
-        border: 4px solid #f57f17;
+        background: linear-gradient(135deg, #ffd700, #ffed4e);
+        border: 4px solid #ff8f00;
         border-radius: 8px;
-        color: #9c27b0;
+        color: #6a1b9a;
         font-family: 'Orbitron', sans-serif;
-        font-weight: bold;
-        font-size: 12px;
+        font-weight: 900;
+        font-size: 16px;
         cursor: pointer;
         box-shadow: 0 0 15px rgba(255, 235, 59, 0.6);
         transition: all 0.3s ease;
@@ -3659,8 +3664,12 @@
       // Fetch player data from server
       if (isServerSideMode && socket && walletParam) {
         console.log('🔍 Fetching profile for wallet:', walletParam);
-        socket.emit('get_player_profile', { address: walletParam });
-        socket.once('player_profile_data', (profileData) => {
+        
+        // Remove any existing listener to avoid duplicates
+        socket.off('player_profile_data');
+        
+        // Set up listener for profile data
+        socket.on('player_profile_data', (profileData) => {
           console.log('📊 Received profile data:', profileData);
           playerFlipBalance = profileData.flip_balance || 0;
           unlockedCoins = JSON.parse(profileData.unlocked_coins || '["plain"]');
@@ -3670,6 +3679,9 @@
           console.log('🔓 Updated unlocked coins:', unlockedCoins);
           updateCoinDisplay();
         });
+        
+        // Request profile
+        socket.emit('get_player_profile', { address: walletParam });
       } else {
         console.log('⚠️ Cannot fetch profile - missing:', {
           isServerSideMode,
@@ -3872,14 +3884,15 @@
                   
                   // Send unlock request to server
                   if (isServerSideMode && socket && walletParam) {
-                    socket.emit('unlock_coin', {
-                      address: walletParam,
-                      coinId: coinId,
-                      cost: cost
-                    });
+                    console.log(`🔓 Requesting unlock: ${coinId} for ${cost} FLIP`);
                     
-                    // Wait for server response
-                    socket.once('coin_unlocked', (result) => {
+                    // Remove any existing unlock listener
+                    socket.off('coin_unlocked');
+                    
+                    // Set up response listener BEFORE sending request
+                    socket.on('coin_unlocked', (result) => {
+                      console.log('📨 Received unlock response:', result);
+                      
                       if (result.success) {
                         console.log(`✅ Server confirmed unlock: ${coin.name}`);
                         
@@ -3888,15 +3901,19 @@
                         unlockedCoins = result.unlockedCoins;
                         
                         // Update UI
-                        document.getElementById('flip-balance').textContent = playerFlipBalance;
+                        const balanceElement = document.getElementById('flip-balance');
+                        if (balanceElement) {
+                          balanceElement.textContent = playerFlipBalance;
+                        }
+                        
                         updateCoinDisplay();
                         selectedCoin = coin;
                         updateCoinSelection();
                         
-                        alert(`🎉 ${coin.name} unlocked for ${cost} FLIP!`);
+                        alert(`🎉 ${coin.name} unlocked for ${cost} FLIP!\n\nNew balance: ${playerFlipBalance} FLIP`);
                       } else {
-                        console.error(`❌ Server unlock failed: ${result.error}`);
-                        alert(`❌ Failed to unlock ${coin.name}: ${result.error}`);
+                        console.error(`❌ Server unlock failed:`, result.error);
+                        alert(`❌ Failed to unlock ${coin.name}:\n\n${result.error}`);
                         
                         // Restore coin element
                         if (coinElement) {
@@ -3905,8 +3922,26 @@
                         }
                       }
                     });
+                    
+                    // Send unlock request
+                    socket.emit('unlock_coin', {
+                      address: walletParam,
+                      coinId: coinId,
+                      cost: cost
+                    });
                   } else {
+                    console.error('❌ Cannot unlock - connection issue:', {
+                      isServerSideMode,
+                      hasSocket: !!socket,
+                      hasWallet: !!walletParam
+                    });
                     alert(`❌ Cannot unlock coin: Server connection required`);
+                    
+                    // Restore coin element
+                    if (coinElement) {
+                      coinElement.style.opacity = '1';
+                      coinElement.style.pointerEvents = 'auto';
+                    }
                   }
                 } else {
                   alert(`Not enough FLIP! You need ${cost} FLIP to unlock ${coin.name}.`);
@@ -5303,46 +5338,33 @@
       console.log('🔄 Creating mobile player cards...', { tubes: tubes.length, players: players.length });
       container.innerHTML = '';
       
-      // Create left side (players 1&2)
-      const leftSide = document.createElement('div');
-      leftSide.style.cssText = 'display: flex; gap: 8px; flex: 1; justify-content: flex-start;';
-      
-      // Create right side (players 3&4)
-      const rightSide = document.createElement('div');
-      rightSide.style.cssText = 'display: flex; gap: 8px; flex: 1; justify-content: flex-end;';
-      
-      tubes.forEach((tube, i) => {
+      // Create 4 individual player boxes
+      for (let i = 0; i < 4; i++) {
         const player = players[i];
         console.log(`🔍 Player ${i + 1}:`, { player: player?.name, isEmpty: player?.isEmpty });
         
-        if (!player || player.isEmpty) {
-          console.log(`⏭️ Skipping empty player ${i + 1}`);
-          return;
-        }
-
-        const card = document.createElement('div');
-        card.className = 'player-card';
-        card.innerHTML = `
-          <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" />
-          <div class="player-name">${player.name}</div>
-          <div class="player-wins">🏆 ${player.wins}</div>
-        `;
+        const box = document.createElement('div');
+        box.className = 'player-box';
         
-        // Add to left side (players 1&2) or right side (players 3&4)
-        if (i < 2) {
-          leftSide.appendChild(card);
+        if (player && !player.isEmpty) {
+          box.innerHTML = `
+            <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" />
+            <div class="player-name">${player.name}</div>
+            <div class="player-wins">🏆 ${player.wins}</div>
+          `;
+          console.log(`✅ Created mobile box for ${player.name}`);
         } else {
-          rightSide.appendChild(card);
+          box.innerHTML = `
+            <div class="player-name">Empty</div>
+            <div class="player-wins">-</div>
+          `;
+          console.log(`⏭️ Created empty box for slot ${i + 1}`);
         }
         
-        console.log(`✅ Created mobile card for ${player.name}`);
-      });
+        container.appendChild(box);
+      }
       
-      // Add both sides to container
-      container.appendChild(leftSide);
-      container.appendChild(rightSide);
-      
-      console.log(`📱 Mobile player cards created: ${leftSide.children.length + rightSide.children.length} cards`);
+      console.log(`📱 Mobile player boxes created: ${container.children.length} boxes`);
     }
 
     // Update mobile displays
