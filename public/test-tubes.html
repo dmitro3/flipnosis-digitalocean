@@ -29,39 +29,17 @@
     /* Mobile Detection and Base Styles */
     @media (max-width: 768px) {
       body {
-        /* Force landscape orientation on mobile - fixed rotation */
-        transform: rotate(90deg);
-        transform-origin: center center;
-        width: 100vh;
-        height: 100vw;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        margin-top: -50vw;
-        margin-left: -50vh;
+        /* No forced rotation - let device handle orientation */
         overflow: hidden;
       }
       
-      /* Hide scrollbars in landscape mode */
+      /* Hide scrollbars on mobile */
       body::-webkit-scrollbar {
         display: none;
       }
       body {
         -ms-overflow-style: none;
         scrollbar-width: none;
-      }
-      
-      /* Fix container sizing for mobile */
-      #container {
-        width: 100vw;
-        height: 100vh;
-        transform: none; /* Remove any transform from container */
-      }
-      
-      /* Adjust canvas sizing for mobile */
-      #container canvas {
-        width: 100vw !important;
-        height: 100vh !important;
       }
     }
 
@@ -80,8 +58,7 @@
         height: 100vh;
         z-index: 10000;
         pointer-events: none; /* Allow clicks to pass through to game */
-        transform: none; /* Remove any transform */
-        background: transparent; /* Ensure no background */
+        background: transparent;
       }
 
       /* Mobile Sidebar - Takes up 1/5 of screen width */
@@ -100,8 +77,7 @@
         padding: 20px 15px;
         gap: 15px;
         overflow-y: auto;
-        z-index: 10001; /* Ensure sidebar is above everything */
-        transform: none; /* Remove any transform */
+        z-index: 10001;
       }
 
       /* Mobile Control Buttons */
@@ -256,8 +232,7 @@
         align-items: center;
         justify-content: center;
         box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-        z-index: 10002; /* Above other elements */
-        transform: none; /* Remove any transform */
+        z-index: 10002;
       }
 
       .mobile-player-avatar {
@@ -5224,10 +5199,9 @@
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         
-        // Calculate position for mobile landscape
-        // Position cards in the center area, below where tubes would be
-        const centerStart = screenWidth * 0.2; // Start after sidebar
-        const centerWidth = screenWidth * 0.6; // Available center width
+        // Calculate position for mobile - center area below tubes
+        const centerStart = screenWidth * 0.1; // Start after some margin
+        const centerWidth = screenWidth * 0.7; // Available center width
         const x = centerStart + (i * centerWidth / tubes.length) - (cardWidth / 2);
         const y = screenHeight - 180; // Above bottom bar
         
@@ -5302,20 +5276,8 @@
       
       console.log('📱 Applying mobile 3D optimizations');
       
-      // Adjust camera for mobile landscape
-      if (camera) {
-        camera.position.set(0, 2, 5); // Closer to tubes for mobile
-        camera.lookAt(0, 0, 0);
-        camera.updateProjectionMatrix();
-      }
-      
-      // Adjust tube positions for mobile
-      tubes.forEach((tube, i) => {
-        if (tube.mesh) {
-          // Move tubes closer together and lower for mobile
-          tube.mesh.position.set(i * 2 - 2, -1, 0); // Adjusted for mobile
-        }
-      });
+      // Keep original camera and tube positions for mobile
+      // No mobile-specific adjustments needed
       
       // Reduce shadow quality for mobile
       if (webglRenderer.shadowMap) {
