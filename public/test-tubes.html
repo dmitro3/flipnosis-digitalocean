@@ -145,42 +145,70 @@
         bottom: 0;
         left: 0;
         width: 100vw;
-        height: 80px;
+        height: 50px;
         background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(20, 25, 45, 0.95));
         border-top: 3px solid #00ffff;
         box-shadow: 0 -5px 20px rgba(0, 255, 255, 0.3);
         pointer-events: auto;
         display: flex;
         align-items: center;
-        padding: 0 20px;
-        gap: 20px;
+        padding: 0 10px;
+        gap: 10px;
       }
 
       /* Mobile Timer Display */
       .mobile-timer {
         color: #00ffff;
-        font-size: 18px;
+        font-size: 14px;
         font-weight: bold;
         text-align: center;
-        min-width: 80px;
+        min-width: 60px;
       }
 
       /* Mobile Earnings Display */
       .mobile-earnings {
         color: #ffd700;
-        font-size: 16px;
+        font-size: 12px;
         font-weight: bold;
         text-align: center;
         flex: 1;
       }
 
+      /* Small bottom buttons */
+      .mobile-bottom-btn {
+        padding: 4px 8px;
+        background: linear-gradient(135deg, #9d00ff, #c44aff);
+        border: 1px solid #9d00ff;
+        border-radius: 4px;
+        color: #fff;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: bold;
+        font-size: 10px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 10px rgba(157, 0, 255, 0.3);
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .mobile-bottom-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 15px rgba(157, 0, 255, 0.6);
+      }
+
+      .mobile-bottom-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 8px rgba(157, 0, 255, 0.4);
+      }
+
       /* Mobile Power Bar */
       .mobile-power-container {
         position: fixed;
-        bottom: 80px;
+        bottom: 50px;
         left: 0;
         width: 100vw;
-        height: 30px;
+        height: 25px;
         background: rgba(0, 0, 0, 0.3);
         pointer-events: auto;
         display: flex;
@@ -219,7 +247,7 @@
       /* Mobile Player Cards - Compact under tubes */
       .mobile-player-card {
         position: fixed;
-        bottom: 120px;
+        bottom: 85px;
         width: 80px;
         height: 60px;
         background: rgba(10, 15, 35, 0.9);
@@ -499,15 +527,16 @@
     <div class="mobile-sidebar">
       <button class="mobile-control-btn heads" id="mobile-heads-btn">HEADS</button>
       <button class="mobile-control-btn tails" id="mobile-tails-btn">TAILS</button>
-      <button class="mobile-control-btn secondary" id="mobile-change-coin-btn">CHANGE COIN</button>
-      <button class="mobile-control-btn secondary" id="mobile-chat-btn">CHAT</button>
-      <button class="mobile-control-btn secondary" id="mobile-fullscreen-btn">FULLSCREEN</button>
+      <button class="mobile-control-btn secondary" id="mobile-power-btn">POWER</button>
     </div>
     
     <!-- Mobile Bottom Bar -->
     <div class="mobile-bottom-bar">
       <div class="mobile-timer" id="mobile-timer">2:45</div>
       <div class="mobile-earnings" id="mobile-earnings">1,250 FLIP</div>
+      <button class="mobile-bottom-btn" id="mobile-change-coin-btn">COIN</button>
+      <button class="mobile-bottom-btn" id="mobile-chat-btn">CHAT</button>
+      <button class="mobile-bottom-btn" id="mobile-fullscreen-btn">FULL</button>
     </div>
     
     <!-- Mobile Power Bar -->
@@ -5090,7 +5119,66 @@
         });
       }
 
-      // Mobile change coin button
+      // Mobile power button (hold to charge)
+      const mobilePowerBtn = document.getElementById('mobile-power-btn');
+      if (mobilePowerBtn) {
+        let powerInterval = null;
+        
+        mobilePowerBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          triggerHaptic();
+          
+          // Start power charging
+          powerInterval = setInterval(() => {
+            // Find current player and charge power
+            const currentPlayer = players.find(p => p.isCurrentPlayer);
+            if (currentPlayer) {
+              // Simulate power charging
+              console.log('⚡ Mobile: Charging power...');
+            }
+          }, 50);
+        });
+        
+        mobilePowerBtn.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          triggerHaptic();
+          
+          // Stop power charging
+          if (powerInterval) {
+            clearInterval(powerInterval);
+            powerInterval = null;
+          }
+        });
+        
+        // Also handle mouse events for testing
+        mobilePowerBtn.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          triggerHaptic();
+          
+          powerInterval = setInterval(() => {
+            const currentPlayer = players.find(p => p.isCurrentPlayer);
+            if (currentPlayer) {
+              console.log('⚡ Mobile: Charging power...');
+            }
+          }, 50);
+        });
+        
+        mobilePowerBtn.addEventListener('mouseup', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          triggerHaptic();
+          
+          if (powerInterval) {
+            clearInterval(powerInterval);
+            powerInterval = null;
+          }
+        });
+      }
+
+      // Mobile change coin button (now in bottom bar)
       const mobileChangeCoinBtn = document.getElementById('mobile-change-coin-btn');
       if (mobileChangeCoinBtn) {
         mobileChangeCoinBtn.addEventListener('click', (e) => {
@@ -5105,7 +5193,7 @@
         });
       }
 
-      // Mobile chat button
+      // Mobile chat button (now in bottom bar)
       const mobileChatBtn = document.getElementById('mobile-chat-btn');
       if (mobileChatBtn) {
         mobileChatBtn.addEventListener('click', (e) => {
@@ -5120,7 +5208,7 @@
         });
       }
 
-      // Mobile fullscreen button
+      // Mobile fullscreen button (now in bottom bar)
       const mobileFullscreenBtn = document.getElementById('mobile-fullscreen-btn');
       if (mobileFullscreenBtn) {
         mobileFullscreenBtn.addEventListener('click', (e) => {
@@ -5199,11 +5287,11 @@
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         
-        // Calculate position for mobile - center area below tubes
-        const centerStart = screenWidth * 0.1; // Start after some margin
-        const centerWidth = screenWidth * 0.7; // Available center width
-        const x = centerStart + (i * centerWidth / tubes.length) - (cardWidth / 2);
-        const y = screenHeight - 180; // Above bottom bar
+        // Calculate position for mobile - align to left, below tubes
+        const leftStart = screenWidth * 0.05; // Start from left margin
+        const spacing = 120; // Space between cards
+        const x = leftStart + (i * spacing) - (cardWidth / 2);
+        const y = screenHeight - 85; // Above bottom bar
         
         mobileCard.style.left = `${x}px`;
         mobileCard.style.top = `${y}px`;
