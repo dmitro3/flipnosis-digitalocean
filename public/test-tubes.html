@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, orientation=landscape">
   <title>Glass Tube Game Test</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,6 +57,8 @@
         background-position: center center;
         background-repeat: no-repeat;
         background-attachment: scroll;
+        min-height: 100vh;
+        width: 100%;
       }
       
       /* Portrait override if needed */
@@ -64,6 +66,17 @@
         body {
           background-size: cover;
           background-attachment: fixed;
+          background-position: center center;
+        }
+      }
+      
+      /* Ensure proper landscape orientation */
+      @media (orientation: landscape) {
+        body {
+          background-size: 100% 100%;
+          background-attachment: scroll;
+          background-position: center center;
+          background-repeat: no-repeat;
         }
       }
       
@@ -75,26 +88,59 @@
         display: none !important;
       }
       
-      /* Show game-info on mobile but position it at top center */
+      /* Show game-info on mobile but position it at top center - smaller and compact */
       .game-info {
         position: fixed !important;
         top: 10px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
         z-index: 10001 !important;
-        width: 200px !important;
+        width: 160px !important;
         text-align: center !important;
         height: auto !important;
         background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95)) !important;
-        border: 3px solid #9d00ff !important;
-        border-radius: 16px !important;
-        padding: 15px !important;
+        border: 2px solid #9d00ff !important;
+        border-radius: 12px !important;
+        padding: 8px 12px !important;
         font-family: 'Orbitron', sans-serif !important;
         color: white !important;
-        box-shadow: 0 0 30px rgba(157, 0, 255, 0.6) !important;
+        box-shadow: 0 0 20px rgba(157, 0, 255, 0.6) !important;
         pointer-events: auto !important;
         text-align: center !important;
         display: block !important;
+      }
+      
+      /* Hide mute and chat buttons on mobile */
+      .game-info button {
+        display: none !important;
+      }
+      
+      /* Hide desktop layout on mobile */
+      .game-info .desktop-timer-layout {
+        display: none !important;
+      }
+      
+      /* Show mobile layout on mobile */
+      .game-info .mobile-timer-round {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        color: #00ffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      .game-info .mobile-timer-round .round-text {
+        color: #00ffff !important;
+        font-size: 14px !important;
+      }
+      
+      .game-info .mobile-timer-round .timer-text {
+        color: #00ff00 !important;
+        font-size: 14px !important;
       }
       
       /* Mobile-optimized body */
@@ -461,6 +507,21 @@
       
     }
     
+    /* Desktop: Show desktop layout, hide mobile layout */
+    @media (min-width: 768px) {
+      .game-info .desktop-timer-layout {
+        display: block !important;
+      }
+      
+      .game-info .mobile-timer-round {
+        display: none !important;
+      }
+      
+      .game-info button {
+        display: block !important;
+      }
+    }
+
     /* Lab room background */
     body.lab-room {
       background: url('/images/background/thelab.png') no-repeat center center fixed;
@@ -1724,9 +1785,16 @@
     
     // Update round display
     function updateRoundDisplay() {
+      // Update desktop round display
       const roundElement = document.getElementById('round-number');
       if (roundElement) {
         roundElement.textContent = currentRound;
+      }
+      
+      // Update mobile round display
+      const mobileRoundElement = document.getElementById('round-number-mobile');
+      if (mobileRoundElement) {
+        mobileRoundElement.textContent = currentRound;
       }
     }
     
@@ -3485,37 +3553,46 @@
     `;
     
     gameInfoDiv.innerHTML = `
-      <!-- Round Counter -->
-      <div style="
-        font-size: 18px;
-        font-weight: bold;
-        color: #00ffff;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 10px;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      ">ROUND <span id="round-number">1</span></div>
+      <!-- Desktop: Original stacked layout -->
+      <div class="desktop-timer-layout">
+        <!-- Round Counter -->
+        <div style="
+          font-size: 18px;
+          font-weight: bold;
+          color: #00ffff;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          margin-bottom: 10px;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        ">ROUND <span id="round-number">1</span></div>
+        
+        <!-- Timer Display -->
+        <div style="
+          font-size: 50px;
+          font-weight: bold;
+          color: #00ff00;
+          margin: 5px 0;
+          font-family: 'Orbitron', monospace;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        " id="timer-display">30</div>
+        <div style="
+          font-size: 12px;
+          color: #888;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          margin-bottom: 10px;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        ">SECONDS</div>
+      </div>
       
-      <!-- Timer Display -->
-      <div style="
-        font-size: 50px;
-        font-weight: bold;
-        color: #00ff00;
-        margin: 5px 0;
-        font-family: 'Orbitron', monospace;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      " id="timer-display">30</div>
-      <div style="
-        font-size: 12px;
-        color: #888;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 10px;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      ">SECONDS</div>
+      <!-- Mobile: Single line format -->
+      <div class="mobile-timer-round" style="display: none;">
+        <span class="round-text">Round <span id="round-number-mobile">1</span>:</span>
+        <span class="timer-text"><span id="timer-display-mobile">30</span> Seconds</span>
+      </div>
       
       <!-- Control Buttons Column -->
       <div style="
@@ -3686,6 +3763,7 @@
     function updateTimerDisplay(serverTime) {
       // Pure display - server is single source of truth
       if (timerElement) {
+        // Update desktop timer
         const timerDisplay = timerElement.querySelector('#timer-display');
         if (timerDisplay) {
           timerDisplay.textContent = serverTime;
@@ -3697,6 +3775,21 @@
             timerDisplay.style.color = '#ffaa00';
           } else {
             timerDisplay.style.color = '#00ff00';
+          }
+        }
+        
+        // Update mobile timer
+        const mobileTimerDisplay = timerElement.querySelector('#timer-display-mobile');
+        if (mobileTimerDisplay) {
+          mobileTimerDisplay.textContent = serverTime;
+          
+          // Change color based on time remaining
+          if (serverTime <= 5) {
+            mobileTimerDisplay.style.color = '#ff0000';
+          } else if (serverTime <= 10) {
+            mobileTimerDisplay.style.color = '#ffaa00';
+          } else {
+            mobileTimerDisplay.style.color = '#00ff00';
           }
         }
       }
@@ -4075,16 +4168,26 @@
       }
       
       function updateCoinSelection() {
+        console.log(`🎨 Updating coin selection visual feedback for: ${selectedCoin.id}`);
+        
+        // Reset all coin options first
         content.querySelectorAll('.coin-option').forEach(opt => {
           opt.style.background = opt.dataset.unlocked === 'true' ? 'rgba(255, 215, 0, 0.08)' : 'rgba(255, 0, 0, 0.1)';
           opt.style.borderColor = opt.dataset.unlocked === 'true' ? 'rgba(255, 215, 0, 0.25)' : 'rgba(255, 0, 0, 0.5)';
+          opt.style.transform = 'scale(1)';
         });
         
+        // Highlight the selected coin
         const selectedOption = content.querySelector(`[data-coin-id="${selectedCoin.id}"]`);
         if (selectedOption) {
-          selectedOption.style.background = 'rgba(255, 215, 0, 0.3)';
+          selectedOption.style.background = 'rgba(255, 215, 0, 0.4)';
           selectedOption.style.borderColor = '#FFD700';
-          selectedOption.style.transform = 'scale(1.05)';
+          selectedOption.style.borderWidth = '3px';
+          selectedOption.style.transform = 'scale(1.1)';
+          selectedOption.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.6)';
+          console.log(`✅ Visual feedback applied to selected coin: ${selectedCoin.name}`);
+        } else {
+          console.log(`❌ Could not find selected coin option for ID: ${selectedCoin.id}`);
         }
       }
       
@@ -4142,8 +4245,10 @@
         });
       });
       
-      // Apply button handler
+      // Apply button handler with mobile support
       const closeBtn = content.querySelector('.close-btn');
+      
+      // Hover effects (desktop only)
       closeBtn.addEventListener('mouseenter', () => {
         closeBtn.style.transform = 'translateY(-2px)';
         closeBtn.style.boxShadow = '0 6px 20px rgba(255, 20, 147, 0.6)';
@@ -4152,7 +4257,13 @@
         closeBtn.style.transform = 'translateY(0)';
         closeBtn.style.boxShadow = '0 4px 15px rgba(255, 20, 147, 0.4)';
       });
-      closeBtn.addEventListener('click', () => {
+      
+      // Close button handler with mobile support
+      const handleCloseButton = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔴 APPLY CHANGES button clicked - closing modal');
+        
         // Store selections in tube
         tubes[tubeIndex].selectedCoin = selectedCoin;
         tubes[tubeIndex].selectedMaterial = selectedMaterial;
@@ -4205,28 +4316,43 @@
           });
         });
         
+        // Close the modal
         modal.remove();
-      });
+      };
+      
+      // Add both click and touch events for mobile compatibility
+      closeBtn.addEventListener('click', handleCloseButton);
+      closeBtn.addEventListener('touchend', handleCloseButton);
 
       // Close on background click/touch - improved mobile support
       const handleModalClose = (e) => {
+        console.log('🖱️ Background click detected, target:', e.target, 'modal:', modal);
         if (e.target === modal) {
+          console.log('✅ Closing modal via background click');
           e.preventDefault();
           e.stopPropagation();
           modal.remove();
         }
       };
       
-      // Add both click and touch events for mobile compatibility
+      // Add multiple event types for better mobile compatibility
       modal.addEventListener('click', handleModalClose);
       modal.addEventListener('touchend', handleModalClose);
+      modal.addEventListener('touchstart', (e) => {
+        // Prevent touchstart from interfering with content interactions
+        if (e.target === modal) {
+          e.preventDefault();
+        }
+      });
       
       // Prevent content clicks from closing modal
       content.addEventListener('click', (e) => {
         e.stopPropagation();
+        console.log('🛡️ Content click prevented from closing modal');
       });
       content.addEventListener('touchend', (e) => {
         e.stopPropagation();
+        console.log('🛡️ Content touch prevented from closing modal');
       });
     }
 
