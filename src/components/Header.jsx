@@ -339,7 +339,7 @@ const Header = () => {
               borderColor: '#ff1493'
             }}
           >
-            🏆 Create Battle
+            🏆 Create Flip
           </CreateButton>
           {isAdmin && <AdminButton to="/admin">Admin</AdminButton>}
   

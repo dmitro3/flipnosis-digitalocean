@@ -1067,7 +1067,7 @@ const Home = () => {
                 Be the first to create a battle royale game!
               </p>
               <Button as={Link} to="/create" style={{ background: theme.colors.neonGreen }}>
-                Create Battle Royale
+                Create Flip
               </Button>
             </GlassCard>
           ) : (
@@ -1244,96 +1244,8 @@ const Home = () => {
                           fontSize: '0.9rem'
                         }}>{selectedFlip.nft.collection}</GameCollection>
                         
-                        {/* Game Status Display */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          marginTop: '0.5rem',
-                          padding: '0.5rem',
-                          background: `rgba(${getStatusColor(selectedFlip.status).replace('#', '')}, 0.1)`,
-                          border: `1px solid rgba(${getStatusColor(selectedFlip.status).replace('#', '')}, 0.3)`,
-                          borderRadius: '0.5rem'
-                        }}>
-                          <span style={{
-                            fontSize: '1.2rem'
-                          }}>{getStatusIcon(selectedFlip.status)}</span>
-                          <div>
-                            <div style={{
-                              fontSize: '0.9rem',
-                              fontWeight: 'bold',
-                              color: getStatusColor(selectedFlip.status)
-                            }}>
-                              {getStatusText(selectedFlip.status)}
-                            </div>
-                            <div style={{
-                              fontSize: '0.7rem',
-                              color: theme.colors.textSecondary
-                            }}>
-                              {selectedFlip.status === 'active' ? 'Accepting offers' :
-                               selectedFlip.status === 'in_progress' ? 'Game will start automatically in a few seconds' :
-                               selectedFlip.status === 'completed' ? `Winner: ${selectedFlip.winner ? selectedFlip.winner.slice(0, 6) + '...' + selectedFlip.winner.slice(-4) : 'Unknown'}` :
-                               'Accepting offers'}
-                            </div>
-                          </div>
-                        </div>
                       </div>
                       
-                      {window.innerWidth > 768 && (
-                        <GameStats style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr',
-                          gap: '0.75rem'
-                        }}>
-                          {selectedFlip.gameType === 'nft-vs-nft' ? (
-                            <>
-                              <GameStat>
-                                <span>Type</span>
-                                <div style={{ color: theme.colors.neonGreen }}>NFT Battle</div>
-                              </GameStat>
-                              <GameStat>
-                                <span>Stakes</span>
-                                <div>Winner Takes All</div>
-                              </GameStat>
-                              {selectedFlip.challengerNFT && (
-                                <GameStat>
-                                  <span>VS</span>
-                                  <div style={{ color: theme.colors.neonYellow }}>
-                                    {selectedFlip.challengerNFT.name}
-                                  </div>
-                                </GameStat>
-                              )}
-                            </>
-                          ) : selectedFlip.gameType === 'battle-royale' ? (
-                            <>
-                              <GameStat>
-                                <span>Type</span>
-                                <div style={{ color: theme.colors.neonBlue }}>Battle Royale</div>
-                              </GameStat>
-                              <GameStat>
-                                <span>Players</span>
-                                <div>{selectedFlip.current_players || 0}/{selectedFlip.max_players || 8}</div>
-                              </GameStat>
-                              <GameStat>
-                                <span>Entry Fee</span>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: theme.colors.neonPink }}>
-                                  {(() => {
-                                    const fee = selectedFlip.entry_fee || 0
-                                    return parseFloat(fee).toFixed(6) + ' ETH'
-                                  })()}
-                                </div>
-                              </GameStat>
-                            </>
-                          ) : (
-                            <>
-                              <GameStat>
-                                <span>Price</span>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: theme.colors.neonPink }}>{(selectedFlip.priceUSD || 0).toFixed(2)} USD</div>
-                              </GameStat>
-                            </>
-                          )}
-                        </GameStats>
-                      )}
                       
                       {/* Links */}
                       <div style={{ 
@@ -1477,7 +1389,7 @@ const Home = () => {
                             e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.3)';
                           }}
                         >
-                          {selectedFlip.isBattleRoyale ? 'Enter Battle Royale' : 'Enter Flip'}
+                          Enter Flip
                         </Button>
 
                       </div>
