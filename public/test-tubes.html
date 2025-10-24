@@ -19,7 +19,7 @@
     
     body {
       font-family: 'Orbitron', sans-serif;
-      background: url('/Images/Background/game room2.png') no-repeat center center fixed;
+      background: url('/Images/Background/game room2.png') no-repeat center center;
       background-size: cover;
       background-attachment: fixed;
       overflow: hidden;
@@ -72,46 +72,71 @@
         scrollbar-width: none;
       }
       
-      /* Top Bar */
-      .top-bar {
+      /* Floating UI Elements */
+      .floating-menu {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 50px;
-        background: rgba(10, 15, 35, 0.95);
-        border-bottom: 2px solid #00ffff;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 15px;
-        pointer-events: auto;
+        top: 15px;
+        left: 15px;
         z-index: 10001;
+        pointer-events: auto;
       }
       
-      .top-menu {
-        position: relative;
+      .floating-earnings {
+        position: fixed;
+        top: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #ffd700, #ffed4e);
+        color: #000;
+        font-size: 14px;
+        font-weight: bold;
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 2px solid #ffd700;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        text-align: center;
+        min-width: 100px;
+        z-index: 10001;
+        pointer-events: auto;
       }
       
-      .menu-btn {
+      .floating-btn {
         background: linear-gradient(135deg, #9d00ff, #c44aff);
         border: 1px solid #9d00ff;
-        border-radius: 6px;
+        border-radius: 50%;
         color: #fff;
         font-size: 16px;
-        padding: 8px 12px;
+        width: 40px;
+        height: 40px;
         cursor: pointer;
         transition: all 0.2s ease;
         box-shadow: 0 0 8px rgba(157, 0, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+      }
+      
+      .floating-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 15px rgba(157, 0, 255, 0.5);
+      }
+      
+      .floating-btn.fullscreen-btn {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 10001;
       }
       
       .menu-dropdown {
         position: absolute;
         top: 100%;
         left: 0;
+        margin-top: 8px;
         background: rgba(10, 15, 35, 0.98);
         border: 1px solid #00ffff;
-        border-radius: 6px;
+        border-radius: 8px;
         padding: 8px;
         min-width: 120px;
         display: none;
@@ -135,31 +160,6 @@
       
       .menu-item:hover {
         background: rgba(0, 255, 255, 0.1);
-      }
-      
-      .earnings-display {
-        background: linear-gradient(135deg, #ffd700, #ffed4e);
-        color: #000;
-        font-size: 14px;
-        font-weight: bold;
-        padding: 8px 16px;
-        border-radius: 20px;
-        border: 2px solid #ffd700;
-        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
-        text-align: center;
-        min-width: 100px;
-      }
-      
-      .fullscreen-btn {
-        background: linear-gradient(135deg, #9d00ff, #c44aff);
-        border: 1px solid #9d00ff;
-        border-radius: 6px;
-        color: #fff;
-        font-size: 16px;
-        padding: 8px 12px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 0 8px rgba(157, 0, 255, 0.3);
       }
       
       /* Bottom Control Panel */
@@ -255,7 +255,7 @@
       /* Player Cards */
       .player-cards {
         position: fixed;
-        top: 60px;
+        top: 70px;
         bottom: 80px;
         left: 20px;
         right: 20px;
@@ -565,23 +565,21 @@
       <!-- Player cards will be dynamically created here -->
     </div>
     
-    <!-- Top Bar -->
-    <div class="top-bar">
-      <!-- Left Menu -->
-      <div class="top-menu">
-        <button class="menu-btn" id="mobile-menu-btn">☰</button>
-        <div class="menu-dropdown" id="mobile-menu-dropdown">
-          <button class="menu-item" id="mobile-chat-menu">💬 Chat</button>
-          <button class="menu-item" id="mobile-change-coin-menu">🪙 Change Coin</button>
-        </div>
+    <!-- Floating UI Elements -->
+    <!-- Top-left Menu -->
+    <div class="floating-menu">
+      <button class="floating-btn menu-btn" id="mobile-menu-btn">☰</button>
+      <div class="menu-dropdown" id="mobile-menu-dropdown">
+        <button class="menu-item" id="mobile-chat-menu">💬 Chat</button>
+        <button class="menu-item" id="mobile-change-coin-menu">🪙 Change Coin</button>
       </div>
-      
-      <!-- Center Earnings -->
-      <div class="earnings-display" id="mobile-earnings">1,250 FLIP</div>
-      
-      <!-- Right Fullscreen -->
-      <button class="fullscreen-btn" id="mobile-fullscreen">⛶</button>
     </div>
+    
+    <!-- Top-center Earnings -->
+    <div class="floating-earnings" id="mobile-earnings">1,250 FLIP</div>
+    
+    <!-- Top-right Fullscreen -->
+    <button class="floating-btn fullscreen-btn" id="mobile-fullscreen">⛶</button>
     
     <!-- Bottom Control Panel -->
     <div class="bottom-panel">
@@ -774,6 +772,9 @@
         });
         gameState = state;
         updateClientFromServerState(state);
+        
+        // Update mobile player cards when state changes
+        createMobilePlayerCards();
       });
       
       socket.on('physics_coin_flip_start', (data) => {
@@ -4912,6 +4913,9 @@
         console.log(`🔍 Tube ${index + 1}:`, { hasCardElement: !!tube.cardElement, player: player?.name });
         if (!tube.cardElement || !player) return;
         
+        // Also update mobile player cards
+        createMobilePlayerCards();
+        
         // TEMPORARILY REMOVED: Button blocking logic for debugging
         // Show buttons for ALL players to debug visibility issues
         const showButtons = !player.isEmpty;
@@ -5044,6 +5048,9 @@
         
         // Update player cards with real data
         updatePlayerCards();
+        
+        // Create mobile player cards
+        createMobilePlayerCards();
         
         // Show appropriate phase indicator based on server state
         // The server will send the correct phase via physics_state_update
