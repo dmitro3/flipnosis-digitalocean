@@ -206,11 +206,27 @@
         box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
       }
       
+      .mobile-btn.heads-btn.selected {
+        background: linear-gradient(135deg, rgba(255, 20, 147, 0.4), rgba(255, 105, 180, 0.4));
+        border-color: #ff1493;
+        color: #ff1493;
+        box-shadow: 0 0 30px rgba(255, 20, 147, 0.6);
+        transform: scale(1.05);
+      }
+      
       .mobile-btn.tails-btn {
         background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(157, 0, 255, 0.2));
         border-color: #00ffff;
         color: #00ffff;
         box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      }
+      
+      .mobile-btn.tails-btn.selected {
+        background: linear-gradient(135deg, rgba(255, 20, 147, 0.4), rgba(255, 105, 180, 0.4));
+        border-color: #ff1493;
+        color: #ff1493;
+        box-shadow: 0 0 30px rgba(255, 20, 147, 0.6);
+        transform: scale(1.05);
       }
       
       .mobile-btn.power-btn {
@@ -244,41 +260,42 @@
         transform: scale(0.95);
       }
       
-      /* Player Cards - 4 boxes attached to bottom */
+      /* Player Cards - 4 flat boxes attached directly to bottom */
       .player-cards {
         position: fixed;
         bottom: 80px;
         left: 0;
         right: 0;
-        height: 60px;
+        height: 30px;
         display: flex;
         gap: 0;
         pointer-events: auto;
         z-index: 10001;
-        align-items: center;
+        align-items: stretch;
         justify-content: space-between;
-        padding: 0 10px;
+        padding: 0;
       }
       
-      /* Individual player boxes */
+      /* Individual player boxes - flat and wide */
       .player-box {
-        width: 80px;
-        height: 60px;
+        flex: 1;
+        height: 30px;
         background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
-        border: 2px solid #00ffff;
-        border-radius: 8px;
-        padding: 4px;
-        text-align: center;
-        box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-        font-size: 8px;
+        border: 1px solid #00ffff;
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+        padding: 2px 4px;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        font-size: 7px;
         backdrop-filter: blur(15px);
         transition: all 0.3s ease;
         font-family: 'Orbitron', sans-serif;
         display: flex;
-        flex-direction: column;
-        justify-content: center;
+        flex-direction: row;
         align-items: center;
-        margin: 0 2px;
+        justify-content: flex-start;
+        margin: 0;
+        min-width: 0;
       }
       
       .player-box:hover {
@@ -314,30 +331,40 @@
       }
       
       .player-box .player-avatar {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         border-radius: 4px;
         object-fit: cover;
         border: 1px solid #00ffff;
-        margin: 0 auto 2px;
+        margin-right: 4px;
         display: block;
         box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+        flex-shrink: 0;
+      }
+      
+      .player-box .player-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        flex: 1;
+        min-width: 0;
       }
       
       .player-box .player-name {
-        font-size: 6px;
+        font-size: 7px;
         color: #00ffff;
         font-weight: bold;
-        margin-bottom: 1px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         text-shadow: 0 0 3px rgba(0, 255, 255, 0.5);
         line-height: 1;
+        margin-bottom: 1px;
       }
       
       .player-box .player-wins {
-        font-size: 8px;
+        font-size: 6px;
         color: #FFD700;
         font-weight: bold;
         text-shadow: 0 0 3px rgba(255, 215, 0, 0.5);
@@ -1234,6 +1261,22 @@
               }
             }
           });
+          
+          // 11. Reset mobile choice highlighting
+          const mobileHeadsBtn = document.getElementById('mobile-heads');
+          const mobileTailsBtn = document.getElementById('mobile-tails');
+          if (mobileHeadsBtn && mobileTailsBtn) {
+            mobileHeadsBtn.classList.remove('selected');
+            mobileTailsBtn.classList.remove('selected');
+          }
+          
+          // 12. Reset mobile power bar
+          const mobilePowerFill = document.getElementById('mobile-power-fill');
+          const mobilePowerText = document.getElementById('mobile-power-text');
+          if (mobilePowerFill && mobilePowerText) {
+            mobilePowerFill.style.width = '0%';
+            mobilePowerText.textContent = 'POWER: 0%';
+          }
           
           console.log(`✅ Round ${currentRound} reset complete - players can charge and choose again`);
           
@@ -5269,6 +5312,10 @@
           if (currentPlayer && !currentPlayer.choice) {
             currentPlayer.choice = 'heads';
             updatePlayerChoice(currentPlayer);
+            
+            // Add visual feedback
+            headsBtn.classList.add('selected');
+            tailsBtn.classList.remove('selected');
           }
         });
       }
@@ -5283,6 +5330,10 @@
           if (currentPlayer && !currentPlayer.choice) {
             currentPlayer.choice = 'tails';
             updatePlayerChoice(currentPlayer);
+            
+            // Add visual feedback
+            tailsBtn.classList.add('selected');
+            headsBtn.classList.remove('selected');
           }
         });
       }
@@ -5291,19 +5342,99 @@
       const powerBtn = document.getElementById('mobile-power');
       if (powerBtn) {
         let powerInterval = null;
+        let isCharging = false;
+        let currentPlayerSlot = -1;
+        
+        // Find current player slot
+        const currentPlayer = players.find(p => p.isCurrentPlayer);
+        if (currentPlayer) {
+          currentPlayerSlot = players.findIndex(p => p.address === currentPlayer.address);
+        }
         
         const startCharging = () => {
+          if (isCharging || currentPlayerSlot === -1) return;
+          
           triggerHaptic();
+          isCharging = true;
+          
+          // Initialize power charging
+          if (tubes[currentPlayerSlot]) {
+            tubes[currentPlayerSlot].isFilling = true;
+            tubes[currentPlayerSlot].power = 0;
+            tubes[currentPlayerSlot].chargingStartTime = Date.now();
+          }
+          
+          // Start power charging animation
           powerInterval = setInterval(() => {
-            // Power charging logic here
+            if (tubes[currentPlayerSlot] && tubes[currentPlayerSlot].isFilling) {
+              const elapsed = Date.now() - tubes[currentPlayerSlot].chargingStartTime;
+              const powerPercent = Math.min(100, (elapsed / 2000) * 100); // 2 second max charge
+              
+              tubes[currentPlayerSlot].power = powerPercent;
+              tubes[currentPlayerSlot].powerLevel = Math.min(5, Math.max(1, Math.ceil(powerPercent / 20)));
+              tubes[currentPlayerSlot].foamIntensity = powerPercent / 100;
+              
+              // Update mobile power bar
+              const powerFill = document.getElementById('mobile-power-fill');
+              const powerText = document.getElementById('mobile-power-text');
+              if (powerFill && powerText) {
+                powerFill.style.width = `${powerPercent}%`;
+                powerText.textContent = `POWER: ${Math.round(powerPercent)}%`;
+              }
+              
+              // Broadcast power charging to server
+              if (isServerSideMode && socket && gameIdParam && walletParam) {
+                socket.emit('physics_power_charging', {
+                  gameId: gameIdParam,
+                  address: walletParam,
+                  power: powerPercent,
+                  powerLevel: tubes[currentPlayerSlot].powerLevel,
+                  playerSlot: currentPlayerSlot,
+                  isFilling: true
+                });
+              }
+            }
           }, 50);
         };
         
         const stopCharging = () => {
+          if (!isCharging || currentPlayerSlot === -1) return;
+          
           triggerHaptic();
+          isCharging = false;
+          
           if (powerInterval) {
             clearInterval(powerInterval);
             powerInterval = null;
+          }
+          
+          if (tubes[currentPlayerSlot]) {
+            const finalPower = tubes[currentPlayerSlot].power;
+            tubes[currentPlayerSlot].isFilling = false;
+            
+            console.log(`⚡ Mobile power released at ${finalPower.toFixed(0)}%`);
+            
+            // Broadcast power stop to server
+            if (isServerSideMode && socket && gameIdParam && walletParam) {
+              socket.emit('physics_power_charging_stop', {
+                gameId: gameIdParam,
+                address: walletParam,
+                playerSlot: currentPlayerSlot,
+                finalPower: finalPower
+              });
+            }
+            
+            // Trigger spin if power is sufficient
+            if (finalPower > 10) { // Minimum 10% power to spin
+              if (isServerSideMode && socket && gameIdParam && walletParam) {
+                socket.emit('physics_coin_flip', {
+                  gameId: gameIdParam,
+                  address: walletParam,
+                  power: finalPower,
+                  playerSlot: currentPlayerSlot
+                });
+              }
+            }
           }
         };
         
@@ -5349,14 +5480,18 @@
         if (player && !player.isEmpty) {
           box.innerHTML = `
             <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" />
-            <div class="player-name">${player.name}</div>
-            <div class="player-wins">🏆 ${player.wins}</div>
+            <div class="player-info">
+              <div class="player-name">${player.name}</div>
+              <div class="player-wins">🏆 ${player.wins}</div>
+            </div>
           `;
           console.log(`✅ Created mobile box for ${player.name}`);
         } else {
           box.innerHTML = `
-            <div class="player-name">Empty</div>
-            <div class="player-wins">-</div>
+            <div class="player-info">
+              <div class="player-name">Empty</div>
+              <div class="player-wins">-</div>
+            </div>
           `;
           console.log(`⏭️ Created empty box for slot ${i + 1}`);
         }
