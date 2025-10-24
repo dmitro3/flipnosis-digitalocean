@@ -22,6 +22,9 @@
       background: url('/Images/Background/game room2.png') no-repeat center center;
       background-size: cover;
       background-attachment: fixed;
+      background-position: center center;
+      min-height: 100vh;
+      width: 100%;
       overflow: hidden;
       margin: 0;
       padding: 0;
@@ -73,12 +76,18 @@
       }
       
       /* Floating UI Elements */
-      .floating-menu {
+      .floating-btn.change-coin-btn {
         position: fixed;
         top: 15px;
         left: 15px;
         z-index: 10001;
-        pointer-events: auto;
+      }
+      
+      .floating-btn.chat-btn {
+        position: fixed;
+        bottom: 100px;
+        right: 15px;
+        z-index: 10001;
       }
       
       .floating-earnings {
@@ -129,38 +138,6 @@
         z-index: 10001;
       }
       
-      .menu-dropdown {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        margin-top: 8px;
-        background: rgba(10, 15, 35, 0.98);
-        border: 1px solid #00ffff;
-        border-radius: 8px;
-        padding: 8px;
-        min-width: 120px;
-        display: none;
-        z-index: 10002;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-      }
-      
-      .menu-item {
-        display: block;
-        width: 100%;
-        background: transparent;
-        border: none;
-        color: #00ffff;
-        font-size: 12px;
-        padding: 6px 8px;
-        cursor: pointer;
-        border-radius: 4px;
-        transition: all 0.2s ease;
-        text-align: left;
-      }
-      
-      .menu-item:hover {
-        background: rgba(0, 255, 255, 0.1);
-      }
       
       /* Bottom Control Panel */
       .bottom-panel {
@@ -566,20 +543,17 @@
     </div>
     
     <!-- Floating UI Elements -->
-    <!-- Top-left Menu -->
-    <div class="floating-menu">
-      <button class="floating-btn menu-btn" id="mobile-menu-btn">☰</button>
-      <div class="menu-dropdown" id="mobile-menu-dropdown">
-        <button class="menu-item" id="mobile-chat-menu">💬 Chat</button>
-        <button class="menu-item" id="mobile-change-coin-menu">🪙 Change Coin</button>
-      </div>
-    </div>
+    <!-- Top-left Change Coin -->
+    <button class="floating-btn change-coin-btn" id="mobile-change-coin">🪙</button>
     
     <!-- Top-center Earnings -->
     <div class="floating-earnings" id="mobile-earnings">1,250 FLIP</div>
     
     <!-- Top-right Fullscreen -->
     <button class="floating-btn fullscreen-btn" id="mobile-fullscreen">⛶</button>
+    
+    <!-- Bottom-right Chat -->
+    <button class="floating-btn chat-btn" id="mobile-chat">💬</button>
     
     <!-- Bottom Control Panel -->
     <div class="bottom-panel">
@@ -5142,44 +5116,32 @@
 
     // Setup mobile controls
     function setupMobileControls() {
-      // Menu button and dropdown
-      const menuBtn = document.getElementById('mobile-menu-btn');
-      const menuDropdown = document.getElementById('mobile-menu-dropdown');
-      const chatMenuBtn = document.getElementById('mobile-chat-menu');
-      const changeCoinMenuBtn = document.getElementById('mobile-change-coin-menu');
-      
-      if (menuBtn && menuDropdown) {
-        menuBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
+      // Change coin button
+      const changeCoinBtn = document.getElementById('mobile-change-coin');
+      if (changeCoinBtn) {
+        changeCoinBtn.addEventListener('click', (e) => {
+          e.preventDefault();
           triggerHaptic();
-          menuDropdown.style.display = menuDropdown.style.display === 'block' ? 'none' : 'block';
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-          if (!menuBtn.contains(e.target) && !menuDropdown.contains(e.target)) {
-            menuDropdown.style.display = 'none';
+          // Handle change coin functionality
+          console.log('Change coin clicked');
+          // Trigger the coin selector
+          if (typeof showCoinSelector === 'function') {
+            showCoinSelector(playerSlot);
           }
         });
       }
       
-      if (chatMenuBtn) {
-        chatMenuBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
+      // Chat button
+      const chatBtn = document.getElementById('mobile-chat');
+      if (chatBtn) {
+        chatBtn.addEventListener('click', (e) => {
+          e.preventDefault();
           triggerHaptic();
           // Handle chat functionality
-          console.log('Chat menu clicked');
-          menuDropdown.style.display = 'none';
-        });
-      }
-      
-      if (changeCoinMenuBtn) {
-        changeCoinMenuBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          triggerHaptic();
-          // Handle change coin functionality
-          console.log('Change coin menu clicked');
-          menuDropdown.style.display = 'none';
+          console.log('Chat clicked');
+          // Trigger desktop chat if available
+          const desktopBtn = document.getElementById('chat-btn');
+          if (desktopBtn) desktopBtn.click();
         });
       }
       
@@ -5260,28 +5222,28 @@
         });
       }
 
-      const chatBtn = document.getElementById('mobile-chat');
-      if (chatBtn) {
-        chatBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          triggerHaptic();
-          const desktopBtn = document.getElementById('chat-btn');
-          if (desktopBtn) desktopBtn.click();
-        });
-      }
 
     }
 
     // Create mobile player cards
     function createMobilePlayerCards() {
       const container = document.getElementById('mobile-player-cards');
-      if (!container) return;
+      if (!container) {
+        console.log('❌ Mobile player cards container not found');
+        return;
+      }
 
+      console.log('🔄 Creating mobile player cards...', { tubes: tubes.length, players: players.length });
       container.innerHTML = '';
       
       tubes.forEach((tube, i) => {
         const player = players[i];
-        if (!player || player.isEmpty) return;
+        console.log(`🔍 Player ${i + 1}:`, { player: player?.name, isEmpty: player?.isEmpty });
+        
+        if (!player || player.isEmpty) {
+          console.log(`⏭️ Skipping empty player ${i + 1}`);
+          return;
+        }
 
         const card = document.createElement('div');
         card.className = 'player-card';
@@ -5291,7 +5253,10 @@
           <div class="player-wins">🏆 ${player.wins}</div>
         `;
         container.appendChild(card);
+        console.log(`✅ Created mobile card for ${player.name}`);
       });
+      
+      console.log(`📱 Mobile player cards created: ${container.children.length} cards`);
     }
 
     // Update mobile displays
