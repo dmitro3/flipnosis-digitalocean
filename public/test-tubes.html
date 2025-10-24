@@ -103,53 +103,11 @@
       font-weight: bold;
     }
 
-    .lives-container {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin: 15px 0;
-    }
-
-    .life {
-      opacity: 0.3;
-      filter: grayscale(100%) brightness(0.5);
-      transition: all 0.3s ease;
-    }
-
-    .life.active {
-      opacity: 1;
-      filter: grayscale(0%) brightness(1);
-      animation: heartbeat 2s ease-in-out infinite;
-    }
-
-    .win-heart {
-      opacity: 0.8;
-      filter: grayscale(50%) brightness(0.8);
-      transition: all 0.3s ease;
-    }
-
-    .win-heart.active {
-      opacity: 1;
-      filter: grayscale(0%) brightness(1);
-      animation: heartBeat 2s ease-in-out infinite;
-    }
-
-    @keyframes heartBeat {
-      0%, 100% { 
-        transform: scale(1); 
-        filter: grayscale(0%) brightness(1);
-        box-shadow: 0 0 20px rgba(255, 105, 180, 0.6);
-      }
-      50% { 
-        transform: scale(1.1); 
-        filter: grayscale(0%) brightness(1.3);
-        box-shadow: 0 0 30px rgba(255, 105, 180, 0.9);
-      }
-    }
-
-    @keyframes heartbeat {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
+    .trophy-symbol {
+      font-size: 24px;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+      margin: 5px;
     }
 
     @keyframes puffWin {
@@ -1001,10 +959,6 @@
           // Show result
           showResult(data.playerSlot, data.won, data.result);
           
-          // Update lives if it's our player
-          if (data.playerAddress.toLowerCase() === walletParam.toLowerCase()) {
-            updateLivesDisplay(data.playerSlot);
-          }
         }
       }
     }
@@ -2683,26 +2637,9 @@
           <img src="${player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png')}" class="player-avatar" alt="${player.name}" style="width: 80px; height: 100px;" />
           <div class="player-info">
             <div class="player-name">${player.name}</div>
-            <div class="wins-container" style="display: flex; gap: 8px; margin-top: 8px; justify-content: center;">
-              ${Array.from({ length: 3 }, (_, idx) => 
-                `<div class="win-heart ${idx < player.wins ? 'active' : ''}" style="
-                  width: 54px; 
-                  height: 54px; 
-                  display: flex; 
-                  align-items: center; 
-                  justify-content: center;
-                  background: ${idx < player.wins ? '#0a0f2e' : 'rgba(100, 100, 100, 0.3)'} url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="red"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>') center/40px 40px no-repeat;
-                  border: ${idx < player.wins ? '3px solid #ffd700' : '2px solid #666'};
-                  border-radius: 12px;
-                  opacity: ${idx < player.wins ? '1' : '0.8'};
-                  box-shadow: ${idx < player.wins ? '0 0 20px rgba(255, 215, 0, 0.6)' : 'none'};
-                  transition: all 0.3s ease;
-                  backdrop-filter: ${idx < player.wins ? 'blur(10px)' : 'none'};
-                  position: relative;
-                  z-index: 10000;
-                ">
-                </div>`
-              ).join('')}
+            <div class="wins-display" style="display: flex; gap: 8px; margin-top: 8px; justify-content: center; align-items: center;">
+              <span class="trophy-symbol">🏆</span>
+              <span style="color: #ffd700; font-size: 18px; font-weight: bold;">${player.wins}</span>
             </div>
           </div>
         </div>
@@ -2792,11 +2729,6 @@
           e.stopPropagation();
           console.log(`🖱️ Power button mousedown for player ${i + 1}`);
           
-          // Prevent charging if player has no lives
-          if (players[i].lives <= 0) {
-            console.log(`❌ Player ${i + 1} has no lives - cannot flip coin`);
-            return;
-          }
           
           // Prevent charging if player hasn't chosen heads or tails
           if (!players[i].choice) {
@@ -3866,11 +3798,6 @@
       const tube = tubes[tubeIndex];
       const player = players[tubeIndex];
       
-      // Only reward if player still has lives
-      if (player.lives <= 0) {
-        console.log(`❌ Player ${tubeIndex + 1} has no lives - no FLIP reward`);
-        return;
-      }
       
       // Use server-provided reward if available, otherwise fallback to local generation
       const reward = serverReward || getRandomFlipReward();
@@ -4041,45 +3968,18 @@
       animateFlip();
     }
 
-    // ===== UPDATE LIVES DISPLAY =====
+    // ===== UPDATE WINS DISPLAY =====
     function updateWinsDisplay(tubeIndex) {
       const player = players[tubeIndex];
       const tube = tubes[tubeIndex];
       
       if (!tube.cardElement) return;
       
-      // Find all win heart elements in the card
-      const winElements = tube.cardElement.querySelectorAll('.win-heart');
-      
-      // Update each heart based on current wins (3 hearts max)
-      winElements.forEach((winElement, idx) => {
-        if (idx < player.wins) {
-          // This heart should be active (won) - apply pink styling
-          winElement.classList.add('active');
-          winElement.style.opacity = '1';
-          winElement.style.color = '#ff1493';
-          winElement.style.background = 'linear-gradient(135deg, #ff69b4, #ffb6c1)';
-          winElement.style.border = '2px solid #ff1493';
-          winElement.style.boxShadow = '0 0 15px rgba(255, 105, 180, 0.4)';
-          winElement.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
-          winElement.textContent = 'WIN';
-          
-          // Add puff animation for newly won hearts
-          if (idx === player.wins - 1) {
-            winElement.style.animation = 'puffWin 0.6s ease-out';
-          }
-        } else {
-          // This heart should be inactive (not won yet)
-          winElement.classList.remove('active');
-          winElement.style.opacity = '0.3';
-          winElement.style.color = '#666';
-          winElement.style.background = 'rgba(100, 100, 100, 0.3)';
-          winElement.style.border = '2px solid #666';
-          winElement.style.boxShadow = 'none';
-          winElement.style.textShadow = 'none';
-          winElement.textContent = '';
-        }
-      });
+      // Find the wins display element and update the number
+      const winsDisplay = tube.cardElement.querySelector('.wins-display span:last-child');
+      if (winsDisplay) {
+        winsDisplay.textContent = player.wins;
+      }
       
       console.log(`🏆 Updated wins display for player ${tubeIndex + 1}: ${player.wins} wins`);
     }
@@ -4472,13 +4372,11 @@
       
       // Determine if current player won
       const didCurrentPlayerWin = (playerSlot === winnerIndex);
-      const currentPlayerLives = players[playerSlot]?.lives || 0;
       
       console.log(`🏁 Game Over Debug:`, {
         playerSlot,
         winnerIndex,
         didCurrentPlayerWin,
-        currentPlayerLives,
         winnerName
       });
       
@@ -4670,18 +4568,10 @@
         }
         
         // Update wins display
-        const winElements = tube.cardElement.querySelectorAll('.win-heart');
-        winElements.forEach((winElement, idx) => {
-          if (idx < player.wins) {
-            winElement.classList.add('active');
-            winElement.style.opacity = '1';
-            winElement.style.filter = 'grayscale(0%) brightness(1)';
-          } else {
-            winElement.classList.remove('active');
-            winElement.style.opacity = '0.3';
-            winElement.style.filter = 'grayscale(100%) brightness(0.5)';
-          }
-        });
+        const winsDisplay = tube.cardElement.querySelector('.wins-display span:last-child');
+        if (winsDisplay) {
+          winsDisplay.textContent = player.wins;
+        }
         
         // Update empty slot overlay
         const existingOverlay = tube.cardElement.querySelector('.empty-slot-overlay');

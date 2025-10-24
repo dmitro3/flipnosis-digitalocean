@@ -12,15 +12,9 @@ import FloatingChatWidget from './FloatingChatWidget'
 
 // Utility function to format entry fee
 const formatEntryFee = (fee) => {
-  if (!fee) return '0.00'
+  if (!fee) return '0.000000'
   const num = parseFloat(fee)
-  if (num < 1) {
-    // For amounts less than $1, round up to 2 decimal places
-    return Math.ceil(num * 100) / 100
-  } else {
-    // For amounts $1 and above, round to 2 decimal places normally
-    return Math.round(num * 100) / 100
-  }
+  return num.toFixed(6)
 }
 
 const Container = styled.div`
@@ -782,11 +776,11 @@ const LobbyScreen = () => {
         </InfoRow>
         <InfoRow>
           <span>Entry Fee:</span>
-          <strong style={{ color: '#00ff88' }}>${formatEntryFee(gameState.entryFee)}</strong>
+          <strong style={{ color: '#00ff88' }}>{formatEntryFee(gameState.entryFee)} ETH</strong>
         </InfoRow>
         <InfoRow>
           <span>Service Fee:</span>
-          <strong style={{ color: '#ffa500' }}>${formatEntryFee(gameState.serviceFee)}</strong>
+          <strong style={{ color: '#ffa500' }}>{formatEntryFee(gameState.serviceFee)} ETH</strong>
         </InfoRow>
         <InfoRow>
           <span>Creator:</span>

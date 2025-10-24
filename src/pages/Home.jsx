@@ -1197,17 +1197,12 @@ const Home = () => {
                               fontWeight: 'bold',
                               color: theme.colors.neonPink
                             }}>
-                              ${(() => {
+                              {(() => {
                                 if (selectedFlip.gameType === 'battle-royale') {
                                   const fee = selectedFlip.entry_fee || 0
-                                  const num = parseFloat(fee)
-                                  if (num < 1) {
-                                    return (Math.ceil(num * 100) / 100).toFixed(2)
-                                  } else {
-                                    return (Math.round(num * 100) / 100).toFixed(2)
-                                  }
+                                  return parseFloat(fee).toFixed(6) + ' ETH'
                                 } else {
-                                  return (selectedFlip.priceUSD || 0).toFixed(2)
+                                  return (selectedFlip.priceUSD || 0).toFixed(2) + ' USD'
                                 }
                               })()}
                             </div>
@@ -1322,14 +1317,9 @@ const Home = () => {
                               <GameStat>
                                 <span>Entry Fee</span>
                                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: theme.colors.neonPink }}>
-                                  ${(() => {
+                                  {(() => {
                                     const fee = selectedFlip.entry_fee || 0
-                                    const num = parseFloat(fee)
-                                    if (num < 1) {
-                                      return (Math.ceil(num * 100) / 100).toFixed(2)
-                                    } else {
-                                      return (Math.round(num * 100) / 100).toFixed(2)
-                                    }
+                                    return parseFloat(fee).toFixed(6) + ' ETH'
                                   })()}
                                 </div>
                               </GameStat>
@@ -1338,7 +1328,7 @@ const Home = () => {
                             <>
                               <GameStat>
                                 <span>Price</span>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: theme.colors.neonPink }}>${(selectedFlip.priceUSD || 0).toFixed(2)}</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: theme.colors.neonPink }}>{(selectedFlip.priceUSD || 0).toFixed(2)} USD</div>
                               </GameStat>
                             </>
                           )}
@@ -1754,17 +1744,12 @@ const Home = () => {
                               color: theme.colors.neonPink,
                               fontSize: '1.2rem'
                             }}>
-                              ${(() => {
+                              {(() => {
                                 if (item.gameType === 'battle-royale') {
                                   const fee = item.entry_fee || 0
-                                  const num = parseFloat(fee)
-                                  if (num < 1) {
-                                    return (Math.ceil(num * 100) / 100).toFixed(2)
-                                  } else {
-                                    return (Math.round(num * 100) / 100).toFixed(2)
-                                  }
+                                  return parseFloat(fee).toFixed(6) + ' ETH'
                                 } else {
-                                  return (item.priceUSD || 0).toFixed(2)
+                                  return (item.priceUSD || 0).toFixed(2) + ' USD'
                                 }
                               })()}
                             </div>
@@ -1926,17 +1911,12 @@ const Home = () => {
                               <ListViewStat>
                                 <span>Price</span>
                                 <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.1rem' }}>
-                                  ${(() => {
+                                  {(() => {
                                     if (item.gameType === 'battle-royale') {
                                       const fee = item.entry_fee || 0
-                                      const num = parseFloat(fee)
-                                      if (num < 1) {
-                                        return (Math.ceil(num * 100) / 100).toFixed(2)
-                                      } else {
-                                        return (Math.round(num * 100) / 100).toFixed(2)
-                                      }
+                                      return parseFloat(fee).toFixed(6) + ' ETH'
                                     } else {
-                                      return (item.priceUSD || 0).toFixed(2)
+                                      return (item.priceUSD || 0).toFixed(2) + ' USD'
                                     }
                                   })()}
                                 </div>
@@ -1950,17 +1930,12 @@ const Home = () => {
                               <ListViewStat>
                                 <span>Price</span>
                                 <div style={{ color: theme.colors.neonBlue, fontWeight: 'bold' }}>
-                                  ${(() => {
+                                  {(() => {
                                     if (item.gameType === 'battle-royale') {
                                       const fee = item.entry_fee || 0
-                                      const num = parseFloat(fee)
-                                      if (num < 1) {
-                                        return (Math.ceil(num * 100) / 100).toFixed(2)
-                                      } else {
-                                        return (Math.round(num * 100) / 100).toFixed(2)
-                                      }
+                                      return parseFloat(fee).toFixed(6) + ' ETH'
                                     } else {
-                                      return (item.priceUSD || 0).toFixed(2)
+                                      return (item.priceUSD || 0).toFixed(2) + ' USD'
                                     }
                                   })()}
                                 </div>
