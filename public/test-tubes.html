@@ -51,13 +51,19 @@
         pointer-events: none;
       }
       
-      /* Mobile Landscape Orientation */
-      @media (orientation: landscape) {
+      /* Mobile Landscape Orientation - Default for mobile */
+      body {
+        background-size: 100% 100%;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-attachment: scroll;
+      }
+      
+      /* Portrait override if needed */
+      @media (orientation: portrait) {
         body {
-          background-size: 100% 100%;
-          background-position: center center;
-          background-repeat: no-repeat;
-          background-attachment: scroll;
+          background-size: cover;
+          background-attachment: fixed;
         }
       }
       
@@ -72,11 +78,12 @@
       /* Show game-info on mobile but position it at top center */
       .game-info {
         position: fixed !important;
-        top: 15px !important;
+        top: 10px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
         z-index: 10001 !important;
         width: 200px !important;
+        text-align: center !important;
         height: auto !important;
         background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95)) !important;
         border: 3px solid #9d00ff !important;
@@ -303,6 +310,7 @@
          align-items: stretch;
          justify-content: space-between;
          padding: 0 5px;
+         border-bottom: 2px solid #00ffff;
        }
       
        /* Individual player boxes - flat and wide */
@@ -311,8 +319,8 @@
          height: 40px;
         background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
         border: 1px solid #00ffff;
-        border-bottom: none;
-        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid #00ffff;
+        border-radius: 0;
         padding: 2px 4px;
         box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
         font-size: 7px;
@@ -3928,10 +3936,16 @@
       
       function attachCoinEventListeners() {
         content.querySelectorAll('.coin-option').forEach(option => {
-          option.addEventListener('click', () => {
+          // Use both click and touchstart for better mobile support
+          const handleCoinSelection = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const coinId = option.dataset.coinId;
             const cost = parseInt(option.dataset.cost);
             const isUnlocked = option.dataset.unlocked === 'true';
+            
+            console.log(`🪙 Coin selection attempt: ${coinId}, unlocked: ${isUnlocked}, cost: ${cost}`);
             
             if (coinId === 'custom') {
               // Handle custom coin selection
@@ -3943,9 +3957,13 @@
                 cost: 0,
                 category: 'custom'
               };
+              console.log(`✅ Custom coin selected`);
             } else {
               const coin = coinOptions.find(c => c.id === coinId);
-              if (!coin) return;
+              if (!coin) {
+                console.log(`❌ Coin not found: ${coinId}`);
+                return;
+              }
               
               if (!isUnlocked && cost > 0) {
                 // Try to unlock the coin
@@ -4026,11 +4044,17 @@
                 }
               } else {
                 selectedCoin = coin;
+                console.log(`✅ Coin selected: ${coin.name}`);
               }
             }
             
+            // Always update selection visual feedback
             updateCoinSelection();
-          });
+          };
+          
+          // Add both click and touchstart for mobile compatibility
+          option.addEventListener('click', handleCoinSelection);
+          option.addEventListener('touchstart', handleCoinSelection);
           
           // Hover effects
           option.addEventListener('mouseenter', () => {
@@ -4064,21 +4088,39 @@
         }
       }
       
-      // Material selection handlers (unchanged)
+      // Material selection handlers with mobile support
       content.querySelectorAll('.material-option').forEach(option => {
-        option.addEventListener('click', () => {
+        const handleMaterialSelection = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
           const materialId = option.dataset.materialId;
           selectedMaterial = coinMaterials.find(m => m.id === materialId);
           
-          content.querySelectorAll('.material-option').forEach(opt => {
-            opt.style.background = 'rgba(255, 255, 255, 0.05)';
-            opt.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-          });
-          option.style.background = 'rgba(255, 215, 0, 0.2)';
-          option.style.borderColor = '#FFD700';
+          console.log(`🔧 Material selection attempt: ${materialId}`);
           
-          console.log(`Material selected:`, selectedMaterial.name);
-        });
+          if (selectedMaterial) {
+            // Reset all material options
+            content.querySelectorAll('.material-option').forEach(opt => {
+              opt.style.background = 'rgba(255, 255, 255, 0.05)';
+              opt.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+              opt.style.transform = 'scale(1)';
+            });
+            
+            // Highlight selected material
+            option.style.background = 'rgba(255, 215, 0, 0.2)';
+            option.style.borderColor = '#FFD700';
+            option.style.transform = 'scale(1.05)';
+            
+            console.log(`✅ Material selected: ${selectedMaterial.name}`);
+          } else {
+            console.log(`❌ Material not found: ${materialId}`);
+          }
+        };
+        
+        // Add both click and touchstart for mobile compatibility
+        option.addEventListener('click', handleMaterialSelection);
+        option.addEventListener('touchstart', handleMaterialSelection);
         
         option.addEventListener('mouseenter', () => {
           if (selectedMaterial.id !== option.dataset.materialId) {
@@ -4166,9 +4208,25 @@
         modal.remove();
       });
 
-      // Close on background click
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
+      // Close on background click/touch - improved mobile support
+      const handleModalClose = (e) => {
+        if (e.target === modal) {
+          e.preventDefault();
+          e.stopPropagation();
+          modal.remove();
+        }
+      };
+      
+      // Add both click and touch events for mobile compatibility
+      modal.addEventListener('click', handleModalClose);
+      modal.addEventListener('touchend', handleModalClose);
+      
+      // Prevent content clicks from closing modal
+      content.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      content.addEventListener('touchend', (e) => {
+        e.stopPropagation();
       });
     }
 
