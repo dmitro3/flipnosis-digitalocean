@@ -95,6 +95,18 @@ class DatabaseService {
               this.createFlipTables(database)
             }
           })
+
+          // Check and create coin unlock tables if they don't exist
+          database.get("SELECT name FROM sqlite_master WHERE type='table' AND name='coin_unlock_transactions'", (err, result) => {
+            if (err) {
+              console.error('❌ Error checking coin_unlock_transactions table:', err)
+            } else if (result) {
+              console.log('✅ Coin unlock transactions table exists')
+            } else {
+              console.log('⚠️ Coin unlock transactions table not found - creating it...')
+              this.createCoinUnlockTables(database)
+            }
+          })
         })
         
         this.db = database
@@ -251,6 +263,35 @@ class DatabaseService {
     database.run(`
       CREATE INDEX IF NOT EXISTS idx_flip_collections_player_status 
       ON flip_collections(player_address, collection_status)
+    `)
+  }
+
+  createCoinUnlockTables(database) {
+    console.log('🔧 Creating coin unlock tables...')
+    
+    // Create coin_unlock_transactions table
+    database.run(`
+      CREATE TABLE IF NOT EXISTS coin_unlock_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        player_address TEXT NOT NULL,
+        coin_id TEXT NOT NULL,
+        flip_cost INTEGER NOT NULL,
+        flip_balance_before INTEGER NOT NULL,
+        flip_balance_after INTEGER NOT NULL,
+        unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `, (err) => {
+      if (err) {
+        console.error('❌ Error creating coin_unlock_transactions table:', err)
+      } else {
+        console.log('✅ Created coin_unlock_transactions table')
+      }
+    })
+    
+    // Create index for better performance
+    database.run(`
+      CREATE INDEX IF NOT EXISTS idx_coin_unlock_transactions_player 
+      ON coin_unlock_transactions(player_address)
     `)
   }
 

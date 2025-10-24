@@ -93,26 +93,47 @@
         font-size: 8px;
       }
       
-      .floating-earnings {
+      .floating-timer {
         position: fixed;
         top: 15px;
         left: 50%;
         transform: translateX(-50%);
         background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
-        color: #00ffff;
-        font-size: 14px;
+        color: #FFD700;
+        font-size: 16px;
         font-weight: bold;
         padding: 8px 16px;
         border-radius: 20px;
-        border: 3px solid #00ffff;
-        box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
+        border: 3px solid #FFD700;
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
         text-align: center;
-        min-width: 100px;
+        min-width: 80px;
         z-index: 10001;
         pointer-events: auto;
         backdrop-filter: blur(15px);
         font-family: 'Orbitron', sans-serif;
-        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      }
+      
+      .floating-earnings {
+        position: fixed;
+        top: 15px;
+        right: 70px;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+        color: #00ffff;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 6px 12px;
+        border-radius: 15px;
+        border: 2px solid #00ffff;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+        text-align: center;
+        min-width: 80px;
+        z-index: 10001;
+        pointer-events: auto;
+        backdrop-filter: blur(15px);
+        font-family: 'Orbitron', sans-serif;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
       }
       
       .floating-btn {
@@ -260,26 +281,26 @@
         transform: scale(0.95);
       }
       
-      /* Player Cards - 4 flat boxes attached directly to bottom */
-      .player-cards {
-        position: fixed;
-        bottom: 100px;
-        left: 0;
-        right: 0;
-        height: 30px;
-        display: flex;
-        gap: 0;
-        pointer-events: auto;
-        z-index: 10001;
-        align-items: stretch;
-        justify-content: space-between;
-        padding: 0;
-      }
+       /* Player Cards - 4 flat boxes attached directly to bottom */
+       .player-cards {
+         position: fixed;
+         bottom: 80px;
+         left: 0;
+         right: 0;
+         height: 40px;
+         display: flex;
+         gap: 0;
+         pointer-events: auto;
+         z-index: 10001;
+         align-items: stretch;
+         justify-content: space-between;
+         padding: 0 5px;
+       }
       
-      /* Individual player boxes - flat and wide */
-      .player-box {
-        flex: 1;
-        height: 30px;
+       /* Individual player boxes - flat and wide */
+       .player-box {
+         flex: 1;
+         height: 40px;
         background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
         border: 1px solid #00ffff;
         border-bottom: none;
@@ -649,7 +670,10 @@
     <!-- Top-left Change Coin -->
     <button class="floating-btn change-coin-btn" id="mobile-change-coin">🪙</button>
     
-    <!-- Top-center Earnings -->
+    <!-- Top-center Timer -->
+    <div class="floating-timer" id="mobile-timer">00:30</div>
+    
+    <!-- Top-right Earnings -->
     <div class="floating-earnings" id="mobile-earnings">1,250 FLIP</div>
     
     <!-- Top-right Fullscreen -->
@@ -5347,36 +5371,42 @@
       if (powerBtn) {
         let powerInterval = null;
         let isCharging = false;
-        let currentPlayerSlot = -1;
-        
-        // Find current player slot
-        const currentPlayer = players.find(p => p.isCurrentPlayer);
-        if (currentPlayer) {
-          currentPlayerSlot = players.findIndex(p => p.address === currentPlayer.address);
-        }
         
         const startCharging = () => {
-          if (isCharging || currentPlayerSlot === -1) return;
+          if (isCharging) return;
+          
+          // Find current player slot dynamically
+          const currentPlayer = players.find(p => p.isCurrentPlayer);
+          if (!currentPlayer) {
+            console.log('❌ No current player found for mobile power');
+            return;
+          }
+          
+          const playerSlot = players.findIndex(p => p.address === currentPlayer.address);
+          if (playerSlot === -1) {
+            console.log('❌ Current player slot not found');
+            return;
+          }
           
           triggerHaptic();
           isCharging = true;
           
           // Initialize power charging
-          if (tubes[currentPlayerSlot]) {
-            tubes[currentPlayerSlot].isFilling = true;
-            tubes[currentPlayerSlot].power = 0;
-            tubes[currentPlayerSlot].chargingStartTime = Date.now();
+          if (tubes[playerSlot]) {
+            tubes[playerSlot].isFilling = true;
+            tubes[playerSlot].power = 0;
+            tubes[playerSlot].chargingStartTime = Date.now();
           }
           
           // Start power charging animation
           powerInterval = setInterval(() => {
-            if (tubes[currentPlayerSlot] && tubes[currentPlayerSlot].isFilling) {
-              const elapsed = Date.now() - tubes[currentPlayerSlot].chargingStartTime;
+            if (tubes[playerSlot] && tubes[playerSlot].isFilling) {
+              const elapsed = Date.now() - tubes[playerSlot].chargingStartTime;
               const powerPercent = Math.min(100, (elapsed / 2000) * 100); // 2 second max charge
               
-              tubes[currentPlayerSlot].power = powerPercent;
-              tubes[currentPlayerSlot].powerLevel = Math.min(5, Math.max(1, Math.ceil(powerPercent / 20)));
-              tubes[currentPlayerSlot].foamIntensity = powerPercent / 100;
+              tubes[playerSlot].power = powerPercent;
+              tubes[playerSlot].powerLevel = Math.min(5, Math.max(1, Math.ceil(powerPercent / 20)));
+              tubes[playerSlot].foamIntensity = powerPercent / 100;
               
               // Update mobile power bar
               const powerFill = document.getElementById('mobile-power-fill');
@@ -5392,8 +5422,8 @@
                   gameId: gameIdParam,
                   address: walletParam,
                   power: powerPercent,
-                  powerLevel: tubes[currentPlayerSlot].powerLevel,
-                  playerSlot: currentPlayerSlot,
+                  powerLevel: tubes[playerSlot].powerLevel,
+                  playerSlot: playerSlot,
                   isFilling: true
                 });
               }
@@ -5402,7 +5432,20 @@
         };
         
         const stopCharging = () => {
-          if (!isCharging || currentPlayerSlot === -1) return;
+          if (!isCharging) return;
+          
+          // Find current player slot dynamically
+          const currentPlayer = players.find(p => p.isCurrentPlayer);
+          if (!currentPlayer) {
+            console.log('❌ No current player found for mobile power stop');
+            return;
+          }
+          
+          const playerSlot = players.findIndex(p => p.address === currentPlayer.address);
+          if (playerSlot === -1) {
+            console.log('❌ Current player slot not found for stop');
+            return;
+          }
           
           triggerHaptic();
           isCharging = false;
@@ -5412,9 +5455,9 @@
             powerInterval = null;
           }
           
-          if (tubes[currentPlayerSlot]) {
-            const finalPower = tubes[currentPlayerSlot].power;
-            tubes[currentPlayerSlot].isFilling = false;
+          if (tubes[playerSlot]) {
+            const finalPower = tubes[playerSlot].power;
+            tubes[playerSlot].isFilling = false;
             
             console.log(`⚡ Mobile power released at ${finalPower.toFixed(0)}%`);
             
@@ -5423,7 +5466,7 @@
               socket.emit('physics_power_charging_stop', {
                 gameId: gameIdParam,
                 address: walletParam,
-                playerSlot: currentPlayerSlot,
+                playerSlot: playerSlot,
                 finalPower: finalPower
               });
             }
@@ -5435,7 +5478,7 @@
                   gameId: gameIdParam,
                   address: walletParam,
                   power: finalPower,
-                  playerSlot: currentPlayerSlot
+                  playerSlot: playerSlot
                 });
               }
             }
@@ -5514,6 +5557,13 @@
         const timerDisplay = timerElement.querySelector('#timer-display');
         if (timerDisplay) {
           timer.textContent = timerDisplay.textContent;
+        }
+      } else if (timer) {
+        // Fallback: try to get timer from game state
+        if (typeof timeRemaining !== 'undefined') {
+          const minutes = Math.floor(timeRemaining / 60);
+          const seconds = timeRemaining % 60;
+          timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
       }
 
