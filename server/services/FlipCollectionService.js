@@ -135,15 +135,15 @@ class FlipCollectionService {
                 return;
               }
 
-              // Award XP equal to FLIP collected
+              // Award FLIP tokens and XP equal to FLIP collected
               this.db.run(
                 `UPDATE profiles 
-                 SET xp = xp + ?, updated_at = CURRENT_TIMESTAMP
+                 SET flip_balance = COALESCE(flip_balance, 0) + ?, xp = xp + ?, updated_at = CURRENT_TIMESTAMP
                  WHERE address = ?`,
-                [collection.total_flip_earned, playerAddress.toLowerCase()],
+                [collection.total_flip_earned, collection.total_flip_earned, playerAddress.toLowerCase()],
                 (err) => {
                   if (err) {
-                    console.error('Error updating XP:', err);
+                    console.error('Error updating FLIP balance and XP:', err);
                   }
 
                   resolve({

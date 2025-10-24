@@ -609,15 +609,15 @@ initialize(server, dbService) {
             console.log(`✅ Created new profile:`, defaultProfile)
             socket.emit('player_profile_data', defaultProfile)
           } else {
-            // Ensure the profile has the new fields with defaults
-            // NOTE: FLIP tokens are stored in the 'xp' field, not 'flip_balance'
-            const profileWithDefaults = {
-              ...profile,
-              flip_balance: profile.xp || 0, // Use xp field as FLIP balance
-              unlocked_coins: profile.unlocked_coins || '["plain"]',
-              custom_coin_heads: profile.headsImage || profile.custom_coin_heads || null,
-              custom_coin_tails: profile.tailsImage || profile.custom_coin_tails || null
-            }
+          // Ensure the profile has the new fields with defaults
+          // NOTE: FLIP tokens are now stored in 'flip_balance' field
+          const profileWithDefaults = {
+            ...profile,
+            flip_balance: profile.flip_balance || profile.xp || 0, // Use flip_balance field, fallback to xp for old profiles
+            unlocked_coins: profile.unlocked_coins || '["plain"]',
+            custom_coin_heads: profile.headsImage || profile.custom_coin_heads || null,
+            custom_coin_tails: profile.tailsImage || profile.custom_coin_tails || null
+          }
             console.log(`📊 Profile with defaults:`, profileWithDefaults)
             socket.emit('player_profile_data', profileWithDefaults)
           }
@@ -666,7 +666,7 @@ initialize(server, dbService) {
           }
 
           console.log(`📊 Profile data:`, profile)
-          const currentBalance = profile.xp || 0 // FLIP tokens are stored in xp field
+          const currentBalance = profile.flip_balance || profile.xp || 0 // FLIP tokens are stored in flip_balance field (fallback to xp for old profiles)
           const unlockedCoins = JSON.parse(profile.unlocked_coins || '["plain"]')
           console.log(`💰 Current balance: ${currentBalance}, Unlocked coins: ${JSON.stringify(unlockedCoins)}`)
 
@@ -688,11 +688,12 @@ initialize(server, dbService) {
           const newBalance = currentBalance - cost
           unlockedCoins.push(coinId)
 
-          // Update profile - use xp field for FLIP balance
-          console.log(`🔄 Updating profile for ${address}: xp=${newBalance}, unlocked_coins=${JSON.stringify(unlockedCoins)}`)
+          // Update profile - use flip_balance field for FLIP balance
+          console.log(`🔄 Updating profile for ${address}: flip_balance=${newBalance}, unlocked_coins=${JSON.stringify(unlockedCoins)}`)
           try {
             const updateResult = await this.dbService.updateProfile(address, {
-              xp: newBalance, // Update xp field with new FLIP balance
+              flip_balance: newBalance, // Update flip_balance field with new FLIP balance
+              xp: newBalance, // Also update xp field for backward compatibility
               unlocked_coins: JSON.stringify(unlockedCoins)
             })
             console.log(`✅ Profile updated successfully, changes: ${updateResult}`)
@@ -702,6 +703,7 @@ initialize(server, dbService) {
               console.log(`⚠️ No profile found for ${address}, creating new profile...`)
               await this.dbService.createOrUpdateProfile({
                 address: address,
+                flip_balance: newBalance,
                 xp: newBalance,
                 unlocked_coins: JSON.stringify(unlockedCoins)
               })
@@ -719,19 +721,21 @@ initialize(server, dbService) {
           
           // Get current Master Field balance
           const masterProfile = await this.dbService.getProfileByAddress(MASTER_ADDRESS)
-          const currentMasterBalance = masterProfile ? (masterProfile.xp || 0) : 0
+          const currentMasterBalance = masterProfile ? (masterProfile.flip_balance || masterProfile.xp || 0) : 0
           const newMasterBalance = currentMasterBalance + cost
           
           if (masterProfile) {
             // Update existing Master Field profile
             await this.dbService.updateProfile(MASTER_ADDRESS, {
-              xp: newMasterBalance // Add the spent FLIP to master account
+              flip_balance: newMasterBalance, // Add the spent FLIP to master account
+              xp: newMasterBalance // Also update xp field for backward compatibility
             })
           } else {
             // Create new Master Field profile with only existing fields
             await this.dbService.createOrUpdateProfile({
               address: MASTER_ADDRESS,
               username: 'Master Field',
+              flip_balance: newMasterBalance,
               xp: newMasterBalance,
               unlocked_coins: '["plain"]'
             })
@@ -788,13 +792,13 @@ initialize(server, dbService) {
         const { gameId, address, totalFlip, gameResult } = data
         
         try {
-          // Award XP directly to player's profile
+          // Award FLIP tokens directly to player's profile
           const result = await new Promise((resolve, reject) => {
             this.dbService.db.run(
               `UPDATE profiles 
-               SET xp = xp + ?, updated_at = CURRENT_TIMESTAMP
+               SET flip_balance = COALESCE(flip_balance, 0) + ?, xp = xp + ?, updated_at = CURRENT_TIMESTAMP
                WHERE address = ?`,
-              [totalFlip, address.toLowerCase()],
+              [totalFlip, totalFlip, address.toLowerCase()],
               function(err) {
                 if (err) {
                   reject(err)
@@ -819,9 +823,9 @@ initialize(server, dbService) {
             // Player profile doesn't exist, create one
             await new Promise((resolve, reject) => {
               this.dbService.db.run(
-                `INSERT INTO profiles (address, xp, created_at, updated_at)
-                 VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-                [address.toLowerCase(), totalFlip],
+                `INSERT INTO profiles (address, flip_balance, xp, created_at, updated_at)
+                 VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [address.toLowerCase(), totalFlip, totalFlip],
                 function(err) {
                   if (err) {
                     reject(err)

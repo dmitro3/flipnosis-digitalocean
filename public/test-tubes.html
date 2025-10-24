@@ -75,7 +75,7 @@
         scrollbar-width: none;
       }
       
-      /* Floating UI Elements */
+      /* Floating UI Elements - Lobby Style */
       .floating-btn.change-coin-btn {
         position: fixed;
         top: 15px;
@@ -95,40 +95,47 @@
         top: 15px;
         left: 50%;
         transform: translateX(-50%);
-        background: linear-gradient(135deg, #ffd700, #ffed4e);
-        color: #000;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+        color: #00ffff;
         font-size: 14px;
         font-weight: bold;
         padding: 8px 16px;
         border-radius: 20px;
-        border: 2px solid #ffd700;
-        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        border: 3px solid #00ffff;
+        box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
         text-align: center;
         min-width: 100px;
         z-index: 10001;
         pointer-events: auto;
+        backdrop-filter: blur(15px);
+        font-family: 'Orbitron', sans-serif;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
       }
       
       .floating-btn {
-        background: linear-gradient(135deg, #9d00ff, #c44aff);
-        border: 1px solid #9d00ff;
+        background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+        border: 3px solid #00ffff;
         border-radius: 50%;
-        color: #fff;
+        color: #00ffff;
         font-size: 16px;
-        width: 40px;
-        height: 40px;
+        width: 50px;
+        height: 50px;
         cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 0 8px rgba(157, 0, 255, 0.3);
+        transition: all 0.3s ease;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
         display: flex;
         align-items: center;
         justify-content: center;
         pointer-events: auto;
+        backdrop-filter: blur(10px);
+        font-family: 'Orbitron', sans-serif;
       }
       
       .floating-btn:hover {
         transform: scale(1.1);
-        box-shadow: 0 0 15px rgba(157, 0, 255, 0.5);
+        border-color: #9d00ff;
+        box-shadow: 0 0 30px rgba(157, 0, 255, 0.5);
+        background: linear-gradient(135deg, rgba(157, 0, 255, 0.3), rgba(0, 255, 255, 0.3));
       }
       
       .floating-btn.fullscreen-btn {
@@ -139,17 +146,19 @@
       }
       
       
-      /* Bottom Control Panel */
+      /* Bottom Control Panel - Lobby Style */
       .bottom-panel {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        background: rgba(10, 15, 35, 0.95);
-        border-top: 2px solid #00ffff;
-        padding: 8px 15px;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+        border-top: 3px solid #00ffff;
+        padding: 12px 15px;
         pointer-events: auto;
         z-index: 10001;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
       }
       
       .control-section {
@@ -171,65 +180,68 @@
       
       .mobile-btn {
         flex: 1;
-        padding: 6px 4px;
-        border: 1px solid;
-        border-radius: 4px;
+        padding: 8px 6px;
+        border: 3px solid;
+        border-radius: 12px;
         font-family: 'Orbitron', sans-serif;
         font-weight: bold;
-        font-size: 8px;
+        font-size: 9px;
         text-transform: uppercase;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
         user-select: none;
         -webkit-tap-highlight-color: transparent;
-        min-height: 28px;
+        min-height: 32px;
+        backdrop-filter: blur(10px);
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
       }
       
       .mobile-btn.heads-btn {
-        background: linear-gradient(135deg, #00ff00, #39ff14);
-        border-color: #00ff00;
-        color: #000;
-        box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 204, 106, 0.2));
+        border-color: #00ff88;
+        color: #00ff88;
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
       }
       
       .mobile-btn.tails-btn {
-        background: linear-gradient(135deg, #00d4ff, #00a3ff);
-        border-color: #00d4ff;
-        color: #fff;
-        box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(157, 0, 255, 0.2));
+        border-color: #00ffff;
+        color: #00ffff;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
       }
       
       .mobile-btn.power-btn {
-        background: linear-gradient(135deg, #ff6600, #ff8800);
-        border-color: #ff6600;
-        color: #fff;
-        box-shadow: 0 0 8px rgba(255, 102, 0, 0.3);
+        background: linear-gradient(135deg, rgba(255, 20, 147, 0.2), rgba(255, 105, 180, 0.2));
+        border-color: #ff1493;
+        color: #ff1493;
+        box-shadow: 0 0 20px rgba(255, 20, 147, 0.3);
       }
       
       .mobile-btn.change-btn {
-        background: linear-gradient(135deg, #9d00ff, #c44aff);
+        background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
         border-color: #9d00ff;
-        color: #fff;
-        box-shadow: 0 0 8px rgba(157, 0, 255, 0.3);
+        color: #9d00ff;
+        box-shadow: 0 0 20px rgba(157, 0, 255, 0.3);
       }
       
       .mobile-btn.action-btn {
-        background: linear-gradient(135deg, #9d00ff, #c44aff);
+        background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
         border-color: #9d00ff;
-        color: #fff;
-        box-shadow: 0 0 8px rgba(157, 0, 255, 0.3);
+        color: #9d00ff;
+        box-shadow: 0 0 20px rgba(157, 0, 255, 0.3);
       }
       
       .mobile-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 3px 12px rgba(0, 255, 0, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        border-color: #00ffff;
       }
       
       .mobile-btn:active {
         transform: scale(0.95);
       }
       
-      /* Player Cards */
+      /* Player Cards - Lobby Style */
       .player-cards {
         position: fixed;
         top: 70px;
@@ -245,39 +257,51 @@
       
       .player-card {
         flex: 1;
-        background: rgba(10, 15, 35, 0.9);
-        border: 1px solid #00ffff;
-        border-radius: 4px;
-        padding: 4px;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+        border: 3px solid #00ffff;
+        border-radius: 12px;
+        padding: 6px;
         text-align: center;
-        box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
         font-size: 10px;
+        backdrop-filter: blur(15px);
+        transition: all 0.3s ease;
+        font-family: 'Orbitron', sans-serif;
+      }
+      
+      .player-card:hover {
+        border-color: #9d00ff;
+        box-shadow: 0 0 30px rgba(157, 0, 255, 0.5);
+        transform: translateY(-2px);
       }
       
       .player-avatar {
-        width: 24px;
-        height: 24px;
-        border-radius: 2px;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
         object-fit: cover;
-        border: 1px solid #00ffff;
+        border: 2px solid #00ffff;
         margin: 0 auto 4px;
         display: block;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
       }
       
       .player-name {
         font-size: 8px;
         color: #00ffff;
         font-weight: bold;
-        margin-bottom: 1px;
+        margin-bottom: 2px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
       }
       
       .player-wins {
         font-size: 12px;
-        color: #ffd700;
+        color: #FFD700;
         font-weight: bold;
+        text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
       }
       
       .timer, .earnings {
@@ -285,27 +309,34 @@
         font-size: 10px;
         font-weight: bold;
         text-align: center;
+        font-family: 'Orbitron', sans-serif;
+        text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
       }
       
       .earnings {
-        color: #ffd700;
+        color: #FFD700;
+        text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
       }
       
       .power-bar {
         position: relative;
-        height: 20px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
+        height: 24px;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.8), rgba(16, 33, 62, 0.8));
+        border: 2px solid #00ffff;
+        border-radius: 12px;
         overflow: hidden;
         width: 100%;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
       }
       
       .power-fill {
         height: 100%;
-        background: linear-gradient(90deg, #00ff00, #39ff14);
+        background: linear-gradient(90deg, #00ff88, #00ff88);
         border-radius: 10px;
         transition: width 0.1s ease;
         width: 0%;
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
       }
       
       .power-text {
@@ -313,10 +344,11 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        color: #00ff00;
-        font-size: 10px;
+        color: #00ff88;
+        font-size: 9px;
         font-weight: bold;
-        text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
+        text-shadow: 0 0 5px rgba(0, 255, 136, 0.8);
+        font-family: 'Orbitron', sans-serif;
       }
       
     }
