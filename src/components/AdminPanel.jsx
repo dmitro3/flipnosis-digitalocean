@@ -566,6 +566,14 @@ export default function AdminPanel() {
   const [contractNFTs, setContractNFTs] = useState([])
   const [isLoadingNFTs, setIsLoadingNFTs] = useState(false)
   const [selectedNFTsForWithdrawal, setSelectedNFTsForWithdrawal] = useState([])
+  
+  // Master Field / Spent FLIP state
+  const [masterFieldData, setMasterFieldData] = useState({
+    totalSpent: 0,
+    transactionCount: 0,
+    recentTransactions: []
+  })
+  const [loadingMasterField, setLoadingMasterField] = useState(false)
   const [withdrawalAddress, setWithdrawalAddress] = useState('')
   
   // API URL
@@ -639,6 +647,30 @@ export default function AdminPanel() {
       addNotification('error', 'Failed to load data: ' + error.message)
     } finally {
       setLoading(false)
+    }
+  }
+  
+  // Load Master Field data (total FLIP spent on unlocks)
+  const loadMasterFieldData = async () => {
+    setLoadingMasterField(true)
+    try {
+      const MASTER_ADDRESS = '0x0000000000000000000000000000000000000000'
+      const response = await fetch(`${API_URL}/api/profile/${MASTER_ADDRESS}`)
+      
+      if (!response.ok) throw new Error('Failed to load Master Field data')
+      
+      const profile = await response.json()
+      
+      setMasterFieldData({
+        totalSpent: profile.flip_balance || profile.xp || 0,
+        transactionCount: 0,
+        recentTransactions: []
+      })
+    } catch (error) {
+      console.error('Error loading Master Field data:', error)
+      addNotification('error', 'Failed to load Spent FLIP data')
+    } finally {
+      setLoadingMasterField(false)
     }
   }
   
@@ -1666,6 +1698,13 @@ export default function AdminPanel() {
               Fees
             </Tab>
             <Tab 
+              active={activeTab === 'spentFlip'} 
+              onClick={() => setActiveTab('spentFlip')}
+            >
+              <Coins size={20} />
+              Spent FLIP
+            </Tab>
+            <Tab 
               active={activeTab === 'emergency'} 
               onClick={() => setActiveTab('emergency')}
             >
@@ -2209,6 +2248,76 @@ export default function AdminPanel() {
                     }
                   }}>Save Fee Settings</Button>
                 </SettingsForm>
+              </div>
+            )}
+
+            {activeTab === 'spentFlip' && (
+              <div>
+                <h3 style={{ color: '#FFD700', marginBottom: '2rem' }}>💰 Total FLIP Spent on Coin Unlocks</h3>
+                
+                <div style={{ 
+                  background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 107, 53, 0.1) 100%)',
+                  border: '2px solid #FFD700',
+                  borderRadius: '16px',
+                  padding: '2rem',
+                  marginBottom: '2rem'
+                }}>
+                  <h4 style={{ color: '#FFD700', marginBottom: '1rem' }}>📊 Master Field Balance</h4>
+                  <p style={{ marginBottom: '1.5rem', opacity: 0.8 }}>
+                    The Master Field accumulates all FLIP tokens spent by users when unlocking coins. 
+                    This represents the total FLIP that has been "burned" from circulation through the coin unlock system.
+                  </p>
+                  
+                  {loadingMasterField ? (
+                    <div style={{ textAlign: 'center', padding: '2rem' }}>
+                      <RefreshCw size={32} style={{ animation: 'spin 1s linear infinite' }} />
+                      <p>Loading...</p>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      borderRadius: '12px',
+                      padding: '2rem',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#FFD700', marginBottom: '0.5rem' }}>
+                        {masterFieldData.totalSpent.toLocaleString()} FLIP
+                      </div>
+                      <div style={{ fontSize: '1rem', opacity: 0.7 }}>
+                        Total Spent on Coin Unlocks
+                      </div>
+                    </div>
+                  )}
+                  
+                  <Button 
+                    onClick={loadMasterFieldData}
+                    disabled={loadingMasterField}
+                    style={{ 
+                      background: 'linear-gradient(135deg, #FFD700 0%, #FF6B35 100%)',
+                      color: '#000',
+                      marginTop: '1.5rem',
+                      width: '100%'
+                    }}
+                  >
+                    <RefreshCw size={16} style={{ marginRight: '0.5rem' }} />
+                    Refresh Data
+                  </Button>
+                </div>
+
+                <div style={{ 
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '12px',
+                  padding: '2rem'
+                }}>
+                  <h4 style={{ marginBottom: '1rem' }}>ℹ️ About the Master Field</h4>
+                  <ul style={{ lineHeight: '1.8', opacity: 0.8 }}>
+                    <li>Master Field Address: <code style={{ background: 'rgba(0,0,0,0.3)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>0x0000000000000000000000000000000000000000</code></li>
+                    <li>Tracks all FLIP spent on unlocking coins across the platform</li>
+                    <li>FLIP is permanently removed from user balances when spent</li>
+                    <li>Provides transparency for the coin unlock economy</li>
+                    <li>Updates in real-time as users unlock new coins</li>
+                  </ul>
+                </div>
               </div>
             )}
 

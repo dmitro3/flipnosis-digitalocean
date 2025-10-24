@@ -51,13 +51,43 @@
         pointer-events: none;
       }
       
+      /* Mobile Landscape Orientation */
+      @media (orientation: landscape) {
+        body {
+          background-size: 100% 100%;
+          background-position: center center;
+          background-repeat: no-repeat;
+          background-attachment: scroll;
+        }
+      }
+      
       /* Hide desktop elements on mobile */
       .player-card,
       #xp-counter,
       #change-coin-box,
-      #leave-btn,
-      .game-info {
+      #leave-btn {
         display: none !important;
+      }
+      
+      /* Show game-info on mobile but position it at top center */
+      .game-info {
+        position: fixed !important;
+        top: 15px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 10001 !important;
+        width: 200px !important;
+        height: auto !important;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95)) !important;
+        border: 3px solid #9d00ff !important;
+        border-radius: 16px !important;
+        padding: 15px !important;
+        font-family: 'Orbitron', sans-serif !important;
+        color: white !important;
+        box-shadow: 0 0 30px rgba(157, 0, 255, 0.6) !important;
+        pointer-events: auto !important;
+        text-align: center !important;
+        display: block !important;
       }
       
       /* Mobile-optimized body */
@@ -91,28 +121,6 @@
         width: 25px;
         height: 25px;
         font-size: 8px;
-      }
-      
-      .floating-timer {
-        position: fixed;
-        top: 15px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
-        color: #FFD700;
-        font-size: 16px;
-        font-weight: bold;
-        padding: 8px 16px;
-        border-radius: 20px;
-        border: 3px solid #FFD700;
-        box-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
-        text-align: center;
-        min-width: 80px;
-        z-index: 10001;
-        pointer-events: auto;
-        backdrop-filter: blur(15px);
-        font-family: 'Orbitron', sans-serif;
-        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
       }
       
       .floating-earnings {
@@ -669,9 +677,6 @@
     <!-- Floating UI Elements -->
     <!-- Top-left Change Coin -->
     <button class="floating-btn change-coin-btn" id="mobile-change-coin">🪙</button>
-    
-    <!-- Top-center Timer -->
-    <div class="floating-timer" id="mobile-timer">00:30</div>
     
     <!-- Top-right Earnings -->
     <div class="floating-earnings" id="mobile-earnings">1,250 FLIP</div>
@@ -3457,6 +3462,7 @@
 
     // ===== CREATE GAME INFO CONTAINER (Round + Timer + Controls) =====
     const gameInfoDiv = document.createElement('div');
+    gameInfoDiv.className = 'game-info';
     gameInfoDiv.style.cssText = `
       width: 200px;
       background: rgba(10, 15, 35, 0.95);
@@ -5551,21 +5557,7 @@
 
     // Update mobile displays
     function updateMobileDisplays() {
-      // Update timer
-      const timer = document.getElementById('mobile-timer');
-      if (timer && timerElement) {
-        const timerDisplay = timerElement.querySelector('#timer-display');
-        if (timerDisplay) {
-          timer.textContent = timerDisplay.textContent;
-        }
-      } else if (timer) {
-        // Fallback: try to get timer from game state
-        if (typeof timeRemaining !== 'undefined') {
-          const minutes = Math.floor(timeRemaining / 60);
-          const seconds = timeRemaining % 60;
-          timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-      }
+      // Timer is now handled by the existing game-info div
 
       // Update earnings
       const earnings = document.getElementById('mobile-earnings');
