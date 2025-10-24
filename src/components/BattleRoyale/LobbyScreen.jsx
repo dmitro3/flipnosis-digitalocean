@@ -127,7 +127,7 @@ const ShareButtonsGrid = styled.div`
   margin-top: 1rem;
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 0.3rem;
     margin-top: 0.5rem;
   }
@@ -148,6 +148,12 @@ const ActionButton = styled.button`
   justify-content: center;
   gap: 0.5rem;
   min-height: 48px;
+
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    min-height: 44px;
+  }
   width: 100%;
   backdrop-filter: blur(5px);
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
@@ -804,12 +810,22 @@ const LobbyScreen = () => {
             className="share-x"
             onClick={() => handleShare('twitter')}
           >
+            <img 
+              src="/images/x-icon.png" 
+              alt="X" 
+              style={{ width: '16px', height: '16px', objectFit: 'contain' }} 
+            />
             Share on X
           </ActionButton>
           <ActionButton 
             className="share-tg"
             onClick={() => handleShare('telegram')}
           >
+            <img 
+              src="/images/telegram-icon.png" 
+              alt="Telegram" 
+              style={{ width: '16px', height: '16px', objectFit: 'contain' }} 
+            />
             Share on TG
           </ActionButton>
           <a
