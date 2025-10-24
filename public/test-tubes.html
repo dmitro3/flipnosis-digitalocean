@@ -26,30 +26,17 @@
       padding: 0;
     }
 
-    /* Mobile Detection and Base Styles */
-    @media (max-width: 768px) {
-      body {
-        /* No forced rotation - let device handle orientation */
-        overflow: hidden;
-      }
-      
-      /* Hide scrollbars on mobile */
-      body::-webkit-scrollbar {
-        display: none;
-      }
-      body {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-    }
-
-    /* Mobile Layout Container */
-    .mobile-layout {
+    /* ===== RESPONSIVE MOBILE-FIRST DESIGN ===== */
+    
+    /* Mobile UI - Hidden by default */
+    .mobile-ui {
       display: none;
     }
-
+    
+    /* Mobile Detection */
     @media (max-width: 768px) {
-      .mobile-layout {
+      /* Show mobile UI */
+      .mobile-ui {
         display: block;
         position: fixed;
         top: 0;
@@ -57,126 +44,202 @@
         width: 100vw;
         height: 100vh;
         z-index: 10000;
-        pointer-events: none; /* Allow clicks to pass through to game */
-        background: transparent;
+        pointer-events: none;
       }
-
-      /* Mobile Sidebar - Takes up 1/5 of screen width */
-      .mobile-sidebar {
+      
+      /* Hide desktop elements on mobile */
+      .player-card,
+      #xp-counter,
+      #change-coin-box,
+      #leave-btn,
+      .game-info {
+        display: none !important;
+      }
+      
+      /* Mobile-optimized body */
+      body {
+        overflow: hidden;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      /* Hide scrollbars */
+      body::-webkit-scrollbar {
+        display: none;
+      }
+      body {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      
+      /* Game Controls */
+      .game-controls {
         position: fixed;
-        top: 0;
-        right: 0;
-        width: 20vw;
-        height: 100vh;
-        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(20, 25, 45, 0.95));
-        border-left: 3px solid #00ffff;
-        box-shadow: -5px 0 20px rgba(0, 255, 255, 0.3);
-        pointer-events: auto;
+        top: 20px;
+        left: 20px;
+        right: 20px;
         display: flex;
-        flex-direction: column;
-        padding: 20px 15px;
-        gap: 15px;
-        overflow-y: auto;
+        gap: 10px;
+        pointer-events: auto;
         z-index: 10001;
       }
-
-      /* Mobile Control Buttons */
-      .mobile-control-btn {
-        width: 100%;
+      
+      .control-btn {
+        flex: 1;
         padding: 12px 8px;
-        background: linear-gradient(135deg, #00ff00, #39ff14);
-        border: 2px solid #00ff00;
+        border: 2px solid;
         border-radius: 8px;
-        color: #000;
         font-family: 'Orbitron', sans-serif;
         font-weight: bold;
         font-size: 14px;
         text-transform: uppercase;
-        letter-spacing: 1px;
         cursor: pointer;
         transition: all 0.3s ease;
-        box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
         user-select: none;
         -webkit-tap-highlight-color: transparent;
       }
-
-      .mobile-control-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(0, 255, 0, 0.6);
+      
+      .heads-btn {
+        background: linear-gradient(135deg, #00ff00, #39ff14);
+        border-color: #00ff00;
+        color: #000;
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
       }
-
-      .mobile-control-btn:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 10px rgba(0, 255, 0, 0.4);
-      }
-
-      .mobile-control-btn.tails {
+      
+      .tails-btn {
         background: linear-gradient(135deg, #00d4ff, #00a3ff);
         border-color: #00d4ff;
         color: #fff;
         box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
       }
-
-      .mobile-control-btn.tails:hover {
-        box-shadow: 0 5px 20px rgba(0, 212, 255, 0.6);
-      }
-
-      .mobile-control-btn.secondary {
+      
+      .power-btn {
         background: linear-gradient(135deg, #9d00ff, #c44aff);
         border-color: #9d00ff;
         color: #fff;
         box-shadow: 0 0 15px rgba(157, 0, 255, 0.3);
       }
-
-      .mobile-control-btn.secondary:hover {
-        box-shadow: 0 5px 20px rgba(157, 0, 255, 0.6);
+      
+      .control-btn:active {
+        transform: scale(0.95);
       }
-
-      /* Mobile chat button - half size */
-      .mobile-control-btn#mobile-chat-btn {
-        width: 50%;
-        padding: 6px 4px;
-        font-size: 10px;
-      }
-
-      /* Mobile Bottom Bar */
-      .mobile-bottom-bar {
+      
+      /* Player Cards */
+      .player-cards {
         position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100vw;
-        height: 50px;
-        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(20, 25, 45, 0.95));
-        border-top: 3px solid #00ffff;
-        box-shadow: 0 -5px 20px rgba(0, 255, 255, 0.3);
-        pointer-events: auto;
+        bottom: 120px;
+        left: 20px;
+        right: 20px;
         display: flex;
-        align-items: center;
-        padding: 0 10px;
         gap: 10px;
+        pointer-events: auto;
+        z-index: 10001;
       }
-
-      /* Mobile Timer Display */
-      .mobile-timer {
+      
+      .player-card {
+        flex: 1;
+        background: rgba(10, 15, 35, 0.9);
+        border: 2px solid #00ffff;
+        border-radius: 8px;
+        padding: 8px;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+      }
+      
+      .player-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        object-fit: cover;
+        border: 1px solid #00ffff;
+        margin: 0 auto 4px;
+        display: block;
+      }
+      
+      .player-name {
+        font-size: 10px;
+        color: #00ffff;
+        font-weight: bold;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .player-wins {
+        font-size: 12px;
+        color: #ffd700;
+        font-weight: bold;
+      }
+      
+      /* Info Bar */
+      .info-bar {
+        position: fixed;
+        bottom: 60px;
+        left: 20px;
+        right: 20px;
+        background: rgba(10, 15, 35, 0.95);
+        border: 2px solid #00ffff;
+        border-radius: 8px;
+        padding: 10px;
+        pointer-events: auto;
+        z-index: 10001;
+      }
+      
+      .timer, .earnings {
         color: #00ffff;
         font-size: 14px;
         font-weight: bold;
         text-align: center;
-        min-width: 60px;
+        margin-bottom: 5px;
       }
-
-      /* Mobile Earnings Display */
-      .mobile-earnings {
+      
+      .earnings {
         color: #ffd700;
-        font-size: 12px;
-        font-weight: bold;
-        text-align: center;
-        flex: 1;
       }
-
-      /* Small bottom buttons */
-      .mobile-bottom-btn {
-        padding: 4px 8px;
+      
+      .power-bar {
+        position: relative;
+        height: 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 5px;
+      }
+      
+      .power-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #00ff00, #39ff14);
+        border-radius: 10px;
+        transition: width 0.1s ease;
+        width: 0%;
+      }
+      
+      .power-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #00ff00;
+        font-size: 10px;
+        font-weight: bold;
+        text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
+      }
+      
+      /* Action Buttons */
+      .action-buttons {
+        position: fixed;
+        bottom: 10px;
+        left: 20px;
+        right: 20px;
+        display: flex;
+        gap: 10px;
+        pointer-events: auto;
+        z-index: 10001;
+      }
+      
+      .action-btn {
+        flex: 1;
+        padding: 8px 4px;
         background: linear-gradient(135deg, #9d00ff, #c44aff);
         border: 1px solid #9d00ff;
         border-radius: 4px;
@@ -191,119 +254,9 @@
         user-select: none;
         -webkit-tap-highlight-color: transparent;
       }
-
-      .mobile-bottom-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 3px 15px rgba(157, 0, 255, 0.6);
-      }
-
-      .mobile-bottom-btn:active {
-        transform: translateY(0);
-        box-shadow: 0 1px 8px rgba(157, 0, 255, 0.4);
-      }
-
-      /* Mobile Power Bar */
-      .mobile-power-container {
-        position: fixed;
-        bottom: 50px;
-        left: 0;
-        width: 100vw;
-        height: 25px;
-        background: rgba(0, 0, 0, 0.3);
-        pointer-events: auto;
-        display: flex;
-        align-items: center;
-        padding: 0 20px;
-      }
-
-      .mobile-power-bar {
-        width: 100%;
-        height: 20px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
-        overflow: hidden;
-        position: relative;
-      }
-
-      .mobile-power-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #00ff00, #39ff14);
-        border-radius: 10px;
-        transition: width 0.1s ease;
-        width: 0%;
-      }
-
-      .mobile-power-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: #00ff00;
-        font-size: 12px;
-        font-weight: bold;
-        text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
-      }
-
-      /* Mobile Player Cards - Compact under tubes */
-      .mobile-player-card {
-        position: fixed;
-        bottom: 85px;
-        width: 80px;
-        height: 60px;
-        background: rgba(10, 15, 35, 0.9);
-        border: 2px solid #00ffff;
-        border-radius: 8px;
-        padding: 5px;
-        pointer-events: auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-        z-index: 10002;
-      }
-
-      .mobile-player-avatar {
-        width: 30px;
-        height: 30px;
-        border-radius: 4px;
-        object-fit: cover;
-        border: 1px solid #00ffff;
-        margin-bottom: 2px;
-      }
-
-      .mobile-player-name {
-        font-size: 8px;
-        color: #00ffff;
-        font-weight: bold;
-        text-align: center;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 70px;
-      }
-
-      .mobile-player-wins {
-        font-size: 10px;
-        color: #ffd700;
-        font-weight: bold;
-        margin-top: 2px;
-      }
-
-      /* Hide desktop elements on mobile */
-      .player-card {
-        display: none;
-      }
-
-      #xp-counter,
-      #change-coin-box,
-      #leave-btn {
-        display: none;
-      }
-
-      /* Adjust game info for mobile */
-      .game-info {
-        display: none;
+      
+      .action-btn:active {
+        transform: scale(0.95);
       }
     }
     
@@ -521,30 +474,35 @@
 <body>
   <div id="container"></div>
   
-  <!-- Mobile Layout -->
-  <div class="mobile-layout">
-    <!-- Mobile Sidebar -->
-    <div class="mobile-sidebar">
-      <button class="mobile-control-btn heads" id="mobile-heads-btn">HEADS</button>
-      <button class="mobile-control-btn tails" id="mobile-tails-btn">TAILS</button>
-      <button class="mobile-control-btn secondary" id="mobile-power-btn">POWER</button>
+  <!-- Responsive Mobile Layout -->
+  <div id="mobile-ui" class="mobile-ui">
+    <!-- Game Controls -->
+    <div class="game-controls">
+      <button class="control-btn heads-btn" id="mobile-heads">HEADS</button>
+      <button class="control-btn tails-btn" id="mobile-tails">TAILS</button>
+      <button class="control-btn power-btn" id="mobile-power">POWER</button>
     </div>
     
-    <!-- Mobile Bottom Bar -->
-    <div class="mobile-bottom-bar">
-      <div class="mobile-timer" id="mobile-timer">2:45</div>
-      <div class="mobile-earnings" id="mobile-earnings">1,250 FLIP</div>
-      <button class="mobile-bottom-btn" id="mobile-change-coin-btn">COIN</button>
-      <button class="mobile-bottom-btn" id="mobile-chat-btn">CHAT</button>
-      <button class="mobile-bottom-btn" id="mobile-fullscreen-btn">FULL</button>
+    <!-- Player Cards -->
+    <div class="player-cards" id="mobile-player-cards">
+      <!-- Player cards will be dynamically created here -->
     </div>
     
-    <!-- Mobile Power Bar -->
-    <div class="mobile-power-container">
-      <div class="mobile-power-bar">
-        <div class="mobile-power-fill" id="mobile-power-fill"></div>
-        <div class="mobile-power-text" id="mobile-power-text">POWER: 0%</div>
+    <!-- Bottom Info Bar -->
+    <div class="info-bar">
+      <div class="timer" id="mobile-timer">2:45</div>
+      <div class="earnings" id="mobile-earnings">1,250 FLIP</div>
+      <div class="power-bar">
+        <div class="power-fill" id="mobile-power-fill"></div>
+        <div class="power-text" id="mobile-power-text">POWER: 0%</div>
       </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button class="action-btn" id="mobile-coin">COIN</button>
+      <button class="action-btn" id="mobile-chat">CHAT</button>
+      <button class="action-btn" id="mobile-fullscreen">FULL</button>
     </div>
   </div>
   <div id="info">
@@ -2063,8 +2021,10 @@
       const xpDisplay = xpCounter.querySelectorAll('div')[1]; // Second div contains the FLIP amount
       xpDisplay.textContent = `${currentPlayerXP} FLIP`;
       
-      // Update mobile earnings
-      updateMobileEarnings();
+      // Update mobile displays
+      if (isMobile()) {
+        updateMobileDisplays();
+      }
       
       // Add a subtle glow effect when XP increases
       xpCounter.style.boxShadow = '0 0 30px rgba(0, 255, 136, 0.6)';
@@ -3512,8 +3472,10 @@
         }
       }
       
-      // Update mobile timer
-      updateMobileTimer(serverTime);
+      // Update mobile displays
+      if (isMobile()) {
+        updateMobileDisplays();
+      }
     }
 
     // SERVER-AUTHORITATIVE: Auto-flip is handled by the server
@@ -5044,403 +5006,239 @@
       }
     }, 1000); // 1 second delay
     
-    // ===== MOBILE FUNCTIONALITY =====
+    // ===== CLEAN MOBILE SYSTEM =====
     
     // Mobile detection
     function isMobile() {
       return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
 
-    // Haptic feedback for mobile
+    // Haptic feedback
     function triggerHaptic() {
       if (navigator.vibrate) {
-        navigator.vibrate(50); // Short vibration
+        navigator.vibrate(30);
       }
     }
 
-    // Fullscreen functionality
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        // Enter fullscreen
-        if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen();
-        } else if (document.documentElement.webkitRequestFullscreen) {
-          document.documentElement.webkitRequestFullscreen();
-        } else if (document.documentElement.msRequestFullscreen) {
-          document.documentElement.msRequestFullscreen();
-        }
-      } else {
-        // Exit fullscreen
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
-      }
-    }
-
-    // Mobile control handlers
-    function setupMobileControls() {
+    // Mobile UI Management
+    function initializeMobileUI() {
       if (!isMobile()) return;
+      
+      console.log('📱 Initializing clean mobile UI');
+      
+      // Setup mobile controls
+      setupMobileControls();
+      
+      // Create player cards
+      createMobilePlayerCards();
+      
+      // Update displays
+      updateMobileDisplays();
+    }
 
-      // Mobile heads button
-      const mobileHeadsBtn = document.getElementById('mobile-heads-btn');
-      if (mobileHeadsBtn) {
-        mobileHeadsBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
+    // Setup mobile controls
+    function setupMobileControls() {
+      // Heads button
+      const headsBtn = document.getElementById('mobile-heads');
+      if (headsBtn) {
+        headsBtn.addEventListener('click', (e) => {
+          e.preventDefault();
           triggerHaptic();
-          
-          // Find current player and set choice
           const currentPlayer = players.find(p => p.isCurrentPlayer);
           if (currentPlayer && !currentPlayer.choice) {
             currentPlayer.choice = 'heads';
             updatePlayerChoice(currentPlayer);
-            console.log('🎯 Mobile: Player chose HEADS');
           }
         });
       }
 
-      // Mobile tails button
-      const mobileTailsBtn = document.getElementById('mobile-tails-btn');
-      if (mobileTailsBtn) {
-        mobileTailsBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
+      // Tails button
+      const tailsBtn = document.getElementById('mobile-tails');
+      if (tailsBtn) {
+        tailsBtn.addEventListener('click', (e) => {
+          e.preventDefault();
           triggerHaptic();
-          
-          // Find current player and set choice
           const currentPlayer = players.find(p => p.isCurrentPlayer);
           if (currentPlayer && !currentPlayer.choice) {
             currentPlayer.choice = 'tails';
             updatePlayerChoice(currentPlayer);
-            console.log('🎯 Mobile: Player chose TAILS');
           }
         });
       }
 
-      // Mobile power button (hold to charge)
-      const mobilePowerBtn = document.getElementById('mobile-power-btn');
-      if (mobilePowerBtn) {
+      // Power button (hold to charge)
+      const powerBtn = document.getElementById('mobile-power');
+      if (powerBtn) {
         let powerInterval = null;
         
-        mobilePowerBtn.addEventListener('touchstart', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        const startCharging = () => {
           triggerHaptic();
-          
-          // Start power charging
           powerInterval = setInterval(() => {
-            // Find current player and charge power
-            const currentPlayer = players.find(p => p.isCurrentPlayer);
-            if (currentPlayer) {
-              // Simulate power charging
-              console.log('⚡ Mobile: Charging power...');
-            }
+            // Power charging logic here
           }, 50);
-        });
+        };
         
-        mobilePowerBtn.addEventListener('touchend', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        const stopCharging = () => {
           triggerHaptic();
-          
-          // Stop power charging
           if (powerInterval) {
             clearInterval(powerInterval);
             powerInterval = null;
           }
-        });
+        };
         
-        // Also handle mouse events for testing
-        mobilePowerBtn.addEventListener('mousedown', (e) => {
+        powerBtn.addEventListener('touchstart', startCharging);
+        powerBtn.addEventListener('touchend', stopCharging);
+        powerBtn.addEventListener('mousedown', startCharging);
+        powerBtn.addEventListener('mouseup', stopCharging);
+      }
+
+      // Action buttons
+      const coinBtn = document.getElementById('mobile-coin');
+      if (coinBtn) {
+        coinBtn.addEventListener('click', (e) => {
           e.preventDefault();
-          e.stopPropagation();
           triggerHaptic();
-          
-          powerInterval = setInterval(() => {
-            const currentPlayer = players.find(p => p.isCurrentPlayer);
-            if (currentPlayer) {
-              console.log('⚡ Mobile: Charging power...');
-            }
-          }, 50);
+          const globalBtn = document.getElementById('global-change-coin-btn');
+          if (globalBtn) globalBtn.click();
         });
-        
-        mobilePowerBtn.addEventListener('mouseup', (e) => {
+      }
+
+      const chatBtn = document.getElementById('mobile-chat');
+      if (chatBtn) {
+        chatBtn.addEventListener('click', (e) => {
           e.preventDefault();
-          e.stopPropagation();
           triggerHaptic();
-          
-          if (powerInterval) {
-            clearInterval(powerInterval);
-            powerInterval = null;
-          }
+          const desktopBtn = document.getElementById('chat-btn');
+          if (desktopBtn) desktopBtn.click();
         });
       }
 
-      // Mobile change coin button (now in bottom bar)
-      const mobileChangeCoinBtn = document.getElementById('mobile-change-coin-btn');
-      if (mobileChangeCoinBtn) {
-        mobileChangeCoinBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          triggerHaptic();
-          
-          // Trigger the existing change coin functionality
-          const globalChangeCoinBtn = document.getElementById('global-change-coin-btn');
-          if (globalChangeCoinBtn) {
-            globalChangeCoinBtn.click();
-          }
-        });
-      }
-
-      // Mobile chat button (now in bottom bar)
-      const mobileChatBtn = document.getElementById('mobile-chat-btn');
-      if (mobileChatBtn) {
-        mobileChatBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          triggerHaptic();
-          
-          // Trigger the existing chat functionality
-          const desktopChatBtn = document.getElementById('chat-btn');
-          if (desktopChatBtn) {
-            desktopChatBtn.click();
-          }
-        });
-      }
-
-      // Mobile fullscreen button (now in bottom bar)
-      const mobileFullscreenBtn = document.getElementById('mobile-fullscreen-btn');
-      if (mobileFullscreenBtn) {
-        mobileFullscreenBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
+      const fullscreenBtn = document.getElementById('mobile-fullscreen');
+      if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', (e) => {
+          e.preventDefault();
           triggerHaptic();
           toggleFullscreen();
         });
       }
     }
 
-    // Mobile power bar updates
-    function updateMobilePowerBar() {
-      if (!isMobile()) return;
-
-      const mobilePowerFill = document.getElementById('mobile-power-fill');
-      const mobilePowerText = document.getElementById('mobile-power-text');
-      
-      if (!mobilePowerFill || !mobilePowerText) return;
-
-      // Calculate total power from all players
-      let totalPower = 0;
-      let playerCount = 0;
-      
-      tubes.forEach((tube, i) => {
-        if (tube.power !== undefined) {
-          totalPower += tube.power;
-          playerCount++;
-        }
-      });
-
-      const averagePower = playerCount > 0 ? totalPower / playerCount : 0;
-      const powerPercentage = Math.min(100, Math.max(0, averagePower));
-
-      mobilePowerFill.style.width = `${powerPercentage}%`;
-      mobilePowerText.textContent = `POWER: ${powerPercentage.toFixed(0)}%`;
-    }
-
-    // Mobile timer updates
-    function updateMobileTimer(timeRemaining) {
-      if (!isMobile()) return;
-
-      const mobileTimer = document.getElementById('mobile-timer');
-      if (!mobileTimer) return;
-
-      const minutes = Math.floor(timeRemaining / 60);
-      const seconds = timeRemaining % 60;
-      mobileTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    // Mobile earnings updates
-    function updateMobileEarnings() {
-      if (!isMobile()) return;
-
-      const mobileEarnings = document.getElementById('mobile-earnings');
-      if (!mobileEarnings) return;
-
-      mobileEarnings.textContent = `${currentPlayerXP} FLIP`;
-    }
-
-    // Mobile player cards - create compact cards under tubes
+    // Create mobile player cards
     function createMobilePlayerCards() {
-      if (!isMobile()) return;
+      const container = document.getElementById('mobile-player-cards');
+      if (!container) return;
 
+      container.innerHTML = '';
+      
       tubes.forEach((tube, i) => {
         const player = players[i];
         if (!player || player.isEmpty) return;
 
-        // Create mobile player card
-        const mobileCard = document.createElement('div');
-        mobileCard.className = 'mobile-player-card';
-        mobileCard.id = `mobile-player-card-${i}`;
-        
-        // Position under the tube (approximate positioning)
-        const cardWidth = 80;
-        const cardHeight = 60;
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
-        
-        // Calculate position for mobile - align to left, below tubes
-        const leftStart = screenWidth * 0.05; // Start from left margin
-        const spacing = 120; // Space between cards
-        const x = leftStart + (i * spacing) - (cardWidth / 2);
-        const y = screenHeight - 85; // Above bottom bar
-        
-        mobileCard.style.left = `${x}px`;
-        mobileCard.style.top = `${y}px`;
-        
-        mobileCard.innerHTML = `
-          <img src="${player.avatar || '/images/default-avatar.png'}" class="mobile-player-avatar" alt="${player.name}" />
-          <div class="mobile-player-name">${player.name}</div>
-          <div class="mobile-player-wins">🏆 ${player.wins}</div>
+        const card = document.createElement('div');
+        card.className = 'player-card';
+        card.innerHTML = `
+          <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" />
+          <div class="player-name">${player.name}</div>
+          <div class="player-wins">🏆 ${player.wins}</div>
         `;
-        
-        document.body.appendChild(mobileCard);
+        container.appendChild(card);
       });
     }
 
-    // Update mobile player cards
-    function updateMobilePlayerCards() {
-      if (!isMobile()) return;
-
-      tubes.forEach((tube, i) => {
-        const mobileCard = document.getElementById(`mobile-player-card-${i}`);
-        if (!mobileCard) return;
-
-        const player = players[i];
-        if (!player || player.isEmpty) {
-          mobileCard.style.display = 'none';
-          return;
+    // Update mobile displays
+    function updateMobileDisplays() {
+      // Update timer
+      const timer = document.getElementById('mobile-timer');
+      if (timer && timerElement) {
+        const timerDisplay = timerElement.querySelector('#timer-display');
+        if (timerDisplay) {
+          timer.textContent = timerDisplay.textContent;
         }
+      }
 
-        mobileCard.style.display = 'flex';
+      // Update earnings
+      const earnings = document.getElementById('mobile-earnings');
+      if (earnings) {
+        earnings.textContent = `${currentPlayerXP} FLIP`;
+      }
+
+      // Update power bar
+      const powerFill = document.getElementById('mobile-power-fill');
+      const powerText = document.getElementById('mobile-power-text');
+      if (powerFill && powerText) {
+        let totalPower = 0;
+        let playerCount = 0;
         
-        // Update wins
-        const winsElement = mobileCard.querySelector('.mobile-player-wins');
-        if (winsElement) {
-          winsElement.textContent = `🏆 ${player.wins}`;
+        tubes.forEach(tube => {
+          if (tube.power !== undefined) {
+            totalPower += tube.power;
+            playerCount++;
+          }
+        });
+
+        const averagePower = playerCount > 0 ? totalPower / playerCount : 0;
+        const powerPercentage = Math.min(100, Math.max(0, averagePower));
+
+        powerFill.style.width = `${powerPercentage}%`;
+        powerText.textContent = `POWER: ${powerPercentage.toFixed(0)}%`;
+      }
+    }
+
+    // Fullscreen functionality
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
         }
-      });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
     }
 
-    // Initialize mobile functionality
-    function initializeMobile() {
-      if (!isMobile()) return;
+    // Initialize mobile UI
+    setTimeout(initializeMobileUI, 1000);
 
-      console.log('📱 Mobile layout initialized');
-      
-      // Setup mobile controls
-      setupMobileControls();
-      
-      // Create mobile player cards
-      createMobilePlayerCards();
-      
-      // Update mobile displays
-      updateMobileEarnings();
-      updateMobilePowerBar();
-      
-      // Set up mobile-specific updates
-      setInterval(() => {
-        updateMobilePowerBar();
-        updateMobilePlayerCards();
-      }, 100);
-    }
-
-    // Initialize mobile on load
-    setTimeout(initializeMobile, 2000);
-
-    // ===== MOBILE 3D OPTIMIZATIONS =====
+    // ===== MOBILE PERFORMANCE OPTIMIZATIONS =====
     
-    // Mobile-specific renderer optimizations
+    // Mobile performance optimizations
     function optimizeForMobile() {
       if (!isMobile()) return;
       
-      console.log('📱 Applying mobile 3D optimizations');
+      console.log('📱 Applying mobile performance optimizations');
       
-      // Keep original camera and tube positions for mobile
-      // No mobile-specific adjustments needed
+      // Optimize renderer for mobile
+      webglRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Cap pixel ratio for performance
+      webglRenderer.antialias = false; // Disable antialiasing for performance
+      webglRenderer.shadowMap.enabled = false; // Disable shadows for performance
       
-      // Reduce shadow quality for mobile
-      if (webglRenderer.shadowMap) {
-        webglRenderer.shadowMap.enabled = true;
-        webglRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        webglRenderer.shadowMap.autoUpdate = false; // Disable auto-update for performance
-      }
-      
-      // Reduce antialiasing for mobile performance
-      if (webglRenderer.antialias) {
-        webglRenderer.antialias = false;
-      }
-      
-      // Optimize renderer settings for mobile
-      webglRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio
-      webglRenderer.outputEncoding = THREE.sRGBEncoding;
-      webglRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-      webglRenderer.toneMappingExposure = 1.0;
-      
-      // Reduce bloom intensity for mobile
-      if (bloomComposer) {
-        bloomComposer.setSize(window.innerWidth, window.innerHeight);
-      }
-      
-      console.log('✅ Mobile 3D optimizations applied');
-    }
-
-    // Mobile-specific particle optimizations
-    function optimizeParticlesForMobile() {
-      if (!isMobile()) return;
-      
-      console.log('📱 Optimizing particles for mobile');
-      
-      tubes.forEach((tube, i) => {
+      // Reduce particle count for mobile
+      tubes.forEach(tube => {
         if (tube.liquidParticleMeshes) {
-          // Reduce particle count for mobile
-          const maxParticles = 50; // Reduced from default
-          if (tube.liquidParticleMeshes.length > maxParticles) {
-            // Hide excess particles
-            tube.liquidParticleMeshes.slice(maxParticles).forEach(mesh => {
-              mesh.visible = false;
-            });
-          }
+          const maxParticles = 30; // Reduced for mobile
+          tube.liquidParticleMeshes.slice(maxParticles).forEach(mesh => {
+            mesh.visible = false;
+          });
         }
       });
       
-      console.log('✅ Mobile particle optimizations applied');
-    }
-
-    // Mobile-specific lighting optimizations
-    function optimizeLightingForMobile() {
-      if (!isMobile()) return;
-      
-      console.log('📱 Optimizing lighting for mobile');
-      
-      // Reduce light intensity for mobile performance
-      if (ambientLight) {
-        ambientLight.intensity = 0.3; // Reduced from default
-      }
-      
-      // Optimize directional light
+      // Optimize lighting for mobile
+      if (ambientLight) ambientLight.intensity = 0.4;
       if (directionalLight) {
-        directionalLight.intensity = 0.8; // Reduced from default
-        directionalLight.castShadow = false; // Disable shadows for mobile
+        directionalLight.intensity = 0.6;
+        directionalLight.castShadow = false;
       }
       
-      console.log('✅ Mobile lighting optimizations applied');
+      console.log('✅ Mobile performance optimizations applied');
     }
 
-    // Apply mobile optimizations after scene setup
-    setTimeout(() => {
-      optimizeForMobile();
-      optimizeParticlesForMobile();
-      optimizeLightingForMobile();
-    }, 3000);
+    // Apply optimizations
+    setTimeout(optimizeForMobile, 2000);
     
     // SERVER-AUTHORITATIVE: No client timer functions to expose
 
