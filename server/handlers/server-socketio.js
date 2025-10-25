@@ -956,6 +956,40 @@ initialize(server, dbService) {
         }
       }))
 
+      // Claim NFT prize for Battle Royale winner
+      socket.on('claim_nft_prize', safeHandler(async (data) => {
+        console.log(`🏆 claim_nft_prize from ${socket.id}`, data)
+        const { gameId, address } = data
+        
+        try {
+          if (!this.blockchainService || !this.blockchainService.hasOwnerWallet()) {
+            throw new Error('Blockchain service not configured')
+          }
+          
+          // Call smart contract to claim NFT prize
+          const result = await this.blockchainService.withdrawWinnerNFT(gameId, address)
+          
+          if (result.success) {
+            // Send confirmation back to client
+            socket.emit('nft_prize_claimed', {
+              success: true,
+              transactionHash: result.transactionHash,
+              message: 'NFT prize claimed successfully!'
+            })
+            
+            console.log(`✅ NFT prize claimed for ${address} in game ${gameId}`)
+          } else {
+            throw new Error(result.error || 'Failed to claim NFT prize')
+          }
+        } catch (error) {
+          console.error('Error claiming NFT prize:', error)
+          socket.emit('nft_prize_claimed', {
+            success: false,
+            error: error.message
+          })
+        }
+      }))
+
       // Handle game over event for FLIP collection
       socket.on('game_over', safeHandler(async (data) => {
         console.log(`🏁 Game over event from ${socket.id}`, data)

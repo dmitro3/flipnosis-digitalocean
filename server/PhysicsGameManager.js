@@ -173,6 +173,7 @@ class PhysicsGameManager {
       // Initialize player with basic game data
       game.players[normalizedAddress] = {
         lives: 3,
+        wins: 0, // Track wins for first-to-3-wins system
         choice: null,
         hasFired: false,
         coin: null,
@@ -393,12 +394,30 @@ class PhysicsGameManager {
 
     console.log(`🎲 Player ${address} result: ${result} (chose ${player.choice}) - ${won ? 'WON' : 'LOST'}`)
 
-    // Update lives
-    if (!won) {
-      player.lives--
-      if (player.lives <= 0) {
-        player.isActive = false
-        console.log(`💀 Player ${address} eliminated from game ${gameId}`)
+    // Update wins (first to 3 wins system)
+    if (won) {
+      player.wins++
+      console.log(`🎉 Player ${address} won! Now has ${player.wins}/3 wins`)
+      
+      // Check if player reached 3 wins
+      if (player.wins >= 3) {
+        console.log(`🏆 Player ${address} reached 3 wins! Game over!`)
+        game.phase = 'game_over'
+        game.winner = address
+        
+        // Cleanup physics
+        this.physicsEngine.cleanupGamePhysics(gameId)
+        
+        if (broadcast) {
+          broadcast(`game_${gameId}`, 'game_over', {
+            gameId: gameId,
+            winner: address,
+            winnerData: player,
+            reason: 'first_to_3_wins',
+            finalState: this.getFullGameState(gameId)
+          })
+        }
+        return // Exit early since game is over
       }
     }
 
@@ -412,6 +431,7 @@ class PhysicsGameManager {
         result: result,
         won: won,
         lives: player.lives,
+        wins: player.wins,
         isActive: player.isActive
       })
     }
@@ -538,38 +558,25 @@ class PhysicsGameManager {
     
     // Wait for auto-flips to complete before checking game state
     setTimeout(() => {
-      // Check active players (players with lives > 0)
-      const activePlayers = Object.entries(game.players).filter(([_, p]) => p.lives > 0)
+      // Check for players who reached 3 wins (game over condition)
+      const playersWith3Wins = Object.entries(game.players).filter(([_, p]) => p.wins >= 3)
       
-      console.log(`👥 Active players remaining: ${activePlayers.length}`)
-      activePlayers.forEach(([address, player]) => {
-        console.log(`  - ${address}: ${player.lives} lives`)
-      })
+      console.log(`👥 Players with 3+ wins: ${playersWith3Wins.length}`)
+      console.log(`🔍 All players state:`, Object.entries(game.players).map(([addr, p]) => ({
+        address: addr,
+        lives: p.lives,
+        wins: p.wins,
+        isActive: p.isActive,
+        hasFired: p.hasFired
+      })))
       
-      if (activePlayers.length === 0) {
-        // No players left - game ends in a draw
+      if (playersWith3Wins.length > 0) {
+        // Someone reached 3 wins - game over!
+        const [winnerAddress, winnerData] = playersWith3Wins[0] // Take first player with 3 wins
         game.phase = 'game_over'
-        game.winner = null
-        console.log(`🏁 Game ${gameId} ended - No winner (all eliminated)`)
-        
-        // Cleanup physics
-        this.physicsEngine.cleanupGamePhysics(gameId)
-        
-        if (broadcast) {
-          broadcast(`game_${gameId}`, 'game_over', {
-            gameId: gameId,
-            winner: null,
-            reason: 'all_eliminated',
-            finalState: this.getFullGameState(gameId)
-          })
-        }
-      } else if (activePlayers.length === 1) {
-        // One player left - they win!
-        game.phase = 'game_over'
-        const [winnerAddress, winnerData] = activePlayers[0]
         game.winner = winnerAddress
         
-        console.log(`🏆 Game ${gameId} ended - Winner: ${winnerAddress} with ${winnerData.lives} lives`)
+        console.log(`🏆 Game ${gameId} ended - Winner: ${winnerAddress} with ${winnerData.wins} wins`)
         
         // Cleanup physics
         this.physicsEngine.cleanupGamePhysics(gameId)
@@ -579,13 +586,13 @@ class PhysicsGameManager {
             gameId: gameId,
             winner: winnerAddress,
             winnerData: winnerData,
-            reason: 'last_player_standing',
+            reason: 'first_to_3_wins',
             finalState: this.getFullGameState(gameId)
           })
         }
       } else {
-        // Multiple players remain - start next round
-        console.log(`🔄 Starting next round for game ${gameId}`)
+        // No one has 3 wins yet - continue to next round
+        console.log(`🔄 No player has 3 wins yet - starting next round for game ${gameId}`)
         
         // Safety check: ensure game is still valid
         if (!this.games.has(gameId)) {

@@ -275,6 +275,42 @@ class BlockchainService {
       console.error('❌ Failed to set up event listeners:', error)
     }
   }
+
+  /**
+   * Winner withdraws NFT prize
+   */
+  async withdrawWinnerNFT(gameId, winnerAddress) {
+    console.log('🏆 Winner withdrawing NFT prize:', { gameId, winnerAddress })
+    if (!this.contractOwnerWallet) {
+      return { success: false, error: 'Contract wallet not configured' }
+    }
+
+    try {
+      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
+      const gameIdBytes32 = ethers.id(gameId)
+
+      // Optional sanity read
+      try {
+        const brGame = await contract.getBattleRoyaleGame(gameIdBytes32)
+        if (!brGame || brGame.creator === ethers.ZeroAddress) {
+          return { success: false, error: 'Battle Royale game does not exist' }
+        }
+        if (brGame.winner !== winnerAddress) {
+          return { success: false, error: 'Address is not the winner' }
+        }
+        if (brGame.nftClaimed) {
+          return { success: false, error: 'NFT already claimed' }
+        }
+      } catch {}
+
+      const tx = await contract.withdrawWinnerNFT(gameIdBytes32)
+      await tx.wait()
+      return { success: true, transactionHash: tx.hash }
+    } catch (error) {
+      console.error('❌ Error withdrawing winner NFT:', error)
+      return { success: false, error: error.message }
+    }
+  }
 }
 
 module.exports = { BlockchainService } 
