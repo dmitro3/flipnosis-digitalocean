@@ -51,8 +51,11 @@
         pointer-events: none;
       }
       
-      /* Consolidated mobile body styles - Base mobile settings */
+      /* Mobile body styles - Use solid color for now */
       body {
+        /* Override desktop background completely */
+        background: linear-gradient(135deg, #0a0f23 0%, #1a1f3a 50%, #0a0f23 100%) !important;
+        background-attachment: fixed !important;
         overflow: hidden;
         -webkit-overflow-scrolling: touch;
         -ms-overflow-style: none;
@@ -64,23 +67,17 @@
         display: none;
       }
       
-      /* Portrait Orientation - Only override what's different */
+      /* Portrait Orientation */
       @media (orientation: portrait) {
         body {
-          background-size: cover !important;
-          background-position: center center !important;
-          background-repeat: no-repeat !important;
-          background-attachment: fixed !important;
+          background: linear-gradient(180deg, #1a0033 0%, #0a0f23 50%, #001a33 100%) !important;
         }
       }
       
-      /* Landscape Orientation - Override for better fit */
+      /* Landscape Orientation */
       @media (orientation: landscape) {
         body {
-          background-size: 100% 100% !important;
-          background-position: center center !important;
-          background-repeat: no-repeat !important;
-          background-attachment: scroll !important;
+          background: linear-gradient(90deg, #0a0f23 0%, #1a1f3a 50%, #0a0f23 100%) !important;
         }
       }
       
