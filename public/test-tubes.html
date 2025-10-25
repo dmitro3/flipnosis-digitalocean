@@ -943,47 +943,65 @@
       document.body.classList.add('mech-room');
     }
     
-    // Mobile background orientation handler
+    // Mobile background orientation handler - AGGRESSIVE VERSION
     function updateMobileBackground() {
       if (!isMobile()) return;
       
       const isLandscape = window.innerWidth > window.innerHeight;
       const roomParam = new URLSearchParams(window.location.search).get('room');
       
+      // STEP 1: Completely remove ALL background properties
+      document.body.style.background = 'none';
+      document.body.style.backgroundImage = 'none';
+      document.body.style.backgroundSize = '';
+      document.body.style.backgroundAttachment = '';
+      document.body.style.backgroundPosition = '';
+      document.body.style.backgroundRepeat = '';
+      
+      // STEP 2: Force a reflow
+      void document.body.offsetHeight;
+      
+      // STEP 3: Set new background based on orientation
       if (isLandscape) {
-        // Landscape mode - show background stretched
-        if (roomParam === 'lab') {
-          document.body.style.background = "url('/images/background/thelab.png') no-repeat center center";
-        } else if (roomParam === 'cyber') {
-          document.body.style.background = "url('/images/background/cyber.png') no-repeat center center";
-        } else if (roomParam === 'mech') {
-          document.body.style.background = "url('/images/background/mech.png') no-repeat center center";
-        } else {
-          document.body.style.background = "url('/Images/Background/game room2.png') no-repeat center center";
-        }
+        let bgImage = "url('/Images/Background/game room2.png')";
+        if (roomParam === 'lab') bgImage = "url('/images/background/thelab.png')";
+        else if (roomParam === 'cyber') bgImage = "url('/images/background/cyber.png')";
+        else if (roomParam === 'mech') bgImage = "url('/images/background/mech.png')";
+        
+        // Set properties individually to force update
+        document.body.style.backgroundImage = bgImage;
         document.body.style.backgroundSize = "100% 100%";
+        document.body.style.backgroundPosition = "center center";
+        document.body.style.backgroundRepeat = "no-repeat";
         document.body.style.backgroundAttachment = "scroll";
       } else {
-        // Portrait mode - solid color (hidden by warning anyway)
-        document.body.style.background = "#0a0f23";
-        document.body.style.backgroundImage = "none";
+        // Portrait - solid color
+        document.body.style.backgroundColor = "#0a0f23";
       }
       
-      console.log('📱 Background updated for', isLandscape ? 'LANDSCAPE' : 'PORTRAIT');
+      // STEP 4: Force another reflow
+      void document.body.offsetHeight;
+      
+      console.log('📱 Background FORCE UPDATED for', isLandscape ? 'LANDSCAPE' : 'PORTRAIT', 'Width:', window.innerWidth, 'Height:', window.innerHeight);
     }
 
     // Run immediately
     updateMobileBackground();
 
-    // Listen for orientation changes
+    // Listen for orientation changes with delay
     window.addEventListener('orientationchange', function() {
-      setTimeout(updateMobileBackground, 100);
+      console.log('🔄 Orientation change detected');
+      setTimeout(updateMobileBackground, 50);
+      setTimeout(updateMobileBackground, 200);
+      setTimeout(updateMobileBackground, 500);
     });
 
     // Fallback: listen for resize
+    let resizeTimeout;
     window.addEventListener('resize', function() {
       if (isMobile()) {
-        updateMobileBackground();
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(updateMobileBackground, 100);
       }
     });
     
