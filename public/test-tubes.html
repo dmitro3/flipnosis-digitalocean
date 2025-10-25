@@ -2242,6 +2242,9 @@
     webglRenderer.outputColorSpace = THREE.SRGBColorSpace; // Proper color space
     console.log('🎨 WebGL Renderer initialized with transparency');
     document.getElementById('container').appendChild(webglRenderer.domElement);
+    
+    // TEST 1: Make canvas semi-transparent to see if background shows through
+    webglRenderer.domElement.style.opacity = "0.5"; // Make it semi-transparent to see if background shows through
 
     // ===== SELECTIVE BLOOM SETUP - Layer 1 (pearls) only! =====
     
