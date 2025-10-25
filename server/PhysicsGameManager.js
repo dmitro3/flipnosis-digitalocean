@@ -398,27 +398,6 @@ class PhysicsGameManager {
     if (won) {
       player.wins++
       console.log(`🎉 Player ${address} won! Now has ${player.wins}/3 wins`)
-      
-      // Check if player reached 3 wins
-      if (player.wins >= 3) {
-        console.log(`🏆 Player ${address} reached 3 wins! Game over!`)
-        game.phase = 'game_over'
-        game.winner = address
-        
-        // Cleanup physics
-        this.physicsEngine.cleanupGamePhysics(gameId)
-        
-        if (broadcast) {
-          broadcast(`game_${gameId}`, 'game_over', {
-            gameId: gameId,
-            winner: address,
-            winnerData: player,
-            reason: 'first_to_3_wins',
-            finalState: this.getFullGameState(gameId)
-          })
-        }
-        return // Exit early since game is over
-      }
     }
 
     // Broadcast result to all clients
@@ -570,9 +549,9 @@ class PhysicsGameManager {
         hasFired: p.hasFired
       })))
       
-      if (playersWith3Wins.length > 0) {
-        // Someone reached 3 wins - game over!
-        const [winnerAddress, winnerData] = playersWith3Wins[0] // Take first player with 3 wins
+      if (playersWith3Wins.length === 1) {
+        // Exactly one player reached 3 wins - they win!
+        const [winnerAddress, winnerData] = playersWith3Wins[0]
         game.phase = 'game_over'
         game.winner = winnerAddress
         
@@ -590,6 +569,39 @@ class PhysicsGameManager {
             finalState: this.getFullGameState(gameId)
           })
         }
+      } else if (playersWith3Wins.length > 1) {
+        // Multiple players reached 3 wins - tiebreaker round!
+        console.log(`🔄 Tiebreaker! ${playersWith3Wins.length} players reached 3 wins - starting tiebreaker round`)
+        
+        // Reset wins for tiebreaker players only
+        playersWith3Wins.forEach(([address, player]) => {
+          player.wins = 0 // Reset to 0 for tiebreaker
+          player.isActive = true
+          player.choice = null
+          player.hasFired = false
+          console.log(`🔄 Reset ${address} for tiebreaker: wins=${player.wins}`)
+        })
+        
+        // Deactivate players who didn't reach 3 wins
+        Object.entries(game.players).forEach(([address, player]) => {
+          if (player.wins < 3) {
+            player.isActive = false
+            console.log(`💀 Player ${address} eliminated (${player.wins} wins)`)
+          }
+        })
+        
+        // Start tiebreaker round
+        game.currentRound++
+        game.roundTimer = 60
+        
+        // Reset physics for tiebreaker round
+        this.physicsEngine.resetGameForNewRound(gameId)
+        this.physicsEngine.updateGamePhase(gameId, 'round_active')
+        
+        // Start the tiebreaker round timer
+        this.startRoundTimer(gameId, broadcast)
+        
+        console.log(`🎮 Tiebreaker round ${game.currentRound} started for ${playersWith3Wins.length} players`)
       } else {
         // No one has 3 wins yet - continue to next round
         console.log(`🔄 No player has 3 wins yet - starting next round for game ${gameId}`)

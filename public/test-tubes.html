@@ -4963,110 +4963,6 @@
       console.log(`🏆 Updated wins display for player ${tubeIndex + 1}: ${player.wins} wins`);
     }
 
-    // ===== SHOW WIN/LOSS NOTIFICATION =====
-    function showWinLossNotification(tubeIndex, didWin, currentWins) {
-      const player = players[tubeIndex];
-      const tube = tubes[tubeIndex];
-      
-      if (!player || !tube) return;
-      
-      // Remove any existing notification
-      const existingNotification = document.getElementById(`win-loss-notification-${tubeIndex}`);
-      if (existingNotification) {
-        existingNotification.remove();
-      }
-      
-      // Create notification element
-      const notification = document.createElement('div');
-      notification.id = `win-loss-notification-${tubeIndex}`;
-      notification.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: ${didWin ? 'linear-gradient(135deg, #4CAF50, #45a049)' : 'linear-gradient(135deg, #f44336, #d32f2f)'};
-        color: white;
-        padding: 20px 30px;
-        border-radius: 15px;
-        font-size: 24px;
-        font-weight: bold;
-        text-align: center;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        z-index: 10000;
-        animation: slideInScale 0.5s ease-out;
-        border: 3px solid ${didWin ? '#2E7D32' : '#C62828'};
-        min-width: 300px;
-      `;
-      
-      // Add animation keyframes if not already added
-      if (!document.getElementById('win-loss-animation-styles')) {
-        const style = document.createElement('style');
-        style.id = 'win-loss-animation-styles';
-        style.textContent = `
-          @keyframes slideInScale {
-            0% {
-              transform: translate(-50%, -50%) scale(0.5);
-              opacity: 0;
-            }
-            100% {
-              transform: translate(-50%, -50%) scale(1);
-              opacity: 1;
-            }
-          }
-          @keyframes slideOutScale {
-            0% {
-              transform: translate(-50%, -50%) scale(1);
-              opacity: 1;
-            }
-            100% {
-              transform: translate(-50%, -50%) scale(0.5);
-              opacity: 0;
-            }
-          }
-        `;
-        document.head.appendChild(style);
-      }
-      
-      // Set notification content
-      if (didWin) {
-        notification.innerHTML = `
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <span style="font-size: 32px;">🎉</span>
-            <div>
-              <div style="font-size: 28px; margin-bottom: 5px;">YOU WON!</div>
-              <div style="font-size: 18px; opacity: 0.9;">Wins: ${currentWins}/3</div>
-            </div>
-          </div>
-        `;
-      } else {
-        notification.innerHTML = `
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <span style="font-size: 32px;">😔</span>
-            <div>
-              <div style="font-size: 28px; margin-bottom: 5px;">YOU LOST</div>
-              <div style="font-size: 18px; opacity: 0.9;">Wins: ${currentWins}/3</div>
-            </div>
-          </div>
-        `;
-      }
-      
-      // Add to page
-      document.body.appendChild(notification);
-      
-      // Auto-remove after 3 seconds
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.style.animation = 'slideOutScale 0.3s ease-in';
-          setTimeout(() => {
-            if (notification.parentNode) {
-              notification.remove();
-            }
-          }, 300);
-        }
-      }, 3000);
-      
-      console.log(`${didWin ? '🎉' : '😔'} Win/Loss notification shown for player ${tubeIndex + 1}: ${didWin ? 'WON' : 'LOST'} (${currentWins}/3 wins)`);
-    }
 
     // ===== UPDATE PLAYER CARD CHOICE =====
     function updatePlayerCardChoice(tubeIndex, choice) {
@@ -5112,8 +5008,6 @@
         // Server handles win tracking, just log the result
         console.log(`🎉 Player ${tubeIndex + 1} WON! Wins: ${player.wins}/3`);
         
-        // Show win notification
-        showWinLossNotification(tubeIndex, true, player.wins);
         
         // Check for game over (first to 3 wins)
         if (player.wins >= 3) {
@@ -5127,8 +5021,6 @@
         coin.add(loseLight);
         tube.loseLight = loseLight;
         
-        // Show loss notification
-        showWinLossNotification(tubeIndex, false, player.wins);
         
         console.log(`❌ Player ${tubeIndex + 1} LOST this round`);
       }
@@ -5449,6 +5341,12 @@
     function showGameOverScreen(winnerIndex, winnerName) {
       console.log('🏁 GAME OVER - Showing end screen');
       
+      // Prevent duplicate game over screens
+      if (gameOver) {
+        console.log('⚠️ Game over screen already shown, ignoring duplicate call');
+        return;
+      }
+      
       // Stop any ongoing game mechanics
       gameOver = true;
       // SERVER-AUTHORITATIVE: Server manages all timing
@@ -5466,12 +5364,15 @@
         winnerName
       });
       
-      // Award FLIP tokens directly via server
-      if (isServerSideMode && socket && gameIdParam && walletParam) {
+      // Award FLIP tokens directly via server (only once)
+      if (isServerSideMode && socket && gameIdParam && walletParam && !window.flipTokensAwarded) {
         const gameResult = didCurrentPlayerWin ? 'won' : 'lost';
         
         // Get current player's lives from server state
         const currentPlayerLives = players[playerSlot]?.lives || 0;
+        
+        // Mark as awarded to prevent duplicates
+        window.flipTokensAwarded = true;
         
         // Request direct FLIP token award
         socket.emit('award_flip_tokens_final', {
