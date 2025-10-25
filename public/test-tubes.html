@@ -51,32 +51,29 @@
         pointer-events: none;
       }
       
-      /* Mobile Landscape Orientation - Default for mobile */
+      /* Mobile base styles */
       body {
-        background-size: 100% 100%;
-        background-position: center center;
-        background-repeat: no-repeat;
-        background-attachment: scroll;
-        min-height: 100vh;
-        width: 100%;
+        overflow: hidden;
+        -webkit-overflow-scrolling: touch;
       }
       
-      /* Portrait override if needed */
+      /* Portrait Orientation */
       @media (orientation: portrait) {
         body {
           background-size: cover;
-          background-attachment: fixed;
           background-position: center center;
+          background-repeat: no-repeat;
+          background-attachment: fixed;
         }
       }
       
-      /* Ensure proper landscape orientation */
+      /* Landscape Orientation */
       @media (orientation: landscape) {
         body {
-          background-size: 100% 100%;
-          background-attachment: scroll;
+          background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;
+          background-attachment: scroll;
         }
       }
       
@@ -507,6 +504,66 @@
       
     }
     
+    /* Portrait Warning Overlay */
+    .portrait-warning {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 20px;
+    }
+
+    @media (max-width: 768px) and (orientation: portrait) {
+      .portrait-warning {
+        display: flex !important;
+      }
+    }
+
+    .portrait-warning-content {
+      background: linear-gradient(135deg, rgba(157, 0, 255, 0.3), rgba(0, 255, 255, 0.3));
+      border: 3px solid #00ffff;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 300px;
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    .portrait-warning-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+      animation: rotate-phone 2s ease-in-out infinite;
+    }
+
+    @keyframes rotate-phone {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(90deg); }
+    }
+
+    .portrait-warning h2 {
+      color: #00ffff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      margin-bottom: 15px;
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    }
+
+    .portrait-warning p {
+      color: white;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    
     /* Desktop: Show desktop layout, hide mobile layout */
     @media (min-width: 768px) {
       .game-info .desktop-timer-layout {
@@ -734,6 +791,16 @@
   </style>
 </head>
 <body>
+  <!-- Portrait Orientation Warning -->
+  <div class="portrait-warning">
+    <div class="portrait-warning-content">
+      <div class="portrait-warning-icon">📱➡️</div>
+      <h2>Please Rotate Your Device</h2>
+      <p>This game is designed for landscape mode.</p>
+      <p>Please rotate your device to continue playing!</p>
+    </div>
+  </div>
+  
   <div id="container"></div>
   
   <!-- Responsive Mobile Layout -->
