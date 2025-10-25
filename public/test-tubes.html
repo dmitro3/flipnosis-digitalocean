@@ -51,11 +51,8 @@
         pointer-events: none;
       }
       
-      /* Mobile body styles - Use solid color for now */
+      /* Mobile body base styles */
       body {
-        /* Override desktop background completely */
-        background: linear-gradient(135deg, #0a0f23 0%, #1a1f3a 50%, #0a0f23 100%) !important;
-        background-attachment: fixed !important;
         overflow: hidden;
         -webkit-overflow-scrolling: touch;
         -ms-overflow-style: none;
@@ -67,17 +64,20 @@
         display: none;
       }
       
-      /* Portrait Orientation */
+      /* Portrait Orientation - No background needed, warning covers it */
       @media (orientation: portrait) {
         body {
-          background: linear-gradient(180deg, #1a0033 0%, #0a0f23 50%, #001a33 100%) !important;
+          background: #0a0f23 !important; /* Simple solid color */
+          background-image: none !important; /* Remove image completely */
         }
       }
       
-      /* Landscape Orientation */
+      /* Landscape Orientation - Stretch background to fit */
       @media (orientation: landscape) {
         body {
-          background: linear-gradient(90deg, #0a0f23 0%, #1a1f3a 50%, #0a0f23 100%) !important;
+          background: url('/Images/Background/game room2.png') no-repeat center center !important;
+          background-size: 100% 100% !important; /* Stretch to fill screen */
+          background-attachment: scroll !important;
         }
       }
       
@@ -6248,6 +6248,47 @@
 
       console.log(`📐 Resized to ${newWidth}x${newHeight}`);
     });
+
+    // Force background refresh on orientation change
+    window.addEventListener('orientationchange', function() {
+      // Force a reflow/repaint by temporarily changing and restoring a property
+      const body = document.body;
+      const originalDisplay = body.style.display;
+      
+      // Trigger reflow
+      body.style.display = 'none';
+      body.offsetHeight; // Force browser to acknowledge the change
+      body.style.display = originalDisplay || '';
+      
+      // Alternative method: toggle a class that forces background recalculation
+      body.classList.add('orientation-changing');
+      setTimeout(() => {
+        body.classList.remove('orientation-changing');
+      }, 50);
+      
+      console.log('📱 Orientation changed - background refreshed');
+    });
+
+    // Also listen for resize events on mobile (some browsers use this instead)
+    let resizeTimer;
+    if (isMobile()) {
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+          // Check if aspect ratio changed significantly (indicates rotation)
+          const aspectRatio = window.innerWidth / window.innerHeight;
+          if ((aspectRatio > 1 && window.lastAspectRatio < 1) || 
+              (aspectRatio < 1 && window.lastAspectRatio > 1)) {
+            // Force background refresh
+            document.body.style.backgroundImage = document.body.style.backgroundImage || 
+              "url('/Images/Background/game room2.png')";
+            console.log('📱 Rotation detected via resize - background refreshed');
+          }
+          window.lastAspectRatio = aspectRatio;
+        }, 100);
+      });
+      window.lastAspectRatio = window.innerWidth / window.innerHeight;
+    }
   </script>
 </body>
 </html>
