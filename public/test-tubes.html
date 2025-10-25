@@ -81,6 +81,48 @@
         }
       }
       
+      /* Override room-specific backgrounds on mobile */
+      
+      /* Portrait - disable all room backgrounds */
+      @media (orientation: portrait) {
+        body.lab-room,
+        body.cyber-room,
+        body.mech-room,
+        body {
+          background: #0a0f23 !important;
+          background-image: none !important;
+          background-attachment: scroll !important;
+        }
+      }
+      
+      /* Landscape - stretch room backgrounds to fit */
+      @media (orientation: landscape) {
+        body.lab-room {
+          background: url('/images/background/thelab.png') no-repeat center center !important;
+          background-size: 100% 100% !important;
+          background-attachment: scroll !important;
+        }
+        
+        body.cyber-room {
+          background: url('/images/background/cyber.png') no-repeat center center !important;
+          background-size: 100% 100% !important;
+          background-attachment: scroll !important;
+        }
+        
+        body.mech-room {
+          background: url('/images/background/mech.png') no-repeat center center !important;
+          background-size: 100% 100% !important;
+          background-attachment: scroll !important;
+        }
+        
+        /* Default room (game room2.png) */
+        body:not(.lab-room):not(.cyber-room):not(.mech-room) {
+          background: url('/Images/Background/game room2.png') no-repeat center center !important;
+          background-size: 100% 100% !important;
+          background-attachment: scroll !important;
+        }
+      }
+      
       /* Hide desktop elements on mobile */
       .player-card,
       #xp-counter,
