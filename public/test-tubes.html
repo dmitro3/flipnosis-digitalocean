@@ -943,6 +943,50 @@
       document.body.classList.add('mech-room');
     }
     
+    // Mobile background orientation handler
+    function updateMobileBackground() {
+      if (!isMobile()) return;
+      
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const roomParam = new URLSearchParams(window.location.search).get('room');
+      
+      if (isLandscape) {
+        // Landscape mode - show background stretched
+        if (roomParam === 'lab') {
+          document.body.style.background = "url('/images/background/thelab.png') no-repeat center center";
+        } else if (roomParam === 'cyber') {
+          document.body.style.background = "url('/images/background/cyber.png') no-repeat center center";
+        } else if (roomParam === 'mech') {
+          document.body.style.background = "url('/images/background/mech.png') no-repeat center center";
+        } else {
+          document.body.style.background = "url('/Images/Background/game room2.png') no-repeat center center";
+        }
+        document.body.style.backgroundSize = "100% 100%";
+        document.body.style.backgroundAttachment = "scroll";
+      } else {
+        // Portrait mode - solid color (hidden by warning anyway)
+        document.body.style.background = "#0a0f23";
+        document.body.style.backgroundImage = "none";
+      }
+      
+      console.log('📱 Background updated for', isLandscape ? 'LANDSCAPE' : 'PORTRAIT');
+    }
+
+    // Run immediately
+    updateMobileBackground();
+
+    // Listen for orientation changes
+    window.addEventListener('orientationchange', function() {
+      setTimeout(updateMobileBackground, 100);
+    });
+
+    // Fallback: listen for resize
+    window.addEventListener('resize', function() {
+      if (isMobile()) {
+        updateMobileBackground();
+      }
+    });
+    
     info.textContent = '🎮 Initializing 4-Player Glass Tube Game...';
 
     // ===== SOCKET.IO CONNECTION =====
