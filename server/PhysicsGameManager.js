@@ -7,10 +7,12 @@
 const ServerPhysicsEngine = require('./ServerPhysicsEngine')
 
 class PhysicsGameManager {
-  constructor() {
+  constructor(blockchainService = null, dbService = null) {
     this.games = new Map() // gameId -> gameState
     this.timers = new Map() // gameId -> intervalId
     this.physicsEngine = new ServerPhysicsEngine() // Server-side physics
+    this.blockchainService = blockchainService // Blockchain service for contract interactions
+    this.dbService = dbService // Database service for game updates
   }
 
   // Create a new physics game
@@ -560,6 +562,9 @@ class PhysicsGameManager {
         // Cleanup physics
         this.physicsEngine.cleanupGamePhysics(gameId)
         
+        // Complete the game on blockchain to transfer NFT ownership
+        this.completeGameOnBlockchain(gameId, winnerAddress, broadcast)
+        
         if (broadcast) {
           broadcast(`game_${gameId}`, 'game_over', {
             gameId: gameId,
@@ -683,6 +688,7 @@ class PhysicsGameManager {
       phase: game.phase,
       currentRound: game.currentRound,
       roundTimer: game.roundTimer,
+      winner: game.winner, // Add winner field
       players: game.players,
       playerOrder: game.playerOrder,
       playerSlots: game.playerSlots, // Use actual slot array
@@ -773,6 +779,61 @@ class PhysicsGameManager {
     }
     
     return rewards[0] // Fallback to 50
+  }
+
+  // Complete game on blockchain to transfer NFT ownership
+  async completeGameOnBlockchain(gameId, winnerAddress, broadcast) {
+    console.log(`🏆 Completing game on blockchain: ${gameId} -> ${winnerAddress}`)
+    
+    try {
+      // This would need to be injected from the server
+      if (this.blockchainService) {
+        const result = await this.blockchainService.completeBattleRoyaleOnChain(gameId, winnerAddress)
+        
+        if (result.success) {
+          console.log(`✅ Game completed on blockchain: ${result.transactionHash}`)
+          
+          // Update database to mark game as completed
+          await this.updateGameInDatabase(gameId, winnerAddress)
+          
+          // Notify all players about the blockchain completion
+          if (broadcast) {
+            broadcast(`game_${gameId}`, 'battle_royale_completed_on_chain', {
+              type: 'battle_royale_completed_on_chain',
+              gameId: gameId,
+              winner: winnerAddress,
+              transactionHash: result.transactionHash
+            })
+          }
+        } else {
+          console.error(`❌ Failed to complete game on blockchain: ${result.error}`)
+        }
+      } else {
+        console.warn(`⚠️ Blockchain service not available for game completion`)
+      }
+    } catch (error) {
+      console.error(`❌ Error completing game on blockchain:`, error)
+    }
+  }
+
+  // Update game in database to mark as completed
+  async updateGameInDatabase(gameId, winnerAddress) {
+    console.log(`📝 Updating game in database: ${gameId} -> ${winnerAddress}`)
+    
+    try {
+      if (this.dbService) {
+        await this.dbService.updateBattleRoyaleGame(gameId, {
+          status: 'completed',
+          winner: winnerAddress,
+          completed_at: new Date().toISOString()
+        })
+        console.log(`✅ Game updated in database: ${gameId}`)
+      } else {
+        console.warn(`⚠️ Database service not available for game update`)
+      }
+    } catch (error) {
+      console.error(`❌ Error updating game in database:`, error)
+    }
   }
 }
 

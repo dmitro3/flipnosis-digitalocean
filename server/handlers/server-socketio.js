@@ -26,7 +26,7 @@ class GameServer {
     this.battleRoyaleManager = null
     
     // ✅ ACTIVE: Physics-based game system (current implementation)
-    this.physicsGameManager = new PhysicsGameManager()
+    this.physicsGameManager = new PhysicsGameManager(blockchainService, dbService)
     
     // this.flipService = new FlipService() // Temporarily disabled for debugging
     this.flipService = null // Placeholder
