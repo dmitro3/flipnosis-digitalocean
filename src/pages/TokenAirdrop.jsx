@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 
@@ -190,118 +190,11 @@ const RewardDescription = styled.p`
   line-height: 1.4;
 `;
 
-// Floating FLIP reward animation
-const floatIn = keyframes`
-  0% { 
-    opacity: 0; 
-    transform: translate(-50%, -50%) scale(0.5) translateY(50px); 
-  }
-  50% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.1) translateY(-10px);
-  }
-  100% { 
-    opacity: 0; 
-    transform: translate(-50%, -50%) scale(0.8) translateY(-100px); 
-  }
-`;
-
-const FloatingReward = styled.div`
-  position: absolute;
-  top: ${props => Math.random() * 60 + 20}%;
-  left: ${props => Math.random() * 60 + 20}%;
-  background: rgba(0, 0, 0, 0.9);
-  color: ${props => props.color || '#FFD700'};
-  padding: 10px 20px;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: bold;
-  z-index: 1000;
-  text-align: center;
-  box-shadow: 0 0 20px ${props => props.color || '#FFD700'}99;
-  pointer-events: none;
-  animation: ${floatIn} 3s ease-out forwards;
-  font-family: 'Orbitron', sans-serif;
-  border: 2px solid ${props => props.color || '#FFD700'};
-`;
-
-const BackButton = styled.button`
-  position: fixed;
-  top: 2rem;
-  left: 2rem;
-  background: linear-gradient(45deg, #ff1493, #ff69b4);
-  border: none;
-  border-radius: 50px;
-  padding: 1rem 2rem;
-  color: #fff;
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 1000;
-  box-shadow: 0 5px 15px rgba(255, 20, 147, 0.3);
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 20, 147, 0.5);
-  }
-
-  @media (max-width: 768px) {
-    top: 1rem;
-    left: 1rem;
-    padding: 0.8rem 1.5rem;
-    font-size: 0.9rem;
-  }
-`;
 
 const TokenAirdrop = () => {
-  const [floatingRewards, setFloatingRewards] = useState([]);
-
-  const showFloatingReward = () => {
-    const amounts = [50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000];
-    const colors = ['#FFD700', '#00FF41', '#ff1493', '#00d4ff', '#ff69b4', '#39ff14', '#ffa500'];
-    const randomAmount = amounts[Math.floor(Math.random() * amounts.length)];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    
-    const newReward = {
-      id: Date.now() + Math.random(),
-      amount: randomAmount,
-      text: `+${randomAmount} FLIP earned!`,
-      color: randomColor
-    };
-    
-    setFloatingRewards(prev => [...prev, newReward]);
-    
-    // Remove the reward after animation completes
-    setTimeout(() => {
-      setFloatingRewards(prev => prev.filter(reward => reward.id !== newReward.id));
-    }, 3000);
-  };
-
-  useEffect(() => {
-    // Show floating rewards every 3 seconds
-    const interval = setInterval(showFloatingReward, 3000);
-    
-    // Show initial reward after 1 second
-    const initialTimeout = setTimeout(showFloatingReward, 1000);
-    
-    return () => {
-      clearInterval(interval);
-      clearTimeout(initialTimeout);
-    };
-  }, []);
-
-  const handleBack = () => {
-    window.history.back();
-  };
 
   return (
     <PageContainer>
-      <BackButton onClick={handleBack}>
-        ← Back
-      </BackButton>
-      
-      
       <ContentWrapper>
         <Title>Token & Airdrop</Title>
         
@@ -309,7 +202,7 @@ const TokenAirdrop = () => {
           <TokenInfo>
             <TokenCard>
               <TokenIcon>
-                <img src="/images/token.png" alt="FLIP Token" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+                <img src="/Images/token.png" alt="FLIP Token" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
               </TokenIcon>
               <TokenName>FLIP</TokenName>
               <TokenValue>10,000,000,000</TokenValue>
@@ -339,18 +232,35 @@ const TokenAirdrop = () => {
         </Section>
 
         <AirdropSection>
-          <AirdropTitle>🎉 Massive Airdrop Campaign</AirdropTitle>
+          <AirdropTitle>Massive Airdrop Campaign</AirdropTitle>
           <AirdropAmount>1,000,000,000 FLIP</AirdropAmount>
           <AirdropDescription>
             We're giving away <strong>1 billion FLIP tokens</strong> to our community! 
             This represents <strong>10% of the total supply</strong> and will be distributed through our games only. Every time you flip your coin you win FLIP.
           </AirdropDescription>
-          {/* Floating FLIP rewards */}
-          {floatingRewards.map(reward => (
-            <FloatingReward key={reward.id} color={reward.color}>
-              {reward.text}
-            </FloatingReward>
-          ))}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
+            gap: '1rem', 
+            marginTop: '2rem',
+            padding: '1rem'
+          }}>
+            {[50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000].map((amount, index) => (
+              <div key={index} style={{
+                background: 'rgba(255, 20, 147, 0.2)',
+                border: '2px solid rgba(255, 20, 147, 0.5)',
+                borderRadius: '10px',
+                padding: '1rem',
+                textAlign: 'center',
+                color: '#FFD700',
+                fontWeight: 'bold',
+                fontSize: '1.1rem',
+                fontFamily: 'Orbitron, sans-serif'
+              }}>
+                +{amount} FLIP
+              </div>
+            ))}
+          </div>
         </AirdropSection>
 
 
@@ -358,7 +268,11 @@ const TokenAirdrop = () => {
           <SectionTitle>Token Utility</SectionTitle>
           <TokenInfo>
             <TokenCard>
-              <TokenIcon>🎨</TokenIcon>
+              <TokenIcon style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <img src="/coins/clownt.png" alt="Clown Skin" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+                <img src="/coins/luigi.png" alt="Luigi Skin" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+                <img src="/coins/trumpheads.webp" alt="Trump Skin" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+              </TokenIcon>
               <TokenName>Skins</TokenName>
               <TokenDescription>
                 Unlock in game coin skins and compounds with <strong>FLIP</strong> tokens.
@@ -366,7 +280,9 @@ const TokenAirdrop = () => {
             </TokenCard>
             
             <TokenCard>
-              <TokenIcon>🏪</TokenIcon>
+              <TokenIcon>
+                <img src="/Images/marketplace.png" alt="Marketplace" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+              </TokenIcon>
               <TokenName>Marketplace</TokenName>
               <TokenDescription>
                 Trade <strong>FLIP</strong> tokens in our upcoming marketplace for NFTs, special items, and exclusive game features. Purchase creator made skins on our marketplace.
@@ -374,7 +290,9 @@ const TokenAirdrop = () => {
             </TokenCard>
             
             <TokenCard>
-              <TokenIcon>🎨</TokenIcon>
+              <TokenIcon>
+                <img src="/Images/factory.png" alt="Coin Factory" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+              </TokenIcon>
               <TokenName>Coin Factory</TokenName>
               <TokenDescription>
                 Mint coin collections and skins with different compounds using <strong>FLIP</strong>. Then sell them in our marketplace.
