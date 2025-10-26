@@ -214,35 +214,31 @@ const TokenAirdrop = () => {
             marginTop: '2rem',
             padding: '1rem'
           }}>
-            {[50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000].map((amount, index) => {
+            {[50, 100, 200, 250, 300, 500, 750, 1000].map((amount, index) => {
               const colors = [
-                { bg: '#ff6b6b', border: '#ff5252' }, // Red
-                { bg: '#4ecdc4', border: '#26a69a' }, // Teal
-                { bg: '#45b7d1', border: '#2196f3' }, // Blue
-                { bg: '#96ceb4', border: '#4caf50' }, // Green
-                { bg: '#feca57', border: '#ffc107' }, // Yellow
-                { bg: '#ff9ff3', border: '#e91e63' }, // Pink
-                { bg: '#a8e6cf', border: '#8bc34a' }, // Light Green
-                { bg: '#ffd93d', border: '#ffeb3b' }, // Gold
-                { bg: '#b4a7d6', border: '#9c27b0' }, // Purple
-                { bg: '#ffb3ba', border: '#f44336' }, // Light Red
-                { bg: '#FFD700', border: '#FFA500' }  // Gold for 1000
+                { bg: '#ff6b6b', text: '#fff' }, // Red
+                { bg: '#4ecdc4', text: '#fff' }, // Teal
+                { bg: '#45b7d1', text: '#fff' }, // Blue
+                { bg: '#96ceb4', text: '#fff' }, // Green
+                { bg: '#feca57', text: '#000' }, // Yellow
+                { bg: '#ff9ff3', text: '#fff' }, // Pink
+                { bg: '#a8e6cf', text: '#000' }, // Light Green
+                { bg: '#FFD700', text: '#000' }  // Gold for 1000
               ];
               const colorSet = colors[index % colors.length];
-              const isGold = amount === 1000;
               
               return (
                 <div key={index} style={{
-                  background: isGold ? '#FFD700' : 'white',
-                  border: `3px solid ${isGold ? '#FFA500' : colorSet.border}`,
+                  background: colorSet.bg,
+                  border: `3px solid ${colorSet.bg}`,
                   borderRadius: '15px',
                   padding: '1rem',
                   textAlign: 'center',
-                  color: isGold ? '#000' : colorSet.bg,
+                  color: colorSet.text,
                   fontWeight: 'bold',
                   fontSize: '1.1rem',
                   fontFamily: 'Orbitron, sans-serif',
-                  boxShadow: `0 4px 15px ${colorSet.border}40`,
+                  boxShadow: `0 4px 15px ${colorSet.bg}40`,
                   transition: 'all 0.3s ease',
                   cursor: 'pointer'
                 }}>
@@ -257,7 +253,7 @@ const TokenAirdrop = () => {
           <TokenInfo>
             <TokenCard>
               <TokenIcon>
-                <img src="/images/token.png" alt="FLIP Token" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+                <img src="/images/token.png" alt="FLIP Token" style={{ width: '64px', height: '64px', objectFit: 'contain', borderRadius: '12px' }} />
               </TokenIcon>
               <TokenName>FLIP</TokenName>
               <TokenValue>10,000,000,000</TokenValue>
@@ -292,9 +288,9 @@ const TokenAirdrop = () => {
           <TokenInfo>
             <TokenCard>
               <TokenIcon style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <img src="/coins/clownt.png" alt="Clown Skin" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-                <img src="/coins/luigi.png" alt="Luigi Skin" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-                <img src="/coins/trumpheads.webp" alt="Trump Skin" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+                <img src="/coins/clownt.png" alt="Clown Skin" style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '8px' }} />
+                <img src="/coins/luigi.png" alt="Luigi Skin" style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '8px' }} />
+                <img src="/coins/trumpheads.webp" alt="Trump Skin" style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '8px' }} />
               </TokenIcon>
               <TokenName>Skins</TokenName>
               <TokenDescription>
@@ -304,7 +300,7 @@ const TokenAirdrop = () => {
             
             <TokenCard>
               <TokenIcon>
-                <img src="/images/marketplace.png" alt="Marketplace" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+                <img src="/images/marketplace.png" alt="Marketplace" style={{ width: '64px', height: '64px', objectFit: 'contain', borderRadius: '12px' }} />
               </TokenIcon>
               <TokenName>Marketplace</TokenName>
               <TokenDescription>
@@ -314,7 +310,7 @@ const TokenAirdrop = () => {
             
             <TokenCard>
               <TokenIcon>
-                <img src="/images/factory.png" alt="Coin Factory" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+                <img src="/images/factory.png" alt="Coin Factory" style={{ width: '64px', height: '64px', objectFit: 'contain', borderRadius: '12px' }} />
               </TokenIcon>
               <TokenName>Coin Factory</TokenName>
               <TokenDescription>
