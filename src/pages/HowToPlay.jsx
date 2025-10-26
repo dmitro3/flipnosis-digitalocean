@@ -164,34 +164,6 @@ const MechanicDescription = styled.p`
   line-height: 1.6;
 `;
 
-const BackButton = styled.button`
-  position: fixed;
-  top: 2rem;
-  left: 2rem;
-  background: linear-gradient(45deg, #ff1493, #ff69b4);
-  border: none;
-  border-radius: 50px;
-  padding: 1rem 2rem;
-  color: #fff;
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 1000;
-  box-shadow: 0 5px 15px rgba(255, 20, 147, 0.3);
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 20, 147, 0.5);
-  }
-
-  @media (max-width: 768px) {
-    top: 1rem;
-    left: 1rem;
-    padding: 0.8rem 1.5rem;
-    font-size: 0.9rem;
-  }
-`;
 
 const TabContainer = styled.div`
   margin-top: 2rem;
@@ -244,22 +216,13 @@ const TabContent = styled.div`
 
 const HowToPlay = () => {
   const [activeTab, setActiveTab] = useState('creator');
-  
-  const handleBack = () => {
-    window.history.back();
-  };
 
   return (
     <PageContainer>
-      <BackButton onClick={handleBack}>
-        ← Back
-      </BackButton>
-      
       <ContentWrapper>
-        <Title>How to Play FLIPNOSIS</Title>
+        <Title>How to Play</Title>
         
         <Section>
-          <SectionTitle>Game Overview</SectionTitle>
           <div style={{ 
             textAlign: 'center', 
             fontStyle: 'italic', 
@@ -278,7 +241,7 @@ const HowToPlay = () => {
             maxWidth: '800px',
             margin: '0 auto'
           }}>
-            <Highlight>FLIPNOSIS</Highlight> is a gamified NFT sale. Creators list NFTs for the price they want. 4 players enter (25% of the price) and flip coins to win it. Players try to choose the correct side (heads or tails), first the player to three wins the NFT.
+            <Highlight>FLIPNOSIS</Highlight> is a gamified NFT sale. Creators list NFTs for the price they want. 4 players enter (25% of the price) and flip coins to win it. Players try to choose the correct side (heads or tails), the first player to three wins the NFT.
           </div>
         </Section>
 
@@ -286,8 +249,10 @@ const HowToPlay = () => {
           <SectionTitle>Game Mechanics</SectionTitle>
           <GameMechanics>
             <MechanicCard>
-              <MechanicIcon>
+              <MechanicIcon style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <img src="/coins/calaverah.png" alt="Coin" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+                <img src="/coins/mangat.png" alt="Coin" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+                <img src="/coins/pharaoht.png" alt="Coin" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
               </MechanicIcon>
               <MechanicTitle>Coin Selection</MechanicTitle>
               <MechanicDescription>
@@ -339,7 +304,7 @@ const HowToPlay = () => {
                   <RuleItem>
                     <RuleNumber>2</RuleNumber>
                     <RuleText>
-                      <Highlight>Get Paid Upfront:</Highlight> Once 4 players enter (paying 25% each), you receive the full asking price immediately.
+                      <Highlight>Get Paid Upfront:</Highlight> Once 4 players enter (paying 25% each), you receive the full asking price.
                     </RuleText>
                   </RuleItem>
                   <RuleItem>
@@ -351,7 +316,13 @@ const HowToPlay = () => {
                   <RuleItem>
                     <RuleNumber>4</RuleNumber>
                     <RuleText>
-                      <Highlight>NFT Transfer:</Highlight> The winner automatically receives your NFT in their wallet.
+                      <Highlight>NFT Transfer:</Highlight> The winner withdraws the NFT from the contract to their wallet.
+                    </RuleText>
+                  </RuleItem>
+                  <RuleItem>
+                    <RuleNumber>5</RuleNumber>
+                    <RuleText>
+                      <Highlight>Option to Join:</Highlight> You can join your own flip and win your NFT back. This reduces the pool amount by 25%.
                     </RuleText>
                   </RuleItem>
                 </RuleList>
@@ -385,7 +356,7 @@ const HowToPlay = () => {
                   <RuleItem>
                     <RuleNumber>4</RuleNumber>
                     <RuleText>
-                      <Highlight>Flip and Win:</Highlight> If your coin lands on your chosen side, you get a point. First to 3 points wins the NFT!
+                      <Highlight>Flip and Win:</Highlight> If your coin lands on your chosen side, you get a point. First to 3 points wins the NFT! 50-50 every flip.
                     </RuleText>
                   </RuleItem>
                 </RuleList>
