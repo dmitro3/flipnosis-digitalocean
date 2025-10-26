@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 
@@ -193,7 +193,58 @@ const BackButton = styled.button`
   }
 `;
 
+const TabContainer = styled.div`
+  margin-top: 2rem;
+`;
+
+const TabButtons = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+`;
+
+const TabButton = styled.button`
+  background: ${props => props.active ? 'linear-gradient(45deg, #00FF41, #00ff88)' : 'rgba(0, 255, 65, 0.1)'};
+  border: 2px solid ${props => props.active ? '#00FF41' : 'rgba(0, 255, 65, 0.3)'};
+  color: ${props => props.active ? '#000' : '#00FF41'};
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+
+  &:hover {
+    background: ${props => props.active ? 'linear-gradient(45deg, #00FF41, #00ff88)' : 'rgba(0, 255, 65, 0.2)'};
+    border-color: #00FF41;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 65, 0.3);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+`;
+
+const TabContent = styled.div`
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid rgba(0, 255, 65, 0.2);
+  border-radius: 15px;
+  padding: 2rem;
+  min-height: 300px;
+`;
+
 const HowToPlay = () => {
+  const [activeTab, setActiveTab] = useState('creator');
+  
   const handleBack = () => {
     window.history.back();
   };
@@ -209,26 +260,26 @@ const HowToPlay = () => {
         
         <Section>
           <SectionTitle>Game Overview</SectionTitle>
-          <RuleList>
-            <RuleItem>
-              <RuleNumber>1</RuleNumber>
-              <RuleText>
-                <Highlight>Why spend months waiting to sell an NFT when you can flip it!</Highlight>
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>2</RuleNumber>
-              <RuleText>
-                <Highlight>FLIPNOSIS</Highlight> is a gamified NFT sale where 4 players flip coins to win NFTs. When the game starts, the creator receives the full amount they have asked for. The first player to three wins, wins the NFT.
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>3</RuleNumber>
-              <RuleText>
-                Creators deposit their NFTs for the exact price they want. Players pay 1/4 of the asking price as an entry fee.
-              </RuleText>
-            </RuleItem>
-          </RuleList>
+          <div style={{ 
+            textAlign: 'center', 
+            fontStyle: 'italic', 
+            fontSize: '1.2rem', 
+            color: '#00FF41', 
+            marginBottom: '2rem',
+            fontWeight: 'bold'
+          }}>
+            Why spend months waiting to sell an NFT when you can flip it!
+          </div>
+          <div style={{ 
+            fontSize: '1.1rem', 
+            lineHeight: '1.6', 
+            color: '#ccc',
+            textAlign: 'center',
+            maxWidth: '800px',
+            margin: '0 auto'
+          }}>
+            <Highlight>FLIPNOSIS</Highlight> is a gamified NFT sale. Creators list NFTs for the price they want. 4 players enter (25% of the price) and flip coins to win it. Players try to choose the correct side (heads or tails), first the player to three wins the NFT.
+          </div>
         </Section>
 
         <Section>
@@ -262,47 +313,86 @@ const HowToPlay = () => {
           </GameMechanics>
         </Section>
 
-        <Section>
-          <SectionTitle>Step-by-Step Guide</SectionTitle>
-          <RuleList>
-            <RuleItem>
-              <RuleNumber>1</RuleNumber>
-              <RuleText>
-                <Highlight>Join a Game:</Highlight> Connect your wallet and join an existing game room or create your own battle.
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>2</RuleNumber>
-              <RuleText>
-                <Highlight>Deposit Assets:</Highlight> Deposit your NFTs and <TokenHighlight>FLIP</TokenHighlight> tokens to enter the game.
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>3</RuleNumber>
-              <RuleText>
-                <Highlight>Make Your Choice:</Highlight> Select either <Highlight>Heads</Highlight> or <Highlight>Tails</Highlight> for the upcoming coin flip.
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>4</RuleNumber>
-              <RuleText>
-                <Highlight>Charge Power:</Highlight> Hold down the <Highlight>POWER</Highlight> button to charge your flip power. Release when you're ready!
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>5</RuleNumber>
-              <RuleText>
-                <Highlight>Watch the Flip:</Highlight> Your coin will flip with physics-based animation. If it matches your choice, you survive!
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>6</RuleNumber>
-              <RuleText>
-                <Highlight>Eliminate Others:</Highlight> Continue until only one player remains. The winner takes all the deposited assets!
-              </RuleText>
-            </RuleItem>
-          </RuleList>
-        </Section>
+        <TabContainer>
+          <TabButtons>
+            <TabButton active={activeTab === 'creator'} onClick={() => setActiveTab('creator')}>
+              Creator's Guide
+            </TabButton>
+            <TabButton active={activeTab === 'player'} onClick={() => setActiveTab('player')}>
+              Player's Guide
+            </TabButton>
+          </TabButtons>
+          
+          <TabContent>
+            {activeTab === 'creator' && (
+              <div>
+                <h3 style={{ color: '#00FF41', fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+                  Creator's Guide
+                </h3>
+                <RuleList>
+                  <RuleItem>
+                    <RuleNumber>1</RuleNumber>
+                    <RuleText>
+                      <Highlight>List Your NFT:</Highlight> Connect your wallet and select the NFT you want to sell. Set your desired price.
+                    </RuleText>
+                  </RuleItem>
+                  <RuleItem>
+                    <RuleNumber>2</RuleNumber>
+                    <RuleText>
+                      <Highlight>Get Paid Upfront:</Highlight> Once 4 players enter (paying 25% each), you receive the full asking price immediately.
+                    </RuleText>
+                  </RuleItem>
+                  <RuleItem>
+                    <RuleNumber>3</RuleNumber>
+                    <RuleText>
+                      <Highlight>Watch the Game:</Highlight> Players compete by flipping coins. The first to 3 wins gets your NFT.
+                    </RuleText>
+                  </RuleItem>
+                  <RuleItem>
+                    <RuleNumber>4</RuleNumber>
+                    <RuleText>
+                      <Highlight>NFT Transfer:</Highlight> The winner automatically receives your NFT in their wallet.
+                    </RuleText>
+                  </RuleItem>
+                </RuleList>
+              </div>
+            )}
+            
+            {activeTab === 'player' && (
+              <div>
+                <h3 style={{ color: '#00FF41', fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+                  Player's Guide
+                </h3>
+                <RuleList>
+                  <RuleItem>
+                    <RuleNumber>1</RuleNumber>
+                    <RuleText>
+                      <Highlight>Join a Game:</Highlight> Browse available NFT listings and join a game by paying 25% of the asking price.
+                    </RuleText>
+                  </RuleItem>
+                  <RuleItem>
+                    <RuleNumber>2</RuleNumber>
+                    <RuleText>
+                      <Highlight>Make Your Choice:</Highlight> Select either <Highlight>Heads</Highlight> or <Highlight>Tails</Highlight> for each coin flip.
+                    </RuleText>
+                  </RuleItem>
+                  <RuleItem>
+                    <RuleNumber>3</RuleNumber>
+                    <RuleText>
+                      <Highlight>Charge Power:</Highlight> Hold the <Highlight>POWER</Highlight> button to charge your flip power (0-100%).
+                    </RuleText>
+                  </RuleItem>
+                  <RuleItem>
+                    <RuleNumber>4</RuleNumber>
+                    <RuleText>
+                      <Highlight>Flip and Win:</Highlight> If your coin lands on your chosen side, you get a point. First to 3 points wins the NFT!
+                    </RuleText>
+                  </RuleItem>
+                </RuleList>
+              </div>
+            )}
+          </TabContent>
+        </TabContainer>
 
       </ContentWrapper>
     </PageContainer>
