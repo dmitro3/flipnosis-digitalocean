@@ -198,11 +198,66 @@ const TokenAirdrop = () => {
       <ContentWrapper>
         <Title>Token & Airdrop</Title>
         
+        <AirdropSection>
+          <AirdropTitle>Massive Airdrop Campaign</AirdropTitle>
+          <AirdropAmount>1,000,000,000 FLIP</AirdropAmount>
+          <AirdropDescription>
+            We're giving away <strong>1 billion FLIP tokens</strong> to our community! 
+            This represents <strong>10% of the total supply</strong> and will be distributed through our games only.
+            <br /><br />
+            <strong>Every time you flip you win FLIP.</strong>
+          </AirdropDescription>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
+            gap: '1rem', 
+            marginTop: '2rem',
+            padding: '1rem'
+          }}>
+            {[50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000].map((amount, index) => {
+              const colors = [
+                { bg: '#ff6b6b', border: '#ff5252' }, // Red
+                { bg: '#4ecdc4', border: '#26a69a' }, // Teal
+                { bg: '#45b7d1', border: '#2196f3' }, // Blue
+                { bg: '#96ceb4', border: '#4caf50' }, // Green
+                { bg: '#feca57', border: '#ffc107' }, // Yellow
+                { bg: '#ff9ff3', border: '#e91e63' }, // Pink
+                { bg: '#a8e6cf', border: '#8bc34a' }, // Light Green
+                { bg: '#ffd93d', border: '#ffeb3b' }, // Gold
+                { bg: '#b4a7d6', border: '#9c27b0' }, // Purple
+                { bg: '#ffb3ba', border: '#f44336' }, // Light Red
+                { bg: '#FFD700', border: '#FFA500' }  // Gold for 1000
+              ];
+              const colorSet = colors[index % colors.length];
+              const isGold = amount === 1000;
+              
+              return (
+                <div key={index} style={{
+                  background: isGold ? '#FFD700' : 'white',
+                  border: `3px solid ${isGold ? '#FFA500' : colorSet.border}`,
+                  borderRadius: '15px',
+                  padding: '1rem',
+                  textAlign: 'center',
+                  color: isGold ? '#000' : colorSet.bg,
+                  fontWeight: 'bold',
+                  fontSize: '1.1rem',
+                  fontFamily: 'Orbitron, sans-serif',
+                  boxShadow: `0 4px 15px ${colorSet.border}40`,
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}>
+                  +{amount} FLIP
+                </div>
+              );
+            })}
+          </div>
+        </AirdropSection>
+
         <Section>
           <TokenInfo>
             <TokenCard>
               <TokenIcon>
-                <img src="/Images/token.png" alt="FLIP Token" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+                <img src="/token.png" alt="FLIP Token" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
               </TokenIcon>
               <TokenName>FLIP</TokenName>
               <TokenValue>10,000,000,000</TokenValue>
@@ -212,7 +267,7 @@ const TokenAirdrop = () => {
             </TokenCard>
             
             <TokenCard>
-              <TokenIcon>🎁</TokenIcon>
+              <TokenIcon>🪂</TokenIcon>
               <TokenName>Airdrop</TokenName>
               <TokenValue>1,000,000,000</TokenValue>
               <TokenDescription>
@@ -230,38 +285,6 @@ const TokenAirdrop = () => {
             </TokenCard>
           </TokenInfo>
         </Section>
-
-        <AirdropSection>
-          <AirdropTitle>Massive Airdrop Campaign</AirdropTitle>
-          <AirdropAmount>1,000,000,000 FLIP</AirdropAmount>
-          <AirdropDescription>
-            We're giving away <strong>1 billion FLIP tokens</strong> to our community! 
-            This represents <strong>10% of the total supply</strong> and will be distributed through our games only. Every time you flip your coin you win FLIP.
-          </AirdropDescription>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
-            gap: '1rem', 
-            marginTop: '2rem',
-            padding: '1rem'
-          }}>
-            {[50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000].map((amount, index) => (
-              <div key={index} style={{
-                background: 'rgba(255, 20, 147, 0.2)',
-                border: '2px solid rgba(255, 20, 147, 0.5)',
-                borderRadius: '10px',
-                padding: '1rem',
-                textAlign: 'center',
-                color: '#FFD700',
-                fontWeight: 'bold',
-                fontSize: '1.1rem',
-                fontFamily: 'Orbitron, sans-serif'
-              }}>
-                +{amount} FLIP
-              </div>
-            ))}
-          </div>
-        </AirdropSection>
 
 
         <Section>
@@ -281,7 +304,7 @@ const TokenAirdrop = () => {
             
             <TokenCard>
               <TokenIcon>
-                <img src="/Images/marketplace.png" alt="Marketplace" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+                <img src="/marketplace.png" alt="Marketplace" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
               </TokenIcon>
               <TokenName>Marketplace</TokenName>
               <TokenDescription>
@@ -291,7 +314,7 @@ const TokenAirdrop = () => {
             
             <TokenCard>
               <TokenIcon>
-                <img src="/Images/factory.png" alt="Coin Factory" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+                <img src="/factory.png" alt="Coin Factory" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
               </TokenIcon>
               <TokenName>Coin Factory</TokenName>
               <TokenDescription>
