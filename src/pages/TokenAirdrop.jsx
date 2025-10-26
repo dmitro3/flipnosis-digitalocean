@@ -216,13 +216,13 @@ const TokenAirdrop = () => {
           }}>
             {[50, 100, 200, 250, 300, 500, 750, 1000].map((amount, index) => {
               const colors = [
-                { bg: '#ff6b6b', text: '#fff' }, // Red
-                { bg: '#4ecdc4', text: '#fff' }, // Teal
-                { bg: '#45b7d1', text: '#fff' }, // Blue
-                { bg: '#96ceb4', text: '#fff' }, // Green
-                { bg: '#feca57', text: '#000' }, // Yellow
-                { bg: '#ff9ff3', text: '#fff' }, // Pink
-                { bg: '#a8e6cf', text: '#000' }, // Light Green
+                { bg: '#808080', text: '#fff' }, // Grey for 50
+                { bg: '#00ffff', text: '#000' }, // Neon Cyan
+                { bg: '#ff00ff', text: '#fff' }, // Neon Magenta
+                { bg: '#00ff00', text: '#000' }, // Neon Green
+                { bg: '#ffff00', text: '#000' }, // Neon Yellow
+                { bg: '#ff0080', text: '#fff' }, // Neon Pink
+                { bg: '#8000ff', text: '#fff' }, // Neon Purple
                 { bg: '#FFD700', text: '#000' }  // Gold for 1000
               ];
               const colorSet = colors[index % colors.length];
@@ -304,7 +304,7 @@ const TokenAirdrop = () => {
               </TokenIcon>
               <TokenName>Marketplace</TokenName>
               <TokenDescription>
-                Trade <strong>FLIP</strong> tokens in our upcoming marketplace for NFTs, special items, and exclusive game features. Purchase creator made skins on our marketplace.
+                Spend <strong>FLIP</strong> tokens on collectable community created skins for your coins
               </TokenDescription>
             </TokenCard>
             
@@ -321,7 +321,7 @@ const TokenAirdrop = () => {
         </Section>
 
 
-        <AirdropSection>
+        <AirdropSection style={{ marginBottom: '0' }}>
           <AirdropTitle>🎯 Start Earning Now!</AirdropTitle>
           <AirdropDescription>
             Join the FLIPNOSIS community today and start earning <strong>FLIP</strong> tokens immediately! 
