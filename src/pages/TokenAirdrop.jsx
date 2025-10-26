@@ -257,7 +257,7 @@ const TokenAirdrop = () => {
           <TokenInfo>
             <TokenCard>
               <TokenIcon>
-                <img src="/token.png" alt="FLIP Token" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+                <img src="/images/token.png" alt="FLIP Token" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
               </TokenIcon>
               <TokenName>FLIP</TokenName>
               <TokenValue>10,000,000,000</TokenValue>
@@ -304,7 +304,7 @@ const TokenAirdrop = () => {
             
             <TokenCard>
               <TokenIcon>
-                <img src="/marketplace.png" alt="Marketplace" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+                <img src="/images/marketplace.png" alt="Marketplace" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
               </TokenIcon>
               <TokenName>Marketplace</TokenName>
               <TokenDescription>
@@ -314,7 +314,7 @@ const TokenAirdrop = () => {
             
             <TokenCard>
               <TokenIcon>
-                <img src="/factory.png" alt="Coin Factory" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+                <img src="/images/factory.png" alt="Coin Factory" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
               </TokenIcon>
               <TokenName>Coin Factory</TokenName>
               <TokenDescription>
