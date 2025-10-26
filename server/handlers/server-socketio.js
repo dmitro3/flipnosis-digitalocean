@@ -14,9 +14,10 @@ function isBattleRoyaleAvailable(handlers) {
 }
 
 class GameServer {
-  constructor(io, dbService) {
+  constructor(io, dbService, blockchainService = null) {
     this.io = io
     this.dbService = dbService
+    this.blockchainService = blockchainService
     
     // Initialize managers FIRST
     // this.gameManager = new GameManager() // TODO: Not implemented yet - for 1v1 games
@@ -1166,8 +1167,8 @@ initialize(server, dbService) {
 }
 
 // Export the initialization function that server.js expects
-function initializeSocketIO(server, dbService) {
-  const gameServer = new GameServer(null, dbService)
+function initializeSocketIO(server, dbService, blockchainService = null) {
+  const gameServer = new GameServer(null, dbService, blockchainService)
   const io = gameServer.initialize(server, dbService)
   return { io, gameServer }
 }

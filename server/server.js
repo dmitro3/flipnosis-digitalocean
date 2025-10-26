@@ -167,7 +167,7 @@ setInterval(() => {
 initializeServices()
   .then(({ dbService, blockchainService, cleanupService }) => {
     // Initialize Socket.io server
-    const { io, gameServer: gameServerInstance } = initializeSocketIO(server, dbService)
+    const { io, gameServer: gameServerInstance } = initializeSocketIO(server, dbService, blockchainService)
     console.log('✅ Socket.io server initialized')
 
     // Make gameServer available globally for API routes
