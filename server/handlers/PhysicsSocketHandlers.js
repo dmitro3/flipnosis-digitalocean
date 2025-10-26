@@ -164,11 +164,12 @@ class PhysicsSocketHandlers {
 
   // Player flips coin with server-side physics
   async handlePhysicsFlipCoin(socket, data, gameManager, io) {
-    const { gameId, address, power, angle = 0 } = data
-    console.log(`🪙 ${address} flipping coin with power ${power} in physics game`, {
+    const { gameId, address, power, accuracy = 'normal', angle = 0 } = data
+    console.log(`🪙 ${address} flipping coin with power ${power} and accuracy ${accuracy} in physics game`, {
       gameId,
       address,
       power,
+      accuracy,
       angle,
       socketId: socket.id
     })
@@ -199,7 +200,7 @@ class PhysicsSocketHandlers {
       console.warn(`❌ Game ${gameId} not found in manager`)
     }
     
-    const success = gameManager.serverFlipCoin(gameId, address, null, power, angle, (room, event, payload) => {
+    const success = gameManager.serverFlipCoin(gameId, address, null, power, angle, accuracy, (room, event, payload) => {
       io.to(room).emit(event, payload)
     })
     

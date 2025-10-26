@@ -277,7 +277,7 @@ class PhysicsGameManager {
   }
 
   // Server-side coin flip with physics simulation
-  serverFlipCoin(gameId, address, choice, power, angle = 0, broadcast) {
+  serverFlipCoin(gameId, address, choice, power, angle = 0, accuracy = 'normal', broadcast) {
     const game = this.games.get(gameId)
     if (!game || game.phase !== 'round_active') {
       console.warn(`❌ Game ${gameId} not in active round`, {
@@ -329,7 +329,8 @@ class PhysicsGameManager {
       player.slotNumber, 
       player.choice, 
       power, 
-      angle
+      angle,
+      accuracy
     )
 
     if (!simulationResult) {
@@ -411,6 +412,7 @@ class PhysicsGameManager {
         playerSlot: player.slotNumber,
         result: result,
         won: won,
+        accuracy: coinState.accuracy,
         lives: player.lives,
         wins: player.wins,
         isActive: player.isActive

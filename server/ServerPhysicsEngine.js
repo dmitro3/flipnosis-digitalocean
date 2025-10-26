@@ -125,7 +125,7 @@ class ServerPhysicsEngine {
   }
 
   // Simulate coin flip with deterministic physics
-  simulateCoinFlip(gameId, playerIndex, choice, power, angle = 0) {
+  simulateCoinFlip(gameId, playerIndex, choice, power, angle = 0, accuracy = 'normal') {
     const gameBodies = this.bodies.get(gameId)
     const gameState = this.gameStates.get(gameId)
     
@@ -173,6 +173,7 @@ class ServerPhysicsEngine {
     coinState.flipStartTime = Date.now()
     coinState.power = power
     coinState.angle = angle
+    coinState.accuracy = accuracy
     coinState.result = null
     
     console.log(`🪙 Simulating coin flip for player ${playerIndex}: power=${power}, duration=${flipDuration.toFixed(0)}ms`)
@@ -227,14 +228,25 @@ class ServerPhysicsEngine {
     // Simplified: use rotation around X axis to determine heads/tails
     // This is a simplified heuristic - in reality you'd need more complex logic
     
-    // Use a deterministic method based on final position and rotation
-    // For fairness, we'll use a seeded random based on game state
+    // Use accuracy-based win chances with deterministic seed
     const seed = this.generateSeed(gameId, playerIndex, coinState.flipStartTime)
     const randomValue = this.seededRandom(seed)
     
-    // 50/50 chance with deterministic seed
-    const result = randomValue < 0.5 ? 'heads' : 'tails'
-    const won = result === choice
+    // Map accuracy to win probability
+    const winChanceMap = {
+      'perfect': 0.55,   // Sweet spot: +5% edge
+      'good': 0.525,     // Good timing: +2.5% edge
+      'normal': 0.50     // Standard: fair 50/50
+    }
+    
+    const winChance = winChanceMap[coinState.accuracy] || 0.50
+    
+    // Weighted random roll
+    const playerWins = randomValue < winChance
+    const result = playerWins ? choice : (choice === 'heads' ? 'tails' : 'heads')
+    const won = playerWins
+    
+    console.log(`🎲 Player ${playerIndex}: chose ${choice}, accuracy: ${coinState.accuracy} (${(winChance*100).toFixed(1)}% chance), rolled: ${randomValue.toFixed(3)}, result: ${result}, won: ${won}`)
     
     // Update coin state
     coinState.isFlipping = false

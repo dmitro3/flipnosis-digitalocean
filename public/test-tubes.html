@@ -530,6 +530,151 @@
         backdrop-filter: blur(10px);
         box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
       }
+
+      /* Sweet Spot Zones for Power Bar */
+      .power-bar-container {
+        position: relative;
+        width: 100%;
+        height: 40px;
+        background: rgba(10, 15, 35, 0.8);
+        border: 2px solid #00ffff;
+        border-radius: 8px;
+        overflow: visible;
+        margin: 10px 0;
+      }
+
+      .zone-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .zone {
+        position: absolute;
+        height: 100%;
+        top: 0;
+        transition: opacity 0.3s;
+      }
+
+      .zone.safe {
+        background: transparent;
+      }
+
+      .zone.good {
+        background: linear-gradient(180deg, 
+          rgba(0, 255, 100, 0.4) 0%,
+          rgba(0, 255, 100, 0.2) 100%);
+        border-left: 1px solid rgba(0, 255, 100, 0.6);
+        border-right: 1px solid rgba(0, 255, 100, 0.6);
+      }
+
+      .zone.perfect {
+        background: radial-gradient(ellipse at center, 
+          rgba(255, 215, 0, 0.8) 0%,
+          rgba(255, 215, 0, 0.5) 50%,
+          rgba(255, 215, 0, 0.3) 100%);
+        box-shadow: 
+          0 0 15px rgba(255, 215, 0, 0.6),
+          inset 0 0 15px rgba(255, 215, 0, 0.4);
+        border-left: 2px solid rgba(255, 215, 0, 0.9);
+        border-right: 2px solid rgba(255, 215, 0, 0.9);
+        animation: sweetSpotPulse 0.8s ease-in-out infinite;
+        z-index: 2;
+      }
+
+      @keyframes sweetSpotPulse {
+        0%, 100% { 
+          opacity: 0.7;
+          box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+        50% { 
+          opacity: 1;
+          box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
+        }
+      }
+
+      .power-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: linear-gradient(90deg, 
+          #00ff00 0%, 
+          #00ffff 50%, 
+          #0088ff 100%);
+        transition: width 0.05s linear;
+        z-index: 3;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+      }
+
+      .power-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+        z-index: 4;
+        pointer-events: none;
+      }
+
+      /* Sweet Spot Feedback Popup */
+      .sweet-spot-feedback {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        z-index: 10000;
+        text-align: center;
+        font-family: 'Orbitron', sans-serif;
+        pointer-events: none;
+      }
+
+      .sweet-spot-feedback.show {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+
+      .sweet-spot-text {
+        font-size: 64px;
+        font-weight: 900;
+        color: #FFD700;
+        text-shadow: 
+          0 0 20px rgba(255, 215, 0, 1),
+          0 0 40px rgba(255, 215, 0, 0.6);
+        animation: textGlow 0.5s ease-in-out infinite;
+        letter-spacing: 4px;
+      }
+
+      .win-chance {
+        font-size: 28px;
+        color: #00ff00;
+        margin-top: 15px;
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+        font-weight: bold;
+      }
+
+      @keyframes textGlow {
+        0%, 100% { 
+          text-shadow: 
+            0 0 20px rgba(255, 215, 0, 1),
+            0 0 40px rgba(255, 215, 0, 0.6);
+        }
+        50% { 
+          text-shadow: 
+            0 0 30px rgba(255, 215, 0, 1),
+            0 0 60px rgba(255, 215, 0, 0.8),
+            0 0 80px rgba(255, 215, 0, 0.4);
+        }
+      }
       
       .power-fill {
         height: 100%;
@@ -1499,14 +1644,13 @@
               }
               
               // Reset power bar
-              const powerBar = tube.cardElement.querySelector('.power-bar');
-              const powerText = tube.cardElement.querySelector('.power-text');
-              if (powerBar) {
-                powerBar.style.width = '0%';
-                powerBar.style.background = 'linear-gradient(90deg, #00ff00, #39ff14)';
+              const powerFill = tube.cardElement.querySelector('.power-fill');
+              const powerValue = tube.cardElement.querySelector('.power-value');
+              if (powerFill) {
+                powerFill.style.width = '0%';
               }
-              if (powerText) {
-                powerText.textContent = 'POWER: 0%';
+              if (powerValue) {
+                powerValue.textContent = '0';
               }
             }
           });
@@ -1681,12 +1825,9 @@
         if (tube && coin && player) {
           tube.isFlipping = false;
           
-          // Lock coin to final rotation based on result
+          // Smoothly land coin with bounce effect
           const targetRotationX = data.result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
-          const finalCycles = Math.floor(coin.rotation.x / (Math.PI * 2));
-          coin.rotation.x = finalCycles * (Math.PI * 2) + targetRotationX;
-          coin.rotation.y = Math.PI / 2;
-          coin.rotation.z = 0;
+          animateCoinLanding(coin, targetRotationX, data.accuracy || 'normal');
           
           console.log(`✅ Coin ${data.playerSlot + 1} landed on ${data.result} facing camera (server-side)`);
           
@@ -1992,9 +2133,11 @@
       
       if (!tube || !coin) return;
       
+      tube.isFlipping = true;
+      
       // Visual animation only - no game logic
       const powerPercent = power / 100;
-      const material = tube.selectedMaterial || coinMaterials[2]; // Default to glass
+      const material = tube.selectedMaterial || coinMaterials[2];
       const speedMult = material.speedMultiplier;
       const durationMult = material.durationMultiplier;
       
@@ -2002,33 +2145,196 @@
       const basePowerSpeed = Math.max(0.08, 0.05 + (powerPercent * 0.25));
       const flipSpeed = basePowerSpeed * speedMult;
       
+      // NEW: Wobble parameters for realistic motion
+      const wobbleAmount = 0.02 + (powerPercent * 0.05); // More power = more wobble
+      const tumbleAmount = 0.01 + (powerPercent * 0.03);
+      
       console.log(`🎬 Starting visual coin flip for slot ${playerSlot}: duration=${flipDuration}ms, speed=${flipSpeed}`);
       
       const startTime = Date.now();
+      let wobblePhase = 0;
+      let tumblePhase = 0;
       
       const animateFlip = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / flipDuration, 1);
         
+        // Cubic ease-out for natural deceleration
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        
         if (progress < 0.7) {
           // Fast spinning phase (first 70%)
-          coin.rotation.x += flipSpeed;
+          const currentSpeed = flipSpeed * (1 - (progress / 0.7) * 0.3);
+          coin.rotation.x += currentSpeed;
         } else {
           // Deceleration phase (last 30%)
           const decelProgress = (progress - 0.7) / 0.3;
-          const currentSpeed = flipSpeed * (1 - decelProgress);
+          const currentSpeed = flipSpeed * 0.7 * (1 - decelProgress);
           coin.rotation.x += currentSpeed;
         }
+        
+        // NEW: Add realistic wobble on Y-axis (decreases as coin settles)
+        wobblePhase += 0.15 * (1 - progress * 0.5);
+        const wobbleIntensity = wobbleAmount * (1 - easeOut);
+        coin.rotation.y = (Math.PI / 2) + Math.sin(wobblePhase) * wobbleIntensity;
+        
+        // NEW: Add subtle tumble on Z-axis
+        tumblePhase += 0.1 * (1 - progress * 0.5);
+        const tumbleIntensity = tumbleAmount * (1 - easeOut);
+        coin.rotation.z = Math.sin(tumblePhase * 0.7) * tumbleIntensity;
         
         if (progress < 1) {
           requestAnimationFrame(animateFlip);
         } else {
           // Animation complete - server will send actual result
-          console.log(`🎬 Visual flip animation complete for slot ${playerSlot}`);
+          console.log(`🎬 Visual flip animation complete for slot ${playerSlot}, awaiting result...`);
         }
       };
       
       animateFlip();
+    }
+
+    // Calculate release accuracy for skill-based probability
+    function calculateReleaseAccuracy(power) {
+      const distanceFromCenter = Math.abs(power - 50);
+      
+      let accuracy, zone, winChance;
+      
+      if (distanceFromCenter <= 2) {
+        // PERFECT - 48-52% range (4% window)
+        accuracy = 'perfect';
+        zone = 'SWEET SPOT!';
+        winChance = 0.55;
+      } else if (distanceFromCenter <= 8) {
+        // GOOD - 42-58% range (excluding perfect)
+        accuracy = 'good';
+        zone = 'Nice Timing!';
+        winChance = 0.525;
+      } else {
+        // NORMAL - everything else (no penalty!)
+        accuracy = 'normal';
+        zone = null;
+        winChance = 0.50;
+      }
+      
+      console.log(`🎯 Release accuracy: ${accuracy} at ${power}% power (${(winChance * 100).toFixed(1)}% win chance)`);
+      
+      return { accuracy, zone, winChance };
+    }
+
+    // Show sweet spot feedback popup
+    function showSweetSpotFeedback(zone, winChance) {
+      const feedback = document.createElement('div');
+      feedback.className = 'sweet-spot-feedback';
+      
+      const bonusPercent = ((winChance - 0.5) * 100).toFixed(1);
+      
+      feedback.innerHTML = `
+        <div class="sweet-spot-text">${zone}</div>
+        <div class="win-chance">+${bonusPercent}% Win Chance!</div>
+      `;
+      
+      document.body.appendChild(feedback);
+      
+      // Animate in
+      setTimeout(() => feedback.classList.add('show'), 10);
+      
+      // Remove after 2 seconds
+      setTimeout(() => {
+        feedback.classList.remove('show');
+        setTimeout(() => feedback.remove(), 300);
+      }, 2000);
+    }
+
+    // Smooth landing with bounce effect when result is revealed
+    function animateCoinLanding(coin, targetRotation, accuracy) {
+      const currentRotation = coin.rotation.x;
+      const rotationCycles = Math.floor(currentRotation / (Math.PI * 2));
+      const finalRotation = rotationCycles * (Math.PI * 2) + targetRotation;
+      
+      let landingProgress = 0;
+      const landingDuration = 400; // 0.4 seconds
+      const startTime = Date.now();
+      
+      const startY = coin.rotation.y;
+      const startZ = coin.rotation.z;
+      
+      const animateLanding = () => {
+        const elapsed = Date.now() - startTime;
+        landingProgress = Math.min(elapsed / landingDuration, 1);
+        
+        // Elastic ease-out for bounce effect
+        let bounce;
+        if (landingProgress < 0.7) {
+          bounce = Math.pow(landingProgress / 0.7, 2);
+        } else {
+          const bounceProgress = (landingProgress - 0.7) / 0.3;
+          bounce = 1 - Math.pow(bounceProgress, 2) * 0.1;
+        }
+        
+        // Smooth rotation to final position
+        coin.rotation.x = currentRotation + (finalRotation - currentRotation) * bounce;
+        
+        // Reset wobble and tumble smoothly
+        coin.rotation.y = startY + (Math.PI / 2 - startY) * landingProgress;
+        coin.rotation.z = startZ * (1 - landingProgress);
+        
+        if (landingProgress < 1) {
+          requestAnimationFrame(animateLanding);
+        } else {
+          // Lock to perfect final position
+          coin.rotation.x = finalRotation;
+          coin.rotation.y = Math.PI / 2;
+          coin.rotation.z = 0;
+          
+          // Show perfect timing effect if sweet spot was hit
+          if (accuracy === 'perfect') {
+            showPerfectTimingEffect(coin);
+          }
+        }
+      };
+      
+      animateLanding();
+    }
+
+    // Visual effect for perfect timing
+    function showPerfectTimingEffect(coin) {
+      // Add golden glow ring around coin
+      const ringGeometry = new THREE.RingGeometry(35, 45, 32);
+      const ringMaterial = new THREE.MeshBasicMaterial({
+        color: 0xFFD700,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.8
+      });
+      const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+      
+      ring.position.copy(coin.position);
+      ring.rotation.copy(coin.rotation);
+      scene.add(ring);
+      
+      // Animate ring expanding and fading
+      let ringProgress = 0;
+      const ringDuration = 1000;
+      const startTime = Date.now();
+      
+      const animateRing = () => {
+        const elapsed = Date.now() - startTime;
+        ringProgress = elapsed / ringDuration;
+        
+        if (ringProgress < 1) {
+          const scale = 1 + ringProgress * 0.5;
+          ring.scale.set(scale, scale, 1);
+          ring.material.opacity = 0.8 * (1 - ringProgress);
+          requestAnimationFrame(animateRing);
+        } else {
+          scene.remove(ring);
+          ring.geometry.dispose();
+          ring.material.dispose();
+        }
+      };
+      
+      animateRing();
     }
 
     // ===== AUDIO SYSTEM =====
@@ -3407,10 +3713,22 @@
           <button class="choice-btn tails">TAILS</button>
         </div>
         <div style="margin: 15px 0;">
-          <div style="height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
-            <div class="power-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #00ff00, #39ff14); border-radius: 10px; transition: width 0.1s;"></div>
+          <div class="power-bar-container">
+            <!-- Sweet Spot Zone Overlays -->
+            <div class="zone-overlay">
+              <div class="zone safe" style="left: 0%; width: 42%;"></div>
+              <div class="zone good" style="left: 42%; width: 6%;"></div>
+              <div class="zone perfect" style="left: 48%; width: 4%;"></div>
+              <div class="zone good" style="left: 52%; width: 6%;"></div>
+              <div class="zone safe" style="left: 58%; width: 42%;"></div>
+            </div>
+            
+            <!-- Actual Power Fill -->
+            <div class="power-fill"></div>
+            
+            <!-- Power Text -->
+            <div class="power-text">POWER: <span class="power-value">0</span>%</div>
           </div>
-          <div class="power-text" style="color: #00ff00; font-size: 14px; text-align: center;">POWER: 0%</div>
         </div>
         <button class="action-btn" style="display: ${showButtons ? 'block' : 'none'};">CHARGE POWER</button>
       `;
@@ -3547,13 +3865,22 @@
               // Get player choice from the card
               const playerChoice = players[i].choice;
               
+              // Calculate accuracy before sending
+              const releaseData = calculateReleaseAccuracy(finalPower);
+              
               // Send flip request to server (server will broadcast glass shatter to all)
               socket.emit('physics_flip_coin', {
                 gameId: gameIdParam,
                 address: walletParam,
                 power: finalPower,
+                accuracy: releaseData.accuracy,
                 angle: 0 // Default angle for now
               });
+              
+              // Show instant feedback if sweet spot hit
+              if (releaseData.zone) {
+                showSweetSpotFeedback(releaseData.zone, releaseData.winChance);
+              }
               
               console.log(`🪙 Sent flip request to server: power=${finalPower}, choice=${playerChoice}`);
             } else {
@@ -3600,13 +3927,22 @@
                 // Get player choice from the card
                 const playerChoice = players[i].choice;
                 
+                // Calculate accuracy before sending
+                const releaseData = calculateReleaseAccuracy(finalPower);
+                
                 // Send flip request to server (server will broadcast glass shatter to all)
                 socket.emit('physics_flip_coin', {
                   gameId: gameIdParam,
                   address: walletParam,
                   power: finalPower,
+                  accuracy: releaseData.accuracy,
                   angle: 0 // Default angle for now
                 });
+                
+                // Show instant feedback if sweet spot hit
+                if (releaseData.zone) {
+                  showSweetSpotFeedback(releaseData.zone, releaseData.winChance);
+                }
                 
                 console.log(`🪙 Sent flip request to server (mouseleave): power=${finalPower}, choice=${playerChoice}`);
               } else {
@@ -6171,17 +6507,10 @@
           
           // Update UI elements
           if (tube.cardElement) {
-            const powerBar = tube.cardElement.querySelector('.power-bar');
-            const powerText = tube.cardElement.querySelector('.power-text');
-            if (powerBar) powerBar.style.width = `${tube.power}%`;
-            if (powerText) powerText.textContent = `POWER: ${tube.power.toFixed(0)}%`;
-            
-            // Change bar color as it charges (pink theme)
-            if (tube.power > 75) {
-              powerBar.style.background = 'linear-gradient(90deg, #ff1493, #ff69b4)';
-            } else if (tube.power > 50) {
-              powerBar.style.background = 'linear-gradient(90deg, #ff69b4, #ffb6c1)';
-            }
+            const powerFill = tube.cardElement.querySelector('.power-fill');
+            const powerValue = tube.cardElement.querySelector('.power-value');
+            if (powerFill) powerFill.style.width = `${tube.power}%`;
+            if (powerValue) powerValue.textContent = tube.power.toFixed(0);
           }
           
           // 🎯 UNIFIED PEARL COLOR UPDATE - Same for local and remote
