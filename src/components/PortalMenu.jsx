@@ -7,7 +7,7 @@ import { useWallet } from '../contexts/WalletContext';
 import ProfileWithNotifications from './ProfileWithNotifications';
 import { 
   User, Gamepad2, Plus, Store, Palette, Settings, 
-  ExternalLink, Home, Crown, ChevronRight, Info, Trophy
+  ExternalLink, Home, Crown, ChevronRight, Info, Trophy, Coins
 } from 'lucide-react';
 
 const MenuOverlay = styled.div`
@@ -229,6 +229,14 @@ const PortalMenu = ({ isOpen, onClose }) => {
               My Profile
             </MenuItem>
           )}
+          <MenuItem to="/how-to-play" onClick={onClose}>
+            <Gamepad2 size={16} />
+            How to Play
+          </MenuItem>
+          <MenuItem to="/token-airdrop" onClick={onClose}>
+            <Coins size={16} />
+            Token & Airdrop
+          </MenuItem>
           <MenuButtonItem onClick={handleInfoClick}>
             <Info size={16} />
             About FLIPNOSIS

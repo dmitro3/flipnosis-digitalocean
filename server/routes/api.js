@@ -305,9 +305,9 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       const offers = await new Promise((resolve, reject) => {
         db.all(`
           SELECT * FROM offers 
-          WHERE (from_address = ? OR to_address = ?)
+          WHERE offerer_address = ?
           ORDER BY created_at DESC
-        `, [address.toLowerCase(), address.toLowerCase()], (err, results) => {
+        `, [address.toLowerCase()], (err, results) => {
           if (err) reject(err)
           else resolve(results || [])
         })

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { 
   User, Gamepad2, Plus, Store, Palette, Settings, 
-  ExternalLink, X, Menu, Home, Crown, Trophy, Info
+  ExternalLink, X, Menu, Home, Crown, Trophy, Info, Coins
 } from 'lucide-react';
 
 const MenuContainer = styled.div`
@@ -237,6 +237,14 @@ const DesktopMenu = () => {
                     My Profile
                   </MenuItem>
                 )}
+                <MenuItem to="/how-to-play" onClick={closeMenu}>
+                  <Gamepad2 size={20} />
+                  How to Play
+                </MenuItem>
+                <MenuItem to="/token-airdrop" onClick={closeMenu}>
+                  <Coins size={20} />
+                  Token & Airdrop
+                </MenuItem>
                 <MenuButtonItem onClick={() => {
                   alert('About FLIPNOSIS\n\nFLIPNOSIS is a revolutionary NFT flipping game where players can create and participate in coin flip games with their NFTs and cryptocurrency.');
                   closeMenu();

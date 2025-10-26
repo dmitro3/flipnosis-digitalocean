@@ -6,6 +6,8 @@ import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./components/Dashboard";
 import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
+import HowToPlay from "./pages/HowToPlay";
+import TokenAirdrop from "./pages/TokenAirdrop";
 import BattleRoyaleContainer from "./components/BattleRoyale/BattleRoyaleContainer";
 import ErrorBoundary from "./components/BattleRoyale/ErrorBoundary";
 // Removed legacy in-app test/game pages in favor of standalone HTML game
@@ -46,6 +48,14 @@ export const router = createBrowserRouter([
       {
         path: "leaderboard",
         element: <Leaderboard />,
+      },
+      {
+        path: "how-to-play",
+        element: <HowToPlay />,
+      },
+      {
+        path: "token-airdrop",
+        element: <TokenAirdrop />,
       },
       {
         path: "battle-royale/:gameId",
