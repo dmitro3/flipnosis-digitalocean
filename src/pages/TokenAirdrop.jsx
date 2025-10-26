@@ -125,6 +125,9 @@ const AirdropSection = styled.div`
   padding: 2rem;
   margin-bottom: 3rem;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
 `;
 
 const AirdropTitle = styled.h3`
@@ -204,23 +207,22 @@ const floatIn = keyframes`
 `;
 
 const FloatingReward = styled.div`
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: absolute;
+  top: ${props => Math.random() * 60 + 20}%;
+  left: ${props => Math.random() * 60 + 20}%;
   background: rgba(0, 0, 0, 0.9);
-  color: #FFD700;
-  padding: 15px 25px;
+  color: ${props => props.color || '#FFD700'};
+  padding: 10px 20px;
   border-radius: 12px;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
-  z-index: 10000;
+  z-index: 1000;
   text-align: center;
-  box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+  box-shadow: 0 0 20px ${props => props.color || '#FFD700'}99;
   pointer-events: none;
   animation: ${floatIn} 3s ease-out forwards;
   font-family: 'Orbitron', sans-serif;
-  border: 2px solid rgba(255, 215, 0, 0.5);
+  border: 2px solid ${props => props.color || '#FFD700'};
 `;
 
 const BackButton = styled.button`
@@ -257,12 +259,15 @@ const TokenAirdrop = () => {
 
   const showFloatingReward = () => {
     const amounts = [50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000];
+    const colors = ['#FFD700', '#00FF41', '#ff1493', '#00d4ff', '#ff69b4', '#39ff14', '#ffa500'];
     const randomAmount = amounts[Math.floor(Math.random() * amounts.length)];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
     
     const newReward = {
       id: Date.now() + Math.random(),
       amount: randomAmount,
-      text: `+${randomAmount} FLIP earned!`
+      text: `+${randomAmount} FLIP earned!`,
+      color: randomColor
     };
     
     setFloatingRewards(prev => [...prev, newReward]);
@@ -296,21 +301,16 @@ const TokenAirdrop = () => {
         ← Back
       </BackButton>
       
-      {/* Floating FLIP rewards */}
-      {floatingRewards.map(reward => (
-        <FloatingReward key={reward.id}>
-          {reward.text}
-        </FloatingReward>
-      ))}
       
       <ContentWrapper>
         <Title>Token & Airdrop</Title>
         
         <Section>
-          <SectionTitle>FLIP Token Information</SectionTitle>
           <TokenInfo>
             <TokenCard>
-              <TokenIcon>🪙</TokenIcon>
+              <TokenIcon>
+                <img src="/images/token.png" alt="FLIP Token" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
+              </TokenIcon>
               <TokenName>FLIP</TokenName>
               <TokenValue>10,000,000,000</TokenValue>
               <TokenDescription>
@@ -323,7 +323,7 @@ const TokenAirdrop = () => {
               <TokenName>Airdrop</TokenName>
               <TokenValue>1,000,000,000</TokenValue>
               <TokenDescription>
-                <strong>1 billion FLIP</strong> tokens (10% of total supply) will be distributed through gameplay rewards and community events.
+                <strong>1 billion FLIP</strong> tokens (10% of total supply) will be distributed through gameplay rewards.
               </TokenDescription>
             </TokenCard>
             
@@ -343,55 +343,25 @@ const TokenAirdrop = () => {
           <AirdropAmount>1,000,000,000 FLIP</AirdropAmount>
           <AirdropDescription>
             We're giving away <strong>1 billion FLIP tokens</strong> to our community! 
-            This represents <strong>10% of the total supply</strong> and will be distributed through various methods including gameplay rewards, community events, and special promotions.
+            This represents <strong>10% of the total supply</strong> and will be distributed through our games only. Every time you flip your coin you win FLIP.
           </AirdropDescription>
+          {/* Floating FLIP rewards */}
+          {floatingRewards.map(reward => (
+            <FloatingReward key={reward.id} color={reward.color}>
+              {reward.text}
+            </FloatingReward>
+          ))}
         </AirdropSection>
 
-        <Section>
-          <SectionTitle>How to Earn FLIP Tokens</SectionTitle>
-          <RewardMechanism>
-            <RewardCard>
-              <RewardIcon>🎮</RewardIcon>
-              <RewardTitle>Gameplay Rewards</RewardTitle>
-              <RewardDescription>
-                Earn 50-1000 FLIP every time your coin spins in a battle royale game. The amount varies based on game performance and luck!
-              </RewardDescription>
-            </RewardCard>
-            
-            <RewardCard>
-              <RewardIcon>🏆</RewardIcon>
-              <RewardTitle>Victory Bonuses</RewardTitle>
-              <RewardDescription>
-                Win games to earn bonus FLIP tokens on top of your regular gameplay rewards. The bigger the win, the bigger the bonus!
-              </RewardDescription>
-            </RewardCard>
-            
-            <RewardCard>
-              <RewardIcon>🎯</RewardIcon>
-              <RewardTitle>Daily Challenges</RewardTitle>
-              <RewardDescription>
-                Complete daily challenges and special events to earn additional FLIP tokens. Check back regularly for new opportunities!
-              </RewardDescription>
-            </RewardCard>
-            
-            <RewardCard>
-              <RewardIcon>👥</RewardIcon>
-              <RewardTitle>Referral Program</RewardTitle>
-              <RewardDescription>
-                Invite friends to join FLIPNOSIS and earn FLIP tokens when they start playing. Build your network and earn together!
-              </RewardDescription>
-            </RewardCard>
-          </RewardMechanism>
-        </Section>
 
         <Section>
           <SectionTitle>Token Utility</SectionTitle>
           <TokenInfo>
             <TokenCard>
-              <TokenIcon>🎮</TokenIcon>
-              <TokenName>Game Entry</TokenName>
+              <TokenIcon>🎨</TokenIcon>
+              <TokenName>Skins</TokenName>
               <TokenDescription>
-                Use <strong>FLIP</strong> tokens to enter battle royale games and compete for NFT prizes. The more you stake, the bigger the potential rewards!
+                Unlock in game coin skins and compounds with <strong>FLIP</strong> tokens.
               </TokenDescription>
             </TokenCard>
             
@@ -399,7 +369,7 @@ const TokenAirdrop = () => {
               <TokenIcon>🏪</TokenIcon>
               <TokenName>Marketplace</TokenName>
               <TokenDescription>
-                Trade <strong>FLIP</strong> tokens in our upcoming marketplace for NFTs, special items, and exclusive game features.
+                Trade <strong>FLIP</strong> tokens in our upcoming marketplace for NFTs, special items, and exclusive game features. Purchase creator made skins on our marketplace.
               </TokenDescription>
             </TokenCard>
             
@@ -407,40 +377,12 @@ const TokenAirdrop = () => {
               <TokenIcon>🎨</TokenIcon>
               <TokenName>Coin Factory</TokenName>
               <TokenDescription>
-                Create custom coins and materials using <strong>FLIP</strong> tokens in our upcoming Coin Factory feature.
+                Mint coin collections and skins with different compounds using <strong>FLIP</strong>. Then sell them in our marketplace.
               </TokenDescription>
             </TokenCard>
           </TokenInfo>
         </Section>
 
-        <Section>
-          <SectionTitle>Distribution Timeline</SectionTitle>
-          <RewardMechanism>
-            <RewardCard>
-              <RewardIcon>🚀</RewardIcon>
-              <RewardTitle>Phase 1: Launch</RewardTitle>
-              <RewardDescription>
-                <strong>200M FLIP</strong> distributed through gameplay rewards and early adopter bonuses during the first month.
-              </RewardDescription>
-            </RewardCard>
-            
-            <RewardCard>
-              <RewardIcon>📈</RewardIcon>
-              <RewardTitle>Phase 2: Growth</RewardTitle>
-              <RewardDescription>
-                <strong>300M FLIP</strong> distributed through community events, tournaments, and referral programs over 3 months.
-              </RewardDescription>
-            </RewardCard>
-            
-            <RewardCard>
-              <RewardIcon>🌟</RewardIcon>
-              <RewardTitle>Phase 3: Expansion</RewardTitle>
-              <RewardDescription>
-                <strong>500M FLIP</strong> distributed through special promotions, partnerships, and long-term holder rewards.
-              </RewardDescription>
-            </RewardCard>
-          </RewardMechanism>
-        </Section>
 
         <AirdropSection>
           <AirdropTitle>🎯 Start Earning Now!</AirdropTitle>

@@ -231,7 +231,7 @@ const HowToPlay = () => {
             marginBottom: '2rem',
             fontWeight: 'bold'
           }}>
-            Why spend months waiting to sell an NFT when you can flip it!
+            Why spend months waiting to sell an NFT when you can instantly flip it!
           </div>
           <div style={{ 
             fontSize: '1.1rem', 
