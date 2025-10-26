@@ -213,19 +213,19 @@ const HowToPlay = () => {
             <RuleItem>
               <RuleNumber>1</RuleNumber>
               <RuleText>
-                <Highlight>FLIPNOSIS</Highlight> is a <Highlight>Battle Royale coin flipping game</Highlight> where up to 4 players compete in real-time coin flip battles using their NFTs and cryptocurrency.
+                <Highlight>Why spend months waiting to sell an NFT when you can flip it!</Highlight>
               </RuleText>
             </RuleItem>
             <RuleItem>
               <RuleNumber>2</RuleNumber>
               <RuleText>
-                Players deposit their <Highlight>NFTs</Highlight> and <TokenHighlight>FLIP</TokenHighlight> tokens to enter a game room and compete for the winner-takes-all prize pool.
+                <Highlight>FLIPNOSIS</Highlight> is a gamified NFT sale where 4 players flip coins to win NFTs. When the game starts, the creator receives the full amount they have asked for. The first player to three wins, wins the NFT.
               </RuleText>
             </RuleItem>
             <RuleItem>
               <RuleNumber>3</RuleNumber>
               <RuleText>
-                The last player standing wins all the <Highlight>NFTs and tokens</Highlight> from the eliminated players, creating massive prize pools!
+                Creators deposit their NFTs for the exact price they want. Players pay 1/4 of the asking price as an entry fee.
               </RuleText>
             </RuleItem>
           </RuleList>
@@ -235,7 +235,9 @@ const HowToPlay = () => {
           <SectionTitle>Game Mechanics</SectionTitle>
           <GameMechanics>
             <MechanicCard>
-              <MechanicIcon>🪙</MechanicIcon>
+              <MechanicIcon>
+                <img src="/coins/calaverah.png" alt="Coin" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+              </MechanicIcon>
               <MechanicTitle>Coin Selection</MechanicTitle>
               <MechanicDescription>
                 Choose between <Highlight>Heads</Highlight> or <Highlight>Tails</Highlight> before each round. Your choice determines your fate in the coin flip!
@@ -246,23 +248,15 @@ const HowToPlay = () => {
               <MechanicIcon>⚡</MechanicIcon>
               <MechanicTitle>Power Charging</MechanicTitle>
               <MechanicDescription>
-                Hold the <Highlight>POWER</Highlight> button to charge your flip power (0-100%). Higher power increases your chances of success and creates more dramatic effects!
-              </MechanicDescription>
-            </MechanicCard>
-
-            <MechanicCard>
-              <MechanicIcon>💥</MechanicIcon>
-              <MechanicTitle>Glass Shattering</MechanicTitle>
-              <MechanicDescription>
-                When you flip, your glass tube shatters with spectacular visual effects. The power level determines the intensity of the shattering animation!
+                Hold the <Highlight>POWER</Highlight> button to charge your flip power (0-100%). Chances are 50-50 every flip.
               </MechanicDescription>
             </MechanicCard>
 
             <MechanicCard>
               <MechanicIcon>🏆</MechanicIcon>
-              <MechanicTitle>Elimination</MechanicTitle>
+              <MechanicTitle>Winner</MechanicTitle>
               <MechanicDescription>
-                Players are eliminated when their coin flip result doesn't match their choice. The last player standing wins the entire prize pool!
+                The first player to 3 wins is the winner!
               </MechanicDescription>
             </MechanicCard>
           </GameMechanics>
@@ -310,59 +304,6 @@ const HowToPlay = () => {
           </RuleList>
         </Section>
 
-        <Section>
-          <SectionTitle>Rewards & <TokenHighlight>FLIP</TokenHighlight> Tokens</SectionTitle>
-          <RuleList>
-            <RuleItem>
-              <RuleNumber>1</RuleNumber>
-              <RuleText>
-                Earn <TokenHighlight>FLIP</TokenHighlight> tokens every time your coin spins! You can win between <Highlight>50-1000 FLIP</Highlight> per spin.
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>2</RuleNumber>
-              <RuleText>
-                <TokenHighlight>FLIP</TokenHighlight> tokens are used to enter games and can be traded or used for various features in the ecosystem.
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>3</RuleNumber>
-              <RuleText>
-                The more you play, the more <TokenHighlight>FLIP</TokenHighlight> tokens you earn, creating a sustainable reward system for active players.
-              </RuleText>
-            </RuleItem>
-          </RuleList>
-        </Section>
-
-        <Section>
-          <SectionTitle>Tips for Success</SectionTitle>
-          <RuleList>
-            <RuleItem>
-              <RuleNumber>1</RuleNumber>
-              <RuleText>
-                <Highlight>Timing is Everything:</Highlight> Learn to charge your power at the right moment for maximum effect.
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>2</RuleNumber>
-              <RuleText>
-                <Highlight>Study Patterns:</Highlight> Watch other players' strategies and adapt your approach accordingly.
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>3</RuleNumber>
-              <RuleText>
-                <Highlight>Manage Risk:</Highlight> Only deposit what you can afford to lose. Battle Royale games are high-risk, high-reward!
-              </RuleText>
-            </RuleItem>
-            <RuleItem>
-              <RuleNumber>4</RuleNumber>
-              <RuleText>
-                <Highlight>Stay Connected:</Highlight> Keep your connection stable during games to avoid disconnection penalties.
-              </RuleText>
-            </RuleItem>
-          </RuleList>
-        </Section>
       </ContentWrapper>
     </PageContainer>
   );
