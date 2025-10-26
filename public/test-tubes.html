@@ -1028,9 +1028,21 @@
           <button class="mobile-btn power-btn" id="mobile-power">POWER</button>
         </div>
         <div class="power-section">
-          <div class="power-bar">
+          <div class="power-bar-container">
+            <!-- Sweet Spot Zone Overlays -->
+            <div class="zone-overlay">
+              <div class="zone safe" style="left: 0%; width: 42%;"></div>
+              <div class="zone good" style="left: 42%; width: 6%;"></div>
+              <div class="zone perfect" style="left: 48%; width: 4%;"></div>
+              <div class="zone good" style="left: 52%; width: 6%;"></div>
+              <div class="zone safe" style="left: 58%; width: 42%;"></div>
+            </div>
+            
+            <!-- Actual Power Fill -->
             <div class="power-fill" id="mobile-power-fill"></div>
-            <div class="power-text" id="mobile-power-text">POWER: 0%</div>
+            
+            <!-- Power Text -->
+            <div class="power-text" id="mobile-power-text">POWER: <span class="power-value">0</span>%</div>
           </div>
         </div>
       </div>
@@ -1697,10 +1709,10 @@
           
           // 12. Reset mobile power bar
           const mobilePowerFill = document.getElementById('mobile-power-fill');
-          const mobilePowerText = document.getElementById('mobile-power-text');
-          if (mobilePowerFill && mobilePowerText) {
+          const mobilePowerValue = document.querySelector('#mobile-power-text .power-value');
+          if (mobilePowerFill && mobilePowerValue) {
             mobilePowerFill.style.width = '0%';
-            mobilePowerText.textContent = 'POWER: 0%';
+            mobilePowerValue.textContent = '0';
           }
           
           console.log(`✅ Round ${currentRound} reset complete - players can charge and choose again`);
@@ -6236,10 +6248,10 @@
               
               // Update mobile power bar
               const powerFill = document.getElementById('mobile-power-fill');
-              const powerText = document.getElementById('mobile-power-text');
-              if (powerFill && powerText) {
+              const powerValue = document.querySelector('#mobile-power-text .power-value');
+              if (powerFill && powerValue) {
                 powerFill.style.width = `${powerPercent}%`;
-                powerText.textContent = `POWER: ${Math.round(powerPercent)}%`;
+                powerValue.textContent = Math.round(powerPercent);
               }
               
               // Broadcast power charging to server
@@ -6387,8 +6399,8 @@
 
       // Update power bar
       const powerFill = document.getElementById('mobile-power-fill');
-      const powerText = document.getElementById('mobile-power-text');
-      if (powerFill && powerText) {
+      const powerValue = document.querySelector('#mobile-power-text .power-value');
+      if (powerFill && powerValue) {
         let totalPower = 0;
         let playerCount = 0;
         
@@ -6403,7 +6415,7 @@
         const powerPercentage = Math.min(100, Math.max(0, averagePower));
 
         powerFill.style.width = `${powerPercentage}%`;
-        powerText.textContent = `POWER: ${powerPercentage.toFixed(0)}%`;
+        powerValue.textContent = powerPercentage.toFixed(0);
       }
     }
 
