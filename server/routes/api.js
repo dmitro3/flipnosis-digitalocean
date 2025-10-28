@@ -1911,8 +1911,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         }
       }
 
-      // Save to database WITH obstacles
-      await dbService.createBattleRoyaleGame(gameData)
+      // Save to database WITH obstacles and create on blockchain
+      await dbService.createBattleRoyaleGame(gameData, blockchainService)
 
       // Add creator as participant if they want to play
       console.log(`🔍 Creator participates check: ${creator_participates}, type: ${typeof creator_participates}`)
