@@ -194,42 +194,7 @@ class BlockchainService {
     }
   }
 
-  /**
-   * Create Battle Royale game on blockchain (owner-only)
-   */
-  async createBattleRoyaleOnChain(gameData) {
-    console.log('🎮 Creating Battle Royale on blockchain:', { gameId: gameData.id, creator: gameData.creator })
-    if (!this.contractOwnerWallet) {
-      return { success: false, error: 'Contract wallet not configured' }
-    }
-
-    try {
-      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
-      const gameIdBytes32 = ethers.id(gameData.id)
-
-      // Convert entry fee to wei (assuming it's in ETH)
-      const entryFeeWei = ethers.parseEther(gameData.entry_fee.toString())
-      const serviceFeeWei = ethers.parseEther(gameData.service_fee.toString())
-
-      const tx = await contract.createBattleRoyale(
-        gameIdBytes32,
-        gameData.nft_contract,
-        gameData.nft_token_id,
-        entryFeeWei,
-        serviceFeeWei,
-        false, // isUnder20
-        ethers.parseEther("0.01") // minUnder20Wei
-      )
-      
-      console.log('⏳ Waiting for Battle Royale creation confirmation:', tx.hash)
-      await tx.wait()
-      console.log('✅ Battle Royale created on blockchain')
-      return { success: true, transactionHash: tx.hash }
-    } catch (error) {
-      console.error('❌ Failed to create Battle Royale on chain:', error)
-      return { success: false, error: error.message || 'Blockchain transaction failed' }
-    }
-  }
+  // (Reverted) No server-side auto-create; creation occurs via frontend wallet
 
   /**
    * Complete Battle Royale (owner-only) and set winner

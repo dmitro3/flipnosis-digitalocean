@@ -768,8 +768,8 @@ class DatabaseService {
   // ===== BATTLE ROYALE METHODS =====
   
   // Create a new Battle Royale game
-  async createBattleRoyaleGame(gameData, blockchainService = null) {
-    return new Promise(async (resolve, reject) => {
+  async createBattleRoyaleGame(gameData) {
+    return new Promise((resolve, reject) => {
       const sql = `
         INSERT INTO battle_royale_games (
           id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, nft_chain,
@@ -796,15 +796,12 @@ class DatabaseService {
         gameData.creator_participates || false,
         gameDataJson,
         gameData.room_type || 'potion'
-      ], async function(err) {
+      ], function(err) {
         if (err) {
           console.error('❌ Error creating Battle Royale game:', err)
           reject(err)
         } else {
-          console.log('✅ Battle Royale game created in database:', gameData.id)
-          
-          // Do not auto-create on blockchain here to avoid conflicting with frontend approve/transfer flow
-          // Frontend remains source of truth for NFT approval and initial on-chain create
+          console.log('✅ Battle Royale game created:', gameData.id)
           
           // Temporarily disabled - Automatically add creator as first player (slot 0) with free entry
           /*
