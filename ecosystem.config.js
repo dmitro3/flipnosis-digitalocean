@@ -17,10 +17,10 @@ module.exports = {
       // Blockchain configuration (server-side)
       CONTRACT_ADDRESS: '0x1d0C6aA57c2c4c7764B9FFdd13DFB6319db02A64',
       RPC_URL: 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3',
-      CONTRACT_OWNER_KEY: '1d3eb837118de4273c1b93e6f77c50b83e0f83f224188402b32e9ac306535790',
+      CONTRACT_OWNER_KEY: process.env.CONTRACT_OWNER_KEY, // Use environment variable instead
 
       // Platform/config
-      PLATFORM_FEE_RECEIVER: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628',
+      PLATFORM_FEE_RECEIVER: process.env.PLATFORM_FEE_RECEIVER || '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1',
       DATABASE_PATH: './server/flipz.db'
     },
     error_file: './logs/err.log',

@@ -194,7 +194,7 @@ const PortalMenu = ({ isOpen, onClose }) => {
   const { isConnected, address, chain } = useWallet();
 
   // Admin wallet address
-  const ADMIN_WALLET = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'
+  const ADMIN_WALLET = import.meta.env.VITE_PLATFORM_FEE_RECEIVER || '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1'
   const isAdmin = isConnected && address && address.toLowerCase() === ADMIN_WALLET.toLowerCase()
 
   const handleInfoClick = () => {

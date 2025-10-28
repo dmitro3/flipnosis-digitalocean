@@ -211,7 +211,7 @@ const CHAIN_CONFIGS = {
 }
 
 // Admin wallet address (update this)
-const ADMIN_WALLET = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628' // Admin wallet address
+const ADMIN_WALLET = import.meta.env.VITE_PLATFORM_FEE_RECEIVER || '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1' // Admin wallet address
 
 // Styled Components
 const AdminContainer = styled.div`
