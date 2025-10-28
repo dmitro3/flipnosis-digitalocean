@@ -120,13 +120,18 @@ class PhysicsGameManager {
           game.currentRound = gameData.current_round
         }
         
+        // Map database status to game phase
         if (gameData.status === 'active' || gameData.status === 'in_progress') {
           game.phase = 'round_active'
           // Don't restart timer here - let the client request trigger it
         } else if (gameData.status === 'completed') {
           game.phase = 'game_over'
+        } else if (gameData.status === 'cancelled') {
+          game.phase = 'cancelled'
+        } else if (gameData.status === 'filling') {
+          game.phase = 'waiting' // filling status = waiting for players
         } else {
-          game.phase = 'waiting'
+          game.phase = 'waiting' // default
         }
         
         console.log(`✅ Game ${gameId} loaded from database - Phase: ${game.phase}, Players: ${game.currentPlayers}`)

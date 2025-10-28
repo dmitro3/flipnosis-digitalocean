@@ -1250,8 +1250,8 @@ const Profile = () => {
                                 <div style={{ color: '#FFD700' }}>
                                   💰 Price: {game.price} ETH
                                 </div>
-                                <div style={{ color: game.status === 'complete' ? '#00ff00' : game.status === 'active' ? '#00ffff' : '#ff6b6b' }}>
-                                  📊 Status: {game.status === 'complete' ? '✅ Complete' : game.status === 'active' ? '🔄 Active' : '❌ Cancelled'}
+                                <div style={{ color: game.status === 'complete' ? '#00ff00' : game.status === 'active' ? '#00ffff' : game.status === 'filling' ? '#FFD700' : '#ff6b6b' }}>
+                                  📊 Status: {game.status === 'complete' ? '✅ Complete' : game.status === 'active' ? '🔄 Active' : game.status === 'filling' ? '⏳ Waiting for Players' : '❌ Cancelled'}
                                 </div>
                                 <div style={{ color: '#ccc' }}>
                                   👥 Players: {game.current_players}/{game.max_players}
