@@ -15,7 +15,7 @@ module.exports = {
       HTTPS_PORT: 3001,
 
       // Blockchain configuration (server-side)
-      CONTRACT_ADDRESS: '0x1d0C6aA57c2c4c7764B9FFdd13DFB6319db02A64',
+      CONTRACT_ADDRESS: '0xd2a2d0A6a0a446c494EdD059680E0f819f9d480B',
       RPC_URL: 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3',
       CONTRACT_OWNER_KEY: process.env.CONTRACT_OWNER_KEY, // Use environment variable instead
 

@@ -194,7 +194,7 @@ const CONTRACT_ABI = [
 
 // Contract addresses for different chains
 const CONTRACT_ADDRESSES = {
-              'base': '0x1d0C6aA57c2c4c7764B9FFdd13DFB6319db02A64', // Base Battle Royale contract address
+              'base': '0xd2a2d0A6a0a446c494EdD059680E0f819f9d480B', // NEW SECURE CONTRACT
   'ethereum': '0x...',
   'bnb': '0x...',
   'avalanche': '0x...',
