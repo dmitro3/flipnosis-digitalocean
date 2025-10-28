@@ -2593,10 +2593,6 @@
       }, duration);
     }
 
-    let currentCollectionId = null;
-    let collectionExpiryTimer = null;
-
-    function showCollectionUI(collectionId, totalFlip, gameResult, expiresAt) {
       currentCollectionId = collectionId;
       
       const overlay = document.createElement('div');
@@ -2720,9 +2716,6 @@
         });
       }
 
-      const expiryTime = new Date(expiresAt).getTime() - Date.now();
-      if (expiryTime > 0) {
-        collectionExpiryTimer = setTimeout(() => {
           showFloatingMessage('â° Collection expired!', '#ff4444', 3000);
           hideCollectionUI();
         }, expiryTime);
@@ -2745,23 +2738,6 @@
       }
     }
 
-    function hideCollectionUI() {
-      const overlay = document.getElementById('collection-overlay');
-      if (overlay) {
-        overlay.style.animation = 'fadeIn 0.5s ease-out reverse';
-        setTimeout(() => {
-          if (overlay.parentNode) {
-            overlay.parentNode.removeChild(overlay);
-          }
-        }, 500);
-      }
-      
-      currentCollectionId = null;
-      if (collectionExpiryTimer) {
-        clearTimeout(collectionExpiryTimer);
-        collectionExpiryTimer = null;
-      }
-    }
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); // Minimal ambient
     scene.add(ambientLight);
@@ -4984,51 +4960,6 @@
       }
     }
     
-    function showXPAwardNotification(amount, totalXP) {
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #1a1a2e, #16213e);
-        border: 2px solid #00ff00;
-        border-radius: 15px;
-        padding: 20px 25px;
-        color: #00ff00;
-        font-family: 'Orbitron', sans-serif;
-        font-weight: bold;
-        font-size: 18px;
-        z-index: 10001;
-        box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
-        transform: translateX(100%);
-        transition: transform 0.3s ease-in-out;
-      `;
-      
-      notification.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="font-size: 24px;">ðŸ’°</div>
-          <div>
-            <div style="font-size: 20px; margin-bottom: 5px;">+${amount} FLIP</div>
-            <div style="font-size: 14px; opacity: 0.8;">Total: ${totalXP}</div>
-          </div>
-        </div>
-      `;
-      
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-      }, 100);
-      
-      setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-          if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-          }
-        }, 300);
-      }, 3000);
-    }
 
     function showGamePhaseIndicator(phase, message) {
       const existing = document.getElementById('game-phase-indicator');
@@ -5592,9 +5523,8 @@
           
           console.log('âœ… Background applied with dimensions:', document.body.style.backgroundSize);
           
-          if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen();
-          }
+          // Toggle fullscreen with cross-browser support
+          toggleFullscreen();
         });
       }
       
@@ -5746,7 +5676,15 @@
         powerBtn.addEventListener('mouseup', stopCharging);
       }
 
-
+      const coinBtn = document.getElementById('mobile-change-coin');
+      if (coinBtn) {
+        coinBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          triggerHaptic();
+          const globalBtn = document.getElementById('global-change-coin-btn');
+          if (globalBtn) globalBtn.click();
+        });
+      }
 
     }
 
@@ -6154,4 +6092,5 @@
   </script>
 </body>
 </html>
+
 
