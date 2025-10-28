@@ -1464,38 +1464,36 @@
         
         // Update button visibility for the new round
         updatePlayerCardButtons();
-      } else if (state.phase === 'game_over') {
-        console.log(`🏁 GAME OVER DETECTED!`, {
-          phase: state.phase,
-          winner: state.winner,
-          gameOver: gameOver,
-          players: players.map(p => ({ name: p.name, address: p.address }))
-        });
-        
-        gameOver = true;
-        
-        // Handle server-side game end
-        if (state.winner) {
-          // Find winner index
-          const winnerIndex = players.findIndex(p => p.address && p.address.toLowerCase() === state.winner.toLowerCase());
-          console.log(`🔍 Winner search:`, {
-            winnerAddress: state.winner,
-            winnerIndex: winnerIndex,
+        } else if (state.phase === 'game_over') {
+          console.log(`🏁 GAME OVER DETECTED!`, {
+            phase: state.phase,
+            winner: state.winner,
+            gameOver: gameOver,
             players: players.map(p => ({ name: p.name, address: p.address }))
           });
           
-          if (winnerIndex >= 0) {
-            console.log(`🏆 Server declared winner: ${players[winnerIndex].name}`);
-            showGameOverScreen(winnerIndex, players[winnerIndex].name);
+          // Handle server-side game end
+          if (state.winner) {
+            // Find winner index
+            const winnerIndex = players.findIndex(p => p.address && p.address.toLowerCase() === state.winner.toLowerCase());
+            console.log(`🔍 Winner search:`, {
+              winnerAddress: state.winner,
+              winnerIndex: winnerIndex,
+              players: players.map(p => ({ name: p.name, address: p.address }))
+            });
+            
+            if (winnerIndex >= 0) {
+              console.log(`🏆 Server declared winner: ${players[winnerIndex].name}`);
+              showGameOverScreen(winnerIndex, players[winnerIndex].name);
+            } else {
+              console.log(`🏆 Server declared winner but couldn't find player: ${state.winner}`);
+              showGameOverScreen(-1, state.winner);
+            }
           } else {
-            console.log(`🏆 Server declared winner but couldn't find player: ${state.winner}`);
-            showGameOverScreen(-1, state.winner);
+            console.log(`🏆 Server declared game over with no winner`);
+            showGameOverScreen(-1, null);
           }
-        } else {
-          console.log(`🏆 Server declared game over with no winner`);
-          showGameOverScreen(-1, null);
         }
-      }
       
       // Update player data
       if (state.players && walletParam) {
