@@ -36,29 +36,20 @@
       overflow: hidden;
     }
 
-    /* Mobile HTML element */
     @media (max-width: 768px) {
       html {
-        background: #0a0f23; /* Fallback */
+        background: #0a0f23;
       }
       
-      @media (orientation: landscape) {
-        html {
-          background: transparent;
-        }
-      }
     }
 
     /* ===== RESPONSIVE MOBILE-FIRST DESIGN ===== */
     
-    /* Mobile UI - Hidden by default */
     .mobile-ui {
       display: none;
     }
     
-    /* Mobile Detection */
     @media (max-width: 768px) {
-      /* Show mobile UI */
       .mobile-ui {
         display: block;
         position: fixed;
@@ -70,7 +61,6 @@
         pointer-events: none;
       }
       
-      /* Mobile body base styles */
       body {
         overflow: hidden;
         -webkit-overflow-scrolling: touch;
@@ -78,31 +68,13 @@
         scrollbar-width: none;
       }
       
-      /* Hide scrollbars */
       body::-webkit-scrollbar {
         display: none;
       }
       
-      /* Portrait Orientation - No background needed, warning covers it */
-      @media (orientation: portrait) {
-        body {
-          background: #0a0f23 !important; /* Simple solid color */
-          background-image: none !important; /* Remove image completely */
-        }
-      }
       
-      /* Landscape Orientation - Stretch background to fit */
-      @media (orientation: landscape) {
-        body {
-          background: url('/Images/Background/game room2.png') no-repeat center center !important;
-          background-size: 100% 100% !important; /* Stretch to fill screen */
-          background-attachment: scroll !important;
-        }
-      }
       
-      /* Override room-specific backgrounds on mobile */
       
-      /* Portrait - disable all room backgrounds */
       @media (orientation: portrait) {
         body.lab-room,
         body.cyber-room,
@@ -114,7 +86,6 @@
         }
       }
       
-      /* Landscape - stretch room backgrounds to fit */
       @media (orientation: landscape) {
         body.lab-room {
           background: url('/images/background/thelab.png') no-repeat center center !important;
@@ -134,15 +105,17 @@
           background-attachment: scroll !important;
         }
         
-        /* Default room (game room2.png) */
         body:not(.lab-room):not(.cyber-room):not(.mech-room) {
           background: url('/Images/Background/game room2.png') no-repeat center center !important;
           background-size: 100% 100% !important;
           background-attachment: scroll !important;
         }
+        
+        html {
+          background: transparent;
+        }
       }
       
-      /* Hide desktop elements on mobile */
       .player-card,
       #xp-counter,
       #change-coin-box,
@@ -150,7 +123,6 @@
         display: none !important;
       }
       
-      /* Show game-info on mobile but position it at top center - smaller and compact */
       .game-info {
         position: fixed !important;
         top: 10px !important;
@@ -172,17 +144,14 @@
         display: block !important;
       }
       
-      /* Hide mute and chat buttons on mobile */
       .game-info button {
         display: none !important;
       }
       
-      /* Hide desktop layout on mobile */
       .game-info .desktop-timer-layout {
         display: none !important;
       }
       
-      /* Show mobile layout on mobile */
       .game-info .mobile-timer-round {
         display: flex !important;
         align-items: center !important;
@@ -205,7 +174,6 @@
         font-size: 14px !important;
       }
       
-      /* Floating UI Elements - Lobby Style */
       .floating-btn.change-coin-btn {
         position: fixed;
         top: 15px;
@@ -278,7 +246,6 @@
       }
       
       
-      /* Bottom Control Panel - Lobby Style */
       .bottom-panel {
         position: fixed;
         bottom: 0;
@@ -389,7 +356,6 @@
         transform: scale(0.95);
       }
       
-       /* Player Cards - 4 flat boxes attached directly to bottom */
        .player-cards {
          position: fixed;
          bottom: 80px;
@@ -406,7 +372,6 @@
          border-bottom: 2px solid #00ffff;
        }
       
-       /* Individual player boxes - flat and wide */
        .player-box {
          flex: 1;
          height: 40px;
@@ -531,7 +496,6 @@
         box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
       }
 
-      /* Sweet Spot Zones for Power Bar */
       .power-bar-container {
         position: relative;
         width: 100%;
@@ -624,7 +588,6 @@
         pointer-events: none;
       }
 
-      /* Sweet Spot Feedback Popup */
       .sweet-spot-feedback {
         position: fixed;
         top: 50%;
@@ -699,7 +662,6 @@
       
     }
     
-    /* Portrait Warning Overlay */
     .portrait-warning {
       display: none;
       position: fixed;
@@ -759,7 +721,6 @@
       margin-bottom: 10px;
     }
     
-    /* Desktop: Show desktop layout, hide mobile layout */
     @media (min-width: 768px) {
       .game-info .desktop-timer-layout {
         display: block !important;
@@ -774,20 +735,6 @@
       }
     }
 
-    /* Lab room background */
-    body.lab-room {
-      background: url('/images/background/thelab.png') no-repeat center center fixed;
-    }
-    
-    /* Cyber Bay room background */
-    body.cyber-room {
-      background: url('/images/background/cyber.png') no-repeat center center fixed;
-    }
-    
-    /* Mech Room background */
-    body.mech-room {
-      background: url('/images/background/mech.png') no-repeat center center fixed;
-    }
 
     #container {
       position: fixed;
@@ -795,14 +742,13 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      pointer-events: auto; /* Enable interactions for CSS3D/UI elements */
+      pointer-events: auto;
     }
     
     #container canvas {
-      pointer-events: auto; /* Re-enable clicks on the canvas */
+      pointer-events: auto;
     }
 
-    /* Player Card Styling */
     .player-card {
       width: 320px;
       background: rgba(10, 15, 35, 0.95);
@@ -973,7 +919,6 @@
       transform: translateY(0);
     }
 
-    /* Pulse animation for eliminated players */
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.05); }
@@ -981,7 +926,7 @@
     }
 
     #info {
-      display: none; /* Hidden */
+      display: none;
     }
   </style>
 </head>
