@@ -1445,6 +1445,11 @@
     
     // Update client state from server
     function updateClientFromServerState(state) {
+      // If game over already handled, ignore subsequent non-game_over updates to prevent UI from re-enabling
+      if (gameOver && state && state.phase !== 'game_over') {
+        console.log('🛑 Ignoring state update after game over:', state.phase)
+        return
+      }
       if (!state) return;
       
       // SERVER-AUTHORITATIVE: Client only reacts to server state
@@ -5761,6 +5766,8 @@
         align-items: center;
         justify-content: center;
         z-index: 10000;
+        pointer-events: auto;
+        opacity: 1;
         font-family: 'Orbitron', sans-serif;
       `;
       
@@ -5845,6 +5852,18 @@
       
       gameOverDiv.appendChild(contentDiv);
       document.body.appendChild(gameOverDiv);
+
+      // Prevent background scroll and interactions
+      try {
+        document.body.style.overflow = 'hidden';
+      } catch (e) {}
+
+      // Diagnostics: verify overlay visibility and z-index stacking
+      try {
+        debugOverlayVisibility('game-over-overlay');
+      } catch (e) {
+        console.warn('⚠️ Overlay debug failed:', e?.message);
+      }
       
       // Add button handlers
       setTimeout(() => {
@@ -5873,6 +5892,42 @@
             });
         }
       }, 100);
+    }
+
+    // Helper: diagnose overlay visibility/z-index issues
+    function debugOverlayVisibility(elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) {
+        console.warn(`🔎 Overlay '${elementId}' not found in DOM`);
+        return;
+      }
+      const cs = window.getComputedStyle(el);
+      console.log('🔎 Overlay computed styles:', {
+        display: cs.display,
+        visibility: cs.visibility,
+        opacity: cs.opacity,
+        position: cs.position,
+        zIndex: cs.zIndex,
+        pointerEvents: cs.pointerEvents
+      });
+
+      // Check for top-most fixed elements that may cover the overlay
+      const all = Array.from(document.body.querySelectorAll('*'));
+      const candidates = all
+        .filter(n => {
+          const s = window.getComputedStyle(n);
+          return (s.position === 'fixed' || s.position === 'sticky' || s.position === 'absolute') && Number(s.zIndex) > 0;
+        })
+        .map(n => ({
+          node: n,
+          tag: n.tagName,
+          id: n.id,
+          class: n.className,
+          z: Number(window.getComputedStyle(n).zIndex) || 0
+        }))
+        .sort((a, b) => b.z - a.z)
+        .slice(0, 5);
+      console.log('🔎 Top stacking candidates (highest z-index):', candidates);
     }
 
     // SERVER-AUTHORITATIVE: Round reset logic is now managed entirely by the server
