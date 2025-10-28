@@ -37,8 +37,8 @@ const CREATOR_ADDRESS = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'
       try {
         console.log(`\n   Checking Game: ${gameId}`)
         
-        // Convert to bytes32 hash 
-        const gameIdBytes32 = ethers.keccak256(ethers.toUtf8Bytes(gameId))
+        // Convert to bytes32 hash (same as server and frontend)
+        const gameIdBytes32 = ethers.id(gameId)
         
         const nftDeposit = await gameContract.nftDeposits(gameIdBytes32)
         const ethDeposit = await gameContract.ethDeposits(gameIdBytes32)

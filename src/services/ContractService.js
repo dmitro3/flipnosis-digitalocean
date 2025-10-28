@@ -305,8 +305,8 @@ class ContractService {
   }
 
   getGameIdBytes32(gameId) {
-    // Convert string gameId to bytes32
-    return ethers.encodeBytes32String(gameId.slice(0, 31))
+    // Convert string gameId to bytes32 using keccak256 hash (same as server)
+    return ethers.id(gameId)
   }
 
   // Approve NFT for transfer - FIXED VERSION
