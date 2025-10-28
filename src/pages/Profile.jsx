@@ -1250,8 +1250,8 @@ const Profile = () => {
                                 <div style={{ color: '#FFD700' }}>
                                   💰 Price: {game.price} ETH
                                 </div>
-                                <div style={{ color: game.status === 'complete' ? '#00ff00' : game.status === 'active' ? '#00ffff' : game.status === 'filling' ? '#FFD700' : '#ff6b6b' }}>
-                                  📊 Status: {game.status === 'complete' ? '✅ Complete' : game.status === 'active' ? '🔄 Active' : game.status === 'filling' ? '⏳ Waiting for Players' : '❌ Cancelled'}
+                                <div style={{ color: game.status === 'complete' || game.status === 'completed' || game.status === 'completed' ? '#00ff00' : game.status === 'active' ? '#00ffff' : game.status === 'filling' ? '#FFD700' : '#ff6b6b' }}>
+                                  📊 Status: {game.status === 'complete' || game.status === 'completed' || game.status === 'completed' ? '✅ Complete' : game.status === 'active' ? '🔄 Active' : game.status === 'filling' ? '⏳ Waiting for Players' : '❌ Cancelled'}
                                 </div>
                                 <div style={{ color: '#ccc' }}>
                                   👥 Players: {game.current_players}/{game.max_players}
@@ -1275,7 +1275,7 @@ const Profile = () => {
                               </ActionButton>
 
                               {/* Withdraw Creator Funds */}
-                              {game.status === 'complete' && !game.creator_funds_withdrawn && (
+                              {game.status === 'complete' || game.status === 'completed' && !game.creator_funds_withdrawn && (
                                 <ActionButton
                                   onClick={async () => {
                                     try {
@@ -1415,7 +1415,7 @@ const Profile = () => {
                                 <StatusBadge status={game.status}>
                                   {game.status === 'filling' ? '⏳ Waiting for Players' : 
                                    game.status === 'active' ? '🎮 In Progress' :
-                                   game.status === 'complete' ? '✅ Completed' :
+                                   game.status === 'complete' || game.status === 'completed' ? '✅ Completed' :
                                    game.status === 'cancelled' ? '❌ Cancelled' : game.status}
                                 </StatusBadge>
                                 <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>
@@ -1435,7 +1435,7 @@ const Profile = () => {
                               </ActionButton>
 
                               {/* Withdraw Creator Funds */}
-                              {game.status === 'complete' && !game.creator_funds_withdrawn && (
+                              {game.status === 'complete' || game.status === 'completed' && !game.creator_funds_withdrawn && (
                                 <ActionButton
                                   onClick={async () => {
                                     try {
@@ -1558,7 +1558,7 @@ const Profile = () => {
                                   <StatusBadge status={game.status}>
                                     {game.status === 'filling' ? '⏳ Waiting' : 
                                      game.status === 'active' ? '🎮 Playing' :
-                                     game.status === 'complete' ? '✅ Complete' :
+                                     game.status === 'complete' || game.status === 'completed' ? '✅ Complete' :
                                      game.status === 'cancelled' ? '❌ Cancelled' : game.status}
                                   </StatusBadge>
                                   {isWinner && (
@@ -1585,7 +1585,7 @@ const Profile = () => {
                                 </ActionButton>
 
                                 {/* Withdraw NFT (for winners) */}
-                                {isWinner && game.status === 'complete' && !game.nft_withdrawn && (
+                                {isWinner && game.status === 'complete' || game.status === 'completed' && !game.nft_withdrawn && (
                                   <ActionButton
                                     onClick={async () => {
                                       try {

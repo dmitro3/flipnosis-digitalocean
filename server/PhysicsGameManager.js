@@ -802,16 +802,16 @@ class PhysicsGameManager {
   async completeGameOnBlockchain(gameId, winnerAddress, broadcast) {
     console.log(`🏆 Completing game on blockchain: ${gameId} -> ${winnerAddress}`)
     
+    // Always update database first to mark game as completed
+    await this.updateGameInDatabase(gameId, winnerAddress)
+    
     try {
-      // This would need to be injected from the server
-      if (this.blockchainService) {
+      // Attempt blockchain completion if service is available
+      if (this.blockchainService && this.blockchainService.hasOwnerWallet()) {
         const result = await this.blockchainService.completeBattleRoyaleOnChain(gameId, winnerAddress)
         
         if (result.success) {
           console.log(`✅ Game completed on blockchain: ${result.transactionHash}`)
-          
-          // Update database to mark game as completed
-          await this.updateGameInDatabase(gameId, winnerAddress)
           
           // Notify all players about the blockchain completion
           if (broadcast) {
@@ -824,12 +824,14 @@ class PhysicsGameManager {
           }
         } else {
           console.error(`❌ Failed to complete game on blockchain: ${result.error}`)
+          console.warn(`⚠️ Game marked as completed in database but blockchain transaction failed`)
         }
       } else {
-        console.warn(`⚠️ Blockchain service not available for game completion`)
+        console.warn(`⚠️ Blockchain service not available - game marked as completed in database only`)
       }
     } catch (error) {
       console.error(`❌ Error completing game on blockchain:`, error)
+      console.warn(`⚠️ Game marked as completed in database but blockchain transaction failed`)
     }
   }
 
