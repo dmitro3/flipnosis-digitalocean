@@ -311,6 +311,42 @@ class BlockchainService {
       return { success: false, error: error.message }
     }
   }
+
+  /**
+   * Creator withdraws their earnings (entry fees minus platform fee)
+   */
+  async withdrawCreatorFunds(gameId, creatorAddress) {
+    console.log('💰 Creator withdrawing funds:', { gameId, creatorAddress })
+    if (!this.contractOwnerWallet) {
+      return { success: false, error: 'Contract wallet not configured' }
+    }
+
+    try {
+      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
+      const gameIdBytes32 = ethers.id(gameId)
+
+      // Optional sanity read
+      try {
+        const brGame = await contract.getBattleRoyaleGame(gameIdBytes32)
+        if (!brGame || brGame.creator === ethers.ZeroAddress) {
+          return { success: false, error: 'Battle Royale game does not exist' }
+        }
+        if (brGame.creator !== creatorAddress) {
+          return { success: false, error: 'Address is not the creator' }
+        }
+        if (brGame.creatorPaid) {
+          return { success: false, error: 'Creator already paid' }
+        }
+      } catch {}
+
+      const tx = await contract.withdrawCreatorFunds(gameIdBytes32)
+      await tx.wait()
+      return { success: true, transactionHash: tx.hash }
+    } catch (error) {
+      console.error('❌ Error withdrawing creator funds:', error)
+      return { success: false, error: error.message }
+    }
+  }
 }
 
 module.exports = { BlockchainService } 

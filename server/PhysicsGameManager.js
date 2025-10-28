@@ -844,7 +844,10 @@ class PhysicsGameManager {
         await this.dbService.updateBattleRoyaleGame(gameId, {
           status: 'completed',
           winner: winnerAddress,
-          completed_at: new Date().toISOString()
+          winner_address: winnerAddress, // Also set winner_address for compatibility
+          completed_at: new Date().toISOString(),
+          creator_paid: 0, // Initialize as not paid
+          nft_claimed: 0   // Initialize as not claimed
         })
         console.log(`✅ Game updated in database: ${gameId}`)
       } else {
