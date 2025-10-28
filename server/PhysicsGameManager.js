@@ -568,12 +568,22 @@ class PhysicsGameManager {
         this.completeGameOnBlockchain(gameId, winnerAddress, broadcast)
         
         if (broadcast) {
+          // Send updated state with game_over phase instead of separate game_over event
+          const finalState = this.getFullGameState(gameId)
+          console.log(`📡 Broadcasting game over state:`, {
+            phase: finalState.phase,
+            winner: finalState.winner,
+            gameId: finalState.gameId
+          })
+          broadcast(`game_${gameId}`, 'physics_state_update', finalState)
+          
+          // Also send the game_over event for backward compatibility
           broadcast(`game_${gameId}`, 'game_over', {
             gameId: gameId,
             winner: winnerAddress,
             winnerData: winnerData,
             reason: 'first_to_3_wins',
-            finalState: this.getFullGameState(gameId)
+            finalState: finalState
           })
         }
       } else if (playersWith3Wins.length > 1) {

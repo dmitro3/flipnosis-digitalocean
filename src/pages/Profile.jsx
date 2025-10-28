@@ -727,7 +727,7 @@ const Profile = () => {
 
   useEffect(() => {
     const loadBattleRoyaleGames = async () => {
-      if (!targetAddress || activeTab !== 'battleRoyale') return;
+      if (!targetAddress || (activeTab !== 'listings' && activeTab !== 'games')) return;
       setLoadingBattleRoyales(true);
       try {
         // Load created games
@@ -1040,8 +1040,14 @@ const Profile = () => {
           Profile
         </TabButton>
         <TabButton 
-          active={activeTab === 'battleRoyale'} 
-          onClick={() => setActiveTab('battleRoyale')}
+          active={activeTab === 'listings'} 
+          onClick={() => setActiveTab('listings')}
+        >
+          Listings
+        </TabButton>
+        <TabButton 
+          active={activeTab === 'games'} 
+          onClick={() => setActiveTab('games')}
         >
           Games
         </TabButton>
@@ -1184,11 +1190,179 @@ const Profile = () => {
 
 
 
-        {activeTab === 'battleRoyale' && (
+        {activeTab === 'listings' && (
+          <div>
+            <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+              My Listings
+            </h3>
+            <p style={{ color: '#ccc', marginBottom: '1.5rem', fontSize: '1rem' }}>
+              Manage your NFT listings and withdraw your earnings
+            </p>
+            
+            {loadingBattleRoyales ? (
+              <EmptyState>
+                <LoadingSpinner />
+                <div style={{ marginTop: '1rem' }}>Loading listings...</div>
+              </EmptyState>
+            ) : (
+              <>
+                {/* Created Games Section */}
+                <h4 style={{ color: '#FFD700', marginTop: '1.5rem', marginBottom: '1rem', fontSize: '1.2rem' }}>
+                  👑 My NFT Listings ({createdBattleRoyales.length})
+                </h4>
+                
+                {createdBattleRoyales.length === 0 ? (
+                  <EmptyState style={{ marginBottom: '2rem' }}>
+                    <Trophy style={{ width: '3rem', height: '3rem', color: 'rgba(255, 255, 255, 0.3)', marginBottom: '0.5rem' }} />
+                    <div>No listings created yet</div>
+                    <div style={{ fontSize: '0.9rem', color: '#888', marginTop: '0.5rem' }}>
+                      Create your first NFT listing to start earning!
+                    </div>
+                  </EmptyState>
+                ) : (
+                  <div style={{ marginBottom: '2rem' }}>
+                    {createdBattleRoyales.map((game) => (
+                      <GameCard key={game.id} style={{ marginBottom: '1rem' }}>
+                        <GameHeader>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
+                            {/* NFT Image */}
+                            <img 
+                              src={game.nft_image} 
+                              alt={game.nft_name}
+                              style={{
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: '8px',
+                                objectFit: 'cover',
+                                border: '2px solid rgba(255, 255, 255, 0.1)'
+                              }}
+                            />
+
+                            {/* Game Info */}
+                            <GameInfo style={{ flex: 1, minWidth: '200px' }}>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '0.25rem' }}>
+                                {game.nft_name}
+                              </div>
+                              <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '0.5rem' }}>
+                                Collection: {game.nft_collection}
+                              </div>
+                              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+                                <div style={{ color: '#FFD700' }}>
+                                  💰 Price: {game.price} ETH
+                                </div>
+                                <div style={{ color: game.status === 'complete' ? '#00ff00' : game.status === 'active' ? '#00ffff' : '#ff6b6b' }}>
+                                  📊 Status: {game.status === 'complete' ? '✅ Complete' : game.status === 'active' ? '🔄 Active' : '❌ Cancelled'}
+                                </div>
+                                <div style={{ color: '#ccc' }}>
+                                  👥 Players: {game.current_players}/{game.max_players}
+                                </div>
+                                {game.winner_address && (
+                                  <div style={{ color: '#FFD700' }}>
+                                    🏆 Winner: {game.winner_address.slice(0, 6)}...{game.winner_address.slice(-4)}
+                                  </div>
+                                )}
+                              </div>
+                            </GameInfo>
+
+                            {/* Actions */}
+                            <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '140px' }}>
+                              {/* View Game Button */}
+                              <ActionButton 
+                                onClick={() => window.location.href = `/battle-royale/${game.id}`}
+                                style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
+                              >
+                                👁️ View Game
+                              </ActionButton>
+
+                              {/* Withdraw Creator Funds */}
+                              {game.status === 'complete' && !game.creator_funds_withdrawn && (
+                                <ActionButton
+                                  onClick={async () => {
+                                    try {
+                                      showInfo('Withdrawing creator funds...');
+                                      const result = await contractService.withdrawBattleRoyaleCreatorFunds(game.id);
+                                      if (result.success) {
+                                        showSuccess('Creator funds withdrawn successfully!');
+                                        // Reload games
+                                        const createdResp = await fetch(`/api/users/${targetAddress}/created-games`);
+                                        if (createdResp.ok) {
+                                          const createdData = await createdResp.json();
+                                          setCreatedBattleRoyales(createdData.games || []);
+                                        }
+                                      } else {
+                                        showError(result.error || 'Failed to withdraw funds');
+                                      }
+                                    } catch (error) {
+                                      console.error('Withdraw funds error:', error);
+                                      showError(error.message || 'Failed to withdraw funds');
+                                    }
+                                  }}
+                                  style={{ background: 'linear-gradient(135deg, #00c853, #00e676)' }}
+                                >
+                                  💰 Withdraw Funds
+                                </ActionButton>
+                              )}
+
+                              {/* Reclaim NFT (for cancelled games) */}
+                              {game.status === 'cancelled' && !game.nft_withdrawn && (
+                                <ActionButton
+                                  onClick={async () => {
+                                    try {
+                                      showInfo('Reclaiming NFT...');
+                                      const result = await contractService.reclaimBattleRoyaleNFT(game.id);
+                                      if (result.success) {
+                                        showSuccess('NFT reclaimed successfully!');
+                                        // Reload games
+                                        const createdResp = await fetch(`/api/users/${targetAddress}/created-games`);
+                                        if (createdResp.ok) {
+                                          const createdData = await createdResp.json();
+                                          setCreatedBattleRoyales(createdData.games || []);
+                                        }
+                                      } else {
+                                        showError(result.error || 'Failed to reclaim NFT');
+                                      }
+                                    } catch (error) {
+                                      console.error('Reclaim NFT error:', error);
+                                      showError(error.message || 'Failed to reclaim NFT');
+                                    }
+                                  }}
+                                  style={{ background: 'linear-gradient(135deg, #ff6b6b, #ff8e8e)' }}
+                                >
+                                  🔄 Reclaim NFT
+                                </ActionButton>
+                              )}
+
+                              {/* Show withdrawn status */}
+                              {game.creator_funds_withdrawn && (
+                                <div style={{ fontSize: '0.75rem', color: '#00ff00', textAlign: 'center' }}>
+                                  ✅ Funds Withdrawn
+                                </div>
+                              )}
+                              {game.nft_withdrawn && (
+                                <div style={{ fontSize: '0.75rem', color: '#00ff00', textAlign: 'center' }}>
+                                  ✅ NFT Reclaimed
+                                </div>
+                              )}
+                            </GameActions>
+                          </div>
+                        </GameHeader>
+                      </GameCard>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'games' && (
           <div>
             <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
               My Games
             </h3>
+            <p style={{ color: '#ccc', marginBottom: '1.5rem', fontSize: '1rem' }}>
+              Games you've participated in and your winnings
+            </p>
 
             {loadingBattleRoyales ? (
               <EmptyState>
