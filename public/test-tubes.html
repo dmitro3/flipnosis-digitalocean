@@ -5993,7 +5993,7 @@
       camera.layers.enable(0); // Only enable layer 0
       
       if (frameCount === 1) {
-        console.log('ðŸŽ¬ Frame 1 - Layer 0 mask:', camera.layers.mask, 'Should be 1 for layer 0');
+        console.log('🎬 Frame 1 - Layer 0 mask:', camera.layers.mask, 'Should be 1 for layer 0');
       }
       
       webglRenderer.autoClear = true;
@@ -6001,22 +6001,22 @@
       webglRenderer.render(scene, camera);
       
       if (frameCount === 1) {
-        console.log('âœ… Main scene (layer 0) rendered to screen');
+        console.log('✅ Main scene (layer 0) rendered to screen');
       }
       
       camera.layers.disableAll();
       camera.layers.enable(1); // Only enable layer 1 (pearls + plasma)
       
       if (frameCount === 1) {
-        console.log('ðŸŽ¬ Frame 1 - Layer 1 mask:', camera.layers.mask, 'Should be 2 for layer 1');
+        console.log('🎬 Frame 1 - Layer 1 mask:', camera.layers.mask, 'Should be 2 for layer 1');
       }
       
       bloomComposer.render();
       
       if (frameCount === 1) {
-        console.log('âœ… Pearls (layer 1) rendered to bloom buffer');
-        console.log('ðŸ” Bloom composer render target:', bloomComposer.renderTarget1 ? 'Found' : 'Missing');
-        console.log('ðŸ” Bloom composer read buffer:', bloomComposer.readBuffer ? 'Found' : 'Missing');
+        console.log('✅ Pearls (layer 1) rendered to bloom buffer');
+        console.log('🔍 Bloom composer render target:', bloomComposer.renderTarget1 ? 'Found' : 'Missing');
+        console.log('🔍 Bloom composer read buffer:', bloomComposer.readBuffer ? 'Found' : 'Missing');
       }
       
       webglRenderer.autoClear = false; // Don't clear - we want to blend on top!
@@ -6024,9 +6024,9 @@
       const bloomTexture = bloomComposer.readBuffer.texture;
       
       if (frameCount === 1) {
-        console.log('ðŸŽ¨ Bloom texture:', bloomTexture ? 'Found' : 'Missing');
+        console.log('🎨 Bloom texture:', bloomTexture ? 'Found' : 'Missing');
         if (bloomTexture) {
-          console.log('ðŸŽ¨ Bloom texture details:', {
+          console.log('🎨 Bloom texture details:', {
             width: bloomTexture.image?.width,
             height: bloomTexture.image?.height,
             format: bloomTexture.format,
@@ -6041,10 +6041,10 @@
           if (tube.liquidParticleMeshes) {
             const tubeVisiblePearls = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
             visiblePearls += tubeVisiblePearls;
-            console.log(`ðŸ” Tube ${i + 1} has ${tubeVisiblePearls} visible pearls on layer 1`);
+            console.log(`🔍 Tube ${i + 1} has ${tubeVisiblePearls} visible pearls on layer 1`);
           }
         });
-        console.log(`ðŸ” Total visible pearls on layer 1: ${visiblePearls}`);
+        console.log(`🔍 Total visible pearls on layer 1: ${visiblePearls}`);
       }
       
       if (!window.bloomQuadMesh) {
@@ -6068,7 +6068,7 @@
         window.bloomQuadScene = quadScene;
         window.bloomQuadCamera = quadCamera;
         
-        console.log('âœ¨ Bloom composite quad created!');
+        console.log('✨ Bloom composite quad created!');
       }
       
       if (window.bloomQuadMesh && bloomTexture) {
@@ -6083,7 +6083,7 @@
       if (window.bloomQuadScene && window.bloomQuadCamera && bloomTexture) {
         webglRenderer.render(window.bloomQuadScene, window.bloomQuadCamera);
       } else {
-        console.log('âš ï¸ Bloom rendering failed, using fallback direct rendering');
+        console.log('⚠️ Bloom rendering failed, using fallback direct rendering');
         camera.layers.disableAll();
         camera.layers.enable(1); // Enable layer 1
         webglRenderer.render(scene, camera);
@@ -6091,8 +6091,8 @@
       }
       
       if (frameCount === 1) {
-        console.log('âœ… Bloomed pearls composited on top');
-        console.log('ðŸŽ‰ Selective bloom rendering complete!');
+        console.log('✅ Bloomed pearls composited on top');
+        console.log('🎉 Selective bloom rendering complete!');
       }
       
       webglRenderer.autoClear = true;
@@ -6139,7 +6139,7 @@
         body.classList.remove('orientation-changing');
       }, 50);
       
-      console.log('ðŸ“± Orientation changed - background refreshed');
+      console.log('📱 Orientation changed - background refreshed');
     });
 
     let resizeTimer;
@@ -6152,7 +6152,7 @@
               (aspectRatio < 1 && window.lastAspectRatio > 1)) {
             document.body.style.backgroundImage = document.body.style.backgroundImage || 
               "url('/Images/Background/game room2.png')";
-            console.log('ðŸ“± Rotation detected via resize - background refreshed');
+            console.log('📱 Rotation detected via resize - background refreshed');
           }
           window.lastAspectRatio = aspectRatio;
         }, 100);
