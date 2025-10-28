@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -934,7 +934,7 @@
   <!-- Portrait Orientation Warning -->
   <div class="portrait-warning">
     <div class="portrait-warning-content">
-      <div class="portrait-warning-icon">📱➡️</div>
+      <div class="portrait-warning-icon">ðŸ“±âž¡ï¸</div>
       <h2>Please Rotate Your Device</h2>
       <p>This game is designed for landscape mode.</p>
       <p>Please rotate your device to continue playing!</p>
@@ -952,16 +952,16 @@
     
     <!-- Floating UI Elements -->
     <!-- Top-left Change Coin -->
-    <button class="floating-btn change-coin-btn" id="mobile-change-coin">🪙</button>
+    <button class="floating-btn change-coin-btn" id="mobile-change-coin">ðŸª™</button>
     
     <!-- Top-right Earnings -->
     <div class="floating-earnings" id="mobile-earnings">1,250 FLIP</div>
     
     <!-- Top-right Fullscreen -->
-    <button class="floating-btn fullscreen-btn" id="mobile-fullscreen">⛶</button>
+    <button class="floating-btn fullscreen-btn" id="mobile-fullscreen">â›¶</button>
     
     <!-- Bottom-right Chat -->
-    <button class="floating-btn chat-btn" id="mobile-chat">💬</button>
+    <button class="floating-btn chat-btn" id="mobile-chat">ðŸ’¬</button>
     
     <!-- Bottom Control Panel -->
     <div class="bottom-panel">
@@ -994,7 +994,7 @@
     </div>
   </div>
   <div id="info">
-    🎮 Glass Tube Game Test<br>
+    ðŸŽ® Glass Tube Game Test<br>
     Loading Three.js...
   </div>
 
@@ -1021,29 +1021,23 @@
 
     const info = document.getElementById('info');
 
-    // ===== URL PARAMS =====
     const urlParams = new URLSearchParams(window.location.search);
     const gameIdParam = urlParams.get('gameId') || '';
     const roleParam = urlParams.get('role') || 'player';
-    const userNameParam = urlParams.get('username') || '';
     let walletParam = urlParams.get('address') || '';
-    const avatarParam = urlParams.get('avatar') || '';
     const roomParam = urlParams.get('room') || 'potion'; // Default to potion room
     const tokenParam = urlParams.get('token') || '';
     
-    // Fallback: Try to get wallet from localStorage if not in URL (for React redirects)
     if (!walletParam) {
       walletParam = localStorage.getItem('walletAddress') || '';
-      console.log('🔍 No wallet in URL, trying localStorage:', walletParam);
+      console.log('ðŸ” No wallet in URL, trying localStorage:', walletParam);
       
-      // Additional fallback: try to get from window.ethereum
       if (!walletParam && window.ethereum?.selectedAddress) {
         walletParam = window.ethereum.selectedAddress;
-        console.log('🔍 Got wallet from window.ethereum:', walletParam);
+        console.log('ðŸ” Got wallet from window.ethereum:', walletParam);
       }
       
-      // Debug: show all available wallet sources
-      console.log('🔍 Wallet detection debug:', {
+      console.log('ðŸ” Wallet detection debug:', {
         urlParam: urlParams.get('address'),
         localStorage: localStorage.getItem('walletAddress'),
         ethereum: window.ethereum?.selectedAddress,
@@ -1052,10 +1046,9 @@
     }
 
     if (gameIdParam) {
-      document.title = `Glass Tube Game • ${gameIdParam}`;
+      document.title = `Glass Tube Game â€¢ ${gameIdParam}`;
     }
     
-    // Apply room-specific styling
     if (roomParam === 'lab') {
       document.body.classList.add('lab-room');
     } else if (roomParam === 'cyber') {
@@ -1064,14 +1057,12 @@
       document.body.classList.add('mech-room');
     }
     
-    // Mobile background orientation handler - AGGRESSIVE VERSION
     function updateMobileBackground() {
       if (!isMobile()) return;
       
       const isLandscape = window.innerWidth > window.innerHeight;
       const roomParam = new URLSearchParams(window.location.search).get('room');
       
-      // STEP 1: Completely remove ALL background properties
       document.body.style.background = 'none';
       document.body.style.backgroundImage = 'none';
       document.body.style.backgroundSize = '';
@@ -1079,45 +1070,37 @@
       document.body.style.backgroundPosition = '';
       document.body.style.backgroundRepeat = '';
       
-      // STEP 2: Force a reflow
       void document.body.offsetHeight;
       
-      // STEP 3: Set new background based on orientation
       if (isLandscape) {
         let bgImage = "url('/Images/Background/game room2.png')";
         if (roomParam === 'lab') bgImage = "url('/images/background/thelab.png')";
         else if (roomParam === 'cyber') bgImage = "url('/images/background/cyber.png')";
         else if (roomParam === 'mech') bgImage = "url('/images/background/mech.png')";
         
-        // Set properties individually to force update
         document.body.style.backgroundImage = bgImage;
         document.body.style.backgroundSize = "100% 100%";
         document.body.style.backgroundPosition = "center center";
         document.body.style.backgroundRepeat = "no-repeat";
         document.body.style.backgroundAttachment = "scroll";
       } else {
-        // Portrait - solid color
         document.body.style.backgroundColor = "#0a0f23";
       }
       
-      // STEP 4: Force another reflow
       void document.body.offsetHeight;
       
-      console.log('📱 Background FORCE UPDATED for', isLandscape ? 'LANDSCAPE' : 'PORTRAIT', 'Width:', window.innerWidth, 'Height:', window.innerHeight);
+      console.log('ðŸ“± Background FORCE UPDATED for', isLandscape ? 'LANDSCAPE' : 'PORTRAIT', 'Width:', window.innerWidth, 'Height:', window.innerHeight);
     }
 
-    // Run immediately
     updateMobileBackground();
 
-    // Listen for orientation changes with delay
     window.addEventListener('orientationchange', function() {
-      console.log('🔄 Orientation change detected');
+      console.log('ðŸ”„ Orientation change detected');
       setTimeout(updateMobileBackground, 50);
       setTimeout(updateMobileBackground, 200);
       setTimeout(updateMobileBackground, 500);
     });
 
-    // Fallback: listen for resize
     let resizeTimeout;
     window.addEventListener('resize', function() {
       if (isMobile()) {
@@ -1126,66 +1109,58 @@
       }
     });
     
-    info.textContent = '🎮 Initializing 4-Player Glass Tube Game...';
+    info.textContent = 'ðŸŽ® Initializing 4-Player Glass Tube Game...';
 
-    // ===== SOCKET.IO CONNECTION =====
     let socket = null;
     let gameState = null;
     let playerSlot = -1;
     let isServerSideMode = true; // Enable server-side physics
     
-    // Initialize socket connection
     function initializeSocket() {
       if (typeof io === 'undefined') {
-        console.error('❌ Socket.io not loaded');
+        console.error('âŒ Socket.io not loaded');
         return;
       }
       
       socket = io();
       
       socket.on('connect', () => {
-        console.log('✅ Connected to server');
+        console.log('âœ… Connected to server');
         
-        // Load saved state and send to server
         const savedState = loadGameState();
         
-        // Join physics room
         if (gameIdParam && walletParam) {
           socket.emit('physics_join_room', {
             roomId: `game_${gameIdParam}`,
             address: walletParam,
-            savedState: savedState // ← Send saved state to server
+            savedState: savedState // â† Send saved state to server
           });
         }
       });
       
       socket.on('disconnect', () => {
-        console.log('❌ Disconnected from server');
+        console.log('âŒ Disconnected from server');
       });
       
-      // Handle reconnection
       socket.on('reconnect', () => {
-        console.log('🔄 Reconnecting to server...');
+        console.log('ðŸ”„ Reconnecting to server...');
         
-        // Load saved state and send to server
         const savedState = loadGameState();
         
-        // Rejoin the game room with saved state
         if (gameIdParam && walletParam) {
           socket.emit('physics_rejoin_room', {
             roomId: `game_${gameIdParam}`,
             address: walletParam,
             lastKnownSlot: playerSlot,
-            savedState: savedState, // ← Send saved state to server
-            disconnectTime: savedState?.timestamp || Date.now() // ← Send disconnect time
+            savedState: savedState, // â† Send saved state to server
+            disconnectTime: savedState?.timestamp || Date.now() // â† Send disconnect time
           });
         }
       });
 
       socket.on('game_state_restored', (data) => {
-        console.log('✅ Game state restored:', data);
+        console.log('âœ… Game state restored:', data);
         
-        // Restore player choices
         if (data.playerChoices) {
           Object.keys(data.playerChoices).forEach(slot => {
             const slotIndex = parseInt(slot);
@@ -1196,19 +1171,16 @@
           });
         }
         
-        // Restore coin selections
         if (data.coinSelections) {
           data.coinSelections.forEach((selection, index) => {
             if (selection && tubes[index]) {
               tubes[index].selectedCoin = coinOptions.find(c => c.id === selection.coinId) || coinOptions[0];
               tubes[index].selectedMaterial = coinMaterials.find(m => m.id === selection.materialId) || coinMaterials[0];
-              // Apply the coin textures
               applyCoinSelection(index, tubes[index].selectedCoin, tubes[index].selectedMaterial);
             }
           });
         }
         
-        // Restore game phase
         if (data.phase) {
           gameState = { ...gameState, phase: data.phase };
           if (data.phase === 'game_over') {
@@ -1218,9 +1190,8 @@
         }
       });
       
-      // Server-side physics events
       socket.on('physics_state_update', (state) => {
-        console.log('📊 Received physics state update:', {
+        console.log('ðŸ“Š Received physics state update:', {
           phase: state?.phase,
           currentRound: state?.currentRound,
           roundTimer: state?.roundTimer,
@@ -1229,94 +1200,86 @@
         gameState = state;
         updateClientFromServerState(state);
         
-        // Update mobile player cards when state changes
         createMobilePlayerCards();
       });
       
       socket.on('physics_coin_flip_start', (data) => {
-        console.log('🪙 Coin flip started:', data);
+        console.log('ðŸª™ Coin flip started:', data);
         startClientCoinFlipAnimation(data);
       });
       
       socket.on('physics_coin_result', (data) => {
-        console.log('🎲 Coin flip result:', data);
+        console.log('ðŸŽ² Coin flip result:', data);
         showCoinFlipResult(data);
       });
       
       socket.on('physics_power_charging', (data) => {
-        console.log('⚡ Power charging:', data);
+        console.log('âš¡ Power charging:', data);
         updatePowerChargingVisual(data);
       });
       
-      // 🎯 NEW: Handle charging start event
       socket.on('physics_power_charging_start', (data) => {
-        console.log('⚡ Received charging start:', data);
+        console.log('âš¡ Received charging start:', data);
         if (data.playerSlot >= 0 && data.playerSlot < 4) {
           const tube = tubes[data.playerSlot];
           if (tube) {
             tube.isFilling = true;
             tube.power = 0;
             tube.chargingStartTime = Date.now();
-            console.log(`🌊 Started pearl animation for tube ${data.playerSlot + 1}`);
+            console.log(`ðŸŒŠ Started pearl animation for tube ${data.playerSlot + 1}`);
             
-            // 🎯 FORCE PEARL VISIBILITY: Ensure pearls are visible when charging starts
             if (tube.liquidParticleMeshes) {
               tube.liquidParticleMeshes.forEach(mesh => {
                 mesh.visible = true;
               });
-              console.log(`🌊 Forced pearl visibility on charging start for tube ${data.playerSlot + 1}`);
+              console.log(`ðŸŒŠ Forced pearl visibility on charging start for tube ${data.playerSlot + 1}`);
             }
           }
         }
       });
 
-      // 🎯 NEW: Handle charging stop event
       socket.on('physics_power_charging_stop', (data) => {
-        console.log('⚡ Received charging stop:', data);
+        console.log('âš¡ Received charging stop:', data);
         if (data.playerSlot >= 0 && data.playerSlot < 4) {
           const tube = tubes[data.playerSlot];
           if (tube) {
             tube.isFilling = false;
             tube.power = data.finalPower || tube.power;
-            console.log(`🛑 Stopped pearl animation for tube ${data.playerSlot + 1} at ${tube.power}%`);
+            console.log(`ðŸ›‘ Stopped pearl animation for tube ${data.playerSlot + 1} at ${tube.power}%`);
           }
         }
       });
       
       socket.on('physics_coin_angle_update', (data) => {
-        console.log('🎯 Coin angle update:', data);
+        console.log('ðŸŽ¯ Coin angle update:', data);
         updateCoinAngleVisual(data);
       });
       
-      // Handle FLIP token award confirmation
       socket.on('flip_tokens_awarded', (data) => {
-        console.log('💰 FLIP tokens awarded:', data);
+        console.log('ðŸ’° FLIP tokens awarded:', data);
         if (data.success) {
-          // Show floating message instead of immediate XP update
           showFloatingMessage(`+${data.amount} FLIP earned!`, '#FFD700', 3000);
         } else {
-          console.error('❌ Failed to award FLIP tokens:', data.error);
+          console.error('âŒ Failed to award FLIP tokens:', data.error);
         }
       });
 
-      // Handle direct FLIP token award
       socket.on('flip_tokens_awarded_final', (data) => {
-        console.log('🎁 FLIP tokens awarded:', data);
+        console.log('ðŸŽ FLIP tokens awarded:', data);
         if (data.success) {
           showFloatingMessage(`+${data.totalFlip} FLIP tokens added to your profile!`, '#00ff00', 4000);
         } else {
-          console.error('❌ FLIP token award failed:', data.error);
+          console.error('âŒ FLIP token award failed:', data.error);
           showFloatingMessage(`Failed to award FLIP tokens: ${data.error}`, '#ff0000', 3000);
         }
       });
 
-      // Handle FLIP collection confirmation
       socket.on('flip_tokens_collected', (data) => {
-        console.log('💎 FLIP tokens collected:', data);
+        console.log('ðŸ’Ž FLIP tokens collected:', data);
         if (data.success) {
           const claimBtn = document.getElementById('claim-flip-btn');
           if (claimBtn) {
-            claimBtn.textContent = `✅ Claimed ${data.amount} FLIP!`;
+            claimBtn.textContent = `âœ… Claimed ${data.amount} FLIP!`;
             claimBtn.style.background = 'linear-gradient(135deg, #888, #666)';
             claimBtn.disabled = true;
           }
@@ -1324,13 +1287,12 @@
         }
       });
 
-      // Handle NFT claim confirmation
       socket.on('nft_prize_claimed', (data) => {
-        console.log('🏆 NFT prize claimed:', data);
+        console.log('ðŸ† NFT prize claimed:', data);
         if (data.success) {
           const nftBtn = document.getElementById('claim-nft-btn');
           if (nftBtn) {
-            nftBtn.textContent = '✅ NFT Claimed!';
+            nftBtn.textContent = 'âœ… NFT Claimed!';
             nftBtn.style.background = 'linear-gradient(135deg, #888, #666)';
             nftBtn.disabled = true;
           }
@@ -1339,9 +1301,8 @@
       });
       
       socket.on('physics_error', (error) => {
-        console.error('❌ Physics error:', error);
+        console.error('âŒ Physics error:', error);
         
-        // 🎯 NEW: Reset the tube state on error
         const playerIndex = players.findIndex(p => p.address === walletParam);
         if (playerIndex !== -1 && tubes[playerIndex]) {
           tubes[playerIndex].isFilling = false;
@@ -1349,128 +1310,107 @@
           tubes[playerIndex].powerLevel = 0;
           isCharging = false;
           
-          // Stop charging sound if playing
           if (powerChargeSound && !powerChargeSound.paused) {
             powerChargeSound.pause();
             powerChargeSound.currentTime = 0;
           }
           
-          console.log(`🔄 Reset tube ${playerIndex + 1} state after error`);
+          console.log(`ðŸ”„ Reset tube ${playerIndex + 1} state after error`);
         }
         
         alert(`Game Error: ${error.message}`);
       });
       
-      // Listen for player choice updates from server
       socket.on('player_choice_update', (data) => {
-        console.log('🎯 Player choice update:', data);
+        console.log('ðŸŽ¯ Player choice update:', data);
         updatePlayerChoice(data);
       });
       
-      // Listen for coin updates from server
       socket.on('coin_update', (data) => {
-        console.log('🪙 Coin update received:', data);
+        console.log('ðŸª™ Coin update received:', data);
         updateCoinFromServer(data);
       });
       
-      // Listen for player flip actions from server
       socket.on('player_flip_action', (data) => {
-        console.log('🎰 Player flip action:', data);
-        // This will be handled by physics_coin_flip_start event
+        console.log('ðŸŽ° Player flip action:', data);
       });
       
-      // Listen for glass shatter events
       socket.on('glass_shatter', (data) => {
-        console.log('💥 Glass shatter:', data);
+        console.log('ðŸ’¥ Glass shatter:', data);
         if (data.playerSlot >= 0 && data.playerSlot < 4) {
           shatterGlass(data.playerSlot, data.power);
         }
       });
     }
     
-    // Update client state from server
     function updateClientFromServerState(state) {
-      // If game over already handled, ignore subsequent non-game_over updates to prevent UI from re-enabling
       if (gameOver && state && state.phase !== 'game_over') {
-        console.log('🛑 Ignoring state update after game over:', state.phase)
+        console.log('ðŸ›‘ Ignoring state update after game over:', state.phase)
         return
       }
       if (!state) return;
       
-      // SERVER-AUTHORITATIVE: Client only reacts to server state
       if (state.phase === 'round_active' && !gameOver) {
-        // Server manages timer, client just displays
-        // Clear any waiting phase indicator and show round active
         const existingIndicator = document.getElementById('game-phase-indicator');
         if (existingIndicator) {
           existingIndicator.remove();
         }
-        console.log(`🎮 Game is now round_active - Round ${state.currentRound}`);
+        console.log(`ðŸŽ® Game is now round_active - Round ${state.currentRound}`);
         
-        // Update button visibility for the new round
         updatePlayerCardButtons();
         } else if (state.phase === 'game_over') {
-          console.log(`🏁 GAME OVER DETECTED!`, {
+          console.log(`ðŸ GAME OVER DETECTED!`, {
             phase: state.phase,
             winner: state.winner,
             gameOver: gameOver,
             players: players.map(p => ({ name: p.name, address: p.address }))
           });
           
-          // Handle server-side game end
           if (state.winner) {
-            // Find winner index
             const winnerIndex = players.findIndex(p => p.address && p.address.toLowerCase() === state.winner.toLowerCase());
-            console.log(`🔍 Winner search:`, {
+            console.log(`ðŸ” Winner search:`, {
               winnerAddress: state.winner,
               winnerIndex: winnerIndex,
               players: players.map(p => ({ name: p.name, address: p.address }))
             });
             
             if (winnerIndex >= 0) {
-              console.log(`🏆 Server declared winner: ${players[winnerIndex].name}`);
+              console.log(`ðŸ† Server declared winner: ${players[winnerIndex].name}`);
               showGameOverScreen(winnerIndex, players[winnerIndex].name);
             } else {
-              console.log(`🏆 Server declared winner but couldn't find player: ${state.winner}`);
+              console.log(`ðŸ† Server declared winner but couldn't find player: ${state.winner}`);
               showGameOverScreen(-1, state.winner);
             }
           } else {
-            console.log(`🏆 Server declared game over with no winner`);
+            console.log(`ðŸ† Server declared game over with no winner`);
             showGameOverScreen(-1, null);
           }
         }
       
-      // Update player data
       if (state.players && walletParam) {
         const normalizedAddress = walletParam.toLowerCase();
         const player = state.players[normalizedAddress];
         if (player) {
-          const oldPlayerSlot = playerSlot;
           playerSlot = player.slotNumber;
-          console.log(`🎮 Player slot: ${playerSlot}`);
+          console.log(`ðŸŽ® Player slot: ${playerSlot}`);
           
-          // Mark this as the current player's tube
           if (playerSlot >= 0 && playerSlot < 4) {
             tubes[playerSlot].isCurrentPlayer = true;
             players[playerSlot].isCurrentPlayer = true;
           }
           
-          // Update button visibility for all player cards
           updatePlayerCardButtons();
         }
         
-        // Sync all player choices from server state
         Object.keys(state.players).forEach(address => {
           const serverPlayer = state.players[address];
           if (serverPlayer && serverPlayer.slotNumber >= 0 && serverPlayer.slotNumber < 4) {
             const localPlayer = players[serverPlayer.slotNumber];
             if (localPlayer && !localPlayer.isEmpty) {
-              // Update choice if it changed (including reset to null)
               if (serverPlayer.choice !== localPlayer.choice) {
-                console.log(`🔄 Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice || 'null'} (was: ${localPlayer.choice || 'null'})`);
+                console.log(`ðŸ”„ Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice || 'null'} (was: ${localPlayer.choice || 'null'})`);
                 localPlayer.choice = serverPlayer.choice;
                 
-                // Update UI for this player
                 const tube = tubes[serverPlayer.slotNumber];
                 if (tube && tube.cardElement) {
                   const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
@@ -1478,13 +1418,11 @@
                   
                   if (choiceButtons && choiceBadge) {
                     if (serverPlayer.choice) {
-                      // Show choice badge
                       choiceButtons.style.display = 'none';
                       choiceBadge.style.display = 'inline-block';
                       choiceBadge.textContent = serverPlayer.choice.toUpperCase();
                       choiceBadge.className = `choice-badge ${serverPlayer.choice}`;
                     } else {
-                      // Hide choice badge, show buttons for current player
                       choiceBadge.style.display = 'none';
                       if (playerSlot === serverPlayer.slotNumber) {
                         choiceButtons.style.display = 'flex';
@@ -1496,7 +1434,6 @@
                 }
               }
               
-              // Update wins if changed
               if (serverPlayer.wins !== undefined && localPlayer.wins !== serverPlayer.wins) {
                 localPlayer.wins = serverPlayer.wins;
                 updateWinsDisplay(serverPlayer.slotNumber);
@@ -1506,33 +1443,27 @@
         });
       }
       
-      // SERVER-AUTHORITATIVE: Display server timer only
       if (state.roundTimer !== undefined) {
         updateTimerDisplay(state.roundTimer);
       }
       
-      // Update round
       if (state.currentRound !== undefined) {
         const oldRound = currentRound;
         currentRound = state.currentRound;
         updateRoundDisplay();
         saveGameState();
         
-        // 🎯 ROUND RESET: Reset ALL player states for new round
         if (currentRound > oldRound) {
-          console.log(`🔄 Round ${currentRound} started - FULL RESET`);
+          console.log(`ðŸ”„ Round ${currentRound} started - FULL RESET`);
           tubes.forEach((tube, i) => {
-            // 1. Reset power usage
             tube.hasUsedPower = false;
             tube.power = 0;
             tube.isFilling = false;
             tube.foamIntensity = 0;
             
-            // 2. Reset glass shatter state
             tube.isShattered = false;
             tube.isFlipping = false;
             
-            // 3. Show glass tube and rims again
             tube.tube.visible = true;
             tube.backing.visible = true;
             tube.topRim.visible = true;
@@ -1540,7 +1471,6 @@
             tube.liquid.visible = true;
             tube.coinShadow.visible = false;
             
-            // 4. Clear glass shards
             if (tube.glassShards && tube.glassShards.length > 0) {
               tube.glassShards.forEach(shard => {
                 scene.remove(shard.mesh);
@@ -1548,17 +1478,13 @@
               tube.glassShards = [];
             }
             
-            // 5. Re-add physics container
             if (!physicsWorld.bodies.includes(tube.glassBody)) {
               physicsWorld.addBody(tube.glassBody);
             }
             
-            // 6. Reset pearl colors to neutral
             updatePearlColors(tube, 0, i);
             
-            // 6.5. Reset pearl positions to bottom of tube
             tube.liquidParticles.forEach((particleBody, idx) => {
-              // Reset position to bottom of tube
               const angle = Math.random() * Math.PI * 2;
               const radius = Math.random() * (TUBE_RADIUS - 25);
               const pearlX = tube.tube.position.x + Math.cos(angle) * radius;
@@ -1569,17 +1495,14 @@
               particleBody.velocity.set(0, 0, 0);
               particleBody.angularVelocity.set(0, 0, 0);
               
-              // Make sure pearl is visible
               if (tube.liquidParticleMeshes[idx]) {
                 tube.liquidParticleMeshes[idx].visible = true;
               }
             });
             
-            // 6.6. Reset liquid light to neutral
             tube.liquidLight.color.setHex(0x1a1a2e); // Dark blue-grey
             tube.liquidLight.intensity = 0.3;
             
-            // 7. Reset coin to default position
             const coin = coins[i];
             if (coin) {
               coin.position.set(tube.tube.position.x, 200, 0);
@@ -1587,7 +1510,6 @@
               coin.rotation.y = Math.PI / 2;
               coin.rotation.z = 0;
               
-              // Remove any result lights
               if (tube.winLight) {
                 coin.remove(tube.winLight);
                 tube.winLight = null;
@@ -1598,13 +1520,11 @@
               }
             }
             
-            // 8. Remove result box
             if (tube.resultBox) {
               scene.remove(tube.resultBox);
               tube.resultBox = null;
             }
             
-            // 9. Reset UI - Power button
             if (tube.cardElement) {
               const powerButton = tube.cardElement.querySelectorAll('.action-btn')[0]; // Fixed: was [1], now [0]
               if (powerButton) {
@@ -1616,7 +1536,6 @@
                 powerButton.style.cursor = 'pointer';
               }
               
-              // Reset power bar
               const powerFill = tube.cardElement.querySelector('.power-fill');
               const powerValue = tube.cardElement.querySelector('.power-value');
               if (powerFill) {
@@ -1628,12 +1547,10 @@
             }
           });
           
-          // 10. Reset player choices for new round
           players.forEach((player, i) => {
             if (!player.isEmpty) {
               player.choice = null;
               
-              // Update UI to show choice buttons again
               const tube = tubes[i];
               if (tube && tube.cardElement) {
                 const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
@@ -1641,11 +1558,9 @@
                 
                 if (choiceButtons && choiceBadge) {
                   choiceBadge.style.display = 'none';
-                  // Only show buttons for current player
                   if (playerSlot === i) {
                     choiceButtons.style.display = 'flex';
                     
-                    // Reset choice button styles
                     const choiceBtnElements = tube.cardElement.querySelectorAll('.choice-btn');
                     choiceBtnElements.forEach(btn => {
                       btn.style.opacity = '1';
@@ -1660,7 +1575,6 @@
             }
           });
           
-          // 11. Reset mobile choice highlighting
           const mobileHeadsBtn = document.getElementById('mobile-heads');
           const mobileTailsBtn = document.getElementById('mobile-tails');
           if (mobileHeadsBtn && mobileTailsBtn) {
@@ -1668,7 +1582,6 @@
             mobileTailsBtn.classList.remove('selected');
           }
           
-          // 12. Reset mobile power bar
           const mobilePowerFill = document.getElementById('mobile-power-fill');
           const mobilePowerValue = document.querySelector('#mobile-power-text .power-value');
           if (mobilePowerFill && mobilePowerValue) {
@@ -1676,23 +1589,19 @@
             mobilePowerValue.textContent = '0';
           }
           
-          console.log(`✅ Round ${currentRound} reset complete - players can charge and choose again`);
+          console.log(`âœ… Round ${currentRound} reset complete - players can charge and choose again`);
           
-          // 🎯 CRITICAL: Update button visibility after reset
           updatePlayerCardButtons();
         }
       }
       
-      // Update coin states from server physics
       if (state.coinStates) {
         updateCoinStatesFromServer(state.coinStates);
       }
       
-      // Update coin rotations based on player choices (before flipping)
       updateCoinRotationsFromPlayerChoices();
     }
     
-    // Update coin rotations based on player choices (before flipping)
     function updateCoinRotationsFromPlayerChoices() {
       tubes.forEach((tube, i) => {
         const player = players[i];
@@ -1700,25 +1609,20 @@
         
         if (coin && !tube.isFlipping && !tube.isShattered) {
           if (player && !player.isEmpty) {
-            // Only update rotation if player has made a choice and coin is not flipping
             if (player.choice === 'heads') {
-              // Show heads face (standing on edge, heads facing camera)
               coin.rotation.x = Math.PI / 2;
               coin.rotation.y = Math.PI / 2;
               coin.rotation.z = 0;
             } else if (player.choice === 'tails') {
-              // Show tails face (standing on edge, tails facing camera)
               coin.rotation.x = 3 * Math.PI / 2;
               coin.rotation.y = Math.PI / 2;
               coin.rotation.z = 0;
             } else {
-              // If no choice made, default to standing on edge (heads position)
               coin.rotation.x = Math.PI / 2;
               coin.rotation.y = Math.PI / 2;
               coin.rotation.z = 0;
             }
           } else {
-            // For empty players, ensure coin is in default upright position (not sideways)
             coin.rotation.x = Math.PI / 2;
             coin.rotation.y = Math.PI / 2;
             coin.rotation.z = 0;
@@ -1727,23 +1631,17 @@
       });
     }
     
-    // Update coin states from server physics
     function updateCoinStatesFromServer(coinStates) {
       coinStates.forEach((coinState, index) => {
         if (coinState && coinState.position) {
           const coin = coins[index];
           const tube = tubes[index];
           if (coin && tube) {
-            // ONLY update from server if we're NOT currently flipping locally
-            // Local flip animations take priority to prevent jittery visuals
             if (!tube.isFlipping) {
-              // Update coin position from server, but ensure it stays within the correct tube
               const tubeX = tube.tube.position.x;
               coin.position.set(tubeX, coinState.position.y, coinState.position.z);
               
-              // Update coin rotation from server, but preserve choice-based rotation when not flipping
               if (coinState.rotation && coinState.isFlipping) {
-                // Only update rotation from server if the coin is actually flipping
                 coin.quaternion.set(
                   coinState.rotation.x,
                   coinState.rotation.y,
@@ -1751,12 +1649,10 @@
                   coinState.rotation.w
                 );
               } else {
-                // When not flipping, ensure coin maintains proper choice-based rotation
                 updateCoinRotationsFromPlayerChoices();
               }
             }
             
-            // Update flip state
             if (coinState.isFlipping) {
               tubes[index].isFlipping = true;
             } else {
@@ -1767,10 +1663,9 @@
       });
     }
     
-    // Start client coin flip animation (visual only)
     function startClientCoinFlipAnimation(data) {
-      console.log('🎁 Received flip reward data:', data.flipReward);
-      console.log('🎁 Full data object:', data);
+      console.log('ðŸŽ Received flip reward data:', data.flipReward);
+      console.log('ðŸŽ Full data object:', data);
       
       if (data.playerSlot >= 0 && data.playerSlot < 4) {
         const tube = tubes[data.playerSlot];
@@ -1779,16 +1674,13 @@
         if (tube && coin) {
           tube.isFlipping = true;
           
-          // Start visual animation based on server data
           animateCoinFlip(data.playerSlot, data.power, data.duration);
           
-          // ✅ Show FLIP reward for everyone to see (more fun!)
           showFlipReward(data.playerSlot, data.flipReward);
         }
       }
     }
     
-    // Show coin flip result
     function showCoinFlipResult(data) {
       if (data.playerSlot >= 0 && data.playerSlot < 4) {
         const tube = tubes[data.playerSlot];
@@ -1798,27 +1690,23 @@
         if (tube && coin && player) {
           tube.isFlipping = false;
           
-          // Smoothly land coin with bounce effect
           const targetRotationX = data.result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
           animateCoinLanding(coin, targetRotationX, data.accuracy || 'normal');
           
-          console.log(`✅ Coin ${data.playerSlot + 1} landed on ${data.result} facing camera (server-side)`);
+          console.log(`âœ… Coin ${data.playerSlot + 1} landed on ${data.result} facing camera (server-side)`);
           
-          // Update player wins from server data
           if (data.wins !== undefined) {
             player.wins = data.wins;
-            console.log(`📊 Updated player ${data.playerSlot + 1} wins from server: ${player.wins}`);
+            console.log(`ðŸ“Š Updated player ${data.playerSlot + 1} wins from server: ${player.wins}`);
             updateWinsDisplay(data.playerSlot);
           }
           
-          // Show result
           showResult(data.playerSlot, data.won, data.result);
           
         }
       }
     }
     
-    // 🎯 REFACTORED: Update power charging visual - REAL-TIME for all players
     function updatePowerChargingVisual(data) {
       if (data.playerSlot >= 0 && data.playerSlot < 4) {
         const tube = tubes[data.playerSlot];
@@ -1831,32 +1719,27 @@
         const powerPercent = tube.power / 100;
         tube.foamIntensity = powerPercent;
         
-        console.log(`⚡ Updated power visual for player ${data.playerSlot + 1}: ${data.power}% (level ${tube.powerLevel}, foamIntensity: ${tube.foamIntensity}, isFilling: ${tube.isFilling})`);
+        console.log(`âš¡ Updated power visual for player ${data.playerSlot + 1}: ${data.power}% (level ${tube.powerLevel}, foamIntensity: ${tube.foamIntensity}, isFilling: ${tube.isFilling})`);
         
-        // 🎯 UNIFIED ANIMATION - Same code for charger and viewers!
         updatePearlColors(tube, powerPercent, data.playerSlot);
         
-        // Debug: Check if pearls exist and are visible
         if (tube.liquidParticleMeshes && tube.liquidParticleMeshes.length > 0) {
           const visibleCount = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
-          console.log(`🔍 Tube ${data.playerSlot + 1} has ${tube.liquidParticleMeshes.length} pearls, ${visibleCount} visible`);
+          console.log(`ðŸ” Tube ${data.playerSlot + 1} has ${tube.liquidParticleMeshes.length} pearls, ${visibleCount} visible`);
         }
         
-        // 🎯 FORCE PEARL VISIBILITY: Ensure pearls are always visible when charging
         if (tube.isFilling && tube.liquidParticleMeshes) {
           tube.liquidParticleMeshes.forEach(mesh => {
             mesh.visible = true;
           });
-          console.log(`🌊 Forced pearl visibility for tube ${data.playerSlot + 1}`);
+          console.log(`ðŸŒŠ Forced pearl visibility for tube ${data.playerSlot + 1}`);
         }
       }
     }
     
-    // 🎯 NEW: Update pearl colors - Extracted for reusability
     function updatePearlColors(tube, powerPercent, tubeIndex) {
       const darkPearl = new THREE.Color(0x1a1a1a); // Dark grey (neutral start)
       
-      // Define neon colors for each tube
       const neonColors = [
         new THREE.Color(0x00ff00), // Tube 1: NEON GREEN
         new THREE.Color(0x00ddff), // Tube 2: NEON BLUE
@@ -1867,39 +1750,31 @@
       const neonColor = neonColors[tubeIndex] || neonColors[0];
       const currentColor = darkPearl.clone().lerp(neonColor, powerPercent);
       
-      // Update pearl colors with MAXIMUM NEON - ULTRA VIBRANT with bloom!
       tube.liquidParticleMeshes.forEach(particleMesh => {
         particleMesh.material.color.copy(currentColor);
         particleMesh.material.emissive.copy(currentColor);
         particleMesh.material.emissiveIntensity = 0.2 + (powerPercent * 25.0); // 0.2 to 25.2 - Perfect with bloom!
       });
       
-      // Update liquid light to match pearl color
       tube.liquidLight.color.copy(currentColor);
       tube.liquidLight.intensity = 0.3 + (powerPercent * 15.0); // 0.3 to 15.3 - MEGA INTENSE!
     }
 
-    // 🎯 NEW: Update pearl physics - Extracted for reusability
     function updatePearlPhysics(tube, powerPercent, tubeIndex, frameCount) {
-      const spinSpeed = powerPercent * 0.3; // Rotation speed increases with power
       const spinForce = powerPercent * 1200; // Orbital force
       const buoyancyForce = powerPercent * 800; // Upward float force
       
       tube.liquidParticles.forEach((particleBody, idx) => {
-        // BUOYANCY - Float upward!
         particleBody.force.y += buoyancyForce;
         
-        // Calculate position relative to tube center
         const dx = particleBody.position.x - tube.tube.position.x;
         const dz = particleBody.position.z;
         const distance = Math.sqrt(dx * dx + dz * dz);
         
         if (distance > 1) {
-          // Calculate tangential force (perpendicular to radius) for circular motion
           const angle = Math.atan2(dz, dx);
           const tangentAngle = angle + Math.PI / 2; // 90 degrees to create orbit
           
-          // Apply circular orbital force - pearls spin around the walls!
           const orbitForceX = Math.cos(tangentAngle) * spinForce * (1 + idx * 0.05);
           const orbitForceZ = Math.sin(tangentAngle) * spinForce * (1 + idx * 0.05);
           
@@ -1907,7 +1782,6 @@
           particleBody.force.z += orbitForceZ;
         }
         
-        // Add chaotic bouncing movement
         const chaos = Math.sin(frameCount * 0.2 + idx) * 200 * powerPercent;
         particleBody.force.x += chaos;
         particleBody.force.z += Math.cos(frameCount * 0.2 + idx * 1.3) * 200 * powerPercent;
@@ -1915,7 +1789,6 @@
     }
     
     
-    // Update coin from server
     function updateCoinFromServer(data) {
       if (data.playerSlot >= 0 && data.playerSlot < 4) {
         const tube = tubes[data.playerSlot];
@@ -1923,13 +1796,11 @@
         const player = players[data.playerSlot];
         
         if (tube && coin && player && data.coinData) {
-          console.log(`🪙 Updating coin for player ${data.playerSlot + 1}: ${data.coinData.name}`);
+          console.log(`ðŸª™ Updating coin for player ${data.playerSlot + 1}: ${data.coinData.name}`);
           
-          // Update stored selections
           tube.selectedCoin = data.coinData;
           tube.selectedMaterial = coinMaterials.find(m => m.id === data.coinData.material) || coinMaterials[0];
           
-          // Load and apply new coin textures
           const textureLoader = new THREE.TextureLoader();
           textureLoader.load(data.coinData.headsImage, (headsTex) => {
             headsTex.minFilter = THREE.LinearFilter;
@@ -1943,44 +1814,38 @@
               tailsTex.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
               tailsTex.generateMipmaps = false;
               
-              // Update textures
               coin.material[1].uniforms.map.value = headsTex;
               coin.material[1].needsUpdate = true;
               coin.material[2].uniforms.map.value = tailsTex;
               coin.material[2].needsUpdate = true;
               
-              // Update coin edge color based on material
               const edgeColor = new THREE.Color(tube.selectedMaterial.edgeColor);
               coin.material[0].color.copy(edgeColor);
               coin.material[0].emissive.copy(edgeColor);
               coin.material[0].emissiveIntensity = 0.3;
               coin.material[0].needsUpdate = true;
               
-              console.log(`✅ Applied ${data.coinData.name} with ${tube.selectedMaterial.name} material to ${player.name}'s coin`);
+              console.log(`âœ… Applied ${data.coinData.name} with ${tube.selectedMaterial.name} material to ${player.name}'s coin`);
             });
           });
         }
       }
     }
     
-    // Update coin angle visual
     function updateCoinAngleVisual(data) {
       if (data.playerSlot >= 0 && data.playerSlot < 4) {
         const coin = coins[data.playerSlot];
         const tube = tubes[data.playerSlot];
         if (coin && tube && !tube.isFlipping) {
-          // Only update angle if NOT currently flipping (prevent conflict)
           const angleRad = (data.angle * Math.PI) / 180;
           coin.rotation.z = angleRad;
         }
       }
     }
     
-    // Update player choice from server broadcast
     function updatePlayerChoice(data) {
-      console.log('🎯 Updating player choice:', data);
+      console.log('ðŸŽ¯ Updating player choice:', data);
       
-      // Find player by address or slot
       let playerIndex = -1;
       
       if (data.playerSlot !== undefined && data.playerSlot >= 0 && data.playerSlot < 4) {
@@ -1993,18 +1858,15 @@
       if (playerIndex >= 0 && playerIndex < 4) {
         const player = players[playerIndex];
         if (player && !player.isEmpty) {
-          // Update player choice
           player.choice = data.choice;
-          console.log(`✅ Updated player ${playerIndex + 1} choice to: ${data.choice}`);
+          console.log(`âœ… Updated player ${playerIndex + 1} choice to: ${data.choice}`);
           
-          // Update the UI - find the choice badge and update it
           const tube = tubes[playerIndex];
           if (tube && tube.cardElement) {
             const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
             const choiceBadge = tube.cardElement.querySelector('.choice-badge');
             
             if (choiceButtons && choiceBadge) {
-              // Replace choice buttons with badge
               choiceButtons.style.display = 'none';
               choiceBadge.style.display = 'inline-block';
               choiceBadge.textContent = data.choice.toUpperCase();
@@ -2012,35 +1874,27 @@
             }
           }
           
-          // Update coin rotation to show the chosen face
           updateCoinRotationsFromPlayerChoices();
         }
       }
     }
     
-    // Initialize socket connection
     initializeSocket();
 
-    // ===== PLAYER CARD BUTTON MANAGEMENT =====
     
-    // Update button visibility for all player cards based on current player slot
     function updatePlayerCardButtons() {
       tubes.forEach((tube, i) => {
         if (tube.cardElement) {
           const player = players[i];
           if (!player || player.isEmpty) return;
           
-          // Determine if this is the current player's slot
           const isCurrentPlayer = isServerSideMode ? (playerSlot === i) : true;
           
-          // Update choice buttons visibility
           const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
           const choiceBadge = tube.cardElement.querySelector('.choice-badge');
           
           if (isCurrentPlayer) {
-            // Show choice buttons for current player only if they haven't made a choice yet
             if (player.choice) {
-              // Player has made a choice - show the badge
               if (choiceButtons) choiceButtons.style.display = 'none';
               if (choiceBadge) {
                 choiceBadge.style.display = 'inline-block';
@@ -2048,58 +1902,47 @@
                 choiceBadge.className = `choice-badge ${player.choice}`;
               }
             } else {
-              // Player hasn't made a choice yet - show buttons
               if (choiceBadge) choiceBadge.style.display = 'none';
               if (choiceButtons) choiceButtons.style.display = 'flex';
             }
           } else if (player.choice) {
-            // Show choice badge for other players
             if (choiceButtons) choiceButtons.style.display = 'none';
             if (choiceBadge) choiceBadge.style.display = 'block';
           } else {
-            // Hide everything for other players without choices
             if (choiceButtons) choiceButtons.style.display = 'none';
             if (choiceBadge) choiceBadge.style.display = 'none';
           }
           
-          // Update action buttons visibility
           const actionButtons = tube.cardElement.querySelectorAll('.action-btn');
           
           if (isCurrentPlayer) {
-            // Show action buttons for current player
             actionButtons.forEach(btn => {
               btn.style.display = 'block';
               btn.style.pointerEvents = 'auto';
             });
-            console.log(`🎯 Power button for slot ${i}: display=block, pointerEvents=auto`);
+            console.log(`ðŸŽ¯ Power button for slot ${i}: display=block, pointerEvents=auto`);
           } else {
-            // Hide action buttons for other players
             actionButtons.forEach(btn => btn.style.display = 'none');
           }
           
-          console.log(`🎯 Updated buttons for slot ${i}: isCurrentPlayer=${isCurrentPlayer}, hasChoice=${!!player.choice}`);
+          console.log(`ðŸŽ¯ Updated buttons for slot ${i}: isCurrentPlayer=${isCurrentPlayer}, hasChoice=${!!player.choice}`);
         }
       });
     }
 
-    // ===== MISSING HELPER FUNCTIONS =====
     
-    // Update round display
     function updateRoundDisplay() {
-      // Update desktop round display
       const roundElement = document.getElementById('round-number');
       if (roundElement) {
         roundElement.textContent = currentRound;
       }
       
-      // Update mobile round display
       const mobileRoundElement = document.getElementById('round-number-mobile');
       if (mobileRoundElement) {
         mobileRoundElement.textContent = currentRound;
       }
     }
     
-    // Animate coin flip (visual only - for server-side physics)
     function animateCoinFlip(playerSlot, power, duration) {
       const tube = tubes[playerSlot];
       const coin = coins[playerSlot];
@@ -2108,7 +1951,6 @@
       
       tube.isFlipping = true;
       
-      // Visual animation only - no game logic
       const powerPercent = power / 100;
       const material = tube.selectedMaterial || coinMaterials[2];
       const speedMult = material.speedMultiplier;
@@ -2118,11 +1960,10 @@
       const basePowerSpeed = Math.max(0.08, 0.05 + (powerPercent * 0.25));
       const flipSpeed = basePowerSpeed * speedMult;
       
-      // NEW: Wobble parameters for realistic motion
       const wobbleAmount = 0.02 + (powerPercent * 0.05); // More power = more wobble
       const tumbleAmount = 0.01 + (powerPercent * 0.03);
       
-      console.log(`🎬 Starting visual coin flip for slot ${playerSlot}: duration=${flipDuration}ms, speed=${flipSpeed}`);
+      console.log(`ðŸŽ¬ Starting visual coin flip for slot ${playerSlot}: duration=${flipDuration}ms, speed=${flipSpeed}`);
       
       const startTime = Date.now();
       let wobblePhase = 0;
@@ -2132,26 +1973,21 @@
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / flipDuration, 1);
         
-        // Cubic ease-out for natural deceleration
         const easeOut = 1 - Math.pow(1 - progress, 3);
         
         if (progress < 0.7) {
-          // Fast spinning phase (first 70%)
           const currentSpeed = flipSpeed * (1 - (progress / 0.7) * 0.3);
           coin.rotation.x += currentSpeed;
         } else {
-          // Deceleration phase (last 30%)
           const decelProgress = (progress - 0.7) / 0.3;
           const currentSpeed = flipSpeed * 0.7 * (1 - decelProgress);
           coin.rotation.x += currentSpeed;
         }
         
-        // NEW: Add realistic wobble on Y-axis (decreases as coin settles)
         wobblePhase += 0.15 * (1 - progress * 0.5);
         const wobbleIntensity = wobbleAmount * (1 - easeOut);
         coin.rotation.y = (Math.PI / 2) + Math.sin(wobblePhase) * wobbleIntensity;
         
-        // NEW: Add subtle tumble on Z-axis
         tumblePhase += 0.1 * (1 - progress * 0.5);
         const tumbleIntensity = tumbleAmount * (1 - easeOut);
         coin.rotation.z = Math.sin(tumblePhase * 0.7) * tumbleIntensity;
@@ -2159,43 +1995,37 @@
         if (progress < 1) {
           requestAnimationFrame(animateFlip);
         } else {
-          // Animation complete - server will send actual result
-          console.log(`🎬 Visual flip animation complete for slot ${playerSlot}, awaiting result...`);
+          console.log(`ðŸŽ¬ Visual flip animation complete for slot ${playerSlot}, awaiting result...`);
         }
       };
       
       animateFlip();
     }
 
-    // Calculate release accuracy for skill-based probability
     function calculateReleaseAccuracy(power) {
       const distanceFromCenter = Math.abs(power - 50);
       
       let accuracy, zone, winChance;
       
       if (distanceFromCenter <= 2) {
-        // PERFECT - 48-52% range (4% window)
         accuracy = 'perfect';
         zone = 'SWEET SPOT!';
         winChance = 0.55;
       } else if (distanceFromCenter <= 8) {
-        // GOOD - 42-58% range (excluding perfect)
         accuracy = 'good';
         zone = 'Nice Timing!';
         winChance = 0.525;
       } else {
-        // NORMAL - everything else (no penalty!)
         accuracy = 'normal';
         zone = null;
         winChance = 0.50;
       }
       
-      console.log(`🎯 Release accuracy: ${accuracy} at ${power}% power (${(winChance * 100).toFixed(1)}% win chance)`);
+      console.log(`ðŸŽ¯ Release accuracy: ${accuracy} at ${power}% power (${(winChance * 100).toFixed(1)}% win chance)`);
       
       return { accuracy, zone, winChance };
     }
 
-    // Show sweet spot feedback popup
     function showSweetSpotFeedback(zone, winChance) {
       const feedback = document.createElement('div');
       feedback.className = 'sweet-spot-feedback';
@@ -2209,17 +2039,14 @@
       
       document.body.appendChild(feedback);
       
-      // Animate in
       setTimeout(() => feedback.classList.add('show'), 10);
       
-      // Remove after 2 seconds
       setTimeout(() => {
         feedback.classList.remove('show');
         setTimeout(() => feedback.remove(), 300);
       }, 2000);
     }
 
-    // Smooth landing with bounce effect when result is revealed
     function animateCoinLanding(coin, targetRotation, accuracy) {
       const currentRotation = coin.rotation.x;
       const rotationCycles = Math.floor(currentRotation / (Math.PI * 2));
@@ -2236,7 +2063,6 @@
         const elapsed = Date.now() - startTime;
         landingProgress = Math.min(elapsed / landingDuration, 1);
         
-        // Elastic ease-out for bounce effect
         let bounce;
         if (landingProgress < 0.7) {
           bounce = Math.pow(landingProgress / 0.7, 2);
@@ -2245,22 +2071,18 @@
           bounce = 1 - Math.pow(bounceProgress, 2) * 0.1;
         }
         
-        // Smooth rotation to final position
         coin.rotation.x = currentRotation + (finalRotation - currentRotation) * bounce;
         
-        // Reset wobble and tumble smoothly
         coin.rotation.y = startY + (Math.PI / 2 - startY) * landingProgress;
         coin.rotation.z = startZ * (1 - landingProgress);
         
         if (landingProgress < 1) {
           requestAnimationFrame(animateLanding);
         } else {
-          // Lock to perfect final position
           coin.rotation.x = finalRotation;
           coin.rotation.y = Math.PI / 2;
           coin.rotation.z = 0;
           
-          // Show perfect timing effect if sweet spot was hit
           if (accuracy === 'perfect') {
             showPerfectTimingEffect(coin);
           }
@@ -2270,9 +2092,7 @@
       animateLanding();
     }
 
-    // Visual effect for perfect timing
     function showPerfectTimingEffect(coin) {
-      // Add golden glow ring around coin
       const ringGeometry = new THREE.RingGeometry(35, 45, 32);
       const ringMaterial = new THREE.MeshBasicMaterial({
         color: 0xFFD700,
@@ -2286,7 +2106,6 @@
       ring.rotation.copy(coin.rotation);
       scene.add(ring);
       
-      // Animate ring expanding and fading
       let ringProgress = 0;
       const ringDuration = 1000;
       const startTime = Date.now();
@@ -2310,7 +2129,6 @@
       animateRing();
     }
 
-    // ===== AUDIO SYSTEM =====
     let isMuted = false;
     const glassBreakSound = new Audio('../Sound/glassclipped.mp3');
     glassBreakSound.volume = 0.7; // Adjust volume as needed
@@ -2319,7 +2137,6 @@
     powerChargeSound.volume = 0.6; // Adjust volume as needed
     powerChargeSound.loop = true; // Loop while charging
     
-    // Function to play sound with mute check
     function playSound(audio) {
       if (!isMuted && audio) {
         audio.currentTime = 0; // Reset to start
@@ -2327,7 +2144,6 @@
       }
     }
     
-    // Function to stop sound
     function stopSound(audio) {
       if (audio) {
         audio.pause();
@@ -2335,12 +2151,10 @@
       }
     }
     
-    // Function to toggle mute
     function toggleMute() {
       isMuted = !isMuted;
-      console.log(`🔊 Sound ${isMuted ? 'MUTED' : 'UNMUTED'}`);
+      console.log(`ðŸ”Š Sound ${isMuted ? 'MUTED' : 'UNMUTED'}`);
       
-      // Mute/unmute all audio elements
       glassBreakSound.muted = isMuted;
       powerChargeSound.muted = isMuted;
       
@@ -2363,21 +2177,19 @@
       { id: 4, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true }
     ];
 
-    // Coin options - MUST be defined before tubes are created
     const coinOptions = [
       { id: 'plain', name: 'Classic', headsImage: '/coins/plainh.png', tailsImage: '/coins/plaint.png', cost: 0, category: 'free' },
       { id: 'skull', name: 'Skull', headsImage: '/coins/skullh.png', tailsImage: '/coins/skullt.png', cost: 200, category: 'premium' },
       { id: 'trump', name: 'Trump', headsImage: '/coins/trumpheads.webp', tailsImage: '/coins/trumptails.webp', cost: 300, category: 'premium' },
       { id: 'mario', name: 'Mario', headsImage: '/coins/mario.png', tailsImage: '/coins/luigi.png', cost: 300, category: 'premium' },
       { id: 'stinger', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png', cost: 300, category: 'premium' },
-      { id: 'dragon', name: '龙', headsImage: '/coins/dragonh.png', tailsImage: '/coins/dragont.png', cost: 300, category: 'premium' },
+      { id: 'dragon', name: 'é¾™', headsImage: '/coins/dragonh.png', tailsImage: '/coins/dragont.png', cost: 300, category: 'premium' },
       { id: 'jestress', name: 'Jestress', headsImage: '/coins/jestressh.png', tailsImage: '/coins/jestresst.png', cost: 500, category: 'epic' },
       { id: 'manga', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png', cost: 500, category: 'epic' },
       { id: 'pharaoh', name: 'Pharaoh', headsImage: '/coins/pharaohh.png', tailsImage: '/coins/pharaoht.png', cost: 1000, category: 'legendary' },
       { id: 'calavera', name: 'Calavera', headsImage: '/coins/calaverah.png', tailsImage: '/coins/calaverat.png', cost: 1000, category: 'legendary' }
     ];
 
-    // Coin material options with physics properties - MUST be defined before tubes are created
     const coinMaterials = [
       {
         id: 'graphite',
@@ -2426,16 +2238,12 @@
       }
     ];
 
-    // Game state
     let currentRound = 1;
-    // SERVER-AUTHORITATIVE: Timer comes from server only
     let roundCounterElement = null;
     let timerElement = null;
-    // SERVER-AUTHORITATIVE: Auto-flip is now handled by the server
     let gameOver = false;
     let roundStartWins = []; // Track wins at start of each round
 
-    // LocalStorage persistence with expiry
     function saveGameState() {
       if (!gameIdParam || !walletParam) return;
       
@@ -2453,7 +2261,7 @@
       
       const storageKey = `game_${gameIdParam}_${walletParam}`;
       localStorage.setItem(storageKey, JSON.stringify(gameState));
-      console.log('💾 Game state saved to localStorage:', gameState);
+      console.log('ðŸ’¾ Game state saved to localStorage:', gameState);
     }
 
     function loadGameState() {
@@ -2463,37 +2271,33 @@
       const savedData = localStorage.getItem(storageKey);
       
       if (!savedData) {
-        console.log('📂 No saved game state found');
+        console.log('ðŸ“‚ No saved game state found');
         return null;
       }
       
       try {
         const gameState = JSON.parse(savedData);
         
-        // Check if expired
         if (Date.now() > gameState.expiresAt) {
-          console.log('⏰ Saved game state expired, clearing...');
+          console.log('â° Saved game state expired, clearing...');
           localStorage.removeItem(storageKey);
           return null;
         }
         
-        console.log('✅ Loaded game state from localStorage:', gameState);
+        console.log('âœ… Loaded game state from localStorage:', gameState);
         return gameState;
       } catch (err) {
-        console.error('❌ Failed to parse saved game state:', err);
+        console.error('âŒ Failed to parse saved game state:', err);
         localStorage.removeItem(storageKey);
         return null;
       }
     }
 
-    // Color Management - ENABLED for proper emissive glow
     THREE.ColorManagement.enabled = true;
     
-    // Scene
     const scene = new THREE.Scene();
     scene.background = null; // Transparent to show CSS background image
     
-    // ===== ADD BACKGROUND IMAGE AS TEXTURED PLANE (1920x1080) =====
     const bgTextureLoader = new THREE.TextureLoader();
     const bgCandidates = roomParam === 'lab' 
       ? ['/images/background/thelab.png']
@@ -2508,19 +2312,15 @@
       bgTextureLoader.load(path, onSuccess, undefined, () => loadBackground(paths.slice(1), onSuccess, onFail));
     }
     loadBackground(bgCandidates, (bgTexture) => {
-      // Keep texture in sRGB color space - don't convert
       bgTexture.colorSpace = THREE.SRGBColorSpace;
       bgTexture.minFilter = THREE.LinearFilter;
       bgTexture.magFilter = THREE.LinearFilter;
       
-      // Calculate correct plane size based on camera FOV and distance
-      // Camera: FOV=30°, position z=1400, background z=-500
       const distanceFromCamera = 1400 - (-500); // 1900 units
       const vFOV = camera.fov * Math.PI / 180; // Convert to radians
       const planeHeight = 2 * Math.tan(vFOV / 2) * distanceFromCamera;
       const planeWidth = planeHeight * camera.aspect; // Match screen aspect ratio
       
-      // Create plane with calculated dimensions
       const bgGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
       const bgMaterial = new THREE.MeshBasicMaterial({
         map: bgTexture,
@@ -2537,12 +2337,11 @@
       bgPlane.layers.set(0); // Layer 0 - main scene
       scene.add(bgPlane);
       scene.background = null; // Remove fallback color now that we have the texture
-      console.log(`🖼️ Background image loaded! Size: ${planeWidth.toFixed(0)}x${planeHeight.toFixed(0)} at distance ${distanceFromCamera}`);
+      console.log(`ðŸ–¼ï¸ Background image loaded! Size: ${planeWidth.toFixed(0)}x${planeHeight.toFixed(0)} at distance ${distanceFromCamera}`);
     }, undefined, (error) => {
-      console.error('❌ Failed to load background image:', error);
+      console.error('âŒ Failed to load background image:', error);
     });
 
-    // Camera - FLATTER VIEW
     const width = window.innerWidth;
     const height = window.innerHeight;
     const camera = new THREE.PerspectiveCamera(30, width / height, 1, 5000); // Narrower FOV
@@ -2550,9 +2349,8 @@
     camera.lookAt(0, 150, 0); // Look at raised tubes
     camera.layers.enable(0); // Default layer - tubes, coins, etc.
     camera.layers.enable(1); // Bloom layer - pearls and plasma
-    console.log('📷 Camera positioned for shorter tubes with dual-layer support');
+    console.log('ðŸ“· Camera positioned for shorter tubes with dual-layer support');
 
-    // WebGL Renderer
     const webglRenderer = new THREE.WebGLRenderer({ 
       antialias: true, 
       alpha: true // Enable transparency for video background
@@ -2564,12 +2362,10 @@
     webglRenderer.toneMapping = THREE.ACESFilmicToneMapping; // Filmic tone mapping for vibrant colors
     webglRenderer.toneMappingExposure = 1.0; // Neutral exposure - don't brighten anything
     webglRenderer.outputColorSpace = THREE.SRGBColorSpace; // Proper color space
-    console.log('🎨 WebGL Renderer initialized with transparency');
+    console.log('ðŸŽ¨ WebGL Renderer initialized with transparency');
     document.getElementById('container').appendChild(webglRenderer.domElement);
 
-    // ===== SELECTIVE BLOOM SETUP - Layer 1 (pearls) only! =====
     
-    // Create bloom render target for layer 1 (pearls + plasma)
     const bloomRenderTarget = new THREE.WebGLRenderTarget(width, height, {
       type: THREE.HalfFloatType,
       format: THREE.RGBAFormat,
@@ -2578,17 +2374,14 @@
       depthBuffer: true
     });
     
-    // Bloom composer - renders ONLY layer 1
     const bloomComposer = new EffectComposer(webglRenderer, bloomRenderTarget);
     
-    // Render pass for layer 1 only (pearls + plasma)
     const bloomRenderPass = new RenderPass(scene, camera);
     bloomRenderPass.clear = true;
     bloomRenderPass.clearColor = new THREE.Color(0, 0, 0);
     bloomRenderPass.clearAlpha = 0; // Clear to transparent black
     bloomComposer.addPass(bloomRenderPass);
     
-    // Bloom effect - ULTRA CRISP neon glow with minimal blur!
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(width, height),
       1.0,  // Strength - increased for better visibility
@@ -2600,37 +2393,10 @@
     
     bloomComposer.renderToScreen = false; // Keep result in render target!
     
-    console.log('✨ Selective bloom composer created for layer 1 (pearls)!');
+    console.log('âœ¨ Selective bloom composer created for layer 1 (pearls)!');
     
-    // ===== ADDITIVE BLEND SHADER - Composites bloomed pearls on top =====
-    const AdditiveBlendShader = {
-      uniforms: {
-        baseTexture: { value: null },
-        bloomTexture: { value: null }
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D baseTexture;
-        uniform sampler2D bloomTexture;
-        varying vec2 vUv;
-        void main() {
-          vec4 base = texture2D(baseTexture, vUv);
-          vec4 bloom = texture2D(bloomTexture, vUv);
-          // Additive blending - add bloom on top
-          gl_FragColor = base + bloom;
-        }
-      `
-    };
     
-    console.log('🎨 Additive blend shader created for compositing!');
 
-    // CSS3D Renderer
     const cssRenderer = new CSS3DRenderer();
     cssRenderer.setSize(width, height);
     cssRenderer.domElement.style.position = 'absolute';
@@ -2638,7 +2404,6 @@
     cssRenderer.domElement.style.pointerEvents = 'auto';
     document.getElementById('container').appendChild(cssRenderer.domElement);
 
-    // ===== LEAVE GAME BUTTON =====
     const leaveBtn = document.createElement('button');
     leaveBtn.textContent = 'Leave Game';
     leaveBtn.style.cssText = `
@@ -2676,7 +2441,6 @@
     };
     document.body.appendChild(leaveBtn);
 
-    // XP Counter for current player
     let currentPlayerXP = 0;
     const xpCounter = document.createElement('div');
     xpCounter.id = 'xp-counter';
@@ -2705,7 +2469,6 @@
       `;
     document.body.appendChild(xpCounter);
 
-    // Create separate change coin box - positioned beside earnings box
     const changeCoinBox = document.createElement('div');
     changeCoinBox.id = 'change-coin-box';
     changeCoinBox.style.cssText = `
@@ -2749,53 +2512,46 @@
     `;
     document.body.appendChild(changeCoinBox);
 
-    // Add global change coin button handler
     setTimeout(() => {
       const globalChangeCoinBtn = document.getElementById('global-change-coin-btn');
       if (globalChangeCoinBtn) {
         globalChangeCoinBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          console.log('🎨 Global change coin button clicked');
+          console.log('ðŸŽ¨ Global change coin button clicked');
           
-          // Try to find current player slot
           let currentPlayerSlot = playerSlot;
           
-          // Fallback: search for current player if playerSlot is not set
           if (currentPlayerSlot === undefined || currentPlayerSlot < 0) {
             currentPlayerSlot = players.findIndex(p => p.address === walletParam);
-            console.log(`🔍 Fallback search found player slot: ${currentPlayerSlot}`);
+            console.log(`ðŸ” Fallback search found player slot: ${currentPlayerSlot}`);
           }
           
           if (currentPlayerSlot !== undefined && currentPlayerSlot >= 0) {
-            console.log(`🎨 Opening coin selector for player slot ${currentPlayerSlot}`);
+            console.log(`ðŸŽ¨ Opening coin selector for player slot ${currentPlayerSlot}`);
             showCoinSelector(currentPlayerSlot);
           } else {
-            console.log('❌ Player slot not found for coin selection. PlayerSlot:', playerSlot, 'WalletParam:', walletParam);
+            console.log('âŒ Player slot not found for coin selection. PlayerSlot:', playerSlot, 'WalletParam:', walletParam);
             console.log('Available players:', players.map((p, i) => ({ slot: i, address: p.address, name: p.name })));
           }
         });
       }
     }, 100);
 
-    // Function to update XP counter
     function updateXPCounter(amount) {
       currentPlayerXP += amount;
       const xpDisplay = xpCounter.querySelectorAll('div')[1]; // Second div contains the FLIP amount
       xpDisplay.textContent = `${currentPlayerXP} FLIP`;
       
-      // Update mobile displays
       if (isMobile()) {
         updateMobileDisplays();
       }
       
-      // Add a subtle glow effect when XP increases
       xpCounter.style.boxShadow = '0 0 30px rgba(0, 255, 136, 0.6)';
       setTimeout(() => {
         xpCounter.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.3)';
       }, 500);
     }
 
-    // Function to show floating messages
     function showFloatingMessage(message, color, duration = 3000) {
       const floatingMsg = document.createElement('div');
       floatingMsg.style.cssText = `
@@ -2821,7 +2577,6 @@
       floatingMsg.textContent = message;
       document.body.appendChild(floatingMsg);
       
-      // Add CSS animation if not already added
       if (!document.getElementById('floating-animations')) {
         const style = document.createElement('style');
         style.id = 'floating-animations';
@@ -2844,15 +2599,12 @@
       }, duration);
     }
 
-    // Global variables for collection UI
     let currentCollectionId = null;
     let collectionExpiryTimer = null;
 
-    // Function to show collection UI
     function showCollectionUI(collectionId, totalFlip, gameResult, expiresAt) {
       currentCollectionId = collectionId;
       
-      // Create collection overlay
       const overlay = document.createElement('div');
       overlay.id = 'collection-overlay';
       overlay.style.cssText = `
@@ -2869,7 +2621,6 @@
         animation: fadeIn 0.5s ease-out;
       `;
 
-      // Create collection box
       const collectionBox = document.createElement('div');
       collectionBox.style.cssText = `
         background: linear-gradient(135deg, #1a1a2e, #16213e);
@@ -2885,16 +2636,16 @@
         animation: scaleIn 0.5s ease-out;
       `;
 
-      const title = gameResult === 'won' ? '🏆 VICTORY!' : '💰 Game Complete';
+      const title = gameResult === 'won' ? 'ðŸ† VICTORY!' : 'ðŸ’° Game Complete';
       const titleColor = gameResult === 'won' ? '#FFD700' : '#00ff00';
       
       collectionBox.innerHTML = `
         <h2 style="color: ${titleColor}; margin: 0 0 20px 0; font-size: 28px;">${title}</h2>
         <div style="font-size: 24px; margin: 20px 0; color: #FFD700;">
-          💎 ${totalFlip} FLIP Tokens Earned
+          ðŸ’Ž ${totalFlip} FLIP Tokens Earned
         </div>
         <div style="font-size: 14px; color: #888; margin: 20px 0;">
-          ⏰ Collect within 24 hours or they expire!
+          â° Collect within 24 hours or they expire!
         </div>
         <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
           <button id="collect-flip-btn" style="
@@ -2908,7 +2659,7 @@
             cursor: pointer;
             font-size: 16px;
             transition: all 0.3s ease;
-          ">💎 Claim FLIP</button>
+          ">ðŸ’Ž Claim FLIP</button>
           ${gameResult === 'won' ? `
           <button id="claim-nft-btn" style="
             background: linear-gradient(45deg, #ff0088, #cc0066);
@@ -2921,7 +2672,7 @@
             cursor: pointer;
             font-size: 16px;
             transition: all 0.3s ease;
-          ">🏆 Claim NFT</button>
+          ">ðŸ† Claim NFT</button>
           ` : ''}
         </div>
         <div style="font-size: 12px; color: #666; margin-top: 15px;">
@@ -2932,7 +2683,6 @@
       overlay.appendChild(collectionBox);
       document.body.appendChild(overlay);
 
-      // Add button hover effects
       const collectBtn = document.getElementById('collect-flip-btn');
       const claimNftBtn = document.getElementById('claim-nft-btn');
       
@@ -2956,7 +2706,6 @@
         });
       }
 
-      // Add event listeners
       collectBtn.addEventListener('click', () => {
         if (isServerSideMode && socket && gameIdParam && walletParam) {
           socket.emit('collect_flip_tokens', {
@@ -2977,16 +2726,14 @@
         });
       }
 
-      // Set expiry timer
       const expiryTime = new Date(expiresAt).getTime() - Date.now();
       if (expiryTime > 0) {
         collectionExpiryTimer = setTimeout(() => {
-          showFloatingMessage('⏰ Collection expired!', '#ff4444', 3000);
+          showFloatingMessage('â° Collection expired!', '#ff4444', 3000);
           hideCollectionUI();
         }, expiryTime);
       }
 
-      // Add CSS animations if not already added
       if (!document.getElementById('collection-animations')) {
         const style = document.createElement('style');
         style.id = 'collection-animations';
@@ -3004,7 +2751,6 @@
       }
     }
 
-    // Function to hide collection UI
     function hideCollectionUI() {
       const overlay = document.getElementById('collection-overlay');
       if (overlay) {
@@ -3023,7 +2769,6 @@
       }
     }
 
-    // Lighting - Very low ambient to protect background from any indirect brightening
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); // Minimal ambient
     scene.add(ambientLight);
 
@@ -3039,24 +2784,20 @@
     rightAccent.position.set(800, 200, 400);
     scene.add(rightAccent);
 
-    // Front light - illuminates the tubes from camera position
     const frontLight = new THREE.DirectionalLight(0xffffff, 1.0); // Good brightness for tubes
     frontLight.position.set(0, 200, 1200); // From camera position
     frontLight.target.position.set(0, 200, 0); // Pointing at tubes
     scene.add(frontLight);
     scene.add(frontLight.target);
 
-    // Create tubes
     const NUM_TUBES = 4;
     const TUBE_RADIUS = 80;
     const TUBE_HEIGHT = 350; // Shorter tubes
     const SPACING = 350;
 
-    // Calculate tube positions
     const totalWidth = SPACING * (NUM_TUBES - 1);
     const startX = -totalWidth / 2;
 
-    // ===== LOAD BRASS/METALLIC TEXTURES =====
     const textureLoader = new THREE.TextureLoader();
     const brassColorMap = textureLoader.load('/Images/textures/Brass/textures/rusty_metal_04_diff_4k.jpg');
     const brassDisplacementMap = textureLoader.load('/Images/textures/Brass/textures/rusty_metal_04_disp_4k.png');
@@ -3069,30 +2810,25 @@
     brassDisplacementMap.wrapT = THREE.RepeatWrapping;
     brassDisplacementMap.repeat.set(2, 2);
 
-    console.log('🎨 Brass metallic textures loaded');
+    console.log('ðŸŽ¨ Brass metallic textures loaded');
 
-    // ===== CREATE SHARED ALPHA MAP FOR GLASS CUTOUT (ONE FOR ALL TUBES) =====
     const tubeAlphaCanvas = document.createElement('canvas');
     tubeAlphaCanvas.width = 512;
     tubeAlphaCanvas.height = 512;
     const tubeAlphaCtx = tubeAlphaCanvas.getContext('2d');
     
-    // Fill with white (visible glass)
     tubeAlphaCtx.fillStyle = 'white';
     tubeAlphaCtx.fillRect(0, 0, 512, 512);
     
-    // Create rectangular cutout with rounded corners (centered on front, where coin is)
     tubeAlphaCtx.globalCompositeOperation = 'destination-out';
     tubeAlphaCtx.fillStyle = 'black';
     
-    // Rectangle dimensions (full height of glass, centered horizontally)
     const rectWidth = 200;
     const rectHeight = 440; // Full height of tube
     const rectX = 256 - rectWidth / 2;
     const rectY = 36; // Start near top
     const cornerRadius = 30; // Larger rounded corners
     
-    // Draw rounded rectangle cutout
     tubeAlphaCtx.beginPath();
     tubeAlphaCtx.moveTo(rectX + cornerRadius, rectY);
     tubeAlphaCtx.lineTo(rectX + rectWidth - cornerRadius, rectY);
@@ -3110,20 +2846,17 @@
     tubeAlphaTexture.wrapS = THREE.RepeatWrapping;
     tubeAlphaTexture.wrapT = THREE.ClampToEdgeWrapping;
 
-    // ===== PHYSICS WORLD SETUP =====
     const physicsWorld = new CANNON.World({
       gravity: new CANNON.Vec3(0, -980, 0) // Gravity in cm/s^2
     });
     physicsWorld.defaultContactMaterial.friction = 0.1;
     physicsWorld.defaultContactMaterial.restitution = 0.3;
 
-    console.log('⚙️ Physics world created with gravity');
+    console.log('âš™ï¸ Physics world created with gravity');
 
-    // ===== ROOM-SPECIFIC TUBE STYLES =====
     function getTubeStyle(roomType) {
       if (roomType === 'lab') {
         return {
-          // Lab tubes: More scientific/industrial look
           glassColor: 0x4a90e2, // Steel blue
           glassOpacity: 0.2,
           glassEmissive: 0x1a3a5c,
@@ -3135,14 +2868,12 @@
           backingColor: 0x34495e, // Dark steel backing
           backingMetalness: 0.8,
           backingRoughness: 0.4,
-          // Lab-specific geometry
           tubeShape: 'lab', // Different shape for lab tubes
           tubeRadius: TUBE_RADIUS * 0.8, // Slightly narrower
           tubeHeight: TUBE_HEIGHT * 1.1 // Slightly taller
         };
       } else if (roomType === 'cyber') {
         return {
-          // Cyber Bay tubes: Futuristic/cyberpunk look
           glassColor: 0x00ffff, // Cyan glass
           glassOpacity: 0.25,
           glassEmissive: 0x004444,
@@ -3154,14 +2885,12 @@
           backingColor: 0x001122, // Dark cyber backing
           backingMetalness: 0.9,
           backingRoughness: 0.1,
-          // Cyber-specific geometry
           tubeShape: 'cyber', // Different shape for cyber tubes
           tubeRadius: TUBE_RADIUS * 0.9, // Slightly narrower than potion
           tubeHeight: TUBE_HEIGHT * 1.05 // Slightly taller
         };
       } else if (roomType === 'mech') {
         return {
-          // Mech Room tubes: Industrial/mechanical look
           glassColor: 0x666666, // Dark steel glass
           glassOpacity: 0.3,
           glassEmissive: 0x220000,
@@ -3173,13 +2902,11 @@
           backingColor: 0x222222, // Dark industrial backing
           backingMetalness: 0.9,
           backingRoughness: 0.2,
-          // Mech-specific geometry
           tubeShape: 'mech', // Different shape for mech tubes
           tubeRadius: TUBE_RADIUS * 0.95, // Slightly narrower
           tubeHeight: TUBE_HEIGHT * 1.02 // Slightly taller
         };
       } else {
-        // Default potion room style
         return {
           glassColor: 0xd0d0d0, // Bright silver
           glassOpacity: 0.15,
@@ -3192,7 +2919,6 @@
           backingColor: 0xe0e0e0, // Chrome
           backingMetalness: 0.98,
           backingRoughness: 0.1,
-          // Default geometry
           tubeShape: 'potion',
           tubeRadius: TUBE_RADIUS,
           tubeHeight: TUBE_HEIGHT
@@ -3201,7 +2927,7 @@
     }
 
     const tubeStyle = getTubeStyle(roomParam);
-    console.log(`🎨 Using ${roomParam} room tube style:`, tubeStyle);
+    console.log(`ðŸŽ¨ Using ${roomParam} room tube style:`, tubeStyle);
 
     const tubes = [];
     const coins = [];
@@ -3210,10 +2936,8 @@
       const x = startX + (i * SPACING);
       const player = players[i];
 
-      // Glass tube - ROOM-SPECIFIC STYLING with RECTANGULAR CUTOUT around coin
       let tubeGeometry;
       if (tubeStyle.tubeShape === 'lab') {
-        // Lab tubes: More circular/rounded shape with higher segment count
         tubeGeometry = new THREE.CylinderGeometry(
           tubeStyle.tubeRadius * 0.9, // Top slightly narrower
           tubeStyle.tubeRadius, // Bottom wider
@@ -3222,7 +2946,6 @@
           1, true
         );
       } else if (tubeStyle.tubeShape === 'cyber') {
-        // Cyber tubes: Futuristic tapered shape
         tubeGeometry = new THREE.CylinderGeometry(
           tubeStyle.tubeRadius * 0.85, // Top narrower
           tubeStyle.tubeRadius * 1.05, // Bottom wider
@@ -3231,7 +2954,6 @@
           1, true
         );
       } else if (tubeStyle.tubeShape === 'mech') {
-        // Mech tubes: Industrial straight cylinder with high segments
         tubeGeometry = new THREE.CylinderGeometry(
           tubeStyle.tubeRadius, 
           tubeStyle.tubeRadius, 
@@ -3240,7 +2962,6 @@
           1, true
         );
       } else {
-        // Potion tubes: Standard cylinder with more segments for circular look
         tubeGeometry = new THREE.CylinderGeometry(
           tubeStyle.tubeRadius, 
           tubeStyle.tubeRadius, 
@@ -3263,10 +2984,9 @@
       });
       const tube = new THREE.Mesh(tubeGeometry, glassMaterial);
       tube.position.set(x, 200, 0); // Move tubes higher up
-      tube.rotation.y = Math.PI; // Rotate 180° so cutout faces camera
+      tube.rotation.y = Math.PI; // Rotate 180Â° so cutout faces camera
       scene.add(tube);
 
-      // ===== ROOM-SPECIFIC BACKING PANEL - Creates contrast with background image =====
       const backingGeometry = new THREE.CylinderGeometry(
         tubeStyle.tubeRadius + 5, 
         tubeStyle.tubeRadius + 5, 
@@ -3285,7 +3005,6 @@
       backing.position.set(x, 200, -10); // Position slightly behind the tube
       scene.add(backing);
 
-      // ===== ROOM-SPECIFIC CAPS (TOP & BOTTOM LIDS) - METALLIC =====
       const capMaterial = new THREE.MeshStandardMaterial({
         map: brassColorMap,
         displacementMap: brassDisplacementMap,
@@ -3295,24 +3014,20 @@
         roughness: tubeStyle.capRoughness,
       });
 
-      // Top cap with transparent circle cutout for coin viewing
       const capGeometry = new THREE.CylinderGeometry(
         tubeStyle.tubeRadius + 10, 
         tubeStyle.tubeRadius + 10, 
         15, 64
       );
       
-      // Create alpha map with transparent circle
       const capCanvas = document.createElement('canvas');
       capCanvas.width = 256;
       capCanvas.height = 256;
       const capCtx = capCanvas.getContext('2d');
       
-      // Fill with white (opaque brass)
       capCtx.fillStyle = 'white';
       capCtx.fillRect(0, 0, 256, 256);
       
-      // Cut out transparent circle in center
       capCtx.globalCompositeOperation = 'destination-out';
       capCtx.fillStyle = 'black';
       capCtx.beginPath();
@@ -3329,12 +3044,10 @@
       topCap.position.set(x, 200 + (tubeStyle.tubeHeight / 2) + 7.5, 0);
       scene.add(topCap);
 
-      // Bottom cap (solid room-specific metallic disc)
       const bottomCap = new THREE.Mesh(capGeometry, capMaterial.clone());
       bottomCap.position.set(x, 200 - (tubeStyle.tubeHeight / 2) - 7.5, 0);
       scene.add(bottomCap);
 
-      // Decorative rims (ROOM-SPECIFIC COLOR - SMOOTH & GLOSSY)
       const rimGeometry = new THREE.TorusGeometry(tubeStyle.tubeRadius + 5, 8, 32, 64);
       const rimMaterial = new THREE.MeshStandardMaterial({
         color: tubeStyle.rimColor,
@@ -3351,25 +3064,20 @@
       bottomRim.position.y = 200 - tubeStyle.tubeHeight / 2;
       scene.add(bottomRim);
 
-      // ===== PHYSICS-BASED LIQUID SYSTEM =====
       
-      // Create glass container collision boundaries (SEALED CONTAINER)
       const glassBody = new CANNON.Body({
         type: CANNON.Body.STATIC,
         position: new CANNON.Vec3(x, 200, 0)
       });
       
-      // SOLID BOTTOM CAP - thick box to seal bottom completely
       const bottomCapShape = new CANNON.Box(new CANNON.Vec3(tubeStyle.tubeRadius + 5, 20, tubeStyle.tubeRadius + 5));
       const bottomCapOffset = new CANNON.Vec3(0, -(tubeStyle.tubeHeight / 2) - 15, 0);
       glassBody.addShape(bottomCapShape, bottomCapOffset);
       
-      // SOLID TOP CAP - VERY THICK box to seal top completely (prevents all escape!)
       const topCapShape = new CANNON.Box(new CANNON.Vec3(tubeStyle.tubeRadius + 5, 30, tubeStyle.tubeRadius + 5));
       const topCapOffset = new CANNON.Vec3(0, (tubeStyle.tubeHeight / 2) + 20, 0);
       glassBody.addShape(topCapShape, topCapOffset);
       
-      // Cylindrical walls - 16 segments for smooth circular containment
       const numWalls = 16;
       const wallThickness = 3;
       for (let w = 0; w < numWalls; w++) {
@@ -3383,25 +3091,21 @@
       }
       
       physicsWorld.addBody(glassBody);
-      console.log(`⚙️ Sealed physics container created for tube ${i + 1}`);
+      console.log(`âš™ï¸ Sealed physics container created for tube ${i + 1}`);
 
-      // Create PEARL particles (glowing pink balls inside the tube)
       const liquidParticles = [];
       const liquidParticleMeshes = [];
       const particleRadius = 7; // Pearl-sized
       const maxLayers = 80; // Double the pearls for more dramatic effect
       const pRadius = particleRadius;
       
-      // Start pearls at the bottom of the tube
       for (let p = 0; p < maxLayers; p++) {
-        // Random position inside cylinder at bottom
         const angle = Math.random() * Math.PI * 2;
         const radius = Math.random() * (tubeStyle.tubeRadius - 25);
         const pearlX = x + Math.cos(angle) * radius;
         const pearlZ = Math.sin(angle) * radius;
         const pearlY = 200 - (tubeStyle.tubeHeight / 2) + 30 + Math.random() * 60; // Start at bottom
         
-        // Create physics body - BOUNCY!
         const particleShape = new CANNON.Sphere(particleRadius);
         const particleBody = new CANNON.Body({
           mass: 0.3, // Lighter so they float easier
@@ -3414,10 +3118,8 @@
         particleBody.collisionFilterGroup = 1;
         particleBody.collisionFilterMask = -1;
         
-        // Add to physics world immediately
         physicsWorld.addBody(particleBody);
         
-        // Create visual PEARL - starts neutral dark (will transition to tube's color)
         const particleGeometry = new THREE.SphereGeometry(particleRadius, 32, 32); // Higher segments for perfect sphere
         const particleMaterial = new THREE.MeshPhysicalMaterial({
           color: 0x1a1a1a, // Neutral dark grey
@@ -3440,7 +3142,6 @@
         liquidParticleMeshes.push(particleMesh);
       }
 
-      // Visual liquid surface (smooth mesh - PRE-FILLED with darkish liquid)
       const liquidHeight = TUBE_HEIGHT - 20;
       const liquidGeometry = new THREE.CylinderGeometry(TUBE_RADIUS - 6, TUBE_RADIUS - 6, liquidHeight, 32, 32);
       const liquidMaterial = new THREE.MeshPhysicalMaterial({
@@ -3467,19 +3168,16 @@
       liquid.visible = true; // Visible from start
       scene.add(liquid);
 
-      // Liquid light (starts very dim)
       const liquidLight = new THREE.PointLight(0x1a1a2e, 0.3, 400); // Dim blue-grey
       liquidLight.position.set(0, 0, 0);
       liquid.add(liquidLight);
 
-      // Spotlight - illuminates each tube/cylinder nicely without affecting background
       const spotlight = new THREE.SpotLight(0xffffff, 0.7, 700, Math.PI / 6, 0.5, 2);
       spotlight.position.set(x, 200 + TUBE_HEIGHT / 2 + 300, 150);
       spotlight.target.position.set(x, 200, 0);
       scene.add(spotlight);
       scene.add(spotlight.target);
 
-      // Platform (BRASS METALLIC BASE)
       const platformGeometry = new THREE.CylinderGeometry(TUBE_RADIUS + 20, TUBE_RADIUS + 20, 15, 32);
       const platformMaterial = new THREE.MeshStandardMaterial({
         map: brassColorMap,
@@ -3492,13 +3190,11 @@
       platform.position.set(x, 200 - (TUBE_HEIGHT / 2) - 30, 0);
       scene.add(platform);
 
-      // Gold coin (centered in tube) - with HEADS and TAILS textures
       const coinRadius = 65; // 30% larger (was 50)
       const coinThickness = 16; // Scaled proportionally
       const coinGeometry = new THREE.CylinderGeometry(coinRadius, coinRadius, coinThickness, 64);
       const textureLoader = new THREE.TextureLoader();
       
-      // Load default coin textures (will be replaced by default selection logic below)
       const headsTexture = textureLoader.load('/coins/plainh.png'); // Temporary placeholder
       const tailsTexture = textureLoader.load('/coins/plaint.png'); // Temporary placeholder
       
@@ -3512,7 +3208,6 @@
       tailsTexture.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
       tailsTexture.generateMipmaps = false;
       
-      // Custom shader that outputs RAW texture colors (no gamma, no processing)
       const rawTextureShader = {
         vertexShader: `
           varying vec2 vUv;
@@ -3530,7 +3225,6 @@
         `
       };
       
-      // Create materials using RAW shader (bypasses ALL THREE.js color processing)
       const coinMaterials = [
         new THREE.MeshStandardMaterial({ 
           color: 0xFFD700,
@@ -3576,17 +3270,14 @@
       coin.layers.set(0); // Main rendering layer
       coin.matrixAutoUpdate = true; // Ensure matrix updates
       
-      // Force materials to update on next render
       coin.material.forEach(mat => {
         if (mat.needsUpdate !== undefined) mat.needsUpdate = true;
       });
       
       scene.add(coin);
 
-      // Diffused dark navy shadow backdrop (hidden initially, shows after glass breaks)
       const shadowGeometry = new THREE.CircleGeometry(coinRadius * 1.5, 64);
       
-      // Create gradient shadow with custom shader for soft diffusion
       const shadowMaterial = new THREE.ShaderMaterial({
         transparent: true,
         side: THREE.DoubleSide,
@@ -3625,25 +3316,20 @@
 
       coins.push(coin);
 
-      // Player card (CSS3D)
       const cardElement = document.createElement('div');
       cardElement.className = 'player-card';
       
-      // Initially hide buttons - they will be shown when player slot is determined
       let showButtons = false;
       if (!isServerSideMode) {
-        // Fallback for local mode
         showButtons = !player.isEmpty;
       }
-      // In server-side mode, buttons will be shown via updatePlayerCardButtons() when playerSlot is set
       
-      console.log(`🎯 Initial Player ${i + 1} button logic (DEBUGGING MODE):`, {
+      console.log(`ðŸŽ¯ Initial Player ${i + 1} button logic (DEBUGGING MODE):`, {
         playerAddress: player.address,
         isEmpty: player.isEmpty,
         showButtons: showButtons
       });
       
-      // Create empty slot overlay for empty players
       const emptySlotOverlay = player.isEmpty ? `
         <div class="empty-slot-overlay" style="
           position: absolute;
@@ -3661,7 +3347,7 @@
           color: white;
           text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
           z-index: 10;
-        ">✕</div>
+        ">âœ•</div>
       ` : '';
       
       cardElement.innerHTML = `
@@ -3671,7 +3357,7 @@
           <div class="player-info">
             <div class="player-name">${player.name}</div>
             <div class="wins-display" style="display: flex; gap: 8px; margin-top: 8px; justify-content: center; align-items: center;">
-              <span class="trophy-symbol">🏆</span>
+              <span class="trophy-symbol">ðŸ†</span>
               <span style="color: #ffd700; font-size: 18px; font-weight: bold;">${player.wins}</span>
             </div>
           </div>
@@ -3708,14 +3394,12 @@
 
       cardElement.style.pointerEvents = 'auto';
       
-      // Add choice button handlers (always add, visibility controlled by CSS)
       const choiceButtons = cardElement.querySelectorAll('.choice-btn');
       choiceButtons.forEach(button => {
         button.addEventListener('click', (e) => {
           e.stopPropagation();
           const choice = button.classList.contains('heads') ? 'heads' : 'tails';
           
-          // Add visual feedback - highlight the selected button
           choiceButtons.forEach(btn => {
             btn.style.opacity = '0.5';
             btn.style.transform = 'scale(0.95)';
@@ -3724,13 +3408,11 @@
           button.style.transform = 'scale(1.1)';
           button.style.boxShadow = '0 0 25px rgba(255, 255, 255, 0.8)';
           
-          // Update local player choice immediately
           players[i].choice = choice;
-          console.log(`🎯 Local choice set for player ${i + 1}: ${choice}`);
+          console.log(`ðŸŽ¯ Local choice set for player ${i + 1}: ${choice}`);
           updateCoinRotationsFromPlayerChoices();
-          saveGameState(); // ← ADD THIS
+          saveGameState(); // â† ADD THIS
           
-          // Update local UI immediately
           const choiceBadge = cardElement.querySelector('.choice-badge');
           const choiceButtonsContainer = cardElement.querySelector('.choice-buttons');
           if (choiceButtonsContainer && choiceBadge) {
@@ -3740,87 +3422,75 @@
             choiceBadge.className = `choice-badge ${choice}`;
           }
           
-          // Update coin rotation locally
           updateCoinRotationsFromPlayerChoices();
           
           if (isServerSideMode && socket && gameIdParam && walletParam) {
-            // Send choice to server (will broadcast to other players)
             socket.emit('physics_set_choice', {
               gameId: gameIdParam,
               address: walletParam,
               choice: choice
             });
-            console.log(`🎯 Sent choice to server: ${choice}`);
+            console.log(`ðŸŽ¯ Sent choice to server: ${choice}`);
           }
           
-          // Update button visibility after choice is made
           updatePlayerCardButtons();
         });
       });
 
 
-      // Add power charge button handler (HOLD TO CHARGE) - always add, visibility controlled by CSS
       const flipButtons = cardElement.querySelectorAll('.action-btn');
       const powerButton = flipButtons[0]; // The first action button (CHARGE POWER)
-      const powerBar = cardElement.querySelector('.power-bar');
       
       if (powerButton) {
-        const powerText = cardElement.querySelector('.power-text');
         powerButton.style.pointerEvents = 'auto';
         
         let isCharging = false;
         
         powerButton.addEventListener('mousedown', (e) => {
           e.stopPropagation();
-          console.log(`🖱️ Power button mousedown for player ${i + 1}`);
+          console.log(`ðŸ–±ï¸ Power button mousedown for player ${i + 1}`);
           
           
-          // Prevent charging if player hasn't chosen heads or tails
           if (!players[i].choice) {
             showChoiceRequiredMessage(i);
-            console.log(`❌ Player ${i + 1} must choose heads or tails first!`);
+            console.log(`âŒ Player ${i + 1} must choose heads or tails first!`);
             return;
           }
           
-          // Prevent charging if already used this round
           if (tubes[i].hasUsedPower) {
-            console.log(`❌ Player ${i + 1} already used power this round`);
+            console.log(`âŒ Player ${i + 1} already used power this round`);
             return;
           }
           
-          console.log(`⚡ Charging power for tube ${i + 1}`);
+          console.log(`âš¡ Charging power for tube ${i + 1}`);
           isCharging = true;
           tubes[i].isFilling = true;
           tubes[i].power = 0;
           tubes[i].chargingStartTime = Date.now(); // Track start time for sync
           
-          // Play power charging sound
           playSound(powerChargeSound);
           
-          // 🎯 NEW: INSTANT BROADCAST - Tell everyone charging started
           if (isServerSideMode && socket && gameIdParam && walletParam) {
             socket.emit('physics_power_charging_start', {
               gameId: gameIdParam,
               address: walletParam,
               playerSlot: i,
-              power: 0,  // ⚡ ADD THIS
-              isFilling: true  // ⚡ ADD THIS
+              power: 0,  // âš¡ ADD THIS
+              isFilling: true  // âš¡ ADD THIS
             });
-            console.log(`📢 Broadcast: Player ${i + 1} started charging`);
+            console.log(`ðŸ“¢ Broadcast: Player ${i + 1} started charging`);
           }
         });
         
         powerButton.addEventListener('mouseup', (e) => {
           e.stopPropagation();
           const finalPower = tubes[i].power;
-          console.log(`⚡ Power released at ${finalPower.toFixed(0)}%`);
+          console.log(`âš¡ Power released at ${finalPower.toFixed(0)}%`);
           isCharging = false;
           tubes[i].isFilling = false;
           
-          // Stop power charging sound
           stopSound(powerChargeSound);
           
-          // 🎯 NEW: INSTANT BROADCAST - Tell everyone charging stopped
           if (isServerSideMode && socket && gameIdParam && walletParam) {
             socket.emit('physics_power_charging_stop', {
               gameId: gameIdParam,
@@ -3828,20 +3498,15 @@
               playerSlot: i,
               finalPower: finalPower
             });
-            console.log(`📢 Broadcast: Player ${i + 1} stopped charging at ${finalPower}%`);
+            console.log(`ðŸ“¢ Broadcast: Player ${i + 1} stopped charging at ${finalPower}%`);
           }
           
-          // Shatter glass and flip coin (minimum 5% power to prevent instant flips)
           if (finalPower >= 5) {
-            // Server-side physics: Send flip request to server
             if (isServerSideMode && socket && gameIdParam && walletParam) {
-              // Get player choice from the card
               const playerChoice = players[i].choice;
               
-              // Calculate accuracy before sending
               const releaseData = calculateReleaseAccuracy(finalPower);
               
-              // Send flip request to server (server will broadcast glass shatter to all)
               socket.emit('physics_flip_coin', {
                 gameId: gameIdParam,
                 address: walletParam,
@@ -3850,20 +3515,17 @@
                 angle: 0 // Default angle for now
               });
               
-              // Show instant feedback if sweet spot hit
               if (releaseData.zone) {
                 showSweetSpotFeedback(releaseData.zone, releaseData.winChance);
               }
               
-              console.log(`🪙 Sent flip request to server: power=${finalPower}, choice=${playerChoice}`);
+              console.log(`ðŸª™ Sent flip request to server: power=${finalPower}, choice=${playerChoice}`);
             } else {
-              // Fallback to local physics (for testing)
               shatterGlass(i, finalPower);
               const playerChoice = players[i].choice;
               flipCoinWithPower(i, finalPower, playerChoice);
             }
             
-            // Disable button after use
             powerButton.disabled = true;
             powerButton.style.opacity = '0.5';
             powerButton.style.cursor = 'not-allowed';
@@ -3877,12 +3539,10 @@
         powerButton.addEventListener('mouseleave', (e) => {
           if (isCharging) {
             const finalPower = tubes[i].power;
-            console.log(`⚡ Power released at ${finalPower.toFixed(0)}%`);
+            console.log(`âš¡ Power released at ${finalPower.toFixed(0)}%`);
             
-            // Stop power charging sound
             stopSound(powerChargeSound);
             
-            // 🎯 NEW: INSTANT BROADCAST - Tell everyone charging stopped
             if (isServerSideMode && socket && gameIdParam && walletParam) {
               socket.emit('physics_power_charging_stop', {
                 gameId: gameIdParam,
@@ -3890,20 +3550,15 @@
                 playerSlot: i,
                 finalPower: finalPower
               });
-              console.log(`📢 Broadcast: Player ${i + 1} stopped charging (mouseleave) at ${finalPower}%`);
+              console.log(`ðŸ“¢ Broadcast: Player ${i + 1} stopped charging (mouseleave) at ${finalPower}%`);
             }
             
-            // Shatter glass and flip coin (minimum 5% power)
             if (finalPower >= 5) {
-              // Server-side physics: Send flip request to server
               if (isServerSideMode && socket && gameIdParam && walletParam) {
-                // Get player choice from the card
                 const playerChoice = players[i].choice;
                 
-                // Calculate accuracy before sending
                 const releaseData = calculateReleaseAccuracy(finalPower);
                 
-                // Send flip request to server (server will broadcast glass shatter to all)
                 socket.emit('physics_flip_coin', {
                   gameId: gameIdParam,
                   address: walletParam,
@@ -3912,20 +3567,17 @@
                   angle: 0 // Default angle for now
                 });
                 
-                // Show instant feedback if sweet spot hit
                 if (releaseData.zone) {
                   showSweetSpotFeedback(releaseData.zone, releaseData.winChance);
                 }
                 
-                console.log(`🪙 Sent flip request to server (mouseleave): power=${finalPower}, choice=${playerChoice}`);
+                console.log(`ðŸª™ Sent flip request to server (mouseleave): power=${finalPower}, choice=${playerChoice}`);
               } else {
-                // Fallback to local physics (for testing)
                 shatterGlass(i, finalPower);
                 const playerChoice = players[i].choice;
                 flipCoinWithPower(i, finalPower, playerChoice);
               }
               
-              // Disable button after use
               powerButton.disabled = true;
               powerButton.style.opacity = '0.5';
               powerButton.style.cursor = 'not-allowed';
@@ -3942,16 +3594,13 @@
       }
 
       const cssObject = new CSS3DObject(cardElement);
-      // Position cards BELOW the tubes
       cssObject.position.set(x, 200 - (TUBE_HEIGHT / 2) - 140, 0);
       cssObject.scale.set(0.6, 0.45, 0.6); // Wider, less tall
       scene.add(cssObject);
 
-      // Auto-apply default selections to fix coin picker gradient issue
       const defaultCoin = coinOptions[0]; // Classic coin
       const defaultMaterial = coinMaterials[0]; // Graphite material
       
-      // Load and apply the default coin textures (heads and tails)
       textureLoader.load(defaultCoin.headsImage, (headsTex) => {
         headsTex.minFilter = THREE.LinearFilter;
         headsTex.magFilter = THREE.LinearFilter;
@@ -3964,25 +3613,23 @@
           tailsTex.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
           tailsTex.generateMipmaps = false;
           
-          // Update both textures
           coin.material[1].uniforms.map.value = headsTex;
           coin.material[1].needsUpdate = true;
           coin.material[2].uniforms.map.value = tailsTex;
           coin.material[2].needsUpdate = true;
           coin.visible = true;
           
-          console.log(`✅ Applied default ${defaultCoin.name} textures to ${player.name}'s coin`);
+          console.log(`âœ… Applied default ${defaultCoin.name} textures to ${player.name}'s coin`);
         });
       });
       
-      // Update coin edge color based on default material
       const edgeColor = new THREE.Color(defaultMaterial.edgeColor);
       coin.material[0].color.copy(edgeColor);
       coin.material[0].emissive.copy(edgeColor);
       coin.material[0].emissiveIntensity = 0.3;
       coin.material[0].needsUpdate = true;
       
-      console.log(`✅ Applied default ${defaultCoin.name} with ${defaultMaterial.name} material to ${player.name}'s coin`);
+      console.log(`âœ… Applied default ${defaultCoin.name} with ${defaultMaterial.name} material to ${player.name}'s coin`);
 
       tubes.push({ 
         tube, backing, topRim, bottomRim, liquid, liquidLight, spotlight, platform, coin,
@@ -4010,29 +3657,24 @@
       });
     }
 
-    // ===== SHADER PRE-WARMING (Prevent first-charge freeze) =====
-    console.log('🔥 Warming up pearl shaders...');
+    console.log('ðŸ”¥ Warming up pearl shaders...');
     tubes.forEach((tube, i) => {
-      // Minimal power update to trigger shader compilation
       tube.power = 1;
       tube.foamIntensity = 0.01;
       updatePearlColors(tube, 0.01, i);
     });
     
-    // Reset after warmup
     setTimeout(() => {
       tubes.forEach((tube, i) => {
         tube.power = 0;
         tube.foamIntensity = 0;
         updatePearlColors(tube, 0, i);
       });
-      console.log('✅ Shader warmup complete');
+      console.log('âœ… Shader warmup complete');
     }, 100);
 
-    // ===== COIN TEXTURES ALREADY APPLIED DURING CREATION =====
-    console.log('🎮 Game started - coin textures already applied during tube creation');
+    console.log('ðŸŽ® Game started - coin textures already applied during tube creation');
 
-    // ===== CREATE GAME INFO CONTAINER (Round + Timer + Controls) =====
     const gameInfoDiv = document.createElement('div');
     gameInfoDiv.className = 'game-info';
     gameInfoDiv.style.cssText = `
@@ -4112,7 +3754,7 @@
           text-transform: uppercase;
           letter-spacing: 1px;
           box-shadow: 0 0 15px rgba(157, 0, 255, 0.4);
-        ">🔊 MUTE</button>
+        ">ðŸ”Š MUTE</button>
         
         <!-- Chat Button -->
         <button id="chat-btn" style="
@@ -4129,7 +3771,7 @@
           text-transform: uppercase;
           letter-spacing: 1px;
           box-shadow: 0 0 15px rgba(157, 0, 255, 0.4);
-        ">💬 CHAT</button>
+        ">ðŸ’¬ CHAT</button>
       </div>
     `;
     
@@ -4138,14 +3780,12 @@
     gameInfoObject.scale.set(0.5, 0.5, 0.5);
     scene.add(gameInfoObject);
 
-    // Get element references
     roundCounterElement = gameInfoDiv;
     timerElement = gameInfoDiv;
     const timerDisplay = gameInfoDiv.querySelector('#timer-display');
     const muteBtn = gameInfoDiv.querySelector('#mute-btn');
     const chatBtn = gameInfoDiv.querySelector('#chat-btn');
 
-    // Add hover effects to buttons
     [muteBtn, chatBtn].forEach(btn => {
       btn.addEventListener('mouseenter', () => {
         btn.style.transform = 'translateY(-2px)';
@@ -4157,18 +3797,16 @@
       });
     });
 
-    // Mute button handler
     muteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const muted = toggleMute();
       
-      // Update button text and style
       if (muted) {
-        muteBtn.textContent = '🔇 UNMUTE';
+        muteBtn.textContent = 'ðŸ”‡ UNMUTE';
         muteBtn.style.background = 'linear-gradient(135deg, #666666, #888888)';
         muteBtn.style.borderColor = '#666666';
       } else {
-        muteBtn.textContent = '🔊 MUTE';
+        muteBtn.textContent = 'ðŸ”Š MUTE';
         muteBtn.style.background = 'linear-gradient(135deg, #9d00ff, #c44aff)';
         muteBtn.style.borderColor = '#9d00ff';
       }
@@ -4180,14 +3818,11 @@
         alert('Chat unavailable: missing gameId');
         return;
       }
-      // Build overlay
       const overlay = document.createElement('div');
       
-      // Check if mobile
       const isMobile = window.innerWidth <= 768;
       
       if (isMobile) {
-        // Mobile chat box - smaller and positioned to fit on screen
         overlay.style.cssText = `
           position: fixed;
           right: 10px;
@@ -4205,7 +3840,6 @@
           overflow: hidden;
         `;
       } else {
-        // Desktop chat box - original size
         overlay.style.cssText = `
           position: fixed;
           right: 20px;
@@ -4223,38 +3857,32 @@
       }
       const header = document.createElement('div');
       if (isMobile) {
-        // Mobile header - smaller padding and font
         header.style.cssText = `
           padding: 8px 10px; color: #fff; font-weight: bold; font-size: 14px;
           background: linear-gradient(135deg, #9d00ff, #c44aff);
           display: flex; align-items: center; justify-content: space-between;
         `;
       } else {
-        // Desktop header - original styling
         header.style.cssText = `
           padding: 10px 12px; color: #fff; font-weight: bold;
           background: linear-gradient(135deg, #9d00ff, #c44aff);
           display: flex; align-items: center; justify-content: space-between;
         `;
       }
-      header.innerHTML = `<span>Lobby Chat</span><button style="all: unset; cursor: pointer; font-weight: bold;">✖</button>`;
+      header.innerHTML = `<span>Lobby Chat</span><button style="all: unset; cursor: pointer; font-weight: bold;">âœ–</button>`;
       const closeBtn = header.querySelector('button');
       closeBtn.onclick = () => overlay.remove();
       const list = document.createElement('div');
       if (isMobile) {
-        // Mobile list - smaller padding
         list.style.cssText = `flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px;`;
       } else {
-        // Desktop list - original padding
         list.style.cssText = `flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px;`;
       }
       
       const inputRow = document.createElement('div');
       if (isMobile) {
-        // Mobile input row - smaller padding and gap
         inputRow.style.cssText = `display: flex; gap: 4px; padding: 6px; background: rgba(255,255,255,0.05);`;
       } else {
-        // Desktop input row - original styling
         inputRow.style.cssText = `display: flex; gap: 6px; padding: 8px; background: rgba(255,255,255,0.05);`;
       }
       
@@ -4263,10 +3891,8 @@
       input.placeholder = 'Type message (read-only for now)';
       input.disabled = true;
       if (isMobile) {
-        // Mobile input - smaller padding and font
         input.style.cssText = `flex:1; background: rgba(0,0,0,0.4); border: 1px solid #444; color: #fff; padding: 6px; border-radius: 6px; font-size: 14px;`;
       } else {
-        // Desktop input - original styling
         input.style.cssText = `flex:1; background: rgba(0,0,0,0.4); border: 1px solid #444; color: #fff; padding: 8px; border-radius: 8px;`;
       }
       
@@ -4274,10 +3900,8 @@
       sendBtn.textContent = 'Send';
       sendBtn.disabled = true;
       if (isMobile) {
-        // Mobile send button - smaller padding and font
         sendBtn.style.cssText = `padding: 6px 8px; color: #000; background: #ccc; border-radius: 6px; border: none; cursor: not-allowed; font-size: 12px;`;
       } else {
-        // Desktop send button - original styling
         sendBtn.style.cssText = `padding: 8px 10px; color: #000; background: #ccc; border-radius: 8px; border: none; cursor: not-allowed;`;
       }
       inputRow.appendChild(input);
@@ -4315,18 +3939,13 @@
       }
     });
 
-    // ===== SERVER-AUTHORITATIVE: NO CLIENT TIMER FUNCTIONS =====
-    // All timer management is handled by the server
 
     function updateTimerDisplay(serverTime) {
-      // Pure display - server is single source of truth
       if (timerElement) {
-        // Update desktop timer
         const timerDisplay = timerElement.querySelector('#timer-display');
         if (timerDisplay) {
           timerDisplay.textContent = serverTime;
           
-          // Change color based on time remaining
           if (serverTime <= 5) {
             timerDisplay.style.color = '#ff0000';
           } else if (serverTime <= 10) {
@@ -4336,12 +3955,10 @@
           }
         }
         
-        // Update mobile timer
         const mobileTimerDisplay = timerElement.querySelector('#timer-display-mobile');
         if (mobileTimerDisplay) {
           mobileTimerDisplay.textContent = serverTime;
           
-          // Change color based on time remaining
           if (serverTime <= 5) {
             mobileTimerDisplay.style.color = '#ff0000';
           } else if (serverTime <= 10) {
@@ -4352,17 +3969,13 @@
         }
       }
       
-      // Update mobile displays
       if (isMobile()) {
         updateMobileDisplays();
       }
     }
 
-    // SERVER-AUTHORITATIVE: Auto-flip is handled by the server
 
-    // SERVER-AUTHORITATIVE: Round progression managed by server
 
-    // Coin selector modal
     function showCoinSelector(tubeIndex) {
       const modal = document.createElement('div');
       modal.style.cssText = `
@@ -4381,7 +3994,6 @@
 
       const content = document.createElement('div');
       
-      // Mobile-specific styling
       if (isMobile()) {
         content.style.cssText = `
           background: rgba(0, 0, 0, 0.95);
@@ -4406,35 +4018,30 @@
         `;
       }
 
-      // Get current player's flip balance and unlocked coins (placeholder for now)
       let playerFlipBalance = 0; // Will be fetched from server
       let unlockedCoins = ['plain']; // Will be fetched from server
       let customCoinHeads = null;
       let customCoinTails = null;
 
-      // Fetch player data from server
       if (isServerSideMode && socket && walletParam) {
-        console.log('🔍 Fetching profile for wallet:', walletParam);
+        console.log('ðŸ” Fetching profile for wallet:', walletParam);
         
-        // Remove any existing listener to avoid duplicates
         socket.off('player_profile_data');
         
-        // Set up listener for profile data
         socket.on('player_profile_data', (profileData) => {
-          console.log('📊 Received profile data:', profileData);
+          console.log('ðŸ“Š Received profile data:', profileData);
           playerFlipBalance = profileData.flip_balance || 0;
           unlockedCoins = JSON.parse(profileData.unlocked_coins || '["plain"]');
           customCoinHeads = profileData.custom_coin_heads;
           customCoinTails = profileData.custom_coin_tails;
-          console.log('💰 Updated FLIP balance:', playerFlipBalance);
-          console.log('🔓 Updated unlocked coins:', unlockedCoins);
+          console.log('ðŸ’° Updated FLIP balance:', playerFlipBalance);
+          console.log('ðŸ”“ Updated unlocked coins:', unlockedCoins);
           updateCoinDisplay();
         });
         
-        // Request profile
         socket.emit('get_player_profile', { address: walletParam });
       } else {
-        console.log('⚠️ Cannot fetch profile - missing:', {
+        console.log('âš ï¸ Cannot fetch profile - missing:', {
           isServerSideMode,
           hasSocket: !!socket,
           walletParam
@@ -4445,7 +4052,6 @@
         const coinGrid = content.querySelector('.coin-grid');
         if (!coinGrid) return;
 
-        // Update FLIP balance display
         const flipBalanceElement = document.getElementById('flip-balance');
         if (flipBalanceElement) {
           flipBalanceElement.textContent = playerFlipBalance;
@@ -4483,7 +4089,7 @@
                 position: relative;
               ">
                 ${isLocked ? `
-                  <div style="position: absolute; top: 3px; right: 3px; background: rgba(255, 0, 0, 0.8); color: white; border-radius: 50%; width: ${isMobileDevice ? '16px' : '20px'}; height: ${isMobileDevice ? '16px' : '20px'}; display: flex; align-items: center; justify-content: center; font-size: ${isMobileDevice ? '10px' : '12px'}; font-weight: bold;">🔒</div>
+                  <div style="position: absolute; top: 3px; right: 3px; background: rgba(255, 0, 0, 0.8); color: white; border-radius: 50%; width: ${isMobileDevice ? '16px' : '20px'}; height: ${isMobileDevice ? '16px' : '20px'}; display: flex; align-items: center; justify-content: center; font-size: ${isMobileDevice ? '10px' : '12px'}; font-weight: bold;">ðŸ”’</div>
                 ` : ''}
                 <img src="${coin.headsImage}" style="width: ${isMobileDevice ? '45px' : '65px'}; height: ${isMobileDevice ? '45px' : '65px'}; object-fit: contain; margin-bottom: ${isMobileDevice ? '4px' : '8px'}; display: block; margin-left: auto; margin-right: auto;" />
                 <div style="color: #FFD700; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: ${isMobileDevice ? '0.7rem' : '0.85rem'}; margin-bottom: ${isMobileDevice ? '2px' : '4px'}; line-height: 1.2;">${coin.name}</div>
@@ -4515,7 +4121,6 @@
           ` : ''}
         `;
         
-        // Re-attach event listeners
         attachCoinEventListeners();
       }
 
@@ -4594,19 +4199,16 @@
       let selectedCoin = tubes[tubeIndex].selectedCoin || coinOptions[0];
       let selectedMaterial = tubes[tubeIndex].selectedMaterial || coinMaterials[0];
       
-      // Force reset to Graphite if material is invalid
       if (!selectedMaterial || !selectedMaterial.id || selectedMaterial.id !== 'graphite') {
         selectedMaterial = coinMaterials[0];
         tubes[tubeIndex].selectedMaterial = selectedMaterial;
-        console.log(`🔧 Forced material reset to: ${selectedMaterial.name}`);
+        console.log(`ðŸ”§ Forced material reset to: ${selectedMaterial.name}`);
       }
       
-      // Initial coin display
       updateCoinDisplay();
       
       function attachCoinEventListeners() {
         content.querySelectorAll('.coin-option').forEach(option => {
-          // Use both click and touchstart for better mobile support
           const handleCoinSelection = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -4615,10 +4217,9 @@
             const cost = parseInt(option.dataset.cost);
             const isUnlocked = option.dataset.unlocked === 'true';
             
-            console.log(`🪙 Coin selection attempt: ${coinId}, unlocked: ${isUnlocked}, cost: ${cost}`);
+            console.log(`ðŸª™ Coin selection attempt: ${coinId}, unlocked: ${isUnlocked}, cost: ${cost}`);
             
             if (coinId === 'custom') {
-              // Handle custom coin selection
               selectedCoin = {
                 id: 'custom',
                 name: 'Custom',
@@ -4627,45 +4228,38 @@
                 cost: 0,
                 category: 'custom'
               };
-              console.log(`✅ Custom coin selected`);
+              console.log(`âœ… Custom coin selected`);
             } else {
               const coin = coinOptions.find(c => c.id === coinId);
               if (!coin) {
-                console.log(`❌ Coin not found: ${coinId}`);
+                console.log(`âŒ Coin not found: ${coinId}`);
                 return;
               }
               
               if (!isUnlocked && cost > 0) {
-                // Try to unlock the coin
                 if (playerFlipBalance >= cost) {
-                  console.log(`🔓 Unlocking ${coin.name} for ${cost} FLIP`);
+                  console.log(`ðŸ”“ Unlocking ${coin.name} for ${cost} FLIP`);
                   
-                  // Show loading state
                   const coinElement = content.querySelector(`[data-coin-id="${coinId}"]`);
                   if (coinElement) {
                     coinElement.style.opacity = '0.5';
                     coinElement.style.pointerEvents = 'none';
                   }
                   
-                  // Send unlock request to server
                   if (isServerSideMode && socket && walletParam) {
-                    console.log(`🔓 Requesting unlock: ${coinId} for ${cost} FLIP`);
+                    console.log(`ðŸ”“ Requesting unlock: ${coinId} for ${cost} FLIP`);
                     
-                    // Remove any existing unlock listener
                     socket.off('coin_unlocked');
                     
-                    // Set up response listener BEFORE sending request
                     socket.on('coin_unlocked', (result) => {
-                      console.log('📨 Received unlock response:', result);
+                      console.log('ðŸ“¨ Received unlock response:', result);
                       
                       if (result.success) {
-                        console.log(`✅ Server confirmed unlock: ${coin.name}`);
+                        console.log(`âœ… Server confirmed unlock: ${coin.name}`);
                         
-                        // Update local state with server response
                         playerFlipBalance = result.newBalance;
                         unlockedCoins = result.unlockedCoins;
                         
-                        // Update UI
                         const balanceElement = document.getElementById('flip-balance');
                         if (balanceElement) {
                           balanceElement.textContent = playerFlipBalance;
@@ -4675,12 +4269,11 @@
                         selectedCoin = coin;
                         updateCoinSelection();
                         
-                        alert(`🎉 ${coin.name} unlocked for ${cost} FLIP!\n\nNew balance: ${playerFlipBalance} FLIP`);
+                        alert(`ðŸŽ‰ ${coin.name} unlocked for ${cost} FLIP!\n\nNew balance: ${playerFlipBalance} FLIP`);
                       } else {
-                        console.error(`❌ Server unlock failed:`, result.error);
-                        alert(`❌ Failed to unlock ${coin.name}:\n\n${result.error}`);
+                        console.error(`âŒ Server unlock failed:`, result.error);
+                        alert(`âŒ Failed to unlock ${coin.name}:\n\n${result.error}`);
                         
-                        // Restore coin element
                         if (coinElement) {
                           coinElement.style.opacity = '1';
                           coinElement.style.pointerEvents = 'auto';
@@ -4688,21 +4281,19 @@
                       }
                     });
                     
-                    // Send unlock request
                     socket.emit('unlock_coin', {
                       address: walletParam,
                       coinId: coinId,
                       cost: cost
                     });
                   } else {
-                    console.error('❌ Cannot unlock - connection issue:', {
+                    console.error('âŒ Cannot unlock - connection issue:', {
                       isServerSideMode,
                       hasSocket: !!socket,
                       hasWallet: !!walletParam
                     });
-                    alert(`❌ Cannot unlock coin: Server connection required`);
+                    alert(`âŒ Cannot unlock coin: Server connection required`);
                     
-                    // Restore coin element
                     if (coinElement) {
                       coinElement.style.opacity = '1';
                       coinElement.style.pointerEvents = 'auto';
@@ -4714,19 +4305,16 @@
                 }
               } else {
                 selectedCoin = coin;
-                console.log(`✅ Coin selected: ${coin.name}`);
+                console.log(`âœ… Coin selected: ${coin.name}`);
               }
             }
             
-            // Always update selection visual feedback
             updateCoinSelection();
           };
           
-          // Add both click and touchstart for mobile compatibility
           option.addEventListener('click', handleCoinSelection);
           option.addEventListener('touchstart', handleCoinSelection);
           
-          // Hover effects
           option.addEventListener('mouseenter', () => {
             if (selectedCoin.id !== option.dataset.coinId) {
               option.style.transform = 'scale(1.05)';
@@ -4745,16 +4333,14 @@
       }
       
       function updateCoinSelection() {
-        console.log(`🎨 Updating coin selection visual feedback for: ${selectedCoin.id}`);
+        console.log(`ðŸŽ¨ Updating coin selection visual feedback for: ${selectedCoin.id}`);
         
-        // Reset all coin options first
         content.querySelectorAll('.coin-option').forEach(opt => {
           opt.style.background = opt.dataset.unlocked === 'true' ? 'rgba(255, 215, 0, 0.08)' : 'rgba(255, 0, 0, 0.1)';
           opt.style.borderColor = opt.dataset.unlocked === 'true' ? 'rgba(255, 215, 0, 0.25)' : 'rgba(255, 0, 0, 0.5)';
           opt.style.transform = 'scale(1)';
         });
         
-        // Highlight the selected coin
         const selectedOption = content.querySelector(`[data-coin-id="${selectedCoin.id}"]`);
         if (selectedOption) {
           selectedOption.style.background = 'rgba(255, 215, 0, 0.4)';
@@ -4762,13 +4348,12 @@
           selectedOption.style.borderWidth = '3px';
           selectedOption.style.transform = 'scale(1.1)';
           selectedOption.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.6)';
-          console.log(`✅ Visual feedback applied to selected coin: ${selectedCoin.name}`);
+          console.log(`âœ… Visual feedback applied to selected coin: ${selectedCoin.name}`);
         } else {
-          console.log(`❌ Could not find selected coin option for ID: ${selectedCoin.id}`);
+          console.log(`âŒ Could not find selected coin option for ID: ${selectedCoin.id}`);
         }
       }
       
-      // Material selection handlers with mobile support
       content.querySelectorAll('.material-option').forEach(option => {
         const handleMaterialSelection = (e) => {
           e.preventDefault();
@@ -4777,28 +4362,25 @@
           const materialId = option.dataset.materialId;
           selectedMaterial = coinMaterials.find(m => m.id === materialId);
           
-          console.log(`🔧 Material selection attempt: ${materialId}`);
+          console.log(`ðŸ”§ Material selection attempt: ${materialId}`);
           
           if (selectedMaterial) {
-            // Reset all material options
             content.querySelectorAll('.material-option').forEach(opt => {
               opt.style.background = 'rgba(255, 255, 255, 0.05)';
               opt.style.borderColor = 'rgba(255, 255, 255, 0.2)';
               opt.style.transform = 'scale(1)';
             });
             
-            // Highlight selected material
             option.style.background = 'rgba(255, 215, 0, 0.2)';
             option.style.borderColor = '#FFD700';
             option.style.transform = 'scale(1.05)';
             
-            console.log(`✅ Material selected: ${selectedMaterial.name}`);
+            console.log(`âœ… Material selected: ${selectedMaterial.name}`);
           } else {
-            console.log(`❌ Material not found: ${materialId}`);
+            console.log(`âŒ Material not found: ${materialId}`);
           }
         };
         
-        // Add both click and touchstart for mobile compatibility
         option.addEventListener('click', handleMaterialSelection);
         option.addEventListener('touchstart', handleMaterialSelection);
         
@@ -4822,10 +4404,8 @@
         });
       });
       
-      // Apply button handler with mobile support
       const closeBtn = content.querySelector('.close-btn');
       
-      // Hover effects (desktop only)
       closeBtn.addEventListener('mouseenter', () => {
         closeBtn.style.transform = 'translateY(-2px)';
         closeBtn.style.boxShadow = '0 6px 20px rgba(255, 20, 147, 0.6)';
@@ -4835,17 +4415,14 @@
         closeBtn.style.boxShadow = '0 4px 15px rgba(255, 20, 147, 0.4)';
       });
       
-      // Close button handler with mobile support
       const handleCloseButton = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('🔴 APPLY CHANGES button clicked - closing modal');
+        console.log('ðŸ”´ APPLY CHANGES button clicked - closing modal');
         
-        // Store selections in tube
         tubes[tubeIndex].selectedCoin = selectedCoin;
         tubes[tubeIndex].selectedMaterial = selectedMaterial;
         
-        // Load both heads and tails textures
         const loader = new THREE.TextureLoader();
         loader.load(selectedCoin.headsImage, (headsTexture) => {
           headsTexture.minFilter = THREE.LinearFilter;
@@ -4859,22 +4436,19 @@
             tailsTexture.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
             tailsTexture.generateMipmaps = false;
             
-            // Update shader uniforms
             tubes[tubeIndex].coin.material[1].uniforms.map.value = headsTexture;
             tubes[tubeIndex].coin.material[1].needsUpdate = true;
             tubes[tubeIndex].coin.material[2].uniforms.map.value = tailsTexture;
             tubes[tubeIndex].coin.material[2].needsUpdate = true;
             
-            // Update coin edge color based on material
             const edgeColor = new THREE.Color(selectedMaterial.edgeColor);
             tubes[tubeIndex].coin.material[0].color.copy(edgeColor);
             tubes[tubeIndex].coin.material[0].emissive.copy(edgeColor);
             tubes[tubeIndex].coin.material[0].emissiveIntensity = 0.3;
             tubes[tubeIndex].coin.material[0].needsUpdate = true;
             
-            console.log(`✅ Applied ${selectedCoin.name} with ${selectedMaterial.name} material to ${players[tubeIndex].name}'s coin`);
+            console.log(`âœ… Applied ${selectedCoin.name} with ${selectedMaterial.name} material to ${players[tubeIndex].name}'s coin`);
             
-            // Send coin update to server
             if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === tubeIndex) {
               socket.emit('physics_update_coin', {
                 gameId: gameIdParam,
@@ -4888,84 +4462,71 @@
                   material: selectedMaterial
                 }
               });
-              console.log(`🎯 Sent coin update to server: ${selectedCoin.name}`);
+              console.log(`ðŸŽ¯ Sent coin update to server: ${selectedCoin.name}`);
             }
           });
         });
         
-        // Close the modal
         modal.remove();
       };
       
-      // Add both click and touch events for mobile compatibility
       closeBtn.addEventListener('click', handleCloseButton);
       closeBtn.addEventListener('touchend', handleCloseButton);
 
-      // Close on background click/touch - improved mobile support
       const handleModalClose = (e) => {
-        console.log('🖱️ Background click detected, target:', e.target, 'modal:', modal);
+        console.log('ðŸ–±ï¸ Background click detected, target:', e.target, 'modal:', modal);
         if (e.target === modal) {
-          console.log('✅ Closing modal via background click');
+          console.log('âœ… Closing modal via background click');
           e.preventDefault();
           e.stopPropagation();
           modal.remove();
         }
       };
       
-      // Add multiple event types for better mobile compatibility
       modal.addEventListener('click', handleModalClose);
       modal.addEventListener('touchend', handleModalClose);
       modal.addEventListener('touchstart', (e) => {
-        // Prevent touchstart from interfering with content interactions
         if (e.target === modal) {
           e.preventDefault();
         }
       });
       
-      // Prevent content clicks from closing modal
       content.addEventListener('click', (e) => {
         e.stopPropagation();
-        console.log('🛡️ Content click prevented from closing modal');
+        console.log('ðŸ›¡ï¸ Content click prevented from closing modal');
       });
       content.addEventListener('touchend', (e) => {
         e.stopPropagation();
-        console.log('🛡️ Content touch prevented from closing modal');
+        console.log('ðŸ›¡ï¸ Content touch prevented from closing modal');
       });
     }
 
-    // ===== GLASS SHATTERING FUNCTION (POWER-BASED) =====
     function shatterGlass(tubeIndex, powerLevel) {
       const tube = tubes[tubeIndex];
       if (tube.isShattered) return;
       
       const powerPercent = powerLevel / 100;
-      console.log(`💥 Shattering glass for tube ${tubeIndex + 1} at ${powerLevel.toFixed(0)}% power`);
+      console.log(`ðŸ’¥ Shattering glass for tube ${tubeIndex + 1} at ${powerLevel.toFixed(0)}% power`);
       
-      // Stop power charging sound and play glass breaking sound
       stopSound(powerChargeSound);
       playSound(glassBreakSound);
       
       tube.isShattered = true;
       
-      // Hide glass tube, backing, rims, and liquid surface
       tube.tube.visible = false;
       tube.backing.visible = false;
       tube.topRim.visible = false;
       tube.bottomRim.visible = false;
       tube.liquid.visible = false; // Hide the transparent liquid surface mesh
       
-      // Show dark shadow behind coin for better visibility
       tube.coinShadow.visible = true;
       
-      // REMOVE PHYSICS CONTAINER so particles can escape
       physicsWorld.removeBody(tube.glassBody);
       
-      // Shard count scales with power (20-80 shards)
       const shardCount = Math.floor(20 + (powerPercent * 60));
       const tubeY = 200;
       
       for (let s = 0; s < shardCount; s++) {
-        // Random triangle shard
         const size = Math.random() * 12 + 5;
         const geometry = new THREE.BufferGeometry();
         const vertices = new Float32Array([
@@ -4986,7 +4547,6 @@
         
         const shard = new THREE.Mesh(geometry, material);
         
-        // Position along tube surface
         const angle = (s / shardCount) * Math.PI * 2;
         const heightPos = (Math.random() - 0.5) * TUBE_HEIGHT;
         shard.position.set(
@@ -4995,14 +4555,12 @@
           Math.sin(angle) * TUBE_RADIUS
         );
         
-        // Random rotation
         shard.rotation.set(
           Math.random() * Math.PI * 2,
           Math.random() * Math.PI * 2,
           Math.random() * Math.PI * 2
         );
         
-        // Explode velocity SCALES WITH POWER (2-14 units/frame)
         const baseSpeed = 2 + (powerPercent * 12);
         const velocity = {
           x: Math.cos(angle) * (Math.random() * baseSpeed + baseSpeed * 0.5),
@@ -5026,14 +4584,11 @@
         });
       }
       
-      // EXPLODE LIQUID PARTICLES (FORCE SCALES WITH POWER)
       tube.liquidParticles.forEach((particleBody, idx) => {
-        // Calculate outward direction
         const dx = particleBody.position.x - tube.tube.position.x;
         const dz = particleBody.position.z - tube.tube.position.z;
         const distance = Math.sqrt(dx * dx + dz * dz) || 1;
         
-        // Explosion force scales with power (2000-18000)
         const baseForce = 2000 + (powerPercent * 16000);
         const explosionForce = baseForce + Math.random() * (baseForce * 0.3);
         
@@ -5043,7 +4598,6 @@
           (dz / distance) * explosionForce
         );
         
-        // Spinning scales with power
         const spinForce = 15 * powerPercent;
         particleBody.angularVelocity.set(
           Math.random() * spinForce * 2 - spinForce,
@@ -5052,10 +4606,9 @@
         );
       });
       
-      console.log(`💥 Glass shattered! ${shardCount} shards + ${tube.liquidParticles.length} liquid particles at ${powerLevel.toFixed(0)}% power`);
+      console.log(`ðŸ’¥ Glass shattered! ${shardCount} shards + ${tube.liquidParticles.length} liquid particles at ${powerLevel.toFixed(0)}% power`);
     }
 
-    // ===== FLIP TOKEN REWARD SYSTEM =====
     const FLIP_REWARDS = [
       { amount: 50, color: '#ffffff', weight: 40 },      // White - Very common
       { amount: 100, color: '#87ceeb', weight: 25 },     // Sky blue - Common
@@ -5066,7 +4619,6 @@
       { amount: 1000, color: '#FFD700', weight: 2 }      // Gold - Extremely rare
     ];
 
-    // Weighted random reward selection
     function getRandomFlipReward() {
       const totalWeight = FLIP_REWARDS.reduce((sum, r) => sum + r.weight, 0);
       let random = Math.random() * totalWeight;
@@ -5081,17 +4633,14 @@
       return FLIP_REWARDS[0]; // Fallback to 50
     }
 
-    // Show FLIP reward animation as floating box above tube
     function showFlipReward(tubeIndex, serverReward = null) {
       const tube = tubes[tubeIndex];
       const player = players[tubeIndex];
       
       
-      // Use server-provided reward if available, otherwise fallback to local generation
       const reward = serverReward || getRandomFlipReward();
-      console.log(`💰 Player ${tubeIndex + 1} earned ${reward.amount} FLIP!`);
+      console.log(`ðŸ’° Player ${tubeIndex + 1} earned ${reward.amount} FLIP!`);
       
-      // Award FLIP tokens to player via server
       if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === tubeIndex) {
         socket.emit('award_flip_tokens', {
           gameId: gameIdParam,
@@ -5099,13 +4648,11 @@
           amount: reward.amount,
           reason: 'coin_flip_reward'
         });
-        console.log(`🎯 Sent FLIP token award to server: ${reward.amount} tokens`);
+        console.log(`ðŸŽ¯ Sent FLIP token award to server: ${reward.amount} tokens`);
         
-        // Update XP counter for current player
         updateXPCounter(reward.amount);
       }
       
-      // Create floating reward box styled like win/lose boxes
       const rewardBox = document.createElement('div');
       rewardBox.style.cssText = `
         width: 200px;
@@ -5148,7 +4695,6 @@
       `;
       
       const cssObject = new CSS3DObject(rewardBox);
-      // Position ABOVE the tube (matching result box orientation pattern)
       const tubeTopY = 200 + (TUBE_HEIGHT / 2);
       cssObject.position.set(tube.tube.position.x, tubeTopY + 100, 0);
       cssObject.scale.set(0.5, 0.5, 0.5);
@@ -5156,73 +4702,57 @@
       
       tube.rewardBox = cssObject;
       
-      // Animate appearance and float up
       rewardBox.style.opacity = '0';
       rewardBox.style.transform = 'scaleY(-1) scale(0.5) translateY(30px)';
       rewardBox.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
       
-      // Pop in with bounce
       setTimeout(() => {
         rewardBox.style.opacity = '1';
         rewardBox.style.transform = 'scaleY(-1) scale(1) translateY(0px)';
       }, 50);
       
-      // Float up and fade out after 1.5s (stay for 2 seconds total)
       setTimeout(() => {
         rewardBox.style.transition = 'all 0.5s ease-in';
         rewardBox.style.opacity = '0';
         rewardBox.style.transform = 'scaleY(-1) scale(1.1) translateY(-40px)';
       }, 1500);
       
-      // Remove from scene after animation completes
       setTimeout(() => {
         scene.remove(cssObject);
       }, 2100);
     }
 
-    // ===== COIN FLIP ANIMATION BASED ON POWER =====
     function flipCoinWithPower(tubeIndex, powerLevel, playerChoice) {
       const tube = tubes[tubeIndex];
       const coin = coins[tubeIndex];
       const powerPercent = powerLevel / 100;
       
-      // Show FLIP reward immediately when flip starts
       showFlipReward(tubeIndex);
       
-      // Get material multipliers
       const material = tube.selectedMaterial || coinMaterials[2]; // Default to glass
       const speedMult = material.speedMultiplier;
       const durationMult = material.durationMultiplier;
       
-      // Duration scales with power (2s - 8s) AND material
       const baseDuration = 2000 + (powerPercent * 6000);
       const flipDuration = baseDuration * durationMult;
       
-      // Flip speed scales with power (0.08 - 0.3 rad/frame) AND material
-      // Minimum 0.08 to ensure coin always visibly flips
       const basePowerSpeed = Math.max(0.08, 0.05 + (powerPercent * 0.25));
       const baseFlipSpeed = basePowerSpeed * speedMult;
       
-      console.log(`🪙 Material: ${material.name} - Speed: ${speedMult}x, Duration: ${durationMult}x`);
+      console.log(`ðŸª™ Material: ${material.name} - Speed: ${speedMult}x, Duration: ${durationMult}x`);
       
-      // Random result (50/50 heads or tails)
       const result = Math.random() < 0.5 ? 'heads' : 'tails';
       
-      // Check if player won
       const didWin = playerChoice === result;
       
-      console.log(`🪙 Flipping coin ${tubeIndex + 1} for ${flipDuration.toFixed(0)}ms at speed ${baseFlipSpeed.toFixed(3)} - Result: ${result}, Choice: ${playerChoice}, Won: ${didWin}`);
+      console.log(`ðŸª™ Flipping coin ${tubeIndex + 1} for ${flipDuration.toFixed(0)}ms at speed ${baseFlipSpeed.toFixed(3)} - Result: ${result}, Choice: ${playerChoice}, Won: ${didWin}`);
       
       const startTime = Date.now();
       
-      // Calculate target rotation - Standing on edge facing camera
-      // For heads: rotation.x should be at π/2 (standing on edge, heads facing camera)
-      // For tails: rotation.x should be at 3π/2 (standing on edge, tails facing camera)
       const targetRotationX = result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
       
       tube.isFlipping = true;
       
-      // PRE-CALCULATE: How many full rotations to do before landing
       const startRotation = coin.rotation.x;
       const rotationsPerSecond = baseFlipSpeed * 60;
       const totalRotations = (rotationsPerSecond * (flipDuration / 1000)) / (Math.PI * 2);
@@ -5233,22 +4763,19 @@
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / flipDuration, 1);
         
-        // EASE-OUT CUBIC: Smooth deceleration to exact target
         const easeOutCubic = 1 - Math.pow(1 - progress, 3);
         coin.rotation.x = startRotation + (finalTarget - startRotation) * easeOutCubic;
         
         if (progress < 1) {
           requestAnimationFrame(animateFlip);
         } else {
-          // Final landing - ensure exact position
           coin.rotation.x = finalTarget;
           coin.rotation.y = Math.PI / 2;
           coin.rotation.z = 0;
           
           tube.isFlipping = false;
-          console.log(`✅ Coin ${tubeIndex + 1} landed on ${result} facing camera`);
+          console.log(`âœ… Coin ${tubeIndex + 1} landed on ${result} facing camera`);
           
-          // Show result after landing
           showResult(tubeIndex, didWin, result);
         }
       };
@@ -5256,24 +4783,21 @@
       animateFlip();
     }
 
-    // ===== UPDATE WINS DISPLAY =====
     function updateWinsDisplay(tubeIndex) {
       const player = players[tubeIndex];
       const tube = tubes[tubeIndex];
       
       if (!tube.cardElement) return;
       
-      // Find the wins display element and update the number
       const winsDisplay = tube.cardElement.querySelector('.wins-display span:last-child');
       if (winsDisplay) {
         winsDisplay.textContent = player.wins;
       }
       
-      console.log(`🏆 Updated wins display for player ${tubeIndex + 1}: ${player.wins} wins`);
+      console.log(`ðŸ† Updated wins display for player ${tubeIndex + 1}: ${player.wins} wins`);
     }
 
 
-    // ===== UPDATE PLAYER CARD CHOICE =====
     function updatePlayerCardChoice(tubeIndex, choice) {
       const tube = tubes[tubeIndex];
       if (!tube.cardElement) return;
@@ -5282,31 +4806,26 @@
       const choiceBadge = tube.cardElement.querySelector('.choice-badge');
       
       if (choiceButtons && choiceBadge) {
-        // Hide choice buttons and show choice badge
         choiceButtons.style.display = 'none';
         choiceBadge.className = `choice-badge ${choice}`;
         choiceBadge.textContent = choice.toUpperCase();
         choiceBadge.style.display = 'block';
       }
       
-      console.log(`🎯 Updated player ${tubeIndex + 1} choice to: ${choice}`);
+      console.log(`ðŸŽ¯ Updated player ${tubeIndex + 1} choice to: ${choice}`);
     }
 
-    // ===== SHOW WIN/LOSE RESULT =====
     function showResult(tubeIndex, didWin, result) {
       const tube = tubes[tubeIndex];
       const coin = coins[tubeIndex];
       const player = players[tubeIndex];
       
-      // Add green glow if won
       if (didWin) {
-        // Create green point light
         const winLight = new THREE.PointLight(0x00ff00, 8, 200);
         winLight.position.set(0, 0, 0);
         coin.add(winLight);
         tube.winLight = winLight;
         
-        // Make coin glow green
         coin.children.forEach(child => {
           if (child.isLight && child !== winLight) {
             child.color.setHex(0x00ff00);
@@ -5314,27 +4833,22 @@
           }
         });
         
-        // Server handles win tracking, just log the result
-        console.log(`🎉 Player ${tubeIndex + 1} WON! Wins: ${player.wins}/3`);
+        console.log(`ðŸŽ‰ Player ${tubeIndex + 1} WON! Wins: ${player.wins}/3`);
         
         
-        // Check for game over (first to 3 wins)
         if (player.wins >= 3) {
-          console.log(`🏆 Player ${tubeIndex + 1} reached 3 wins!`);
-          // Server will handle game over logic
+          console.log(`ðŸ† Player ${tubeIndex + 1} reached 3 wins!`);
         }
       } else {
-        // Red glow for loss
         const loseLight = new THREE.PointLight(0xff0000, 6, 200);
         loseLight.position.set(0, 0, 0);
         coin.add(loseLight);
         tube.loseLight = loseLight;
         
         
-        console.log(`❌ Player ${tubeIndex + 1} LOST this round`);
+        console.log(`âŒ Player ${tubeIndex + 1} LOST this round`);
       }
       
-      // Create result text box (CSS3D)
       const resultBox = document.createElement('div');
       resultBox.style.cssText = `
         width: 300px;
@@ -5382,43 +4896,31 @@
       `;
       
       const cssObject = new CSS3DObject(resultBox);
-      // Position below coin, matching the tube's X position
       cssObject.position.set(tube.tube.position.x, coin.position.y - 100, 0);
       cssObject.scale.set(0.5, 0.5, 0.5);
       scene.add(cssObject);
       
       tube.resultBox = cssObject;
       
-      // Animate result box appearing
       resultBox.style.opacity = '0';
       resultBox.style.transition = 'all 0.5s ease-out';
       
       setTimeout(() => {
         resultBox.style.opacity = '1';
         
-        // SERVER-AUTHORITATIVE: Game progression managed by server
       }, 50);
     }
 
-    // ===== GAME ENDING LOGIC =====
-    // SERVER-AUTHORITATIVE: Game progression is now managed entirely by the server
     
-    // SERVER-AUTHORITATIVE: Game ending logic is now managed entirely by the server
     
-    // SERVER-AUTHORITATIVE: Winner declaration is now managed entirely by the server
     
-    // SERVER-AUTHORITATIVE: Sudden death logic is now managed entirely by the server
 
-    // SERVER-AUTHORITATIVE: Special replay logic is now managed entirely by the server
     
-    // SERVER-AUTHORITATIVE: Special replay messages are now managed entirely by the server
     
-    // Show choice required message
     function showChoiceRequiredMessage(playerIndex) {
       const player = players[playerIndex];
       const tube = tubes[playerIndex];
       
-      // Create message div positioned near the player's card
       const messageDiv = document.createElement('div');
       messageDiv.style.cssText = `
         position: fixed;
@@ -5442,14 +4944,13 @@
       `;
       
       messageDiv.innerHTML = `
-        <div style="margin-bottom: 8px;">⚠️</div>
+        <div style="margin-bottom: 8px;">âš ï¸</div>
         <div>${player.name.toUpperCase()}</div>
         <div style="font-size: 14px; margin-top: 5px; opacity: 0.9;">
           Choose HEADS or TAILS first!
         </div>
       `;
       
-      // Add bounce animation
       const style = document.createElement('style');
       style.textContent = `
         @keyframes bounceIn {
@@ -5462,7 +4963,6 @@
       
       document.body.appendChild(messageDiv);
       
-      // Remove message after 2 seconds
       setTimeout(() => {
         if (messageDiv.parentNode) {
           messageDiv.style.animation = 'bounceOut 0.3s ease-in forwards';
@@ -5477,7 +4977,6 @@
         }
       }, 2000);
       
-      // Add bounceOut animation
       if (!document.querySelector('#bounceOutStyle')) {
         const bounceOutStyle = document.createElement('style');
         bounceOutStyle.id = 'bounceOutStyle';
@@ -5491,7 +4990,6 @@
       }
     }
     
-    // Show XP award notification
     function showXPAwardNotification(amount, totalXP) {
       const notification = document.createElement('div');
       notification.style.cssText = `
@@ -5514,7 +5012,7 @@
       
       notification.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="font-size: 24px;">💰</div>
+          <div style="font-size: 24px;">ðŸ’°</div>
           <div>
             <div style="font-size: 20px; margin-bottom: 5px;">+${amount} FLIP</div>
             <div style="font-size: 14px; opacity: 0.8;">Total: ${totalXP}</div>
@@ -5524,12 +5022,10 @@
       
       document.body.appendChild(notification);
       
-      // Slide in
       setTimeout(() => {
         notification.style.transform = 'translateX(0)';
       }, 100);
       
-      // Slide out and remove after 3 seconds
       setTimeout(() => {
         notification.style.transform = 'translateX(100%)';
         setTimeout(() => {
@@ -5540,9 +5036,7 @@
       }, 3000);
     }
 
-    // Show game phase indicator
     function showGamePhaseIndicator(phase, message) {
-      // Remove existing phase indicator
       const existing = document.getElementById('game-phase-indicator');
       if (existing) {
         existing.remove();
@@ -5571,7 +5065,7 @@
         animation: phaseIndicatorPulse 0.5s ease-out;
       `;
       
-      const phaseIcon = phase === 'waiting' ? '⏳' : phase === 'starting' ? '🎮' : phase === 'in_progress' ? '⚔️' : '🏁';
+      const phaseIcon = phase === 'waiting' ? 'â³' : phase === 'starting' ? 'ðŸŽ®' : phase === 'in_progress' ? 'âš”ï¸' : 'ðŸ';
       indicator.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 24px;">${phaseIcon}</span>
@@ -5579,7 +5073,6 @@
         </div>
       `;
       
-      // Add animation
       const style = document.createElement('style');
       style.textContent = `
         @keyframes phaseIndicatorPulse {
@@ -5592,7 +5085,6 @@
       document.body.appendChild(indicator);
     }
 
-    // Show game start notification
     function showGameStartNotification() {
       const notification = document.createElement('div');
       notification.style.cssText = `
@@ -5617,12 +5109,11 @@
       `;
       
       notification.innerHTML = `
-        <div style="margin-bottom: 10px;">🎮</div>
+        <div style="margin-bottom: 10px;">ðŸŽ®</div>
         <div>GAME STARTED!</div>
         <div style="font-size: 18px; margin-top: 10px;">Round 1 Beginning</div>
       `;
       
-      // Add animation
       const style = document.createElement('style');
       style.textContent = `
         @keyframes gameStartPulse {
@@ -5635,7 +5126,6 @@
       
       document.body.appendChild(notification);
       
-      // Remove after 3 seconds
       setTimeout(() => {
         notification.style.animation = 'gameStartPulse 0.5s ease-out reverse';
         setTimeout(() => {
@@ -5646,44 +5136,34 @@
       }, 3000);
     }
 
-    // Show game over screen
     function showGameOverScreen(winnerIndex, winnerName) {
-      console.log('🏁 GAME OVER - Showing end screen');
+      console.log('ðŸ GAME OVER - Showing end screen');
       
-      // Prevent duplicate game over screens
       if (gameOver) {
-        console.log('⚠️ Game over screen already shown, ignoring duplicate call');
+        console.log('âš ï¸ Game over screen already shown, ignoring duplicate call');
         return;
       }
       
-      // Stop any ongoing game mechanics
       gameOver = true;
-      // SERVER-AUTHORITATIVE: Server manages all timing
       
-      // Show game ended phase indicator
       showGamePhaseIndicator('ended', 'Game Over - Claim your rewards!');
       
-      // Determine if current player won
       const didCurrentPlayerWin = (playerSlot === winnerIndex);
       
-      console.log(`🏁 Game Over Debug:`, {
+      console.log(`ðŸ Game Over Debug:`, {
         playerSlot,
         winnerIndex,
         didCurrentPlayerWin,
         winnerName
       });
       
-      // Award FLIP tokens directly via server (only once)
       if (isServerSideMode && socket && gameIdParam && walletParam && !window.flipTokensAwarded) {
         const gameResult = didCurrentPlayerWin ? 'won' : 'lost';
         
-        // Get current player's lives from server state
         const currentPlayerLives = players[playerSlot]?.lives || 0;
         
-        // Mark as awarded to prevent duplicates
         window.flipTokensAwarded = true;
         
-        // Request direct FLIP token award
         socket.emit('award_flip_tokens_final', {
           gameId: gameIdParam,
           address: walletParam,
@@ -5692,10 +5172,9 @@
           totalFlip: currentPlayerXP
         });
         
-        console.log(`🎁 Awarding FLIP tokens directly: ${gameResult}, ${currentPlayerXP} FLIP`);
+        console.log(`ðŸŽ Awarding FLIP tokens directly: ${gameResult}, ${currentPlayerXP} FLIP`);
       }
       
-      // Show immediate game over overlay
       const gameOverDiv = document.createElement('div');
       gameOverDiv.id = 'game-over-overlay';
       gameOverDiv.style.cssText = `
@@ -5726,10 +5205,9 @@
         width: 90%;
       `;
       
-      // Show different content based on win/lose
       if (didCurrentPlayerWin) {
         contentDiv.innerHTML = `
-            <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
+            <div style="font-size: 80px; margin-bottom: 20px;">ðŸ†</div>
             <div style="font-size: 48px; font-weight: bold; color: #FFD700; margin-bottom: 20px;">
                 VICTORY!
             </div>
@@ -5750,13 +5228,13 @@
                     text-transform: uppercase;
                     letter-spacing: 2px;
                 ">
-                    🎨 Claim NFT Prize
+                    ðŸŽ¨ Claim NFT Prize
                 </button>
             </div>
         `;
       } else {
         contentDiv.innerHTML = `
-            <div style="font-size: 60px; margin-bottom: 20px;">💔</div>
+            <div style="font-size: 60px; margin-bottom: 20px;">ðŸ’”</div>
             <div style="font-size: 36px; font-weight: bold; color: #ff0000; margin-bottom: 20px;">
                 DEFEATED
             </div>
@@ -5769,7 +5247,6 @@
         `;
       }
       
-      // Add return to lobby button
       contentDiv.innerHTML += `
         <button id="return-lobby-btn" style="
             background: linear-gradient(135deg, #666, #888);
@@ -5796,19 +5273,16 @@
       gameOverDiv.appendChild(contentDiv);
       document.body.appendChild(gameOverDiv);
 
-      // Prevent background scroll and interactions
       try {
         document.body.style.overflow = 'hidden';
       } catch (e) {}
 
-      // Diagnostics: verify overlay visibility and z-index stacking
       try {
         debugOverlayVisibility('game-over-overlay');
       } catch (e) {
-        console.warn('⚠️ Overlay debug failed:', e?.message);
+        console.warn('âš ï¸ Overlay debug failed:', e?.message);
       }
       
-      // Add button handlers
       setTimeout(() => {
         const claimNftBtn = document.getElementById('claim-nft-btn');
         const returnLobbyBtn = document.getElementById('return-lobby-btn');
@@ -5816,7 +5290,7 @@
         if (claimNftBtn && didCurrentPlayerWin) {
             claimNftBtn.addEventListener('click', () => {
                 if (socket && gameIdParam && walletParam) {
-                    console.log(`🏆 Claiming NFT prize for winner ${walletParam} in game ${gameIdParam}`);
+                    console.log(`ðŸ† Claiming NFT prize for winner ${walletParam} in game ${gameIdParam}`);
                     socket.emit('claim_nft_prize', {
                         gameId: gameIdParam,
                         address: walletParam
@@ -5824,7 +5298,7 @@
                     claimNftBtn.disabled = true;
                     claimNftBtn.textContent = 'Claiming...';
                 } else {
-                    console.error('❌ Cannot claim NFT: missing socket, gameId, or walletParam');
+                    console.error('âŒ Cannot claim NFT: missing socket, gameId, or walletParam');
                 }
             });
         }
@@ -5837,15 +5311,14 @@
       }, 100);
     }
 
-    // Helper: diagnose overlay visibility/z-index issues
     function debugOverlayVisibility(elementId) {
       const el = document.getElementById(elementId);
       if (!el) {
-        console.warn(`🔎 Overlay '${elementId}' not found in DOM`);
+        console.warn(`ðŸ”Ž Overlay '${elementId}' not found in DOM`);
         return;
       }
       const cs = window.getComputedStyle(el);
-      console.log('🔎 Overlay computed styles:', {
+      console.log('ðŸ”Ž Overlay computed styles:', {
         display: cs.display,
         visibility: cs.visibility,
         opacity: cs.opacity,
@@ -5854,7 +5327,6 @@
         pointerEvents: cs.pointerEvents
       });
 
-      // Check for top-most fixed elements that may cover the overlay
       const all = Array.from(document.body.querySelectorAll('*'));
       const candidates = all
         .filter(n => {
@@ -5870,47 +5342,39 @@
         }))
         .sort((a, b) => b.z - a.z)
         .slice(0, 5);
-      console.log('🔎 Top stacking candidates (highest z-index):', candidates);
+      console.log('ðŸ”Ž Top stacking candidates (highest z-index):', candidates);
     }
 
-    // SERVER-AUTHORITATIVE: Round reset logic is now managed entirely by the server
 
-    // Plasma effects removed - pearls now glow on their own!
 
-    console.log('✅ Game loaded! Hold CHARGE POWER button to fill tubes!');
-    console.log('🎮 Server-authoritative game ready - all game logic managed by server');
+    console.log('âœ… Game loaded! Hold CHARGE POWER button to fill tubes!');
+    console.log('ðŸŽ® Server-authoritative game ready - all game logic managed by server');
     
-    // Update player cards with real data after loading
     function updatePlayerCards() {
-      console.log('🔄 Updating player cards with real data...');
+      console.log('ðŸ”„ Updating player cards with real data...');
       tubes.forEach((tube, index) => {
         const player = players[index];
-        console.log(`🔍 Tube ${index + 1}:`, { hasCardElement: !!tube.cardElement, player: player?.name });
+        console.log(`ðŸ” Tube ${index + 1}:`, { hasCardElement: !!tube.cardElement, player: player?.name });
         if (!tube.cardElement || !player) return;
         
-        // Also update mobile player cards
         createMobilePlayerCards();
         
-        // TEMPORARILY REMOVED: Button blocking logic for debugging
-        // Show buttons for ALL players to debug visibility issues
         const showButtons = !player.isEmpty;
         
-        console.log(`🎯 Player ${index + 1} button logic (DEBUGGING MODE):`, {
+        console.log(`ðŸŽ¯ Player ${index + 1} button logic (DEBUGGING MODE):`, {
           playerAddress: player.address,
           isEmpty: player.isEmpty,
           showButtons: showButtons
         });
         
-        // Update player name and address
         const playerNameElement = tube.cardElement.querySelector('.player-name');
         const playerAddressElement = tube.cardElement.querySelector('.player-address');
         const playerAvatarElement = tube.cardElement.querySelector('.player-avatar');
         
-        console.log(`📝 Updating player ${index + 1}:`, { name: player.name, address: player.address, isEmpty: player.isEmpty });
+        console.log(`ðŸ“ Updating player ${index + 1}:`, { name: player.name, address: player.address, isEmpty: player.isEmpty });
         
         if (playerNameElement) playerNameElement.textContent = player.name;
         if (playerAddressElement) {
-          // Shorten wallet address for display
           const shortAddress = player.address ? `${player.address.slice(0, 6)}...${player.address.slice(-4)}` : '';
           playerAddressElement.textContent = shortAddress;
         }
@@ -5919,30 +5383,26 @@
           playerAvatarElement.alt = player.name;
         }
         
-        // Update wins display
         const winsDisplay = tube.cardElement.querySelector('.wins-display span:last-child');
         if (winsDisplay) {
           winsDisplay.textContent = player.wins;
         }
         
-        // Update empty slot overlay
         const existingOverlay = tube.cardElement.querySelector('.empty-slot-overlay');
-        console.log(`🎯 Player ${index + 1} empty slot logic:`, { 
+        console.log(`ðŸŽ¯ Player ${index + 1} empty slot logic:`, { 
           isEmpty: player.isEmpty, 
           hasExistingOverlay: !!existingOverlay,
           playerName: player.name,
           playerAddress: player.address 
         });
         
-        // Always remove existing overlay first to ensure clean state
         if (existingOverlay) {
-          console.log(`🧹 Removing existing overlay from player slot ${index + 1}`);
+          console.log(`ðŸ§¹ Removing existing overlay from player slot ${index + 1}`);
           existingOverlay.remove();
         }
         
-        // Add overlay only for truly empty slots
         if (player.isEmpty) {
-          console.log(`➕ Adding pink X overlay to empty slot ${index + 1}`);
+          console.log(`âž• Adding pink X overlay to empty slot ${index + 1}`);
           const overlay = document.createElement('div');
           overlay.className = 'empty-slot-overlay';
           overlay.style.cssText = `
@@ -5962,11 +5422,10 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
             z-index: 10;
           `;
-          overlay.textContent = '✕';
+          overlay.textContent = 'âœ•';
           tube.cardElement.appendChild(overlay);
         }
         
-        // Update buttons visibility
         const actionButtons = tube.cardElement.querySelectorAll('.action-btn');
         const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
         
@@ -5979,11 +5438,9 @@
         }
       });
       
-      // Update coin rotations based on player choices
       updateCoinRotationsFromPlayerChoices();
     }
 
-    // Fetch participants and map to tubes left-to-right
     async function loadParticipants() {
       try {
         if (!gameIdParam) return;
@@ -5991,12 +5448,12 @@
         if (!res.ok) throw new Error('Failed to load participants');
         const data = await res.json();
         const parts = (data?.game?.participants || []).slice().sort((a,b) => (a.slot_number||0)-(b.slot_number||0));
-        console.log('🔍 Raw participants data:', parts);
+        console.log('ðŸ” Raw participants data:', parts);
         
         players = [1,2,3,4].map((slot, idx) => {
           const p = parts[idx];
           if (!p) {
-            console.log(`📭 Slot ${idx+1}: Empty`);
+            console.log(`ðŸ“­ Slot ${idx+1}: Empty`);
             return { id: idx+1, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true };
           }
           
@@ -6010,50 +5467,40 @@
             isEmpty: false
           };
           
-          console.log(`👤 Slot ${idx+1}:`, {
+          console.log(`ðŸ‘¤ Slot ${idx+1}:`, {
             raw: p,
             processed: playerData
           });
           
           return playerData;
         });
-        // Update initial wins tracking
         roundStartWins = players.map(player => player.wins);
-        console.log('📊 Participants mapped:', players);
+        console.log('ðŸ“Š Participants mapped:', players);
         
-        // Update player cards with real data
         updatePlayerCards();
         
-        // Create mobile player cards
         createMobilePlayerCards();
         
-        // Show appropriate phase indicator based on server state
-        // The server will send the correct phase via physics_state_update
-        // Don't hardcode to 'waiting' - let server control the phase
         
-        // SERVER-AUTHORITATIVE: Server manages all timing
         
-        // Show game start notification
         if (!gameOver) {
           showGameStartNotification();
         }
       } catch (err) {
         console.warn('Participants load failed:', err);
-        // SERVER-AUTHORITATIVE: Server manages all timing
       }
     }
     await loadParticipants();
 
-    // ===== SERVER JOIN (PLAYER) =====
     (async () => {
       try {
         if (!gameIdParam) return;
         if (roleParam === 'spectator') {
-          console.log('👀 Spectator mode - skipping join');
+          console.log('ðŸ‘€ Spectator mode - skipping join');
           return;
         }
         if (!walletParam) {
-          console.warn('⚠️ No wallet address provided; cannot join game');
+          console.warn('âš ï¸ No wallet address provided; cannot join game');
           return;
         }
         const res = await fetch(`/api/battle-royale/${encodeURIComponent(gameIdParam)}/join`, {
@@ -6063,123 +5510,100 @@
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
-          console.log('✅ Joined game on server:', data);
+          console.log('âœ… Joined game on server:', data);
         } else {
-          console.warn('⚠️ Join failed:', data?.error || res.statusText);
+          console.warn('âš ï¸ Join failed:', data?.error || res.statusText);
         }
       } catch (err) {
-        console.error('❌ Join error:', err);
+        console.error('âŒ Join error:', err);
       }
     })();
     
-    // ===== POST-INITIALIZATION SETUP =====
     setTimeout(() => {
-      // Update player card buttons after all initialization is complete
       if (typeof updatePlayerCardButtons === 'function') {
         updatePlayerCardButtons();
       }
       
-      // Update coin rotations based on initial player choices
       if (typeof updateCoinRotationsFromPlayerChoices === 'function') {
         updateCoinRotationsFromPlayerChoices();
       }
     }, 1000); // 1 second delay
     
-    // ===== CLEAN MOBILE SYSTEM =====
     
-    // Mobile detection
     function isMobile() {
       return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
 
-    // Haptic feedback
     function triggerHaptic() {
       if (navigator.vibrate) {
         navigator.vibrate(30);
       }
     }
 
-    // Mobile UI Management
     function initializeMobileUI() {
       if (!isMobile()) return;
       
-      console.log('📱 Initializing clean mobile UI');
+      console.log('ðŸ“± Initializing clean mobile UI');
       
-      // Setup mobile controls
       setupMobileControls();
       
-      // Create player cards
       createMobilePlayerCards();
       
-      // Update displays
       updateMobileDisplays();
     }
 
-    // Setup mobile controls
     function setupMobileControls() {
-      // Change coin button
       const changeCoinBtn = document.getElementById('mobile-change-coin');
       if (changeCoinBtn) {
         changeCoinBtn.addEventListener('click', (e) => {
           e.preventDefault();
           triggerHaptic();
-          // Handle change coin functionality
           console.log('Change coin clicked');
-          // Trigger the coin selector
           if (typeof showCoinSelector === 'function') {
             showCoinSelector(playerSlot);
           }
         });
       }
       
-      // Chat button
       const chatBtn = document.getElementById('mobile-chat');
       if (chatBtn) {
         chatBtn.addEventListener('click', (e) => {
           e.preventDefault();
           triggerHaptic();
-          // Handle chat functionality
           console.log('Chat clicked');
-          // Trigger desktop chat if available
           const desktopBtn = document.getElementById('chat-btn');
           if (desktopBtn) desktopBtn.click();
         });
       }
       
-      // Fullscreen button
       const fullscreenBtn = document.getElementById('mobile-fullscreen');
       if (fullscreenBtn) {
         fullscreenBtn.addEventListener('click', (e) => {
           e.preventDefault();
           triggerHaptic();
           
-          // MANUALLY TRIGGER BACKGROUND UPDATE FOR TESTING
-          console.log('🔴 FULLSCREEN BUTTON CLICKED - FORCING BACKGROUND UPDATE');
+          console.log('ðŸ”´ FULLSCREEN BUTTON CLICKED - FORCING BACKGROUND UPDATE');
           console.log('Current dimensions:', window.innerWidth, 'x', window.innerHeight);
           console.log('Is Landscape?', window.innerWidth > window.innerHeight);
           
-          // Clear and reset background
           document.body.style.background = 'none';
           document.body.style.backgroundImage = 'none';
           void document.body.offsetHeight;
           
-          // Apply new background
           document.body.style.backgroundImage = "url('/Images/Background/game room2.png')";
           document.body.style.backgroundSize = window.innerWidth + 'px ' + window.innerHeight + 'px';
           document.body.style.backgroundPosition = 'center center';
           document.body.style.backgroundRepeat = 'no-repeat';
           document.body.style.backgroundAttachment = 'scroll';
           
-          console.log('✅ Background applied with dimensions:', document.body.style.backgroundSize);
+          console.log('âœ… Background applied with dimensions:', document.body.style.backgroundSize);
           
-          // Also trigger fullscreen
           if (document.documentElement.requestFullscreen) {
             document.documentElement.requestFullscreen();
           }
         });
       }
       
-      // Heads button
       const headsBtn = document.getElementById('mobile-heads');
       if (headsBtn) {
         headsBtn.addEventListener('click', (e) => {
@@ -6190,14 +5614,12 @@
             currentPlayer.choice = 'heads';
             updatePlayerChoice(currentPlayer);
             
-            // Add visual feedback
             headsBtn.classList.add('selected');
             tailsBtn.classList.remove('selected');
           }
         });
       }
 
-      // Tails button
       const tailsBtn = document.getElementById('mobile-tails');
       if (tailsBtn) {
         tailsBtn.addEventListener('click', (e) => {
@@ -6208,14 +5630,12 @@
             currentPlayer.choice = 'tails';
             updatePlayerChoice(currentPlayer);
             
-            // Add visual feedback
             tailsBtn.classList.add('selected');
             headsBtn.classList.remove('selected');
           }
         });
       }
 
-      // Power button (hold to charge)
       const powerBtn = document.getElementById('mobile-power');
       if (powerBtn) {
         let powerInterval = null;
@@ -6224,30 +5644,27 @@
         const startCharging = () => {
           if (isCharging) return;
           
-          // Find current player slot dynamically
           const currentPlayer = players.find(p => p.isCurrentPlayer);
           if (!currentPlayer) {
-            console.log('❌ No current player found for mobile power');
+            console.log('âŒ No current player found for mobile power');
             return;
           }
           
           const playerSlot = players.findIndex(p => p.address === currentPlayer.address);
           if (playerSlot === -1) {
-            console.log('❌ Current player slot not found');
+            console.log('âŒ Current player slot not found');
             return;
           }
           
           triggerHaptic();
           isCharging = true;
           
-          // Initialize power charging
           if (tubes[playerSlot]) {
             tubes[playerSlot].isFilling = true;
             tubes[playerSlot].power = 0;
             tubes[playerSlot].chargingStartTime = Date.now();
           }
           
-          // Start power charging animation
           powerInterval = setInterval(() => {
             if (tubes[playerSlot] && tubes[playerSlot].isFilling) {
               const elapsed = Date.now() - tubes[playerSlot].chargingStartTime;
@@ -6257,7 +5674,6 @@
               tubes[playerSlot].powerLevel = Math.min(5, Math.max(1, Math.ceil(powerPercent / 20)));
               tubes[playerSlot].foamIntensity = powerPercent / 100;
               
-              // Update mobile power bar
               const powerFill = document.getElementById('mobile-power-fill');
               const powerValue = document.querySelector('#mobile-power-text .power-value');
               if (powerFill && powerValue) {
@@ -6265,7 +5681,6 @@
                 powerValue.textContent = Math.round(powerPercent);
               }
               
-              // Broadcast power charging to server
               if (isServerSideMode && socket && gameIdParam && walletParam) {
                 socket.emit('physics_power_charging', {
                   gameId: gameIdParam,
@@ -6283,16 +5698,15 @@
         const stopCharging = () => {
           if (!isCharging) return;
           
-          // Find current player slot dynamically
           const currentPlayer = players.find(p => p.isCurrentPlayer);
           if (!currentPlayer) {
-            console.log('❌ No current player found for mobile power stop');
+            console.log('âŒ No current player found for mobile power stop');
             return;
           }
           
           const playerSlot = players.findIndex(p => p.address === currentPlayer.address);
           if (playerSlot === -1) {
-            console.log('❌ Current player slot not found for stop');
+            console.log('âŒ Current player slot not found for stop');
             return;
           }
           
@@ -6308,9 +5722,8 @@
             const finalPower = tubes[playerSlot].power;
             tubes[playerSlot].isFilling = false;
             
-            console.log(`⚡ Mobile power released at ${finalPower.toFixed(0)}%`);
+            console.log(`âš¡ Mobile power released at ${finalPower.toFixed(0)}%`);
             
-            // Broadcast power stop to server
             if (isServerSideMode && socket && gameIdParam && walletParam) {
               socket.emit('physics_power_charging_stop', {
                 gameId: gameIdParam,
@@ -6320,7 +5733,6 @@
               });
             }
             
-            // Trigger spin if power is sufficient
             if (finalPower > 10) { // Minimum 10% power to spin
               if (isServerSideMode && socket && gameIdParam && walletParam) {
                 socket.emit('physics_coin_flip', {
@@ -6340,7 +5752,6 @@
         powerBtn.addEventListener('mouseup', stopCharging);
       }
 
-      // Action buttons
       const coinBtn = document.getElementById('mobile-coin');
       if (coinBtn) {
         coinBtn.addEventListener('click', (e) => {
@@ -6354,21 +5765,19 @@
 
     }
 
-    // Create mobile player cards
     function createMobilePlayerCards() {
       const container = document.getElementById('mobile-player-cards');
       if (!container) {
-        console.log('❌ Mobile player cards container not found');
+        console.log('âŒ Mobile player cards container not found');
         return;
       }
 
-      console.log('🔄 Creating mobile player cards...', { tubes: tubes.length, players: players.length });
+      console.log('ðŸ”„ Creating mobile player cards...', { tubes: tubes.length, players: players.length });
       container.innerHTML = '';
       
-      // Create 4 individual player boxes
       for (let i = 0; i < 4; i++) {
         const player = players[i];
-        console.log(`🔍 Player ${i + 1}:`, { player: player?.name, isEmpty: player?.isEmpty });
+        console.log(`ðŸ” Player ${i + 1}:`, { player: player?.name, isEmpty: player?.isEmpty });
         
         const box = document.createElement('div');
         box.className = 'player-box';
@@ -6378,10 +5787,10 @@
             <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" />
             <div class="player-info">
               <div class="player-name">${player.name}</div>
-              <div class="player-wins">🏆 ${player.wins}</div>
+              <div class="player-wins">ðŸ† ${player.wins}</div>
             </div>
           `;
-          console.log(`✅ Created mobile box for ${player.name}`);
+          console.log(`âœ… Created mobile box for ${player.name}`);
         } else {
           box.innerHTML = `
             <div class="player-info">
@@ -6389,26 +5798,22 @@
               <div class="player-wins">-</div>
             </div>
           `;
-          console.log(`⏭️ Created empty box for slot ${i + 1}`);
+          console.log(`â­ï¸ Created empty box for slot ${i + 1}`);
         }
         
         container.appendChild(box);
       }
       
-      console.log(`📱 Mobile player boxes created: ${container.children.length} boxes`);
+      console.log(`ðŸ“± Mobile player boxes created: ${container.children.length} boxes`);
     }
 
-    // Update mobile displays
     function updateMobileDisplays() {
-      // Timer is now handled by the existing game-info div
 
-      // Update earnings
       const earnings = document.getElementById('mobile-earnings');
       if (earnings) {
         earnings.textContent = `${currentPlayerXP} FLIP`;
       }
 
-      // Update power bar
       const powerFill = document.getElementById('mobile-power-fill');
       const powerValue = document.querySelector('#mobile-power-text .power-value');
       if (powerFill && powerValue) {
@@ -6430,7 +5835,6 @@
       }
     }
 
-    // Fullscreen functionality
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
         if (document.documentElement.requestFullscreen) {
@@ -6447,23 +5851,18 @@
       }
     }
 
-    // Initialize mobile UI
     setTimeout(initializeMobileUI, 1000);
 
-    // ===== MOBILE PERFORMANCE OPTIMIZATIONS =====
     
-    // Mobile performance optimizations
     function optimizeForMobile() {
       if (!isMobile()) return;
       
-      console.log('📱 Applying mobile performance optimizations');
+      console.log('ðŸ“± Applying mobile performance optimizations');
       
-      // Optimize renderer for mobile
       webglRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Cap pixel ratio for performance
       webglRenderer.antialias = false; // Disable antialiasing for performance
       webglRenderer.shadowMap.enabled = false; // Disable shadows for performance
       
-      // Reduce particle count for mobile
       tubes.forEach(tube => {
         if (tube.liquidParticleMeshes) {
           const maxParticles = 30; // Reduced for mobile
@@ -6473,47 +5872,37 @@
         }
       });
       
-      // Optimize lighting for mobile
       if (ambientLight) ambientLight.intensity = 0.4;
       if (directionalLight) {
         directionalLight.intensity = 0.6;
         directionalLight.castShadow = false;
       }
       
-      console.log('✅ Mobile performance optimizations applied');
+      console.log('âœ… Mobile performance optimizations applied');
     }
 
-    // Apply optimizations
     setTimeout(optimizeForMobile, 2000);
     
-    // SERVER-AUTHORITATIVE: No client timer functions to expose
 
-    // Animation loop with physics
     let frameCount = 0;
     const timeStep = 1 / 60; // 60 FPS
     
     function animate() {
       frameCount++;
 
-      // Step physics simulation
       physicsWorld.step(timeStep);
 
       tubes.forEach((tube, i) => {
         const offset = i * 0.4;
         
-        // 🎯 REFACTORED: POWER CHARGING SYSTEM - REAL-TIME SYNC
         if (tube.isFilling && !tube.isShattered) {
-          // Increase power (0-100 over ~3 seconds) - FOR ALL PLAYERS
           tube.power = Math.min(tube.power + 0.6, 100);
           const powerPercent = tube.power / 100;
           
-          // Update foam intensity
           tube.foamIntensity = powerPercent;
           
-          // Calculate power level (1-5) based on power percentage
           const powerLevel = Math.min(5, Math.max(1, Math.ceil(tube.power / 20)));
           
-          // 🎯 FASTER BROADCAST - Every 5 frames = 12 updates/second (was every frame)
           if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === i) {
             if (frameCount % 5 === 0) { // Changed from every frame to every 5 frames
               socket.emit('physics_power_charging', {
@@ -6524,11 +5913,9 @@
                 playerSlot: i,
                 isFilling: tube.isFilling
               });
-              // Removed console.log to reduce spam - only log on start/stop
             }
           }
           
-          // Update UI elements
           if (tube.cardElement) {
             const powerFill = tube.cardElement.querySelector('.power-fill');
             const powerValue = tube.cardElement.querySelector('.power-value');
@@ -6536,57 +5923,45 @@
             if (powerValue) powerValue.textContent = tube.power.toFixed(0);
           }
           
-          // 🎯 UNIFIED PEARL COLOR UPDATE - Same for local and remote
           updatePearlColors(tube, powerPercent, i);
         }
         
-        // 🎯 UNIFIED PEARL PHYSICS - Runs for BOTH local charging AND remote viewing
         if ((tube.isFilling || tube.foamIntensity > 0) && !tube.isShattered) {
           updatePearlPhysics(tube, tube.foamIntensity, i, frameCount);
         }
         
-        // Sync particle visual meshes with physics bodies
         tube.liquidParticles.forEach((particleBody, idx) => {
           tube.liquidParticleMeshes[idx].position.copy(particleBody.position);
           tube.liquidParticleMeshes[idx].quaternion.copy(particleBody.quaternion);
         });
         
-        // Pulsing light during charging
         if (tube.foamIntensity > 0) {
           const lightPulse = Math.sin(frameCount * 0.15 + offset) * 0.5;
           tube.liquidLight.intensity = tube.liquidLight.intensity + lightPulse * tube.foamIntensity;
         }
       });
 
-      // Animate coins - VIBRATE during charge, stay centered
       coins.forEach((coin, i) => {
         const tube = tubes[i];
         
-        // Ensure coin is always visible
         coin.visible = true;
         
         if (tube.isFlipping) {
-          // Flipping animation handled by flipCoinWithPower function
-          // Ensure coin stays centered during flip
           const tubeX = tube.tube.position.x;
           coin.position.x = tubeX;
           coin.position.y = 200;
           coin.position.z = 0;
         } else if (tube.isFilling && !tube.isShattered) {
-          // VIBRATION increases with power
           const vibIntensity = (tube.power / 100) * 8; // 0 to 8 pixels
           const vibSpeed = (tube.power / 100) * 20; // Speed increases
           
-          // Vibrate position
           const tubeX = tube.tube.position.x;
           coin.position.x = tubeX + Math.sin(frameCount * vibSpeed) * vibIntensity;
           coin.position.y = 200 + Math.cos(frameCount * vibSpeed * 1.3) * vibIntensity;
           coin.position.z = Math.sin(frameCount * vibSpeed * 0.7) * vibIntensity * 0.5;
           
-          // Slight rotation vibration
           coin.rotation.z = Math.sin(frameCount * vibSpeed * 0.5) * (vibIntensity / 50);
         } else if (!tube.isShattered && !tube.isFilling) {
-          // Reset to center when idle (like reference)
           const tubeX = tube.tube.position.x;
           coin.position.x = tubeX;
           coin.position.y = 200;
@@ -6595,29 +5970,23 @@
         }
       });
       
-      // Animate glass shards
       tubes.forEach((tube, i) => {
         if (tube.glassShards.length > 0) {
           tube.glassShards.forEach(shard => {
             shard.lifetime += 0.016;
             
-            // Apply velocity
             shard.mesh.position.x += shard.velocity.x;
             shard.mesh.position.y += shard.velocity.y;
             shard.mesh.position.z += shard.velocity.z;
             
-            // Apply gravity to shards
             shard.velocity.y -= 0.3;
             
-            // Rotate shards
             shard.mesh.rotation.x += shard.rotVelocity.x;
             shard.mesh.rotation.y += shard.rotVelocity.y;
             shard.mesh.rotation.z += shard.rotVelocity.z;
             
-            // Fade out over 2 seconds
             shard.mesh.material.opacity = Math.max(0, 0.6 - (shard.lifetime / 2) * 0.6);
             
-            // Remove after 2 seconds
             if (shard.lifetime > 2) {
               shard.mesh.visible = false;
             }
@@ -6625,15 +5994,13 @@
         }
       });
 
-      // ===== SELECTIVE BLOOM - TWO-PASS RENDERING =====
       
-      // PASS 1: Render main scene (layer 0) - tubes, coins, background, etc.
       const originalMask = camera.layers.mask; // Save original layer mask
       camera.layers.disableAll(); // Clear all layers
       camera.layers.enable(0); // Only enable layer 0
       
       if (frameCount === 1) {
-        console.log('🎬 Frame 1 - Layer 0 mask:', camera.layers.mask, 'Should be 1 for layer 0');
+        console.log('ðŸŽ¬ Frame 1 - Layer 0 mask:', camera.layers.mask, 'Should be 1 for layer 0');
       }
       
       webglRenderer.autoClear = true;
@@ -6641,36 +6008,32 @@
       webglRenderer.render(scene, camera);
       
       if (frameCount === 1) {
-        console.log('✅ Main scene (layer 0) rendered to screen');
+        console.log('âœ… Main scene (layer 0) rendered to screen');
       }
       
-      // PASS 2: Render pearls (layer 1) with bloom to separate buffer  
       camera.layers.disableAll();
       camera.layers.enable(1); // Only enable layer 1 (pearls + plasma)
       
       if (frameCount === 1) {
-        console.log('🎬 Frame 1 - Layer 1 mask:', camera.layers.mask, 'Should be 2 for layer 1');
+        console.log('ðŸŽ¬ Frame 1 - Layer 1 mask:', camera.layers.mask, 'Should be 2 for layer 1');
       }
       
-      // Render to bloom composer's internal render target (NOT to screen!)
       bloomComposer.render();
       
       if (frameCount === 1) {
-        console.log('✅ Pearls (layer 1) rendered to bloom buffer');
-        console.log('🔍 Bloom composer render target:', bloomComposer.renderTarget1 ? 'Found' : 'Missing');
-        console.log('🔍 Bloom composer read buffer:', bloomComposer.readBuffer ? 'Found' : 'Missing');
+        console.log('âœ… Pearls (layer 1) rendered to bloom buffer');
+        console.log('ðŸ” Bloom composer render target:', bloomComposer.renderTarget1 ? 'Found' : 'Missing');
+        console.log('ðŸ” Bloom composer read buffer:', bloomComposer.readBuffer ? 'Found' : 'Missing');
       }
       
-      // PASS 3: Composite bloomed pearls on top with additive blending
       webglRenderer.autoClear = false; // Don't clear - we want to blend on top!
       
-      // Get the bloom result texture from the read buffer
       const bloomTexture = bloomComposer.readBuffer.texture;
       
       if (frameCount === 1) {
-        console.log('🎨 Bloom texture:', bloomTexture ? 'Found' : 'Missing');
+        console.log('ðŸŽ¨ Bloom texture:', bloomTexture ? 'Found' : 'Missing');
         if (bloomTexture) {
-          console.log('🎨 Bloom texture details:', {
+          console.log('ðŸŽ¨ Bloom texture details:', {
             width: bloomTexture.image?.width,
             height: bloomTexture.image?.height,
             format: bloomTexture.format,
@@ -6679,20 +6042,18 @@
         }
       }
       
-      // Debug: Check if any pearls are visible on layer 1
       if (frameCount === 1) {
         let visiblePearls = 0;
         tubes.forEach((tube, i) => {
           if (tube.liquidParticleMeshes) {
             const tubeVisiblePearls = tube.liquidParticleMeshes.filter(mesh => mesh.visible).length;
             visiblePearls += tubeVisiblePearls;
-            console.log(`🔍 Tube ${i + 1} has ${tubeVisiblePearls} visible pearls on layer 1`);
+            console.log(`ðŸ” Tube ${i + 1} has ${tubeVisiblePearls} visible pearls on layer 1`);
           }
         });
-        console.log(`🔍 Total visible pearls on layer 1: ${visiblePearls}`);
+        console.log(`ðŸ” Total visible pearls on layer 1: ${visiblePearls}`);
       }
       
-      // Create a fullscreen quad to display bloom texture (create once)
       if (!window.bloomQuadMesh) {
         const quadGeometry = new THREE.PlaneGeometry(2, 2);
         const quadMaterial = new THREE.MeshBasicMaterial({
@@ -6714,26 +6075,22 @@
         window.bloomQuadScene = quadScene;
         window.bloomQuadCamera = quadCamera;
         
-        console.log('✨ Bloom composite quad created!');
+        console.log('âœ¨ Bloom composite quad created!');
       }
       
-      // Update bloom texture reference and ensure it's properly bound
       if (window.bloomQuadMesh && bloomTexture) {
         window.bloomQuadMesh.material.map = bloomTexture;
         window.bloomQuadMesh.material.needsUpdate = true;
         
-        // Force texture update
         if (bloomTexture.needsUpdate !== undefined) {
           bloomTexture.needsUpdate = true;
         }
       }
       
-      // Render the bloomed pearls additively on top of the main scene
       if (window.bloomQuadScene && window.bloomQuadCamera && bloomTexture) {
         webglRenderer.render(window.bloomQuadScene, window.bloomQuadCamera);
       } else {
-        // Fallback: If bloom fails, render pearls directly to main layer
-        console.log('⚠️ Bloom rendering failed, using fallback direct rendering');
+        console.log('âš ï¸ Bloom rendering failed, using fallback direct rendering');
         camera.layers.disableAll();
         camera.layers.enable(1); // Enable layer 1
         webglRenderer.render(scene, camera);
@@ -6741,15 +6098,13 @@
       }
       
       if (frameCount === 1) {
-        console.log('✅ Bloomed pearls composited on top');
-        console.log('🎉 Selective bloom rendering complete!');
+        console.log('âœ… Bloomed pearls composited on top');
+        console.log('ðŸŽ‰ Selective bloom rendering complete!');
       }
       
-      // Restore renderer settings
       webglRenderer.autoClear = true;
       camera.layers.mask = originalMask; // Restore original layer mask
       
-      // Render CSS3D UI on top
       cssRenderer.render(scene, camera);
 
       requestAnimationFrame(animate);
@@ -6757,7 +6112,6 @@
 
     animate();
 
-    // Resize handler
     window.addEventListener('resize', () => {
       const newWidth = window.innerWidth;
       const newHeight = window.innerHeight;
@@ -6769,54 +6123,43 @@
       cssRenderer.setSize(newWidth, newHeight);
       bloomComposer.setSize(newWidth, newHeight);
 
-      // Mobile-specific resize handling
       if (isMobile()) {
-        // Recreate mobile player cards with new positions
         setTimeout(() => {
-          // Remove existing mobile cards
           document.querySelectorAll('.mobile-player-card').forEach(card => card.remove());
-          // Recreate them with new positions
           createMobilePlayerCards();
         }, 100);
       }
 
-      console.log(`📐 Resized to ${newWidth}x${newHeight}`);
+      console.log(`ðŸ“ Resized to ${newWidth}x${newHeight}`);
     });
 
-    // Force background refresh on orientation change
     window.addEventListener('orientationchange', function() {
-      // Force a reflow/repaint by temporarily changing and restoring a property
       const body = document.body;
       const originalDisplay = body.style.display;
       
-      // Trigger reflow
       body.style.display = 'none';
       body.offsetHeight; // Force browser to acknowledge the change
       body.style.display = originalDisplay || '';
       
-      // Alternative method: toggle a class that forces background recalculation
       body.classList.add('orientation-changing');
       setTimeout(() => {
         body.classList.remove('orientation-changing');
       }, 50);
       
-      console.log('📱 Orientation changed - background refreshed');
+      console.log('ðŸ“± Orientation changed - background refreshed');
     });
 
-    // Also listen for resize events on mobile (some browsers use this instead)
     let resizeTimer;
     if (isMobile()) {
       window.addEventListener('resize', function() {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function() {
-          // Check if aspect ratio changed significantly (indicates rotation)
           const aspectRatio = window.innerWidth / window.innerHeight;
           if ((aspectRatio > 1 && window.lastAspectRatio < 1) || 
               (aspectRatio < 1 && window.lastAspectRatio > 1)) {
-            // Force background refresh
             document.body.style.backgroundImage = document.body.style.backgroundImage || 
               "url('/Images/Background/game room2.png')";
-            console.log('📱 Rotation detected via resize - background refreshed');
+            console.log('ðŸ“± Rotation detected via resize - background refreshed');
           }
           window.lastAspectRatio = aspectRatio;
         }, 100);
