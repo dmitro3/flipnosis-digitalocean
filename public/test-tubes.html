@@ -1277,12 +1277,6 @@
       socket.on('flip_tokens_collected', (data) => {
         console.log('ðŸ’Ž FLIP tokens collected:', data);
         if (data.success) {
-          const claimBtn = document.getElementById('claim-flip-btn');
-          if (claimBtn) {
-            claimBtn.textContent = `âœ… Claimed ${data.amount} FLIP!`;
-            claimBtn.style.background = 'linear-gradient(135deg, #888, #666)';
-            claimBtn.disabled = true;
-          }
           showFloatingMessage(`Successfully claimed ${data.amount} FLIP!`, '#00ff00', 3000);
         }
       });
@@ -5752,15 +5746,6 @@
         powerBtn.addEventListener('mouseup', stopCharging);
       }
 
-      const coinBtn = document.getElementById('mobile-coin');
-      if (coinBtn) {
-        coinBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          triggerHaptic();
-          const globalBtn = document.getElementById('global-change-coin-btn');
-          if (globalBtn) globalBtn.click();
-        });
-      }
 
 
     }
