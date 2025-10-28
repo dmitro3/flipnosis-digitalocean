@@ -803,24 +803,8 @@ class DatabaseService {
         } else {
           console.log('✅ Battle Royale game created in database:', gameData.id)
           
-          // Create game on blockchain if service is available
-          if (blockchainService && blockchainService.hasOwnerWallet()) {
-            try {
-              console.log('🔗 Creating Battle Royale on blockchain:', gameData.id)
-              const result = await blockchainService.createBattleRoyaleOnChain(gameData)
-              if (result.success) {
-                console.log('✅ Battle Royale created on blockchain:', result.transactionHash)
-              } else {
-                console.error('❌ Failed to create Battle Royale on blockchain:', result.error)
-                console.warn('⚠️ Game created in database but blockchain creation failed')
-              }
-            } catch (error) {
-              console.error('❌ Error creating Battle Royale on blockchain:', error)
-              console.warn('⚠️ Game created in database but blockchain creation failed')
-            }
-          } else {
-            console.warn('⚠️ Blockchain service not available - game created in database only')
-          }
+          // Do not auto-create on blockchain here to avoid conflicting with frontend approve/transfer flow
+          // Frontend remains source of truth for NFT approval and initial on-chain create
           
           // Temporarily disabled - Automatically add creator as first player (slot 0) with free entry
           /*
