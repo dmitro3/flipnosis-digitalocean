@@ -1272,7 +1272,20 @@ const Profile = () => {
                                       showInfo('Claiming NFT prize...');
                                       const result = await contractService.withdrawBattleRoyaleWinnerNFT(game.id);
                                       if (result.success) {
-                                        showSuccess('NFT claimed successfully!');
+                                        // Update database to mark NFT as claimed
+                                        try {
+                                          await fetch(`/api/battle-royale/${game.id}/mark-nft-claimed`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                              winner: address,
+                                              transactionHash: result.transactionHash
+                                            })
+                                          });
+                                        } catch (dbError) {
+                                          console.warn('DB update failed:', dbError);
+                                        }
+                                        showSuccess('NFT claimed successfully! 🎉');
                                         const participatedResp = await fetch(`/api/users/${targetAddress}/participated-games`);
                                         if (participatedResp.ok) {
                                           const participatedData = await participatedResp.json();
@@ -1344,7 +1357,20 @@ const Profile = () => {
                                       showInfo('Withdrawing creator funds...');
                                       const result = await contractService.withdrawBattleRoyaleCreatorFunds(game.id);
                                       if (result.success) {
-                                        showSuccess('Creator funds withdrawn successfully!');
+                                        // Update database to mark creator as paid
+                                        try {
+                                          await fetch(`/api/battle-royale/${game.id}/mark-creator-paid`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                              creator: address,
+                                              transactionHash: result.transactionHash
+                                            })
+                                          });
+                                        } catch (dbError) {
+                                          console.warn('DB update failed:', dbError);
+                                        }
+                                        showSuccess('Creator funds withdrawn successfully! 💰');
                                         const createdResp = await fetch(`/api/users/${targetAddress}/created-games`);
                                         if (createdResp.ok) {
                                           const createdData = await createdResp.json();
@@ -1780,6 +1806,19 @@ const Profile = () => {
                                         showInfo('Claiming NFT prize...');
                                         const result = await contractService.withdrawBattleRoyaleWinnerNFT(game.id);
                                         if (result.success) {
+                                          // Update database to mark NFT as claimed
+                                          try {
+                                            await fetch(`/api/battle-royale/${game.id}/mark-nft-claimed`, {
+                                              method: 'POST',
+                                              headers: { 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({
+                                                winner: address,
+                                                transactionHash: result.transactionHash
+                                              })
+                                            });
+                                          } catch (dbError) {
+                                            console.warn('DB update failed:', dbError);
+                                          }
                                           showSuccess('NFT claimed successfully! 🎉');
                                           // Reload games
                                           const participatedResp = await fetch(`/api/users/${targetAddress}/participated-games`);

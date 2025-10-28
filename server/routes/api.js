@@ -2393,18 +2393,14 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
-  // Claim creator funds from completed Battle Royale
-  router.post('/battle-royale/:gameId/claim-creator-funds', async (req, res) => {
+  // Mark creator funds as withdrawn (called after frontend completes withdrawal)
+  router.post('/battle-royale/:gameId/mark-creator-paid', async (req, res) => {
     try {
       const { gameId } = req.params
-      const { creator } = req.body
+      const { creator, transactionHash } = req.body
 
-      if (!creator) {
-        return res.status(400).json({ error: 'Creator address required' })
-      }
-
-      if (!blockchainService.hasOwnerWallet()) {
-        return res.status(500).json({ error: 'Blockchain service not configured' })
+      if (!creator || !transactionHash) {
+        return res.status(400).json({ error: 'Creator address and transaction hash required' })
       }
 
       // Verify game exists and creator is correct
@@ -2422,49 +2418,37 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       }
 
       if (game.creator_paid) {
-        return res.status(400).json({ error: 'Creator funds already claimed' })
+        return res.status(400).json({ error: 'Creator funds already marked as claimed' })
       }
 
-      // Call blockchain service to withdraw creator funds
-      const result = await blockchainService.withdrawCreatorFunds(gameId, creator)
+      // Update database to mark creator as paid
+      await dbService.updateBattleRoyaleGame(gameId, { 
+        creator_paid: 1,
+        creator_paid_tx: transactionHash 
+      })
       
-      if (result.success) {
-        // Update database to mark creator as paid
-        await dbService.updateBattleRoyaleGame(gameId, { creator_paid: 1 })
-        
-        res.json({
-          success: true,
-          transactionHash: result.transactionHash,
-          message: 'Creator funds claimed successfully!'
-        })
-      } else {
-        res.status(500).json({
-          error: 'Failed to claim creator funds',
-          details: result.error
-        })
-      }
+      res.json({
+        success: true,
+        message: 'Creator payment status updated successfully!'
+      })
 
     } catch (error) {
-      console.error('❌ Error claiming creator funds:', error)
+      console.error('❌ Error updating creator payment status:', error)
       res.status(500).json({
-        error: 'Failed to claim creator funds',
+        error: 'Failed to update creator payment status',
         details: error.message
       })
     }
   })
 
-  // Claim winner NFT from completed Battle Royale
-  router.post('/battle-royale/:gameId/claim-winner-nft', async (req, res) => {
+  // Mark winner NFT as claimed (called after frontend completes withdrawal)
+  router.post('/battle-royale/:gameId/mark-nft-claimed', async (req, res) => {
     try {
       const { gameId } = req.params
-      const { winner } = req.body
+      const { winner, transactionHash } = req.body
 
-      if (!winner) {
-        return res.status(400).json({ error: 'Winner address required' })
-      }
-
-      if (!blockchainService.hasOwnerWallet()) {
-        return res.status(500).json({ error: 'Blockchain service not configured' })
+      if (!winner || !transactionHash) {
+        return res.status(400).json({ error: 'Winner address and transaction hash required' })
       }
 
       // Verify game exists and winner is correct
@@ -2482,32 +2466,24 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       }
 
       if (game.nft_claimed) {
-        return res.status(400).json({ error: 'NFT already claimed' })
+        return res.status(400).json({ error: 'NFT already marked as claimed' })
       }
 
-      // Call blockchain service to withdraw winner NFT
-      const result = await blockchainService.withdrawWinnerNFT(gameId, winner)
+      // Update database to mark NFT as claimed
+      await dbService.updateBattleRoyaleGame(gameId, { 
+        nft_claimed: 1,
+        nft_claimed_tx: transactionHash 
+      })
       
-      if (result.success) {
-        // Update database to mark NFT as claimed
-        await dbService.updateBattleRoyaleGame(gameId, { nft_claimed: 1 })
-        
-        res.json({
-          success: true,
-          transactionHash: result.transactionHash,
-          message: 'Winner NFT claimed successfully!'
-        })
-      } else {
-        res.status(500).json({
-          error: 'Failed to claim winner NFT',
-          details: result.error
-        })
-      }
+      res.json({
+        success: true,
+        message: 'NFT claim status updated successfully!'
+      })
 
     } catch (error) {
-      console.error('❌ Error claiming winner NFT:', error)
+      console.error('❌ Error updating NFT claim status:', error)
       res.status(500).json({
-        error: 'Failed to claim winner NFT',
+        error: 'Failed to update NFT claim status',
         details: error.message
       })
     }
