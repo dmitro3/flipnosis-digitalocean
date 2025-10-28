@@ -125,6 +125,16 @@ const CONTRACT_ABI = [
     "type": "function"
   },
   {
+    "inputs": [
+      {"internalType": "bytes32", "name": "gameId", "type": "bytes32"},
+      {"internalType": "address", "name": "winner", "type": "address"}
+    ],
+    "name": "completeBattleRoyaleEarly",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}],
     "name": "withdrawCreatorFunds",
     "outputs": [],
@@ -231,7 +241,7 @@ const NFT_ABI = [
 
 class ContractService {
   constructor() {
-    this.contractAddress = '0xd2a2d0A6a0a446c494EdD059680E0f819f9d480B' // NEW SECURE CONTRACT - Deployed with new wallet
+    this.contractAddress = '0xB2FC2180e003D818621F4722FFfd7878A218581D' // NEW SECURE CONTRACT - Deployed with new wallet
     this.walletClient = null
     this.publicClient = null
     this.userAddress = null

@@ -4,7 +4,7 @@ async function main() {
   console.log('🔧 Fixing Battle Royale winner in contract...\n');
 
   // Get the contract
-  const contractAddress = process.env.CONTRACT_ADDRESS || '0xd2a2d0A6a0a446c494EdD059680E0f819f9d480B';
+  const contractAddress = process.env.CONTRACT_ADDRESS || '0xB2FC2180e003D818621F4722FFfd7878A218581D';
   const contract = await ethers.getContractAt('NFTFlipGame', contractAddress);
 
   // Get parameters from command line

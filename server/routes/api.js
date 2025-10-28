@@ -1895,7 +1895,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         nft_chain: nft_chain || 'base',
         entry_fee: parseFloat(entry_fee),
         service_fee: parseFloat(service_fee || 0.50),
-        max_players: 4, // Test tubes game is 4 players max
+        max_players: 8, // Battle royale game is 8 players max
         creator_participates: creator_participates || false,
         room_type: room_type || 'potion',
         status: 'filling' // Explicitly set initial status

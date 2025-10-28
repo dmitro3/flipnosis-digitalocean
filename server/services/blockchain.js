@@ -33,6 +33,7 @@ class BlockchainService {
       "function createBattleRoyale(bytes32 gameId, address nftContract, uint256 tokenId, uint256 entryFee, uint256 serviceFee, bool isUnder20, uint256 minUnder20Wei)",
       "function joinBattleRoyale(bytes32 gameId) payable",
       "function completeBattleRoyale(bytes32 gameId, address winner)",
+      "function completeBattleRoyaleEarly(bytes32 gameId, address winner)",
       "function withdrawCreatorFunds(bytes32 gameId)",
       "function withdrawWinnerNFT(bytes32 gameId)",
       "function getBattleRoyaleGame(bytes32 gameId) view returns (tuple(address creator,address nftContract,uint256 tokenId,uint256 entryFee,uint256 serviceFee,uint8 maxPlayers,uint8 currentPlayers,address winner,bool completed,bool creatorPaid,bool nftClaimed,uint256 totalPool,uint256 createdAt,bool isUnder20,uint256 minUnder20Wei))",
@@ -222,6 +223,36 @@ class BlockchainService {
       return { success: true, transactionHash: tx.hash }
     } catch (error) {
       console.error('❌ Failed to complete Battle Royale on chain:', error)
+      return { success: false, error: error.message || 'Blockchain transaction failed' }
+    }
+  }
+
+  /**
+   * Complete Battle Royale early with fewer players (owner-only)
+   */
+  async completeBattleRoyaleEarlyOnChain(gameId, winner) {
+    console.log('🏆 Completing Battle Royale early on blockchain:', { gameId, winner })
+    if (!this.contractOwnerWallet) {
+      return { success: false, error: 'Contract wallet not configured' }
+    }
+
+    try {
+      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
+      const gameIdBytes32 = ethers.id(gameId)
+
+      // Optional sanity read
+      try {
+        const brGame = await contract.getBattleRoyaleGame(gameIdBytes32)
+        if (!brGame || brGame.creator === ethers.ZeroAddress) {
+          return { success: false, error: 'Battle Royale game does not exist' }
+        }
+      } catch {}
+
+      const tx = await contract.completeBattleRoyaleEarly(gameIdBytes32, winner)
+      await tx.wait()
+      return { success: true, transactionHash: tx.hash }
+    } catch (error) {
+      console.error('❌ Failed to complete Battle Royale early on chain:', error)
       return { success: false, error: error.message || 'Blockchain transaction failed' }
     }
   }

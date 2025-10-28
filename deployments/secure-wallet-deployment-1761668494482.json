@@ -1,6 +1,6 @@
 {
   "network": "base",
-  "contractAddress": "0xd2a2d0A6a0a446c494EdD059680E0f819f9d480B",
+  "contractAddress": "0xB2FC2180e003D818621F4722FFfd7878A218581D",
   "deployer": "0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1",
   "deploymentTime": "2025-10-28T16:21:34.482Z",
   "transactionHash": "0x5c8ee41b6071162444a360aececa65fb874c25e26c98bdb52de6571f381e1842",
@@ -36,7 +36,7 @@
     "emergencyWithdrawNFT",
     "directTransferNFT"
   ],
-  "basescanUrl": "https://basescan.org/address/0xd2a2d0A6a0a446c494EdD059680E0f819f9d480B",
+  "basescanUrl": "https://basescan.org/address/0xB2FC2180e003D818621F4722FFfd7878A218581D",
   "status": "deployed_with_new_wallet",
   "notes": "Contract deployed with new secure wallet after old wallet was compromised. All admin functions now accessible with new wallet."
 }

@@ -7,7 +7,7 @@ const DATABASE_PATH = path.join(__dirname, '..', 'server', 'flipz.db')
 
 // Contract configuration - LATEST CONTRACT ADDRESS ONLY
 const RPC_URL = 'https://mainnet.base.org'
-const LATEST_CONTRACT_ADDRESS = '0xd2a2d0A6a0a446c494EdD059680E0f819f9d480B'
+const LATEST_CONTRACT_ADDRESS = '0xB2FC2180e003D818621F4722FFfd7878A218581D'
 
 async function fixNFTDepositStatus() {
   console.log('🔧 Fixing NFT Deposit Status with Latest Contract...\n')

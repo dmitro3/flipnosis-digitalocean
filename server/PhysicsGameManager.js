@@ -24,7 +24,7 @@ class PhysicsGameManager {
       gameId,
       creator: gameData.creator_address || gameData.creator,
       betAmount: gameData.bet_amount,
-      maxPlayers: gameData.max_players || 4, // Test tubes game is 4 players max
+      maxPlayers: gameData.max_players || 8, // Battle royale game is 8 players max
       currentPlayers: 0,
       phase: 'waiting', // waiting, round_active, game_over
       currentRound: 0,
@@ -808,7 +808,18 @@ class PhysicsGameManager {
     try {
       // Attempt blockchain completion if service is available
       if (this.blockchainService && this.blockchainService.hasOwnerWallet()) {
-        const result = await this.blockchainService.completeBattleRoyaleOnChain(gameId, winnerAddress)
+        // Choose the right completion function based on player count
+        const game = this.games.get(gameId)
+        const isFullGame = game && game.currentPlayers >= game.maxPlayers
+        
+        let result
+        if (isFullGame) {
+          console.log(`🏆 Game is full (${game.currentPlayers}/${game.maxPlayers}) - using completeBattleRoyale`)
+          result = await this.blockchainService.completeBattleRoyaleOnChain(gameId, winnerAddress)
+        } else {
+          console.log(`🏆 Game is early completion (${game?.currentPlayers || 'unknown'}/${game?.maxPlayers || 'unknown'}) - using completeBattleRoyaleEarly`)
+          result = await this.blockchainService.completeBattleRoyaleEarlyOnChain(gameId, winnerAddress)
+        }
         
         if (result.success) {
           console.log(`✅ Game completed on blockchain: ${result.transactionHash}`)

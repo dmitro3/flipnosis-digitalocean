@@ -569,6 +569,24 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     }
     
     /**
+     * @notice Complete Battle Royale early with fewer players (only owner/backend)
+     * Allows completion when game has 2+ players but less than max
+     */
+    function completeBattleRoyaleEarly(bytes32 gameId, address winner) external onlyOwner nonReentrant {
+        BattleRoyaleGame storage game = battleRoyaleGames[gameId];
+        require(game.creator != address(0), "Game does not exist");
+        require(!game.completed, "Game already completed");
+        require(game.currentPlayers >= 2, "Need at least 2 players");
+        require(game.currentPlayers < game.maxPlayers, "Use completeBattleRoyale for full games");
+        require(battleRoyaleEntries[gameId][winner], "Winner must be a participant");
+        
+        game.winner = winner;
+        game.completed = true;
+        
+        emit BattleRoyaleCompleted(gameId, winner);
+    }
+    
+    /**
      * @notice Creator withdraws their earnings (entry fees minus platform fee)
      */
     function withdrawCreatorFunds(bytes32 gameId) external nonReentrant {

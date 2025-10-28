@@ -1,0 +1,14 @@
+{
+  "network": "base",
+  "contractAddress": "0xB2FC2180e003D818621F4722FFfd7878A218581D",
+  "deployer": "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628",
+  "deploymentTime": "2025-01-19T20:30:00.000Z",
+  "features": [
+    "completeBattleRoyaleEarly",
+    "early_game_completion_support",
+    "2_to_7_players_support"
+  ],
+  "basescanUrl": "https://basescan.org/address/0xB2FC2180e003D818621F4722FFfd7878A218581D",
+  "status": "deployed_with_early_completion",
+  "notes": "Contract deployed with new completeBattleRoyaleEarly function to support games that end early with 2-7 players. Fixes withdrawal issues for early completion games."
+}
