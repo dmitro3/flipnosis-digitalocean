@@ -602,6 +602,7 @@ const Profile = () => {
   const [offers, setOffers] = useState([]);
   const [winnings, setWinnings] = useState([]);
   const [claimables, setClaimables] = useState({ creator: [], winner: [] });
+  const [hasBlockchain, setHasBlockchain] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -711,7 +712,7 @@ const Profile = () => {
 
   useEffect(() => {
     const loadClaimables = async () => {
-      if (!targetAddress || activeTab !== 'assets') return;
+      if (!targetAddress || activeTab !== 'claims') return;
       try {
         const resp = await fetch(`/api/users/${targetAddress}/claimables`)
         if (resp.ok) {
@@ -726,8 +727,25 @@ const Profile = () => {
   }, [targetAddress, activeTab])
 
   useEffect(() => {
+    // Fetch blockchain availability to enable/disable on-chain claim buttons
+    const loadHealth = async () => {
+      try {
+        const resp = await fetch('/api/health')
+        if (resp.ok) {
+          const data = await resp.json()
+          setHasBlockchain(!!data.hasContractOwner)
+        }
+      } catch (e) {
+        console.error('Failed to load health:', e)
+        setHasBlockchain(false)
+      }
+    }
+    loadHealth()
+  }, [])
+
+  useEffect(() => {
     const loadBattleRoyaleGames = async () => {
-      if (!targetAddress || (activeTab !== 'listings' && activeTab !== 'games')) return;
+      if (!targetAddress || (activeTab !== 'listings' && activeTab !== 'games' && activeTab !== 'claims')) return;
       setLoadingBattleRoyales(true);
       try {
         // Load created games
@@ -1051,6 +1069,12 @@ const Profile = () => {
         >
           Games
         </TabButton>
+        <TabButton 
+          active={activeTab === 'claims'} 
+          onClick={() => setActiveTab('claims')}
+        >
+          Claims
+        </TabButton>
       </TabContainer>
 
       {/* Tab Content */}
@@ -1186,6 +1210,170 @@ const Profile = () => {
           </>
         )}
 
+        {activeTab === 'claims' && (
+          <div>
+            <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+              Claims
+            </h3>
+            <p style={{ color: '#ccc', marginBottom: '1.5rem', fontSize: '1rem' }}>
+              Withdraw your winnings and creator funds. Items disappear once claimed.
+            </p>
+
+            {loadingBattleRoyales ? (
+              <EmptyState>
+                <LoadingSpinner />
+                <div style={{ marginTop: '1rem' }}>Loading claimables...</div>
+              </EmptyState>
+            ) : (
+              <>
+                {/* Winner NFT Claims */}
+                <h4 style={{ color: '#FFD700', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '1.2rem' }}>
+                  🏆 Winner NFT Claims
+                </h4>
+                {(() => {
+                  const winnerClaims = participatedBattleRoyales.filter(g =>
+                    (g.status === 'completed' || g.status === 'complete') &&
+                    g.winner_address && targetAddress && g.winner_address.toLowerCase() === targetAddress.toLowerCase() &&
+                    !g.nft_withdrawn
+                  );
+                  return winnerClaims.length === 0 ? (
+                    <EmptyState style={{ marginBottom: '2rem' }}>
+                      <div>No NFT claims pending</div>
+                    </EmptyState>
+                  ) : (
+                    <div style={{ marginBottom: '2rem' }}>
+                      {winnerClaims.map(game => (
+                        <GameCard key={`claim-winner-${game.id}`} style={{ marginBottom: '1rem' }}>
+                          <GameHeader>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
+                              <img 
+                                src={game.nft_image} 
+                                alt={game.nft_name}
+                                style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover', border: '2px solid rgba(255, 255, 255, 0.1)' }}
+                              />
+                              <GameInfo style={{ flex: 1, minWidth: '200px' }}>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '0.25rem' }}>
+                                  {game.nft_name}
+                                </div>
+                                <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '0.5rem' }}>
+                                  Collection: {game.nft_collection}
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+                                  <div style={{ color: '#00ff00' }}>✅ Complete</div>
+                                  <div style={{ color: '#FFD700' }}>🏆 You are the winner</div>
+                                </div>
+                              </GameInfo>
+                              <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '160px' }}>
+                                <ActionButton
+                                  disabled={!hasBlockchain}
+                                  title={hasBlockchain ? '' : 'Blockchain service unavailable'}
+                                  onClick={async () => {
+                                    try {
+                                      showInfo('Claiming NFT prize...');
+                                      const result = await contractService.withdrawBattleRoyaleWinnerNFT(game.id);
+                                      if (result.success) {
+                                        showSuccess('NFT claimed successfully!');
+                                        const participatedResp = await fetch(`/api/users/${targetAddress}/participated-games`);
+                                        if (participatedResp.ok) {
+                                          const participatedData = await participatedResp.json();
+                                          setParticipatedBattleRoyales(participatedData.games || []);
+                                        }
+                                      } else {
+                                        showError(result.error || 'Failed to claim NFT');
+                                      }
+                                    } catch (err) {
+                                      console.error('Claim NFT error:', err);
+                                      showError(err.message || 'Failed to claim NFT');
+                                    }
+                                  }}
+                                  style={{ background: 'linear-gradient(135deg, #FFD700, #FFA500)' }}
+                                >
+                                  🏆 Claim NFT
+                                </ActionButton>
+                              </GameActions>
+                            </div>
+                          </GameHeader>
+                        </GameCard>
+                      ))}
+                    </div>
+                  );
+                })()}
+
+                {/* Creator Fund Withdrawals */}
+                <h4 style={{ color: '#00ffff', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '1.2rem' }}>
+                  💰 Creator Fund Withdrawals
+                </h4>
+                {(() => {
+                  const creatorClaims = createdBattleRoyales.filter(g =>
+                    (g.status === 'completed' || g.status === 'complete') &&
+                    !g.creator_funds_withdrawn
+                  );
+                  return creatorClaims.length === 0 ? (
+                    <EmptyState>
+                      <div>No creator withdrawals pending</div>
+                    </EmptyState>
+                  ) : (
+                    <div>
+                      {creatorClaims.map(game => (
+                        <GameCard key={`claim-creator-${game.id}`} style={{ marginBottom: '1rem' }}>
+                          <GameHeader>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
+                              <img 
+                                src={game.nft_image} 
+                                alt={game.nft_name}
+                                style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover', border: '2px solid rgba(255, 255, 255, 0.1)' }}
+                              />
+                              <GameInfo style={{ flex: 1, minWidth: '200px' }}>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '0.25rem' }}>
+                                  {game.nft_name}
+                                </div>
+                                <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '0.5rem' }}>
+                                  Collection: {game.nft_collection}
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+                                  <div style={{ color: '#00ff00' }}>✅ Complete</div>
+                                  <div style={{ color: '#00ffff' }}>💳 Creator funds ready</div>
+                                </div>
+                              </GameInfo>
+                              <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '160px' }}>
+                                <ActionButton
+                                  disabled={!hasBlockchain}
+                                  title={hasBlockchain ? '' : 'Blockchain service unavailable'}
+                                  onClick={async () => {
+                                    try {
+                                      showInfo('Withdrawing creator funds...');
+                                      const result = await contractService.withdrawBattleRoyaleCreatorFunds(game.id);
+                                      if (result.success) {
+                                        showSuccess('Creator funds withdrawn successfully!');
+                                        const createdResp = await fetch(`/api/users/${targetAddress}/created-games`);
+                                        if (createdResp.ok) {
+                                          const createdData = await createdResp.json();
+                                          setCreatedBattleRoyales(createdData.games || []);
+                                        }
+                                      } else {
+                                        showError(result.error || 'Failed to withdraw funds');
+                                      }
+                                    } catch (err) {
+                                      console.error('Withdraw funds error:', err);
+                                      showError(err.message || 'Failed to withdraw funds');
+                                    }
+                                  }}
+                                  style={{ background: 'linear-gradient(135deg, #00c853, #00e676)' }}
+                                >
+                                  💰 Withdraw Funds
+                                </ActionButton>
+                              </GameActions>
+                            </div>
+                          </GameHeader>
+                        </GameCard>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </>
+            )}
+          </div>
+        )}
 
 
 
