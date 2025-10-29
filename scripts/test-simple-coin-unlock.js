@@ -5,7 +5,7 @@ const path = require('path');
 
 class SimpleCoinUnlockTester {
   constructor() {
-    this.dbPath = path.join(__dirname, '..', 'dist', 'server', 'flipz.db');
+    this.dbPath = path.join(__dirname, '..', 'dist', 'server', 'database.sqlite');
     this.db = null;
   }
 

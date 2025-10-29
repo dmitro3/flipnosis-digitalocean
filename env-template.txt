@@ -6,8 +6,8 @@ PORT=3001
 NODE_ENV=production
 
 # Database Configuration (Local SQLite)
-# Database will be stored locally as flipz.db in the server directory
-DATABASE_PATH=./server/flipz.db
+# Database will be stored locally as database.sqlite in the server directory
+DATABASE_PATH=./server/database.sqlite
 
 # Blockchain Configuration
 CONTRACT_ADDRESS=0xB2FC2180e003D818621F4722FFfd7878A218581D

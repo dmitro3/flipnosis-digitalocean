@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 const fs = require('fs')
 
-const DATABASE_PATH = path.join(__dirname, 'flipz.db')
+const DATABASE_PATH = path.join(__dirname, 'database.sqlite')
 
 console.log('🚀 Initializing database...')
 

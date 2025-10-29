@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 
 // Database path
-const DATABASE_PATH = path.join(__dirname, '..', 'server', 'flipz.db')
+const DATABASE_PATH = path.join(__dirname, '..', 'server', 'database.sqlite')
 
 async function checkContractUsage() {
   console.log('🔍 Checking Contract Usage in Database...\n')

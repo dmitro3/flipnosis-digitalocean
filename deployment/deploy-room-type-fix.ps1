@@ -36,15 +36,15 @@ cd $APP_PATH
 
 # Backup database
 echo "💾 Backing up database..."
-cp server/flipz.db server/flipz.db.backup.\$(date +%Y%m%d_%H%M%S) || echo "⚠️ Could not backup database"
+cp server/database.sqlite server/database.sqlite.backup.\$(date +%Y%m%d_%H%M%S) || echo "⚠️ Could not backup database"
 
 # Check if room_type column exists
 echo "🔍 Checking if room_type column exists..."
-ROOM_TYPE_EXISTS=\$(sqlite3 server/flipz.db "PRAGMA table_info(battle_royale_games);" | grep -c room_type || echo "0")
+ROOM_TYPE_EXISTS=\$(sqlite3 server/database.sqlite "PRAGMA table_info(battle_royale_games);" | grep -c room_type || echo "0")
 
 if [ "\$ROOM_TYPE_EXISTS" = "0" ]; then
     echo "➕ Adding room_type column to database..."
-    sqlite3 server/flipz.db < /tmp/add_room_type_fix.sql || echo "⚠️ SQL fix may have failed (column might already exist)"
+    sqlite3 server/database.sqlite < /tmp/add_room_type_fix.sql || echo "⚠️ SQL fix may have failed (column might already exist)"
     echo "✅ Database schema updated"
 else
     echo "✅ room_type column already exists"
@@ -52,7 +52,7 @@ fi
 
 # Verify the fix
 echo "🔍 Verifying database schema..."
-sqlite3 server/flipz.db "PRAGMA table_info(battle_royale_games);" | grep room_type || echo "⚠️ Warning: room_type column not found after update"
+sqlite3 server/database.sqlite "PRAGMA table_info(battle_royale_games);" | grep room_type || echo "⚠️ Warning: room_type column not found after update"
 
 # Restart the server
 echo "🔄 Restarting server..."

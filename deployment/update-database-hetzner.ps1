@@ -26,11 +26,11 @@ pm2 stop all || true
 
 # Backup the current database
 echo "💾 Creating database backup..."
-cp server/flipz.db server/flipz.db.backup.$(date +%Y%m%d_%H%M%S)
+cp server/database.sqlite server/database.sqlite.backup.$(date +%Y%m%d_%H%M%S)
 
 # Apply the schema updates
 echo "📝 Applying database schema updates..."
-sqlite3 server/flipz.db < update-database-schema.sql
+sqlite3 server/database.sqlite < update-database-schema.sql
 
 if [ `$? -eq 0 ]; then
     echo "✅ Database schema updated successfully"
@@ -44,7 +44,7 @@ if [ `$? -eq 0 ]; then
 else
     echo "❌ Database update failed"
     echo "🔄 Restoring from backup..."
-    cp server/flipz.db.backup.* server/flipz.db
+    cp server/database.sqlite.backup.* server/database.sqlite
     pm2 start all
     exit 1
 fi
@@ -76,8 +76,8 @@ try {
     Write-Host "   1. SSH into your server: ssh root@159.69.118.159" -ForegroundColor Yellow
     Write-Host "   2. Navigate to: cd /root/Flipnosis-Final-Coin-Hybrid" -ForegroundColor Yellow
     Write-Host "   3. Stop server: pm2 stop all" -ForegroundColor Yellow
-    Write-Host "   4. Backup database: cp server/flipz.db server/flipz.db.backup" -ForegroundColor Yellow
-    Write-Host "   5. Apply updates: sqlite3 server/flipz.db < update-database-schema.sql" -ForegroundColor Yellow
+    Write-Host "   4. Backup database: cp server/database.sqlite server/database.sqlite.backup" -ForegroundColor Yellow
+    Write-Host "   5. Apply updates: sqlite3 server/database.sqlite < update-database-schema.sql" -ForegroundColor Yellow
     Write-Host "   6. Start server: pm2 start all" -ForegroundColor Yellow
 } finally {
     # Clean up temporary file

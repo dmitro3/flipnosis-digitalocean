@@ -21,7 +21,7 @@ module.exports = {
 
       // Platform/config
       PLATFORM_FEE_RECEIVER: process.env.PLATFORM_FEE_RECEIVER || '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1',
-      DATABASE_PATH: './server/flipz.db'
+      DATABASE_PATH: './server/database.sqlite'
     },
     error_file: './logs/err.log',
     out_file: './logs/out.log',

@@ -4,7 +4,7 @@ const path = require('path');
 async function setupFlipCollections() {
   console.log('🔧 Setting up FLIP collections database...\n');
   
-  const dbPath = path.join(__dirname, '..', 'server', 'flipz.db');
+  const dbPath = path.join(__dirname, '..', 'server', 'database.sqlite');
   
   // Connect to the database
   const db = new sqlite3.Database(dbPath, (err) => {

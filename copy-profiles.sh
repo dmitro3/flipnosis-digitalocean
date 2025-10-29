@@ -2,7 +2,7 @@
 # Copy player profiles from old database to new database
 
 OLD_DB="/opt/flipnosis/app/database-legacy/backups/flipz_backup_20251026_062501.db"
-NEW_DB="/opt/flipnosis/app/server/flipz.db"
+NEW_DB="/opt/flipnosis/app/server/database.sqlite"
 
 echo "Copying profiles from old database to new database..."
 

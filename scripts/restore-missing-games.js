@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // Database path
-const dbPath = path.join(__dirname, '../server/flipz.db');
+const dbPath = path.join(__dirname, '../server/database.sqlite');
 
 // Data from the listings you provided
 const missingGames = [

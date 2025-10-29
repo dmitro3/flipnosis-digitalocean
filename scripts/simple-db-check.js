@@ -6,6 +6,8 @@ async function checkDatabase() {
   
   // Try different database paths
   const possiblePaths = [
+    path.join(__dirname, '../server/database.sqlite'),
+    '/opt/flipnosis/app/server/database.sqlite',
     '/opt/flipnosis/app/server/flipz.db',
     path.join(__dirname, '../server/flipz.db'),
     path.join(__dirname, '../server/games.db')
