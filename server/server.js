@@ -13,8 +13,13 @@ const { BlockchainService } = require('./services/blockchain')
 const CleanupService = require('./services/cleanupService')
 // const { errorHandler, notFoundHandler } = require('./middleware/error-handler') // Temporarily disabled
 
-// Import wallet monitor
-const walletMonitor = require('./monitors/walletMonitor')
+// Import wallet monitor (optional)
+let walletMonitor;
+try {
+  walletMonitor = require('./monitors/walletMonitor');
+} catch (error) {
+  console.warn('⚠️ Wallet monitor not available:', error.message);
+}
 
 console.log('🚀 Starting CryptoFlipz Server...')
 console.log('📍 Working directory:', process.cwd())
