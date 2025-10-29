@@ -428,7 +428,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       // Creator claimables (post-completion, unpaid)
       const creatorClaimables = await new Promise((resolve, reject) => {
         db.all(`
-          SELECT br.id as gameId, br.creator, br.entry_fee, br.service_fee, br.max_players
+          SELECT br.id as gameId, br.creator, br.entry_fee, br.service_fee, br.max_players, 
+                 br.nft_name, br.nft_image, br.nft_collection, br.nft_contract, br.nft_token_id
           FROM battle_royale_games br
           WHERE br.creator = ? AND br.status = 'completed' AND (br.creator_paid IS NULL OR br.creator_paid = 0)
         `, [address.toLowerCase()], (err, rows) => {
@@ -442,7 +443,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         db.all(`
           SELECT br.id as gameId, br.nft_contract, br.nft_token_id, br.nft_name, br.nft_image
           FROM battle_royale_games br
-          WHERE br.winner = ? AND br.status = 'completed' AND (br.nft_claimed IS NULL OR br.nft_claimed = 0)
+          WHERE br.winner_address = ? AND br.status = 'completed' AND (br.nft_claimed IS NULL OR br.nft_claimed = 0)
         `, [address.toLowerCase()], (err, rows) => {
           if (err) reject(err)
           else resolve(rows || [])

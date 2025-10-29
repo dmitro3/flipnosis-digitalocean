@@ -1231,12 +1231,7 @@ const Profile = () => {
                   🏆 Winner NFT Claims
                 </h4>
                 {(() => {
-                  const winnerClaims = participatedBattleRoyales.filter(g =>
-                    (g.status === 'completed' || g.status === 'complete') &&
-                    g.completion_tx &&
-                    g.winner_address && targetAddress && g.winner_address.toLowerCase() === targetAddress.toLowerCase() &&
-                    !g.nft_withdrawn
-                  );
+                  const winnerClaims = claimables.winner || [];
                   return winnerClaims.length === 0 ? (
                     <EmptyState style={{ marginBottom: '2rem' }}>
                       <div>No NFT claims pending</div>
@@ -1244,7 +1239,7 @@ const Profile = () => {
                   ) : (
                     <div style={{ marginBottom: '2rem' }}>
                       {winnerClaims.map(game => (
-                        <GameCard key={`claim-winner-${game.id}`} style={{ marginBottom: '1rem' }}>
+                        <GameCard key={`claim-winner-${game.gameId}`} style={{ marginBottom: '1rem' }}>
                           <GameHeader>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
                               <img 
@@ -1271,11 +1266,11 @@ const Profile = () => {
                                   onClick={async () => {
                                     try {
                                       showInfo('Claiming NFT prize...');
-                                      const result = await contractService.withdrawBattleRoyaleWinnerNFT(game.id);
+                                      const result = await contractService.withdrawBattleRoyaleWinnerNFT(game.gameId);
                                       if (result.success) {
                                         // Update database to mark NFT as claimed
                                         try {
-                                          await fetch(`/api/battle-royale/${game.id}/mark-nft-claimed`, {
+                                          await fetch(`/api/battle-royale/${game.gameId}/mark-nft-claimed`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({
@@ -1287,10 +1282,11 @@ const Profile = () => {
                                           console.warn('DB update failed:', dbError);
                                         }
                                         showSuccess('NFT claimed successfully! 🎉');
-                                        const participatedResp = await fetch(`/api/users/${targetAddress}/participated-games`);
-                                        if (participatedResp.ok) {
-                                          const participatedData = await participatedResp.json();
-                                          setParticipatedBattleRoyales(participatedData.games || []);
+                                        // Refresh claimables data
+                                        const claimablesResp = await fetch(`/api/users/${targetAddress}/claimables`);
+                                        if (claimablesResp.ok) {
+                                          const claimablesData = await claimablesResp.json();
+                                          setClaimables({ creator: claimablesData.creator || [], winner: claimablesData.winner || [] });
                                         }
                                       } else {
                                         showError(result.error || 'Failed to claim NFT');
@@ -1315,14 +1311,10 @@ const Profile = () => {
 
                 {/* Creator Fund Withdrawals */}
                 <h4 style={{ color: '#00ffff', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '1.2rem' }}>
-                  💰 Creator Fund Withdrawals
+💰 Creator Fund Withdrawals
                 </h4>
                 {(() => {
-                  const creatorClaims = createdBattleRoyales.filter(g =>
-                    (g.status === 'completed' || g.status === 'complete') &&
-                    g.completion_tx &&
-                    !g.creator_funds_withdrawn
-                  );
+                  const creatorClaims = claimables.creator || [];
                   return creatorClaims.length === 0 ? (
                     <EmptyState>
                       <div>No creator withdrawals pending</div>
@@ -1330,7 +1322,7 @@ const Profile = () => {
                   ) : (
                     <div>
                       {creatorClaims.map(game => (
-                        <GameCard key={`claim-creator-${game.id}`} style={{ marginBottom: '1rem' }}>
+                        <GameCard key={`claim-creator-${game.gameId}`} style={{ marginBottom: '1rem' }}>
                           <GameHeader>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
                               <img 
@@ -1347,7 +1339,7 @@ const Profile = () => {
                                 </div>
                                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
                                   <div style={{ color: '#00ff00' }}>✅ Complete</div>
-                                  <div style={{ color: '#00ffff' }}>💳 Creator funds ready</div>
+                                  <div style={{ color: '#00ffff' }}>💰 Creator earnings: ${(game.entry_fee * game.max_players - game.service_fee).toFixed(2)}</div>
                                 </div>
                               </GameInfo>
                               <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '160px' }}>
@@ -1357,11 +1349,11 @@ const Profile = () => {
                                   onClick={async () => {
                                     try {
                                       showInfo('Withdrawing creator funds...');
-                                      const result = await contractService.withdrawBattleRoyaleCreatorFunds(game.id);
+                                      const result = await contractService.withdrawBattleRoyaleCreatorFunds(game.gameId);
                                       if (result.success) {
                                         // Update database to mark creator as paid
                                         try {
-                                          await fetch(`/api/battle-royale/${game.id}/mark-creator-paid`, {
+                                          await fetch(`/api/battle-royale/${game.gameId}/mark-creator-paid`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({
@@ -1373,10 +1365,11 @@ const Profile = () => {
                                           console.warn('DB update failed:', dbError);
                                         }
                                         showSuccess('Creator funds withdrawn successfully! 💰');
-                                        const createdResp = await fetch(`/api/users/${targetAddress}/created-games`);
-                                        if (createdResp.ok) {
-                                          const createdData = await createdResp.json();
-                                          setCreatedBattleRoyales(createdData.games || []);
+                                        // Refresh claimables data
+                                        const claimablesResp = await fetch(`/api/users/${targetAddress}/claimables`);
+                                        if (claimablesResp.ok) {
+                                          const claimablesData = await claimablesResp.json();
+                                          setClaimables({ creator: claimablesData.creator || [], winner: claimablesData.winner || [] });
                                         }
                                       } else {
                                         showError(result.error || 'Failed to withdraw funds');

@@ -774,7 +774,7 @@ class DatabaseService {
         INSERT INTO battle_royale_games (
           id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, nft_chain,
           entry_fee, service_fee, max_players, status, creator_participates, game_data, room_type, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `
       
       // Serialize game_data (obstacles, etc.) to JSON
