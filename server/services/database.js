@@ -9,6 +9,9 @@ class DatabaseService {
   }
 
   async initialize() {
+    // Default to allowing migrations unless explicitly disabled. This ensures
+    // required tables are created on first run even in production.
+    const allowMigrations = (process.env.ALLOW_DB_MIGRATIONS !== 'false')
     return new Promise((resolve, reject) => {
       const database = new sqlite3.Database(this.databasePath, (err) => {
         if (err) {
@@ -18,8 +21,7 @@ class DatabaseService {
         }
         console.log('✅ Connected to SQLite database at:', this.databasePath)
         
-        // IMPORTANT: Since the database already exists with all tables,
-        // we should NOT create tables, just verify they exist
+        // IMPORTANT: In production we do NOT auto-create tables unless explicitly allowed
         database.serialize(() => {
           // Verify critical tables exist
           database.get("SELECT name FROM sqlite_master WHERE type='table' AND name='games'", (err, result) => {
@@ -72,39 +74,51 @@ class DatabaseService {
             }
           })
 
-          // Check and create Battle Royale tables if they don't exist
+          // Check Battle Royale tables (no auto-create in prod unless ALLOW_DB_MIGRATIONS=true)
           database.get("SELECT name FROM sqlite_master WHERE type='table' AND name='battle_royale_games'", (err, result) => {
             if (err) {
               console.error('❌ Error checking battle_royale_games table:', err)
             } else if (result) {
               console.log('✅ Battle Royale games table exists')
             } else {
-              console.log('⚠️ Battle Royale games table not found - creating it...')
-              this.createBattleRoyaleTables(database)
+              if (allowMigrations) {
+                console.log('⚠️ battle_royale_games table not found - creating it (migrations allowed) ...')
+                this.createBattleRoyaleTables(database)
+              } else {
+                console.error('❌ battle_royale_games table missing and migrations disabled in production')
+              }
             }
           })
 
-          // Check and create FLIP tables if they don't exist
+          // Check FLIP tables
           database.get("SELECT name FROM sqlite_master WHERE type='table' AND name='flip_collections'", (err, result) => {
             if (err) {
               console.error('❌ Error checking flip_collections table:', err)
             } else if (result) {
               console.log('✅ FLIP collections table exists')
             } else {
-              console.log('⚠️ FLIP collections table not found - creating it...')
-              this.createFlipTables(database)
+              if (allowMigrations) {
+                console.log('⚠️ flip_collections table not found - creating it (migrations allowed) ...')
+                this.createFlipTables(database)
+              } else {
+                console.error('❌ flip_collections table missing and migrations disabled in production')
+              }
             }
           })
 
-          // Check and create coin unlock tables if they don't exist
+          // Check coin unlock tables
           database.get("SELECT name FROM sqlite_master WHERE type='table' AND name='coin_unlock_transactions'", (err, result) => {
             if (err) {
               console.error('❌ Error checking coin_unlock_transactions table:', err)
             } else if (result) {
               console.log('✅ Coin unlock transactions table exists')
             } else {
-              console.log('⚠️ Coin unlock transactions table not found - creating it...')
-              this.createCoinUnlockTables(database)
+              if (allowMigrations) {
+                console.log('⚠️ coin_unlock_transactions table not found - creating it (migrations allowed) ...')
+                this.createCoinUnlockTables(database)
+              } else {
+                console.error('❌ coin_unlock_transactions table missing and migrations disabled in production')
+              }
             }
           })
         })
@@ -206,6 +220,45 @@ class DatabaseService {
         console.error('❌ Error creating battle_royale_rounds table:', err)
       } else {
         console.log('✅ Created battle_royale_rounds table')
+      }
+    })
+
+    // Create battle_royale_flips table (used to record individual flips)
+    database.run(`
+      CREATE TABLE IF NOT EXISTS battle_royale_flips (
+        id TEXT PRIMARY KEY,
+        game_id TEXT NOT NULL,
+        round_id TEXT,
+        player_address TEXT NOT NULL,
+        choice TEXT,
+        power INTEGER DEFAULT 0,
+        result TEXT,
+        flip_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `, (err) => {
+      if (err) {
+        console.error('❌ Error creating battle_royale_flips table:', err)
+      } else {
+        console.log('✅ Created battle_royale_flips table')
+      }
+    })
+
+    // Create optional chat table for battle royale rooms
+    database.run(`
+      CREATE TABLE IF NOT EXISTS battle_royale_chat (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        game_id TEXT NOT NULL,
+        sender_address TEXT NOT NULL,
+        message TEXT,
+        message_type TEXT DEFAULT 'chat',
+        message_data TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `, (err) => {
+      if (err) {
+        console.error('❌ Error creating battle_royale_chat table:', err)
+      } else {
+        console.log('✅ Created battle_royale_chat table')
       }
     })
   }

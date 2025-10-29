@@ -1,4 +1,5 @@
 // CryptoFlipz Server - Clean WebSocket-only implementation
+require('dotenv').config()
 const express = require('express')
 const http = require('http')
 const cors = require('cors')
@@ -32,7 +33,33 @@ const server = http.createServer(app)
 
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3000
-const DATABASE_PATH = path.join(__dirname, 'database.sqlite')
+// In production, REQUIRE DATABASE_PATH and do NOT fallback to local.
+let DATABASE_PATH
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.DATABASE_PATH) {
+    console.error('❌ DATABASE_PATH is required in production. Set it to the Hetzner 159 DB path.')
+    process.exit(1)
+  }
+  DATABASE_PATH = path.isAbsolute(process.env.DATABASE_PATH)
+    ? process.env.DATABASE_PATH
+    : path.join(process.cwd(), process.env.DATABASE_PATH)
+  // Fail fast if the file is not accessible (SQLite file should exist on 159)
+  try {
+    if (!require('fs').existsSync(DATABASE_PATH)) {
+      console.error(`❌ Database file not found at: ${DATABASE_PATH}`)
+      process.exit(1)
+    }
+  } catch (e) {
+    console.error(`❌ Unable to access DATABASE_PATH: ${DATABASE_PATH}`)
+    console.error(e.message)
+    process.exit(1)
+  }
+} else {
+  // Dev fallback for local work
+  DATABASE_PATH = process.env.DATABASE_PATH
+    ? (path.isAbsolute(process.env.DATABASE_PATH) ? process.env.DATABASE_PATH : path.join(process.cwd(), process.env.DATABASE_PATH))
+    : path.join(__dirname, 'database.sqlite')
+}
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0xB2FC2180e003D818621F4722FFfd7878A218581D'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
@@ -40,7 +67,11 @@ const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/ho
 console.log('⚙️ Configuration:')
 console.log('  - PORT:', PORT)
 console.log('  - DATABASE_PATH:', DATABASE_PATH)
-console.log('  - DATABASE_EXISTS:', fs.existsSync(DATABASE_PATH))
+try {
+  console.log('  - DATABASE_EXISTS:', fs.existsSync(DATABASE_PATH))
+} catch (e) {
+  console.log('  - DATABASE_EXISTS: unknown (path may be remote)')
+}
 console.log('  - CONTRACT_ADDRESS:', CONTRACT_ADDRESS)
 console.log('  - HAS_PRIVATE_KEY:', !!CONTRACT_OWNER_KEY)
 console.log('  - RPC_URL:', RPC_URL ? RPC_URL.substring(0, 50) + '...' : 'NOT SET')
@@ -202,6 +233,32 @@ initializeServices()
       global.pendingBlockchainEvents = []
     }
     
+    // TEMP: Debug DB endpoint to verify active DB and tables
+    app.get('/api/debug/db', async (req, res) => {
+      try {
+        const tables = await new Promise((resolve) => {
+          if (!dbService || !dbService.db) return resolve([])
+          dbService.db.all("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name", (err, rows) => {
+            if (err || !rows) return resolve([])
+            resolve(rows.map(r => r.name))
+          })
+        })
+        let exists
+        try {
+          exists = fs.existsSync(DATABASE_PATH)
+        } catch {
+          exists = null
+        }
+        res.json({
+          databasePath: DATABASE_PATH,
+          databaseExists: exists,
+          tables
+        })
+      } catch (e) {
+        res.status(500).json({ error: e.message })
+      }
+    })
+
     // Setup API routes - pass gameServerInstance with error handling
     try {
       const apiRouter = createApiRoutes(dbService, blockchainService, gameServerInstance)
