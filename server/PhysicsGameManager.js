@@ -802,43 +802,26 @@ class PhysicsGameManager {
   async completeGameOnBlockchain(gameId, winnerAddress, broadcast) {
     console.log(`🏆 Completing game on blockchain: ${gameId} -> ${winnerAddress}`)
     
-    // Always update database first to mark game as completed
-    await this.updateGameInDatabase(gameId, winnerAddress)
-    
+    // Use the new battle royale completion handler
     try {
-      // Attempt blockchain completion if service is available
-      if (this.blockchainService && this.blockchainService.hasOwnerWallet()) {
-        // Choose the right completion function based on player count
-        const game = this.games.get(gameId)
-        const isFullGame = game && game.currentPlayers >= game.maxPlayers
+      const { handleBattleRoyaleCompletion } = require('./handlers/battleRoyaleHandler')
+      const result = await handleBattleRoyaleCompletion(gameId, winnerAddress)
+      
+      if (result.success) {
+        console.log(`✅ Game completed on blockchain: ${result.transactionHash}`)
         
-        let result
-        if (isFullGame) {
-          console.log(`🏆 Game is full (${game.currentPlayers}/${game.maxPlayers}) - using completeBattleRoyale`)
-          result = await this.blockchainService.completeBattleRoyaleOnChain(gameId, winnerAddress)
-        } else {
-          console.log(`🏆 Game is early completion (${game?.currentPlayers || 'unknown'}/${game?.maxPlayers || 'unknown'}) - using completeBattleRoyaleEarly`)
-          result = await this.blockchainService.completeBattleRoyaleEarlyOnChain(gameId, winnerAddress)
-        }
-        
-        if (result.success) {
-          console.log(`✅ Game completed on blockchain: ${result.transactionHash}`)
-          
-          // Notify all players about the blockchain completion
-          if (broadcast) {
-            broadcast(`game_${gameId}`, 'battle_royale_completed_on_chain', {
-              type: 'battle_royale_completed_on_chain',
-              gameId: gameId,
-              winner: winnerAddress,
-              transactionHash: result.transactionHash
-            })
-          }
-        } else {
-          console.error(`❌ Failed to complete game on blockchain: ${result.error}`)
-          console.warn(`⚠️ Game marked as completed in database but blockchain transaction failed`)
+        // Notify all players about the blockchain completion
+        if (broadcast) {
+          broadcast(`game_${gameId}`, 'battle_royale_completed_on_chain', {
+            type: 'battle_royale_completed_on_chain',
+            gameId: gameId,
+            winner: winnerAddress,
+            transactionHash: result.transactionHash
+          })
         }
       } else {
-        console.warn(`⚠️ Blockchain service not available - game marked as completed in database only`)
+        console.error(`❌ Failed to complete game on blockchain: ${result.error}`)
+        console.warn(`⚠️ Game marked as completed in database but blockchain transaction failed`)
       }
     } catch (error) {
       console.error(`❌ Error completing game on blockchain:`, error)

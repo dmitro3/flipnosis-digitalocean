@@ -1233,6 +1233,7 @@ const Profile = () => {
                 {(() => {
                   const winnerClaims = participatedBattleRoyales.filter(g =>
                     (g.status === 'completed' || g.status === 'complete') &&
+                    g.completion_tx &&
                     g.winner_address && targetAddress && g.winner_address.toLowerCase() === targetAddress.toLowerCase() &&
                     !g.nft_withdrawn
                   );
@@ -1319,6 +1320,7 @@ const Profile = () => {
                 {(() => {
                   const creatorClaims = createdBattleRoyales.filter(g =>
                     (g.status === 'completed' || g.status === 'complete') &&
+                    g.completion_tx &&
                     !g.creator_funds_withdrawn
                   );
                   return creatorClaims.length === 0 ? (
@@ -1489,7 +1491,7 @@ const Profile = () => {
                               </ActionButton>
 
                               {/* Withdraw Creator Funds */}
-                              {game.status === 'complete' || game.status === 'completed' && !game.creator_funds_withdrawn && (
+                              {game.status === 'complete' || game.status === 'completed' && game.completion_tx && !game.creator_funds_withdrawn && (
                                 <ActionButton
                                   onClick={async () => {
                                     try {
@@ -1649,7 +1651,7 @@ const Profile = () => {
                               </ActionButton>
 
                               {/* Withdraw Creator Funds */}
-                              {game.status === 'complete' || game.status === 'completed' && !game.creator_funds_withdrawn && (
+                              {game.status === 'complete' || game.status === 'completed' && game.completion_tx && !game.creator_funds_withdrawn && (
                                 <ActionButton
                                   onClick={async () => {
                                     try {
@@ -1799,7 +1801,7 @@ const Profile = () => {
                                 </ActionButton>
 
                                 {/* Withdraw NFT (for winners) */}
-                                {isWinner && game.status === 'complete' || game.status === 'completed' && !game.nft_withdrawn && (
+                                {isWinner && game.status === 'complete' || game.status === 'completed' && game.completion_tx && !game.nft_withdrawn && (
                                   <ActionButton
                                     onClick={async () => {
                                       try {

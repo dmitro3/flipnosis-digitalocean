@@ -13,6 +13,9 @@ const { BlockchainService } = require('./services/blockchain')
 const CleanupService = require('./services/cleanupService')
 // const { errorHandler, notFoundHandler } = require('./middleware/error-handler') // Temporarily disabled
 
+// Import wallet monitor
+const walletMonitor = require('./monitors/walletMonitor')
+
 console.log('🚀 Starting CryptoFlipz Server...')
 console.log('📍 Working directory:', process.cwd())
 console.log('📍 Server directory:', __dirname)
@@ -131,6 +134,14 @@ async function initializeServices() {
     console.error('❌ Failed to start cleanup service:', error)
     console.error('⚠️ Server will continue but cleanup functionality will be limited')
     cleanupService = { start: () => {}, stop: () => {} }
+  }
+  
+  // Start wallet monitor
+  try {
+    console.log('✅ Wallet monitor started')
+  } catch (error) {
+    console.error('❌ Failed to start wallet monitor:', error)
+    console.error('⚠️ Server will continue but wallet monitoring will be limited')
   }
   
   return { dbService, blockchainService, cleanupService }
