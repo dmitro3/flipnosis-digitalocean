@@ -1223,6 +1223,38 @@ const Home = () => {
                         
                       </div>
                       
+                      {/* Price Display for Desktop */}
+                      {window.innerWidth > 768 && (
+                        <div style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          padding: '0.75rem',
+                          borderRadius: '0.5rem',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          marginBottom: '1rem'
+                        }}>
+                          <div style={{ 
+                            fontSize: '0.8rem', 
+                            color: theme.colors.textSecondary,
+                            marginBottom: '0.5rem'
+                          }}>
+                            Price
+                          </div>
+                          <div style={{ 
+                            fontSize: '1.2rem', 
+                            fontWeight: 'bold',
+                            color: theme.colors.neonPink
+                          }}>
+                            {(() => {
+                              if (selectedFlip.gameType === 'battle-royale') {
+                                const fee = selectedFlip.entry_fee || 0
+                                return parseFloat(fee).toFixed(6) + ' ETH'
+                              } else {
+                                return (selectedFlip.priceUSD || 0).toFixed(2) + ' USD'
+                              }
+                            })()}
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Links */}
                       <div style={{ 
