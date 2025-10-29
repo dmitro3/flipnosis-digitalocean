@@ -62,23 +62,28 @@ console.log('📁 Checking dist path:', distPath)
 console.log('📁 Dist exists:', fs.existsSync(distPath))
 
 if (fs.existsSync(distPath)) {
-  // Serve static files from the dist directory only
-  app.use(express.static(distPath, {
-    setHeaders: (res, filePath) => {
-      console.log('📁 Serving static file:', filePath)
-      
-      // Set proper MIME types for JavaScript files
-      if (filePath.endsWith('.js')) {
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
-      } else if (filePath.endsWith('.jsx')) {
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
-      } else if (filePath.endsWith('.css')) {
-        res.setHeader('Content-Type', 'text/css; charset=utf-8')
-      } else if (filePath.endsWith('.html')) {
-        res.setHeader('Content-Type', 'text/html; charset=utf-8')
-      }
+  // Serve static files from the dist directory only (but not for API routes)
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+      return next() // Skip static file serving for API routes
     }
-  }))
+    return express.static(distPath, {
+      setHeaders: (res, filePath) => {
+        console.log('📁 Serving static file:', filePath)
+        
+        // Set proper MIME types for JavaScript files
+        if (filePath.endsWith('.js')) {
+          res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+        } else if (filePath.endsWith('.jsx')) {
+          res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+        } else if (filePath.endsWith('.css')) {
+          res.setHeader('Content-Type', 'text/css; charset=utf-8')
+        } else if (filePath.endsWith('.html')) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8')
+        }
+      }
+    })(req, res, next)
+  })
   console.log('✅ Serving static files from:', distPath)
 } else {
   console.log('⚠️ No dist directory found - creating placeholder')
@@ -237,9 +242,14 @@ initializeServices()
     }
 
     // Catch-all for SPA (only if dist exists)
-    // Exclude test-tubes.html from catch-all since it has its own route above
+    // Exclude test-tubes.html and API routes from catch-all
     if (fs.existsSync(distPath)) {
-      app.get('*', (req, res) => {
+      app.get('*', (req, res, next) => {
+        // Skip API routes - they should be handled by API router
+        if (req.path.startsWith('/api/')) {
+          return next() // Let Express handle 404 for API routes
+        }
+        
         // Skip if this is test-tubes.html - it should be handled by the specific route above
         if (req.path === '/test-tubes.html') {
           return res.status(404).json({ error: 'test-tubes.html route not working' })

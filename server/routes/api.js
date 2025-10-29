@@ -1251,6 +1251,70 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     })
   })
 
+  // Get user winnings (completed games where user is the winner)
+  router.get('/users/:address/winnings', async (req, res) => {
+    const { address } = req.params
+
+    try {
+      const lower = address.toLowerCase()
+
+      const winnings = { games: [], battleRoyale: [] }
+
+      // Legacy/regular games table (if present)
+      await new Promise((resolve) => {
+        db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='games';", (err, tableExists) => {
+          if (err || !tableExists) return resolve()
+
+          db.all(
+            "SELECT * FROM games WHERE status = 'completed' AND winner = ? ORDER BY updated_at DESC",
+            [lower],
+            (e, rows) => {
+              if (!e && Array.isArray(rows)) {
+                winnings.games = rows.map((game) => ({
+                  ...game,
+                  gameId: game.id,
+                  createdAt: game.created_at ? Math.floor(new Date(game.created_at).getTime() / 1000) : undefined,
+                  updatedAt: game.updated_at ? Math.floor(new Date(game.updated_at).getTime() / 1000) : undefined,
+                }))
+              }
+              resolve()
+            }
+          )
+        })
+      })
+
+      // Battle Royale winners (if present)
+      await new Promise((resolve) => {
+        db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='battle_royale_games';", (err, tableExists) => {
+          if (err || !tableExists) return resolve()
+
+          db.all(
+            "SELECT * FROM battle_royale_games WHERE status = 'completed' AND winner = ? ORDER BY updated_at DESC",
+            [lower],
+            (e, rows) => {
+              if (!e && Array.isArray(rows)) {
+                winnings.battleRoyale = rows
+              }
+              resolve()
+            }
+          )
+        })
+      })
+
+      // Unified response; keep array for backwards compatibility if frontend expects array
+      const unified = [
+        ...(winnings.games || []),
+        ...(winnings.battleRoyale || [])
+      ]
+
+      res.json(unified)
+    } catch (error) {
+      console.error('Error fetching user winnings:', error)
+      // Return empty array instead of error to avoid frontend parse issues
+      res.json([])
+    }
+  })
+
   // Get user listings
   router.get('/users/:address/listings', (req, res) => {
     const { address } = req.params
