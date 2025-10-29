@@ -3331,23 +3331,16 @@
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(255, 20, 147, 0.8);
+          background: rgba(0, 0, 50, 0.9);
           border-radius: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 48px;
-          font-weight: bold;
-          color: white;
-          text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
           z-index: 10;
-        ">âœ•</div>
+        "></div>
       ` : '';
       
       cardElement.innerHTML = `
         ${emptySlotOverlay}
         <div class="card-header">
-          <img src="${player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png')}" class="player-avatar" alt="${player.name}" style="width: 80px; height: 100px;" />
+          <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" style="width: 80px; height: 100px;" />
           <div class="player-info">
             <div class="player-name">${player.name}</div>
             <div class="wins-display" style="display: flex; gap: 8px; margin-top: 8px; justify-content: center; align-items: center;">
@@ -5373,7 +5366,7 @@
           playerAddressElement.textContent = shortAddress;
         }
         if (playerAvatarElement) {
-          playerAvatarElement.src = player.isEmpty ? '/images/potion.png' : (player.avatar || '/images/default-avatar.png');
+          playerAvatarElement.src = player.avatar || '/images/default-avatar.png';
           playerAvatarElement.alt = player.name;
         }
         
@@ -5405,18 +5398,11 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 20, 147, 0.8);
+            background: rgba(0, 0, 50, 0.9);
             border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            font-weight: bold;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
             z-index: 10;
           `;
-          overlay.textContent = 'âœ•';
+          overlay.textContent = '';
           tube.cardElement.appendChild(overlay);
         }
         
