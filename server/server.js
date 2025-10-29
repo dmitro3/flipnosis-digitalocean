@@ -140,6 +140,12 @@ if (fs.existsSync(distPath)) {
   app.get('/', (req, res) => {
     res.send(simpleHtml)
   })
+
+  // Provide SPA fallback for non-API routes when dist is missing
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next()
+    res.send(simpleHtml)
+  })
 }
 
 // ===== SERVICES INITIALIZATION =====
@@ -321,7 +327,7 @@ initializeServices()
       })
     }
 
-    // Start server
+    // Start primary server
     server.listen(PORT, '0.0.0.0', () => {
       console.log('═══════════════════════════════════════════')
       console.log(`🎮 CryptoFlipz Server Running`)
@@ -332,6 +338,20 @@ initializeServices()
       console.log(`🗄️ Database: ${DATABASE_PATH}`)
       console.log(`⛓️ Contract: ${CONTRACT_ADDRESS}`)
       console.log('═══════════════════════════════════════════')
+    })
+
+    // Attempt to listen on common alternate ports (helps when proxy expects a fixed port)
+    const alternatePorts = [3000, 3001].filter(p => String(p) !== String(PORT))
+    alternatePorts.forEach(p => {
+      try {
+        const altServer = http.createServer(app)
+        altServer.listen(p, '0.0.0.0', () => {
+          console.log(`🛟 Also listening on http://localhost:${p} (alternate port)`) 
+        })
+        // Best-effort; no socket.io binding required for alt ports
+      } catch (e) {
+        console.warn(`⚠️ Could not bind alternate port ${p}:`, e.message)
+      }
     })
   })
   .catch((error) => {

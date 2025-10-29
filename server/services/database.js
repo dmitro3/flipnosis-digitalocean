@@ -74,12 +74,15 @@ class DatabaseService {
             }
           })
 
-          // Check Battle Royale tables (no auto-create in prod unless ALLOW_DB_MIGRATIONS=true)
+          // Check Battle Royale tables (and auto-migrate missing columns when allowed)
           database.get("SELECT name FROM sqlite_master WHERE type='table' AND name='battle_royale_games'", (err, result) => {
             if (err) {
               console.error('❌ Error checking battle_royale_games table:', err)
             } else if (result) {
               console.log('✅ Battle Royale games table exists')
+              if (allowMigrations) {
+                this.ensureBattleRoyaleGamesColumns(database)
+              }
             } else {
               if (allowMigrations) {
                 console.log('⚠️ battle_royale_games table not found - creating it (migrations allowed) ...')
@@ -260,6 +263,49 @@ class DatabaseService {
       } else {
         console.log('✅ Created battle_royale_chat table')
       }
+    })
+  }
+
+  ensureBattleRoyaleGamesColumns(database) {
+    const requiredColumns = {
+      creator_participates: "ALTER TABLE battle_royale_games ADD COLUMN creator_participates BOOLEAN DEFAULT 0",
+      game_data: "ALTER TABLE battle_royale_games ADD COLUMN game_data TEXT",
+      room_type: "ALTER TABLE battle_royale_games ADD COLUMN room_type TEXT DEFAULT 'potion'",
+      current_players: "ALTER TABLE battle_royale_games ADD COLUMN current_players INTEGER DEFAULT 0",
+      current_round: "ALTER TABLE battle_royale_games ADD COLUMN current_round INTEGER DEFAULT 1",
+      target_result: "ALTER TABLE battle_royale_games ADD COLUMN target_result TEXT",
+      round_deadline: "ALTER TABLE battle_royale_games ADD COLUMN round_deadline TIMESTAMP",
+      winner_address: "ALTER TABLE battle_royale_games ADD COLUMN winner_address TEXT",
+      winner: "ALTER TABLE battle_royale_games ADD COLUMN winner TEXT",
+      creator_payout: "ALTER TABLE battle_royale_games ADD COLUMN creator_payout DECIMAL(20,8) DEFAULT 0",
+      platform_fee: "ALTER TABLE battle_royale_games ADD COLUMN platform_fee DECIMAL(20,8) DEFAULT 0",
+      nft_deposited: "ALTER TABLE battle_royale_games ADD COLUMN nft_deposited BOOLEAN DEFAULT 0",
+      nft_deposit_time: "ALTER TABLE battle_royale_games ADD COLUMN nft_deposit_time TIMESTAMP",
+      nft_deposit_hash: "ALTER TABLE battle_royale_games ADD COLUMN nft_deposit_hash TEXT",
+      nft_claimed: "ALTER TABLE battle_royale_games ADD COLUMN nft_claimed BOOLEAN DEFAULT 0",
+      started_at: "ALTER TABLE battle_royale_games ADD COLUMN started_at TIMESTAMP",
+      completed_at: "ALTER TABLE battle_royale_games ADD COLUMN completed_at TIMESTAMP",
+      updated_at: "ALTER TABLE battle_royale_games ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    database.all("PRAGMA table_info('battle_royale_games')", (err, rows) => {
+      if (err) {
+        console.error('❌ Error reading battle_royale_games schema:', err)
+        return
+      }
+      const existing = new Set((rows || []).map(r => r.name))
+      Object.entries(requiredColumns).forEach(([col, alterSql]) => {
+        if (!existing.has(col)) {
+          console.log(`🧩 Adding missing column to battle_royale_games: ${col}`)
+          database.run(alterSql, (alterErr) => {
+            if (alterErr) {
+              console.error(`❌ Failed to add column ${col}:`, alterErr)
+            } else {
+              console.log(`✅ Added column ${col}`)
+            }
+          })
+        }
+      })
     })
   }
 
