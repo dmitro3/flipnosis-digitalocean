@@ -1169,31 +1169,8 @@ const Home = () => {
                             border: '1px solid rgba(255, 255, 255, 0.2)'
                           }}>
                             <div style={{ fontSize: '0.7rem', color: theme.colors.textSecondary }}>Price</div>
-                            <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>
-                              ${(() => {
-                                if (selectedFlip.gameType === 'battle-royale') {
-                                  const fee = selectedFlip.entry_fee || 0
-                                  const num = parseFloat(fee)
-                                  if (num < 1) {
-                                    return (Math.ceil(num * 100) / 100).toFixed(2)
-                                  } else {
-                                    return (Math.round(num * 100) / 100).toFixed(2)
-                                  }
-                                } else {
-                                  return (selectedFlip.priceUSD || 0).toFixed(2)
-                                }
-                              })()}
-                            </div>
-                          </div>
-                          <div style={{
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            padding: '0.5rem',
-                            borderRadius: '0.5rem',
-                            border: '1px solid rgba(255, 255, 255, 0.2)'
-                          }}>
-                            <div style={{ fontSize: '0.7rem', color: theme.colors.textSecondary }}>Type</div>
                             <div style={{ 
-                              fontSize: '1.5rem', 
+                              fontSize: '1rem', 
                               fontWeight: 'bold',
                               color: theme.colors.neonPink
                             }}>
