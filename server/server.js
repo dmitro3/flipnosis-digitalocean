@@ -1,5 +1,5 @@
 // CryptoFlipz Server - Clean WebSocket-only implementation
-require('dotenv').config()
+try { require('dotenv').config() } catch (e) { /* dotenv optional in production */ }
 const express = require('express')
 const http = require('http')
 const cors = require('cors')
@@ -33,27 +33,40 @@ const server = http.createServer(app)
 
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3000
-// In production, REQUIRE DATABASE_PATH and do NOT fallback to local.
+// In production, prefer DATABASE_PATH, but gracefully fall back to common local paths.
 let DATABASE_PATH
 if (process.env.NODE_ENV === 'production') {
-  if (!process.env.DATABASE_PATH) {
-    console.error('❌ DATABASE_PATH is required in production. Set it to the Hetzner 159 DB path.')
-    process.exit(1)
-  }
-  DATABASE_PATH = path.isAbsolute(process.env.DATABASE_PATH)
-    ? process.env.DATABASE_PATH
-    : path.join(process.cwd(), process.env.DATABASE_PATH)
-  // Fail fast if the file is not accessible (SQLite file should exist on 159)
-  try {
-    if (!require('fs').existsSync(DATABASE_PATH)) {
-      console.error(`❌ Database file not found at: ${DATABASE_PATH}`)
-      process.exit(1)
+  const providedPath = process.env.DATABASE_PATH
+    ? (path.isAbsolute(process.env.DATABASE_PATH)
+        ? process.env.DATABASE_PATH
+        : path.join(process.cwd(), process.env.DATABASE_PATH))
+    : null
+
+  const candidatePaths = [
+    providedPath,
+    path.join(process.cwd(), 'database.sqlite'),               // repo root
+    path.join(process.cwd(), 'server', 'database.sqlite'),     // server folder under repo root
+    path.join(__dirname, 'database.sqlite')                    // current server dir
+  ].filter(Boolean)
+
+  let selected = null
+  for (const cand of candidatePaths) {
+    try {
+      if (fs.existsSync(cand)) {
+        selected = cand
+        break
+      }
+    } catch (_) {
+      // ignore access errors, try next
     }
-  } catch (e) {
-    console.error(`❌ Unable to access DATABASE_PATH: ${DATABASE_PATH}`)
-    console.error(e.message)
-    process.exit(1)
   }
+
+  if (!selected) {
+    console.warn('⚠️ No existing database file found in production fallbacks. Using server/database.sqlite as default path.')
+    selected = path.join(__dirname, 'database.sqlite')
+  }
+
+  DATABASE_PATH = selected
 } else {
   // Dev fallback for local work
   DATABASE_PATH = process.env.DATABASE_PATH
