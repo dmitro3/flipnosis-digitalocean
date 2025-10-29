@@ -88,7 +88,13 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       })
       
       if (profile) {
-        res.json(profile)
+        // Ensure flip_balance is included with fallback to xp
+        const profileWithDefaults = {
+          ...profile,
+          flip_balance: profile.flip_balance || profile.xp || 0,
+          unlocked_coins: profile.unlocked_coins || '["plain"]'
+        }
+        res.json(profileWithDefaults)
       } else {
         // Return empty profile if not found
         res.json({
@@ -100,6 +106,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           twitter: '',
           telegram: '',
           xp: 0,
+          flip_balance: 0,
+          unlocked_coins: '["plain"]',
           xp_name_earned: false,
           xp_avatar_earned: false,
           xp_twitter_earned: false,

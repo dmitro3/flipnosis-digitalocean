@@ -1044,8 +1044,8 @@ const Profile = () => {
         </StatCard>
         <StatCard>
           <StatIcon><Zap style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-          <StatValue>{profileData.xp}</StatValue>
-          <StatLabel>FLIP Tokens (XP)</StatLabel>
+          <StatValue>{profileData.flip_balance || profileData.xp || 0}</StatValue>
+          <StatLabel>FLIP Tokens</StatLabel>
         </StatCard>
       </StatsGrid>
 
