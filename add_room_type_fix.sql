@@ -21,3 +21,5 @@ ALTER TABLE battle_royale_games ADD COLUMN room_type TEXT DEFAULT 'potion';
 -- Step 2: Update any existing rows that might have NULL room_type
 UPDATE battle_royale_games SET room_type = 'potion' WHERE room_type IS NULL;
 
+
+

@@ -430,7 +430,7 @@ class PhysicsGameManager {
       .every(p => p.hasFired)
 
     if (allFired) {
-      this.endRound(gameId, broadcast)
+      this.endRound(gameId, broadcast).catch(err => console.error('Error ending round:', err))
     } else if (broadcast) {
       this.broadcastState(gameId, broadcast)
     }
@@ -490,7 +490,7 @@ class PhysicsGameManager {
         this.timers.delete(gameId)
         
         // Then end the round
-        this.endRound(gameId, broadcast)
+        this.endRound(gameId, broadcast).catch(err => console.error('Error ending round:', err))
       }
     }, 1000)
     
@@ -498,7 +498,7 @@ class PhysicsGameManager {
   }
 
   // End round
-  endRound(gameId, broadcast) {
+  async endRound(gameId, broadcast) {
     const game = this.games.get(gameId)
     if (!game) return
     
@@ -568,6 +568,9 @@ class PhysicsGameManager {
         
         // Cleanup physics
         this.physicsEngine.cleanupGamePhysics(gameId)
+        
+        // Update database first with winner information
+        await this.updateGameInDatabase(gameId, winnerAddress)
         
         // Complete the game on blockchain to transfer NFT ownership
         this.completeGameOnBlockchain(gameId, winnerAddress, broadcast)
