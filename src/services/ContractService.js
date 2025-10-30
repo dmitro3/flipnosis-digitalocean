@@ -1557,38 +1557,83 @@ class ContractService {
       
       console.log('🏆 Battle Royale creation tx:', hash)
       
-      // Wait for receipt - this is critical, we MUST verify success
-      const receipt = await this.publicClient.waitForTransactionReceipt({ 
-        hash,
-        timeout: 120000 // 2 minute timeout
-      })
+      let receipt = null
+      let verificationAttempts = 0
+      const maxVerificationAttempts = 3
       
-      // Check if transaction actually succeeded
-      if (receipt.status !== 'success') {
-        throw new Error('Transaction reverted - Battle Royale creation failed on-chain')
+      // Try to get receipt, but don't fail if RPC is slow
+      try {
+        console.log('⏳ Waiting for transaction receipt...')
+        receipt = await this.publicClient.waitForTransactionReceipt({ 
+          hash,
+          timeout: 120000 // 2 minute timeout
+        })
+        
+        // Check if transaction actually succeeded
+        if (receipt.status !== 'success') {
+          throw new Error('Transaction reverted - Battle Royale creation failed on-chain')
+        }
+        
+        console.log('✅ Transaction confirmed in block:', receipt.blockNumber)
+      } catch (receiptError) {
+        console.warn('⚠️ Could not get receipt within timeout:', receiptError.message)
+        console.log('📝 Transaction was submitted. Will verify game exists on-chain directly...')
+        // Don't fail yet - transaction might have succeeded but RPC is slow
+        // We'll verify by reading the contract state directly
       }
       
-      console.log('✅ Transaction confirmed, verifying game was created...')
-      
-      // Verify game actually exists on-chain now
-      const gameState = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'getBattleRoyaleGame',
-        args: [gameIdBytes32]
-      })
-      
-      if (gameState.creator === '0x0000000000000000000000000000000000000000') {
-        throw new Error('Transaction succeeded but game was not created on-chain - possible contract error')
+      // CRITICAL: Verify game actually exists on-chain (regardless of receipt)
+      // Try multiple times with delays to account for RPC node indexing lag
+      while (verificationAttempts < maxVerificationAttempts) {
+        try {
+          console.log(`🔍 Verification attempt ${verificationAttempts + 1}/${maxVerificationAttempts}...`)
+          
+          const gameState = await this.publicClient.readContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'getBattleRoyaleGame',
+            args: [gameIdBytes32]
+          })
+          
+          if (gameState.creator === '0x0000000000000000000000000000000000000000') {
+            // Game doesn't exist yet - might be RPC lag
+            if (verificationAttempts < maxVerificationAttempts - 1) {
+              console.log('⏳ Game not found yet, waiting 5 seconds for RPC to sync...')
+              await new Promise(resolve => setTimeout(resolve, 5000))
+              verificationAttempts++
+              continue
+            } else {
+              // Final attempt failed
+              throw new Error('Game was not created on-chain. Transaction may have reverted.')
+            }
+          }
+          
+          // Success! Game exists on-chain
+          console.log('✅ Game verified on-chain:', {
+            creator: gameState.creator,
+            nftContract: gameState.nftContract,
+            tokenId: gameState.tokenId.toString(),
+            blockNumber: receipt?.blockNumber || 'unknown'
+          })
+          
+          return { success: true, transactionHash: hash, receipt }
+          
+        } catch (readError) {
+          if (verificationAttempts < maxVerificationAttempts - 1) {
+            console.warn(`⚠️ Read attempt ${verificationAttempts + 1} failed:`, readError.message)
+            console.log('⏳ Waiting 5 seconds before retry...')
+            await new Promise(resolve => setTimeout(resolve, 5000))
+            verificationAttempts++
+          } else {
+            // All attempts exhausted
+            console.error('❌ Failed to verify game on-chain after multiple attempts')
+            throw new Error(`Transaction submitted but could not verify game creation: ${readError.message}`)
+          }
+        }
       }
       
-      console.log('✅ Game verified on-chain:', {
-        creator: gameState.creator,
-        nftContract: gameState.nftContract,
-        tokenId: gameState.tokenId.toString()
-      })
-
-      return { success: true, transactionHash: hash, receipt }
+      // Should never reach here, but just in case
+      throw new Error('Game verification failed after maximum attempts')
     } catch (error) {
       console.error('❌ Error creating Battle Royale:', error)
       return { success: false, error: error.message }
