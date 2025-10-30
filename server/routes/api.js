@@ -2568,6 +2568,53 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
+  // Mark NFT as deposited (called after frontend successfully deposits NFT on-chain)
+  router.post('/battle-royale/:gameId/mark-nft-deposited', async (req, res) => {
+    try {
+      const { gameId } = req.params
+      const { creator, transactionHash } = req.body
+
+      if (!creator || !transactionHash) {
+        return res.status(400).json({ error: 'Creator address and transaction hash required' })
+      }
+
+      // Verify game exists and creator matches
+      const game = await dbService.getBattleRoyaleGame(gameId)
+      if (!game) {
+        return res.status(404).json({ error: 'Game not found' })
+      }
+
+      if (game.creator.toLowerCase() !== creator.toLowerCase()) {
+        return res.status(403).json({ error: 'Not the creator of this game' })
+      }
+
+      if (game.nft_deposited === 1 || game.nft_deposited === true || game.nft_deposit_hash) {
+        return res.status(400).json({ error: 'NFT already marked as deposited' })
+      }
+
+      // Update database to mark NFT as deposited
+      await dbService.updateBattleRoyaleGame(gameId, { 
+        nft_deposited: 1,
+        nft_deposit_hash: transactionHash,
+        nft_deposit_time: new Date().toISOString()
+      })
+      
+      console.log(`✅ NFT deposit recorded for Battle Royale ${gameId}: ${transactionHash}`)
+      
+      res.json({
+        success: true,
+        message: 'NFT deposit status updated successfully!'
+      })
+
+    } catch (error) {
+      console.error('❌ Error updating NFT deposit status:', error)
+      res.status(500).json({
+        error: 'Failed to update NFT deposit status',
+        details: error.message
+      })
+    }
+  })
+
   // Mark winner NFT as claimed (called after frontend completes withdrawal)
   router.post('/battle-royale/:gameId/mark-nft-claimed', async (req, res) => {
     try {

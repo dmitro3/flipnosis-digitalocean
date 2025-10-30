@@ -657,6 +657,20 @@ const LobbyScreen = () => {
       setClaiming(true)
       const res = await contractService.withdrawBattleRoyaleWinnerNFT(gameState.gameId)
       if (res.success) {
+        // Update database to mark NFT as claimed
+        try {
+          await fetch(`/api/battle-royale/${gameState.gameId}/mark-nft-claimed`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              winner: address,
+              transactionHash: res.transactionHash
+            })
+          })
+        } catch (dbError) {
+          console.warn('⚠️ Failed to mark NFT as claimed in database, but transaction succeeded:', dbError)
+          // Don't throw - transaction succeeded, this is just a database update
+        }
         showToast('NFT claimed successfully!', 'success')
       } else {
         showToast(res.error || 'Failed to claim NFT', 'error')

@@ -785,6 +785,28 @@ const CreateBattle = () => {
         throw new Error(createResult.error || 'Failed to create Battle Royale on blockchain')
       }
       
+      // Step 2.5: Update database to mark NFT as deposited
+      const markDepositedResponse = await fetch(
+        getApiUrl(`/battle-royale/${battleRoyaleResult.gameId}/mark-nft-deposited`),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            creator: address,
+            transactionHash: createResult.transactionHash
+          })
+        }
+      )
+      
+      if (!markDepositedResponse.ok) {
+        console.warn('⚠️ Failed to mark NFT as deposited in database, but transaction succeeded')
+        const errorData = await markDepositedResponse.json().catch(() => ({}))
+        console.error('Mark deposit error:', errorData)
+        // Don't throw - transaction succeeded, this is just a database update
+      } else {
+        console.log('✅ NFT deposit recorded in database')
+      }
+      
       // Step 3: Complete
       setCurrentStep(3)
       setStepStatus({ create: true, approve: true, deposit: true })
