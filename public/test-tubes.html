@@ -5275,17 +5275,47 @@
         const returnLobbyBtn = document.getElementById('return-lobby-btn');
         
         if (claimNftBtn && didCurrentPlayerWin) {
-            claimNftBtn.addEventListener('click', () => {
-                if (socket && gameIdParam && walletParam) {
-                    console.log(`ðŸ† Claiming NFT prize for winner ${walletParam} in game ${gameIdParam}`);
-                    socket.emit('claim_nft_prize', {
-                        gameId: gameIdParam,
-                        address: walletParam
-                    });
+            claimNftBtn.addEventListener('click', async () => {
+                if (!gameIdParam || !walletParam) {
+                    console.error('Cannot claim NFT: missing gameId or walletParam');
+                    alert('Missing game information. Redirecting to profile...');
+                    window.location.href = `/profile?address=${walletParam || ''}`;
+                    return;
+                }
+                
+                try {
                     claimNftBtn.disabled = true;
-                    claimNftBtn.textContent = 'Claiming...';
-                } else {
-                    console.error('âŒ Cannot claim NFT: missing socket, gameId, or walletParam');
+                    claimNftBtn.textContent = 'Completing game on-chain...';
+                    
+                    // First, complete the game on-chain via API
+                    const completeResponse = await fetch(`/api/battle-royale/${gameIdParam}/complete`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ winner: walletParam })
+                    });
+                    
+                    if (!completeResponse.ok) {
+                        const errorData = await completeResponse.json().catch(() => ({ error: 'Failed to complete game' }));
+                        throw new Error(errorData.error || 'Failed to complete game on-chain');
+                    }
+                    
+                    const completeData = await completeResponse.json();
+                    console.log('Game completed on-chain:', completeData.transactionHash);
+                    
+                    // Wait for transaction to propagate, then redirect to profile
+                    claimNftBtn.textContent = 'Redirecting to profile...';
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    
+                    // Redirect to profile where user can claim the NFT
+                    window.location.href = `/profile?address=${walletParam}&claimGame=${gameIdParam}`;
+                } catch (error) {
+                    console.error('Error claiming NFT:', error);
+                    claimNftBtn.disabled = false;
+                    claimNftBtn.textContent = '🎨 Claim NFT Prize';
+                    alert(`Failed to complete game: ${error.message || 'Unknown error'}. Redirecting to profile where you can try again.`);
+                    setTimeout(() => {
+                        window.location.href = `/profile?address=${walletParam}`;
+                    }, 2000);
                 }
             });
         }

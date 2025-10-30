@@ -724,6 +724,14 @@ const Profile = () => {
       }
     }
     loadClaimables()
+    
+    // Check if we have a claimGame parameter in URL (from game end screen)
+    const urlParams = new URLSearchParams(window.location.search)
+    const claimGameId = urlParams.get('claimGame')
+    if (claimGameId && activeTab === 'claims') {
+      // Auto-switch to claims tab if not already there
+      setActiveTab('claims')
+    }
   }, [targetAddress, activeTab])
 
   useEffect(() => {
@@ -1265,8 +1273,19 @@ const Profile = () => {
                                   title={hasBlockchain ? '' : 'Blockchain service unavailable'}
                                   onClick={async () => {
                                     try {
-                                      showInfo('Claiming NFT prize...');
-                                      const result = await contractService.withdrawBattleRoyaleWinnerNFT(game.gameId);
+                                      showInfo('Checking game state and claiming NFT...');
+                                      
+                                      // Get game data to find winner address
+                                      const gameData = await fetch(`/api/battle-royale/${game.gameId}`).then(r => r.json()).catch(() => null);
+                                      const winnerAddress = gameData?.winner_address || gameData?.winner || address;
+                                      
+                                      // Complete on-chain and claim (auto-completes if needed)
+                                      const result = await contractService.completeAndClaimBattleRoyaleNFT(
+                                        game.gameId, 
+                                        winnerAddress,
+                                        gameData?.current_players || gameData?.max_players || 8
+                                      );
+                                      
                                       if (result.success) {
                                         // Update database to mark NFT as claimed
                                         try {
@@ -1289,7 +1308,12 @@ const Profile = () => {
                                           setClaimables({ creator: claimablesData.creator || [], winner: claimablesData.winner || [] });
                                         }
                                       } else {
-                                        showError(result.error || 'Failed to claim NFT');
+                                        // Check if it needs completion
+                                        if (result.needsCompletion) {
+                                          showError(result.error || 'Game needs to be completed on-chain first. Please try again in a moment.');
+                                        } else {
+                                          showError(result.error || 'Failed to claim NFT');
+                                        }
                                       }
                                     } catch (err) {
                                       console.error('Claim NFT error:', err);
