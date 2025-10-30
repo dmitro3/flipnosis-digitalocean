@@ -569,13 +569,21 @@ class PhysicsGameManager {
         // Cleanup physics
         this.physicsEngine.cleanupGamePhysics(gameId)
         
-        // Update database first with winner information (fire and forget - don't block)
+        // Update database with winner information (database is source of truth)
+        // Game will be completed on-chain later when winner tries to claim
         this.updateGameInDatabase(gameId, winnerAddress).catch(err => {
           console.error(`❌ Error updating game in database: ${err.message}`)
         })
         
-        // Complete the game on blockchain to transfer NFT ownership
-        this.completeGameOnBlockchain(gameId, winnerAddress, broadcast)
+        console.log(`📝 Winner ${winnerAddress} recorded in database. Game will be completed on-chain when they claim.`)
+        
+        // NOTE: We do NOT complete the game on-chain here anymore!
+        // The new flow is:
+        // 1. Game ends → Update database with winner ✅
+        // 2. Winner goes to profile → Sees claimable game ✅
+        // 3. Winner clicks claim → Backend completes game on-chain
+        // 4. Winner withdraws NFT with their wallet
+        // This prevents failed background blockchain transactions
         
         if (broadcast) {
           // Send updated state with game_over phase instead of separate game_over event

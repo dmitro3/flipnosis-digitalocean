@@ -39,6 +39,72 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     })
   })
 
+  // Debug endpoint to check recent games in database
+  router.get('/debug/recent-games', async (req, res) => {
+    try {
+      const games = await new Promise((resolve, reject) => {
+        db.all(`
+          SELECT id, creator, winner_address, status, nft_deposited, nft_claimed, 
+                 created_at, nft_deposit_hash
+          FROM battle_royale_games 
+          ORDER BY created_at DESC 
+          LIMIT 10
+        `, [], (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows || [])
+        })
+      })
+
+      res.json({
+        success: true,
+        totalGames: games.length,
+        games: games.map(g => ({
+          id: g.id,
+          creator: g.creator,
+          winner: g.winner_address || 'Not set',
+          status: g.status,
+          nftDeposited: g.nft_deposited ? 'Yes' : 'No',
+          nftClaimed: g.nft_claimed ? 'Yes' : 'No',
+          created: g.created_at
+        }))
+      })
+    } catch (error) {
+      console.error('Error fetching recent games:', error)
+      res.status(500).json({ error: 'Failed to fetch games', details: error.message })
+    }
+  })
+
+  // Debug endpoint to check specific game
+  router.get('/debug/game/:gameId', async (req, res) => {
+    const { gameId } = req.params
+    
+    try {
+      const game = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM battle_royale_games WHERE id = ?', [gameId], (err, row) => {
+          if (err) reject(err)
+          else resolve(row)
+        })
+      })
+
+      if (!game) {
+        return res.json({
+          success: false,
+          found: false,
+          message: `Game ${gameId} not found in database`
+        })
+      }
+
+      res.json({
+        success: true,
+        found: true,
+        game: game
+      })
+    } catch (error) {
+      console.error('Error fetching game:', error)
+      res.status(500).json({ error: 'Failed to fetch game', details: error.message })
+    }
+  })
+
   // Cleanup service stats
   router.get('/cleanup/stats', async (req, res) => {
     try {
