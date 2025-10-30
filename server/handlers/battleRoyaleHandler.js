@@ -1,5 +1,6 @@
-const gameCompletionService = require('../blockchain/gameCompletion');
-const db = require('../database'); // Adjust path to your database
+// Use the blockchainService from the main server instead of gameCompletion.js
+// gameCompletion.js has a dotenv dependency issue
+// This handler should be called with blockchainService passed in as parameter
 
 // Function to handle when a battle royale game ends
 async function handleBattleRoyaleCompletion(gameId, winnerIdOrAddress) {

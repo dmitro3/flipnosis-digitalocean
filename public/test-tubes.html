@@ -5296,6 +5296,12 @@
                     
                     if (!completeResponse.ok) {
                         const errorData = await completeResponse.json().catch(() => ({ error: 'Failed to complete game' }));
+                        
+                        // Check if game was never created on-chain
+                        if (errorData.needsOnChainCreation || errorData.error?.includes('never created on-chain')) {
+                            throw new Error('This game was never initialized on-chain. The NFT was not deposited to the contract, so there is no NFT to claim. Redirecting to profile...');
+                        }
+                        
                         throw new Error(errorData.error || 'Failed to complete game on-chain');
                     }
                     

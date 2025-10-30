@@ -219,8 +219,8 @@ class BlockchainService {
       } catch {}
 
       const tx = await contract.completeBattleRoyale(gameIdBytes32, winner)
-      await tx.wait()
-      return { success: true, transactionHash: tx.hash }
+      const receipt = await tx.wait()
+      return { success: true, transactionHash: tx.hash, blockNumber: receipt.blockNumber }
     } catch (error) {
       console.error('❌ Failed to complete Battle Royale on chain:', error)
       return { success: false, error: error.message || 'Blockchain transaction failed' }

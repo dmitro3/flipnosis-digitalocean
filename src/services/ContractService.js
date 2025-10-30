@@ -1749,6 +1749,16 @@ class ContractService {
         
         if (!completeResponse.ok) {
           const errorData = await completeResponse.json().catch(() => ({ error: 'Failed to complete game' }))
+          
+          // Check if game was never created on-chain
+          if (errorData.needsOnChainCreation || errorData.error?.includes('never created on-chain')) {
+            return { 
+              success: false, 
+              error: 'This game was never initialized on-chain. The NFT was not deposited to the smart contract, so there is no NFT to claim. This may happen if the game creator did not complete the on-chain setup.',
+              cannotClaim: true
+            }
+          }
+          
           return { success: false, error: errorData.error || 'Failed to complete game on-chain' }
         }
         

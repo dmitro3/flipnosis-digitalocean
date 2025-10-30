@@ -807,13 +807,27 @@ class PhysicsGameManager {
   async completeGameOnBlockchain(gameId, winnerAddress, broadcast) {
     console.log(`🏆 Completing game on blockchain: ${gameId} -> ${winnerAddress}`)
     
-    // Use the new battle royale completion handler
+    // Use blockchainService directly (avoids dotenv dependency issue in gameCompletion.js)
     try {
-      const { handleBattleRoyaleCompletion } = require('./handlers/battleRoyaleHandler')
-      const result = await handleBattleRoyaleCompletion(gameId, winnerAddress)
+      if (!this.blockchainService || !this.blockchainService.hasOwnerWallet()) {
+        throw new Error('Blockchain service not available or not configured')
+      }
+      
+      const result = await this.blockchainService.completeBattleRoyaleOnChain(gameId, winnerAddress)
       
       if (result.success) {
         console.log(`✅ Game completed on blockchain: ${result.transactionHash}`)
+        
+        // Update database with completion_tx now that blockchain completion succeeded
+        if (this.dbService) {
+          await this.dbService.updateBattleRoyaleGame(gameId, {
+            completion_tx: result.transactionHash,
+            completion_block: result.blockNumber || null,
+            status: 'completed' // Ensure status is set
+          }).catch(err => {
+            console.error(`❌ Error updating completion_tx in database: ${err.message}`)
+          })
+        }
         
         // Notify all players about the blockchain completion
         if (broadcast) {
@@ -827,10 +841,30 @@ class PhysicsGameManager {
       } else {
         console.error(`❌ Failed to complete game on blockchain: ${result.error}`)
         console.warn(`⚠️ Game marked as completed in database but blockchain transaction failed`)
+        
+        // Update database to indicate completion failed
+        if (this.dbService) {
+          await this.dbService.updateBattleRoyaleGame(gameId, {
+            completion_error: result.error || 'Unknown error',
+            status: 'pending_completion' // Mark as pending so it can be retried
+          }).catch(err => {
+            console.error(`❌ Error updating completion error in database: ${err.message}`)
+          })
+        }
       }
     } catch (error) {
       console.error(`❌ Error completing game on blockchain:`, error)
       console.warn(`⚠️ Game marked as completed in database but blockchain transaction failed`)
+      
+      // Update database to indicate completion error
+      if (this.dbService) {
+        await this.dbService.updateBattleRoyaleGame(gameId, {
+          completion_error: error.message || 'Unknown error',
+          status: 'pending_completion' // Mark as pending so it can be retried
+        }).catch(err => {
+          console.error(`❌ Error updating completion error in database: ${err.message}`)
+        })
+      }
     }
   }
 

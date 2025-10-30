@@ -1308,8 +1308,10 @@ const Profile = () => {
                                           setClaimables({ creator: claimablesData.creator || [], winner: claimablesData.winner || [] });
                                         }
                                       } else {
-                                        // Check if it needs completion
-                                        if (result.needsCompletion) {
+                                        // Check specific error types
+                                        if (result.cannotClaim) {
+                                          showError(result.error || 'This game cannot have an NFT claim because it was never created on-chain.');
+                                        } else if (result.needsCompletion) {
                                           showError(result.error || 'Game needs to be completed on-chain first. Please try again in a moment.');
                                         } else {
                                           showError(result.error || 'Failed to claim NFT');

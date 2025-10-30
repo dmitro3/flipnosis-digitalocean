@@ -1864,6 +1864,23 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     try {
       if (!winner) return res.status(400).json({ error: 'Winner address required' })
 
+      // First, check if game exists in database
+      const game = await dbService.getBattleRoyaleGame(gameId)
+      if (!game) {
+        return res.status(404).json({ error: `Game ${gameId} not found in database` })
+      }
+
+      // Check if game was created on-chain (nft_deposited indicates on-chain creation)
+      const wasCreatedOnChain = game.nft_deposited === 1 || game.nft_deposited === true || game.nft_deposit_hash
+      
+      if (!wasCreatedOnChain) {
+        return res.status(400).json({ 
+          error: 'Game was never created on-chain. The NFT was not deposited to the contract. This game cannot have an NFT claim because it was never initialized on the blockchain.',
+          gameExistsInDb: true,
+          needsOnChainCreation: true
+        })
+      }
+
       if (!gameServer || !blockchainService.hasOwnerWallet()) {
         return res.status(500).json({ error: 'Blockchain service not configured' })
       }
