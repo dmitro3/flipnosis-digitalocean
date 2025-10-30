@@ -785,7 +785,13 @@ const CreateBattle = () => {
         throw new Error(createResult.error || 'Failed to create Battle Royale on blockchain')
       }
       
+      // Verify we have a transaction hash
+      if (!createResult.transactionHash) {
+        throw new Error('Transaction submitted but no hash received')
+      }
+      
       // Step 2.5: Update database to mark NFT as deposited
+      // Note: Even if receipt wait failed, we still have the tx hash and can mark it
       const markDepositedResponse = await fetch(
         getApiUrl(`/battle-royale/${battleRoyaleResult.gameId}/mark-nft-deposited`),
         {
@@ -799,12 +805,17 @@ const CreateBattle = () => {
       )
       
       if (!markDepositedResponse.ok) {
-        console.warn('⚠️ Failed to mark NFT as deposited in database, but transaction succeeded')
+        console.warn('⚠️ Failed to mark NFT as deposited in database, but transaction was submitted')
         const errorData = await markDepositedResponse.json().catch(() => ({}))
         console.error('Mark deposit error:', errorData)
-        // Don't throw - transaction succeeded, this is just a database update
+        // Don't throw - transaction was submitted, this is just a database update
       } else {
         console.log('✅ NFT deposit recorded in database')
+      }
+      
+      // Show info about transaction status
+      if (!createResult.receipt) {
+        showInfo('Transaction submitted! Waiting for confirmation... You can check the transaction on BaseScan.')
       }
       
       // Step 3: Complete

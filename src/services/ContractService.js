@@ -1556,8 +1556,20 @@ class ContractService {
       })
       
       console.log('🏆 Battle Royale creation tx:', hash)
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Battle Royale created successfully')
+      
+      // Wait for receipt with timeout - if it fails, still return success with hash
+      let receipt = null
+      try {
+        receipt = await this.publicClient.waitForTransactionReceipt({ 
+          hash,
+          timeout: 120000 // 2 minute timeout
+        })
+        console.log('✅ Battle Royale created successfully')
+      } catch (receiptError) {
+        console.warn('⚠️ Could not wait for receipt, but transaction was submitted:', receiptError.message)
+        console.log('✅ Transaction hash recorded:', hash)
+        // Continue - transaction was submitted successfully, receipt will come later
+      }
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
