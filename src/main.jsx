@@ -74,8 +74,22 @@ class RootErrorBoundary extends React.Component {
   }
 }
 
+// Hide loading spinner when React is ready
+const hideLoadingSpinner = () => {
+  const loading = document.getElementById('loading');
+  if (loading) {
+    loading.style.opacity = '0';
+    setTimeout(() => {
+      loading.style.display = 'none';
+    }, 300);
+  }
+};
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <RootErrorBoundary>
     <App />
   </RootErrorBoundary>,
-) 
+)
+
+// Hide loading spinner after React renders
+setTimeout(hideLoadingSpinner, 100); 

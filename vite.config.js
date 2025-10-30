@@ -86,6 +86,7 @@ export default defineConfig(({ mode }) => {
     build: {
       target: 'esnext',
       minify: 'esbuild', // Use esbuild for better compatibility
+      cssCodeSplit: false, // Keep CSS in single file to prevent layout shift
       rollupOptions: {
         external: ['fsevents'],
         output: {
@@ -95,6 +96,10 @@ export default defineConfig(({ mode }) => {
             three: ['three', '@react-three/fiber', '@react-three/drei'],
             socketio: ['socket.io-client'],
           },
+          // Ensure consistent chunk loading
+          chunkFileNames: 'assets/[name]-[hash].js',
+          entryFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]'
         },
       },
       commonjsOptions: {
