@@ -1,105 +1,59 @@
-#!/usr/bin/env node
-
 const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
 
-class DatabaseChecker {
-  constructor() {
-    this.dbPath = path.join(__dirname, '..', 'database.sqlite');
-    this.db = null;
+const db = new sqlite3.Database('./server/database.sqlite');
+
+console.log('\n📊 Recent Battle Royale Games:');
+console.log('════════════════════════════════════════════════════════════════\n');
+
+db.all(`
+  SELECT id, creator, winner_address, status, nft_deposited, nft_claimed, 
+         created_at, nft_deposit_hash
+  FROM battle_royale_games 
+  ORDER BY created_at DESC 
+  LIMIT 10
+`, [], (err, rows) => {
+  if (err) {
+    console.error('Error:', err.message);
+    db.close();
+    return;
   }
 
-  async connect() {
-    return new Promise((resolve, reject) => {
-      this.db = new sqlite3.Database(this.dbPath, (err) => {
-        if (err) {
-          console.error('❌ Error connecting to database:', err);
-          reject(err);
-        } else {
-          console.log('✅ Connected to database');
-          resolve();
-        }
+  if (rows.length === 0) {
+    console.log('No games found in database.\n');
+    db.close();
+    return;
+  }
+
+  rows.forEach((row, index) => {
+    console.log(`${index + 1}. Game ID: ${row.id}`);
+    console.log(`   Creator: ${row.creator}`);
+    console.log(`   Winner: ${row.winner_address || 'Not set'}`);
+    console.log(`   Status: ${row.status}`);
+    console.log(`   NFT Deposited: ${row.nft_deposited ? 'Yes' : 'No'}`);
+    console.log(`   NFT Claimed: ${row.nft_claimed ? 'Yes' : 'No'}`);
+    console.log(`   Deposit Hash: ${row.nft_deposit_hash || 'None'}`);
+    console.log(`   Created: ${row.created_at}\n`);
+  });
+
+  console.log('\n🔍 Looking for game with "1761831327138" timestamp...\n');
+  
+  db.all(`
+    SELECT id, creator, winner_address, status, nft_deposited 
+    FROM battle_royale_games 
+    WHERE id LIKE '%1761831327138%'
+  `, [], (err, matches) => {
+    if (err) {
+      console.error('Error:', err.message);
+    } else if (matches.length > 0) {
+      console.log(`✅ Found ${matches.length} matching game(s):`);
+      matches.forEach(match => {
+        console.log(`   ${match.id} - Status: ${match.status}, NFT Deposited: ${match.nft_deposited}`);
       });
-    });
-  }
-
-  async checkTables() {
-    return new Promise((resolve, reject) => {
-      this.db.all("SELECT name FROM sqlite_master WHERE type='table'", (err, tables) => {
-        if (err) {
-          console.error('❌ Error getting tables:', err);
-          reject(err);
-        } else {
-          console.log('📋 Database tables:');
-          tables.forEach(table => {
-            console.log(`  - ${table.name}`);
-          });
-          resolve(tables);
-        }
-      });
-    });
-  }
-
-  async checkProfilesTable() {
-    return new Promise((resolve, reject) => {
-      this.db.all("PRAGMA table_info(profiles)", (err, columns) => {
-        if (err) {
-          console.error('❌ Error getting profiles table info:', err);
-          reject(err);
-        } else {
-          console.log('📋 Profiles table columns:');
-          columns.forEach(col => {
-            console.log(`  - ${col.name} (${col.type})`);
-          });
-          resolve(columns);
-        }
-      });
-    });
-  }
-
-  async close() {
-    return new Promise((resolve) => {
-      if (this.db) {
-        this.db.close((err) => {
-          if (err) {
-            console.error('❌ Error closing database:', err);
-          } else {
-            console.log('✅ Database connection closed');
-          }
-          resolve();
-        });
-      } else {
-        resolve();
-      }
-    });
-  }
-
-  async check() {
-    try {
-      await this.connect();
-      await this.checkTables();
-      await this.checkProfilesTable();
-    } catch (error) {
-      console.error('❌ Check failed:', error);
-      throw error;
-    } finally {
-      await this.close();
+    } else {
+      console.log('❌ No games found with that timestamp');
+      console.log('   The game may have been deleted or never created in the database');
     }
-  }
-}
-
-// Run check if this script is executed directly
-if (require.main === module) {
-  const checker = new DatabaseChecker();
-  checker.check()
-    .then(() => {
-      console.log('✅ Database check completed');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('❌ Database check failed:', error);
-      process.exit(1);
-    });
-}
-
-module.exports = DatabaseChecker;
+    
+    db.close();
+  });
+});

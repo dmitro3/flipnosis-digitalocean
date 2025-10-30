@@ -1557,19 +1557,36 @@ class ContractService {
       
       console.log('🏆 Battle Royale creation tx:', hash)
       
-      // Wait for receipt with timeout - if it fails, still return success with hash
-      let receipt = null
-      try {
-        receipt = await this.publicClient.waitForTransactionReceipt({ 
-          hash,
-          timeout: 120000 // 2 minute timeout
-        })
-        console.log('✅ Battle Royale created successfully')
-      } catch (receiptError) {
-        console.warn('⚠️ Could not wait for receipt, but transaction was submitted:', receiptError.message)
-        console.log('✅ Transaction hash recorded:', hash)
-        // Continue - transaction was submitted successfully, receipt will come later
+      // Wait for receipt - this is critical, we MUST verify success
+      const receipt = await this.publicClient.waitForTransactionReceipt({ 
+        hash,
+        timeout: 120000 // 2 minute timeout
+      })
+      
+      // Check if transaction actually succeeded
+      if (receipt.status !== 'success') {
+        throw new Error('Transaction reverted - Battle Royale creation failed on-chain')
       }
+      
+      console.log('✅ Transaction confirmed, verifying game was created...')
+      
+      // Verify game actually exists on-chain now
+      const gameState = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'getBattleRoyaleGame',
+        args: [gameIdBytes32]
+      })
+      
+      if (gameState.creator === '0x0000000000000000000000000000000000000000') {
+        throw new Error('Transaction succeeded but game was not created on-chain - possible contract error')
+      }
+      
+      console.log('✅ Game verified on-chain:', {
+        creator: gameState.creator,
+        nftContract: gameState.nftContract,
+        tokenId: gameState.tokenId.toString()
+      })
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {

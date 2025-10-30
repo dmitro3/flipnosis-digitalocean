@@ -5285,9 +5285,11 @@
                 
                 try {
                     claimNftBtn.disabled = true;
-                    claimNftBtn.textContent = 'Completing game on-chain...';
+                    claimNftBtn.textContent = '📝 Completing game on-chain...';
                     
-                    // First, complete the game on-chain via API
+                    console.log('📝 Completing game on-chain first...', { gameId: gameIdParam, winner: walletParam });
+                    
+                    // First, complete the game on-chain via API (server calls completeBattleRoyale with backend wallet)
                     const completeResponse = await fetch(`/api/battle-royale/${gameIdParam}/complete`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -5297,31 +5299,56 @@
                     if (!completeResponse.ok) {
                         const errorData = await completeResponse.json().catch(() => ({ error: 'Failed to complete game' }));
                         
-                        // Check if game was never created on-chain
-                        if (errorData.needsOnChainCreation || errorData.error?.includes('never created on-chain')) {
-                            throw new Error('This game was never initialized on-chain. The NFT was not deposited to the contract, so there is no NFT to claim. Redirecting to profile...');
+                        console.error('❌ Game completion failed:', errorData);
+                        
+                        // Check if game was never created on-chain (NFT might be stuck)
+                        if (errorData.recovery === 'nft_stuck' || errorData.error?.includes('does not exist on-chain')) {
+                            throw new Error(
+                                `This game was never successfully created on the blockchain. ` +
+                                `The NFT deposit transaction may have reverted. ` +
+                                `Please contact support with game ID: ${gameIdParam} for NFT recovery.`
+                            );
+                        }
+                        
+                        // Check if winner doesn't match
+                        if (errorData.error?.includes('does not match game records')) {
+                            throw new Error(
+                                `Winner verification failed. Database shows ${errorData.databaseWinner} as winner. ` +
+                                `Please contact support if this is incorrect.`
+                            );
                         }
                         
                         throw new Error(errorData.error || 'Failed to complete game on-chain');
                     }
                     
                     const completeData = await completeResponse.json();
-                    console.log('Game completed on-chain:', completeData.transactionHash);
                     
-                    // Wait for transaction to propagate, then redirect to profile
-                    claimNftBtn.textContent = 'Redirecting to profile...';
-                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    if (completeData.alreadyCompleted) {
+                        console.log('✅ Game already completed on-chain');
+                        claimNftBtn.textContent = '🎨 Redirecting to withdraw...';
+                    } else {
+                        console.log('✅ Game completed on-chain:', completeData.transactionHash);
+                        claimNftBtn.textContent = '✅ Game complete! Redirecting...';
+                    }
                     
-                    // Redirect to profile where user can claim the NFT
+                    // Wait a moment, then redirect to profile
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    // Redirect to profile where user can withdraw the NFT with their own wallet
                     window.location.href = `/profile?address=${walletParam}&claimGame=${gameIdParam}`;
+                    
                 } catch (error) {
-                    console.error('Error claiming NFT:', error);
+                    console.error('❌ Error claiming NFT:', error);
                     claimNftBtn.disabled = false;
                     claimNftBtn.textContent = '🎨 Claim NFT Prize';
-                    alert(`Failed to complete game: ${error.message || 'Unknown error'}. Redirecting to profile where you can try again.`);
+                    
+                    // Show detailed error to user
+                    const errorMessage = error.message || 'Unknown error occurred';
+                    alert(`Failed to complete game: ${errorMessage}\n\nRedirecting to profile...`);
+                    
                     setTimeout(() => {
                         window.location.href = `/profile?address=${walletParam}`;
-                    }, 2000);
+                    }, 3000);
                 }
             });
         }

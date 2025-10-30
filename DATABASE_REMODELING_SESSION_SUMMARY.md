@@ -267,3 +267,4 @@ ssh root@159.69.242.154 "cd /opt/flipnosis/app/server && sqlite3 flipz.db < /tmp
 
 
 
+
