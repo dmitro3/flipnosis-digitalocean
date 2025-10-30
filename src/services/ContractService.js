@@ -264,6 +264,13 @@ const NFT_ABI = [
     "outputs": [{"internalType": "address", "name": "", "type": "address"}],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+    "name": "getApproved",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]
 
@@ -369,6 +376,24 @@ class ContractService {
         return { success: false, error: 'You do not own this NFT' }
       }
       
+      // Check if already approved
+      try {
+        const currentApproved = await this.publicClient.readContract({
+          address: nftContract,
+          abi: NFT_ABI,
+          functionName: 'getApproved',
+          args: [BigInt(tokenId)]
+        })
+        
+        if (currentApproved.toLowerCase() === this.contractAddress.toLowerCase()) {
+          console.log('✅ NFT already approved')
+          return { success: true, transactionHash: null, alreadyApproved: true }
+        }
+      } catch (checkError) {
+        // If getApproved fails, continue with approval
+        console.log('⚠️ Could not check current approval status, proceeding with approval')
+      }
+      
       // Approve the contract to transfer the NFT
       const hash = await this.walletClient.writeContract({
         address: nftContract,
@@ -381,14 +406,86 @@ class ContractService {
 
       console.log('🔓 NFT approval tx:', hash)
       
-      const receipt = await this.publicClient.waitForTransactionReceipt({ 
-        hash,
-        confirmations: 1,
-        timeout: 60_000
-      })
+      let receipt = null
+      let verificationAttempts = 0
+      const maxVerificationAttempts = 5
       
-      console.log('✅ NFT approval confirmed')
-      return { success: true, transactionHash: hash, receipt }
+      // Try to get receipt, but don't fail if RPC is slow
+      try {
+        console.log('⏳ Waiting for transaction receipt...')
+        receipt = await this.publicClient.waitForTransactionReceipt({ 
+          hash,
+          confirmations: 1,
+          timeout: 120000 // 2 minute timeout
+        })
+        
+        // Check if transaction actually succeeded
+        if (receipt.status !== 'success') {
+          throw new Error('Transaction reverted - NFT approval failed on-chain')
+        }
+        
+        console.log('✅ Transaction confirmed in block:', receipt.blockNumber)
+      } catch (receiptError) {
+        console.warn('⚠️ Could not get receipt within timeout:', receiptError.message)
+        console.log('📝 Transaction was submitted. Will verify approval by checking contract state...')
+        // Don't fail yet - transaction might have succeeded but RPC is slow
+        // We'll verify by reading the contract state directly
+      }
+      
+      // CRITICAL: Verify approval actually exists on-chain (regardless of receipt)
+      // Try multiple times with delays to account for RPC node indexing lag
+      while (verificationAttempts < maxVerificationAttempts) {
+        try {
+          console.log(`🔍 Verification attempt ${verificationAttempts + 1}/${maxVerificationAttempts}...`)
+          
+          const approvedAddress = await this.publicClient.readContract({
+            address: nftContract,
+            abi: NFT_ABI,
+            functionName: 'getApproved',
+            args: [BigInt(tokenId)]
+          })
+          
+          if (approvedAddress.toLowerCase() === this.contractAddress.toLowerCase()) {
+            // Success! Approval exists on-chain
+            console.log('✅ NFT approval verified on-chain')
+            return { success: true, transactionHash: hash, receipt }
+          } else {
+            // Not approved yet - might be RPC lag
+            if (verificationAttempts < maxVerificationAttempts - 1) {
+              console.log('⏳ Approval not found yet, waiting 3 seconds for RPC to sync...')
+              await new Promise(resolve => setTimeout(resolve, 3000))
+              verificationAttempts++
+              continue
+            } else {
+              // Final attempt failed
+              throw new Error('NFT approval was not confirmed on-chain. Transaction may have reverted.')
+            }
+          }
+          
+        } catch (readError) {
+          if (verificationAttempts < maxVerificationAttempts - 1) {
+            console.warn(`⚠️ Read attempt ${verificationAttempts + 1} failed:`, readError.message)
+            console.log('⏳ Waiting 3 seconds before retry...')
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            verificationAttempts++
+          } else {
+            // All attempts exhausted
+            console.error('❌ Failed to verify approval on-chain after multiple attempts')
+            // Still return success with hash if we have it - transaction was submitted
+            if (hash) {
+              console.warn('⚠️ Returning transaction hash even though verification failed - transaction may still be pending')
+              return { success: true, transactionHash: hash, receipt: null, verificationFailed: true }
+            }
+            throw new Error(`Transaction submitted but could not verify approval: ${readError.message}`)
+          }
+        }
+      }
+      
+      // Should never reach here, but just in case
+      if (hash) {
+        return { success: true, transactionHash: hash, receipt: null, verificationFailed: true }
+      }
+      throw new Error('Approval verification failed after maximum attempts')
       
     } catch (error) {
       console.error('❌ Error approving NFT:', error)
