@@ -1744,7 +1744,15 @@ class ContractService {
       
       // Step 1: Check current on-chain state
       const gameState = await this.getBattleRoyaleGameState(gameId)
-      if (!gameState.success && !gameState.error?.includes('does not exist')) {
+      if (!gameState.success) {
+        // If game doesn't exist on-chain, that's a real problem
+        if (gameState.error?.includes('does not exist')) {
+          return { 
+            success: false, 
+            error: 'Game does not exist on-chain. It may have been created with a different gameId or was never initialized.',
+            cannotClaim: true
+          }
+        }
         return { success: false, error: `Cannot check game state: ${gameState.error}` }
       }
       

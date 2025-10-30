@@ -1864,25 +1864,32 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     try {
       if (!winner) return res.status(400).json({ error: 'Winner address required' })
 
-      // First, check if game exists in database
-      const game = await dbService.getBattleRoyaleGame(gameId)
-      if (!game) {
-        return res.status(404).json({ error: `Game ${gameId} not found in database` })
+      if (!gameServer || !blockchainService.hasOwnerWallet()) {
+        return res.status(500).json({ error: 'Blockchain service not configured' })
       }
 
-      // Check if game was created on-chain (nft_deposited indicates on-chain creation)
-      const wasCreatedOnChain = game.nft_deposited === 1 || game.nft_deposited === true || game.nft_deposit_hash
-      
-      if (!wasCreatedOnChain) {
-        return res.status(400).json({ 
-          error: 'Game was never created on-chain. The NFT was not deposited to the contract. This game cannot have an NFT claim because it was never initialized on the blockchain.',
-          gameExistsInDb: true,
-          needsOnChainCreation: true
+      // First, verify game exists on-chain (this is the source of truth)
+      const onChainState = await blockchainService.getBattleRoyaleGameState(gameId)
+      if (!onChainState.success) {
+        // Game doesn't exist on-chain - this is a real error
+        return res.status(404).json({ 
+          error: `Game ${gameId} does not exist on-chain. ${onChainState.error || 'Game was never created.'}`,
+          onChainExists: false
         })
       }
 
-      if (!gameServer || !blockchainService.hasOwnerWallet()) {
-        return res.status(500).json({ error: 'Blockchain service not configured' })
+      // Game exists on-chain, now check database (softer check)
+      const game = await dbService.getBattleRoyaleGame(gameId)
+      if (!game) {
+        console.warn(`⚠️ Game ${gameId} exists on-chain but not in database - proceeding anyway`)
+        // Continue - game exists on-chain, we can still complete it
+      } else {
+        // Double-check that game was created on-chain (from DB perspective)
+        const wasCreatedOnChain = game.nft_deposited === 1 || game.nft_deposited === true || game.nft_deposit_hash
+        if (!wasCreatedOnChain) {
+          console.warn(`⚠️ Game ${gameId} in DB but not marked as deposited - but on-chain state shows it exists`)
+          // Continue anyway since on-chain state is authoritative
+        }
       }
 
       const result = await blockchainService.completeBattleRoyaleOnChain(gameId, winner)
@@ -2625,33 +2632,57 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         return res.status(400).json({ error: 'Winner address and transaction hash required' })
       }
 
-      // Verify game exists and winner is correct
+      // Check on-chain state first (authoritative source)
+      let onChainState = null
+      if (blockchainService.hasOwnerWallet()) {
+        try {
+          onChainState = await blockchainService.getBattleRoyaleGameState(gameId)
+        } catch (error) {
+          console.warn('Could not check on-chain state:', error.message)
+        }
+      }
+
+      // Verify game exists in database or on-chain
       const game = await dbService.getBattleRoyaleGame(gameId)
-      if (!game) {
-        return res.status(404).json({ error: 'Game not found' })
+      if (!game && (!onChainState || !onChainState.success)) {
+        return res.status(404).json({ error: 'Game not found in database or on-chain' })
       }
 
-      if (game.winner.toLowerCase() !== winner.toLowerCase()) {
-        return res.status(403).json({ error: 'Not the winner of this game' })
+      // Verify winner - check on-chain first if available, otherwise use DB
+      if (onChainState && onChainState.success) {
+        if (onChainState.winner.toLowerCase() !== winner.toLowerCase()) {
+          return res.status(403).json({ error: 'Not the winner of this game (on-chain verification failed)' })
+        }
+      } else if (game) {
+        if (game.winner && game.winner.toLowerCase() !== winner.toLowerCase()) {
+          return res.status(403).json({ error: 'Not the winner of this game' })
+        }
       }
 
-      if (game.status !== 'completed') {
-        return res.status(400).json({ error: 'Game not completed yet' })
+      // Check if already claimed
+      if (onChainState && onChainState.success && onChainState.nftClaimed) {
+        return res.status(400).json({ error: 'NFT already claimed (verified on-chain)' })
+      }
+      if (game && game.nft_claimed) {
+        return res.status(400).json({ error: 'NFT already marked as claimed in database' })
       }
 
-      if (game.nft_claimed) {
-        return res.status(400).json({ error: 'NFT already marked as claimed' })
-      }
+      // Update database if game exists, otherwise just return success
+      if (game) {
 
-      // Update database to mark NFT as claimed
-      await dbService.updateBattleRoyaleGame(gameId, { 
-        nft_claimed: 1,
-        nft_claimed_tx: transactionHash 
-      })
+        await dbService.updateBattleRoyaleGame(gameId, { 
+          nft_claimed: 1,
+          nft_claimed_tx: transactionHash 
+        })
+        console.log(`✅ NFT claim recorded in database for game ${gameId}`)
+      } else {
+        console.warn(`⚠️ Game ${gameId} not in database, but NFT claim succeeded on-chain - cannot update DB`)
+      }
       
       res.json({
         success: true,
-        message: 'NFT claim status updated successfully!'
+        message: 'NFT claim status updated successfully!',
+        updatedInDb: !!game
       })
 
     } catch (error) {
