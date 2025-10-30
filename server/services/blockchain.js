@@ -299,10 +299,47 @@ class BlockchainService {
         contractAddress: this.contractAddress
       })
 
+      // Verify contract address matches expected
+      const expectedContractAddress = '0xa90abBDE769BC2901A8E68E6C9758B1Cd6699A5F'
+      if (this.contractAddress.toLowerCase() !== expectedContractAddress.toLowerCase()) {
+        console.error('❌ [BLOCKCHAIN] Contract address mismatch!', {
+          expected: expectedContractAddress,
+          actual: this.contractAddress
+        })
+      }
+
       console.log('🔍 [BLOCKCHAIN] Calling contract.getBattleRoyaleGame...')
-      const game = await contract.getBattleRoyaleGame(gameIdBytes32)
+      console.log('🔍 [BLOCKCHAIN] Using provider:', this.provider?.connection?.url || this.rpcUrl)
       
-      console.log('🔍 [BLOCKCHAIN] Contract returned:', {
+      const gameResult = await contract.getBattleRoyaleGame(gameIdBytes32)
+      
+      // Log raw result type for debugging
+      console.log('🔍 [BLOCKCHAIN] Raw result type:', typeof gameResult, Array.isArray(gameResult))
+      
+      // Handle both array and object formats (ethers can return tuples as arrays)
+      // Struct order: creator, nftContract, tokenId, entryFee, serviceFee, maxPlayers, 
+      //              currentPlayers, winner, completed, creatorPaid, nftClaimed, 
+      //              totalPool, createdAt, isUnder20, minUnder20Wei
+      const game = Array.isArray(gameResult) ? {
+        creator: gameResult[0],
+        nftContract: gameResult[1],
+        tokenId: gameResult[2],
+        entryFee: gameResult[3],
+        serviceFee: gameResult[4],
+        maxPlayers: gameResult[5],
+        currentPlayers: gameResult[6],
+        winner: gameResult[7],
+        completed: gameResult[8],
+        creatorPaid: gameResult[9],
+        nftClaimed: gameResult[10],
+        totalPool: gameResult[11],
+        createdAt: gameResult[12],
+        isUnder20: gameResult[13],
+        minUnder20Wei: gameResult[14]
+      } : gameResult
+      
+      console.log('🔍 [BLOCKCHAIN] Contract returned (raw):', gameResult)
+      console.log('🔍 [BLOCKCHAIN] Contract returned (parsed):', {
         creator: game.creator,
         nftContract: game.nftContract,
         tokenId: game.tokenId?.toString(),
@@ -311,11 +348,29 @@ class BlockchainService {
         nftClaimed: game.nftClaimed,
         creatorPaid: game.creatorPaid,
         currentPlayers: game.currentPlayers?.toString(),
-        totalPool: game.totalPool?.toString()
+        totalPool: game.totalPool?.toString(),
+        isArrayFormat: Array.isArray(gameResult)
       })
       
-      if (game.creator === ethers.ZeroAddress) {
+      // Check if creator is zero address (game doesn't exist)
+      const creatorAddress = game.creator || (Array.isArray(gameResult) ? gameResult[0] : null)
+      const zeroAddressLower = '0x0000000000000000000000000000000000000000'
+      
+      // Compare addresses case-insensitively
+      const creatorLower = creatorAddress?.toLowerCase()
+      if (!creatorAddress || 
+          creatorLower === zeroAddressLower || 
+          creatorLower === ethers.ZeroAddress?.toLowerCase()) {
         console.error('❌ [BLOCKCHAIN] Game does not exist - creator is zero address')
+        console.error('❌ [BLOCKCHAIN] Creator address received:', creatorAddress)
+        console.error('❌ [BLOCKCHAIN] Full game result:', gameResult)
+        console.error('❌ [BLOCKCHAIN] Full game result (JSON):', JSON.stringify(gameResult, (key, value) => {
+          // Handle BigNumber serialization
+          if (value && typeof value === 'object' && value.type === 'BigNumber') {
+            return value.toString()
+          }
+          return value
+        }, 2))
         return { success: false, error: 'Game does not exist on-chain' }
       }
 
