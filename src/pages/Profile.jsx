@@ -445,9 +445,15 @@ const ActionButton = styled.button`
   align-items: center;
   gap: 0.5rem;
 
-  &:hover {
+  &:hover:not(:disabled) {
     transform: scale(1.05);
     box-shadow: 0 0 15px ${props => props.variant === 'danger' ? 'rgba(255, 68, 68, 0.4)' : 'rgba(0, 191, 255, 0.4)'};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(128, 128, 128, 0.3);
   }
 `;
 
@@ -1270,12 +1276,26 @@ const Profile = () => {
                               <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '160px' }}>
                                 {/* Step 1: Complete game on-chain with backend wallet (sets winner) */}
                                 <ActionButton
-                                  disabled={!hasBlockchain}
-                                  title={hasBlockchain ? 'Complete this game on-chain first (small gas fee)' : 'Blockchain service unavailable'}
+                                  disabled={!hasBlockchain || !isConnected}
+                                  title={
+                                    !isConnected ? 'Please connect your wallet first' :
+                                    !hasBlockchain ? 'Blockchain service unavailable' :
+                                    'Complete this game on-chain first (backend will pay gas)'
+                                  }
                                   onClick={async () => {
+                                    if (!isConnected) {
+                                      showError('Please connect your wallet first!');
+                                      return;
+                                    }
+                                    if (!hasBlockchain) {
+                                      showError('Blockchain service is unavailable');
+                                      return;
+                                    }
+                                    
                                     try {
                                       console.log('🔍 [MANUAL-COMPLETE] Starting manual completion for:', game.gameId);
-                                      showInfo('Completing game on-chain... Check console for detailed logs.');
+                                      console.log('🔍 [MANUAL-COMPLETE] Using address:', address);
+                                      showInfo('Completing game on-chain... This may take a moment.');
                                       
                                       // Call the new manual complete endpoint with extensive debugging
                                       const response = await fetch(`/api/battle-royale/${game.gameId}/complete-manual`, {
@@ -1291,9 +1311,9 @@ const Profile = () => {
                                       
                                       if (result.success) {
                                         if (result.alreadyCompleted) {
-                                          showSuccess('Game already completed! You can now claim your NFT.');
+                                          showSuccess('✅ Game already completed! You can now claim your NFT.');
                                         } else {
-                                          showSuccess(`Game completed on-chain! TX: ${result.transactionHash?.substring(0, 10)}... Now claim your NFT!`);
+                                          showSuccess(`✅ Game completed on-chain! TX: ${result.transactionHash?.substring(0, 10)}... Now you can claim your NFT!`);
                                         }
                                         
                                         // Refresh claimables
@@ -1312,19 +1332,39 @@ const Profile = () => {
                                       showError(`Error: ${err.message}. Check console for details.`);
                                     }
                                   }}
-                                  style={{ background: 'linear-gradient(135deg, #4A90E2, #357ABD)' }}
+                                  style={{ 
+                                    background: (!hasBlockchain || !isConnected) 
+                                      ? 'rgba(128, 128, 128, 0.3)' 
+                                      : 'linear-gradient(135deg, #4A90E2, #357ABD)',
+                                    opacity: (!hasBlockchain || !isConnected) ? 0.5 : 1,
+                                    cursor: (!hasBlockchain || !isConnected) ? 'not-allowed' : 'pointer'
+                                  }}
                                 >
                                   📝 1. Complete On-Chain
                                 </ActionButton>
 
                                 {/* Step 2: Claim NFT with user's wallet */}
                                 <ActionButton
-                                  disabled={!hasBlockchain}
-                                  title={hasBlockchain ? 'Claim your NFT (must complete on-chain first)' : 'Blockchain service unavailable'}
+                                  disabled={!hasBlockchain || !isConnected}
+                                  title={
+                                    !isConnected ? 'Please connect your wallet first' :
+                                    !hasBlockchain ? 'Blockchain service unavailable' :
+                                    'Claim your NFT (must complete on-chain first, you pay gas)'
+                                  }
                                   onClick={async () => {
+                                    if (!isConnected) {
+                                      showError('Please connect your wallet first!');
+                                      return;
+                                    }
+                                    if (!hasBlockchain) {
+                                      showError('Blockchain service is unavailable');
+                                      return;
+                                    }
+                                    
                                     try {
                                       console.log('🏆 [CLAIM-NFT] Starting NFT claim for:', game.gameId);
-                                      showInfo('Claiming NFT...');
+                                      console.log('🏆 [CLAIM-NFT] Using address:', address);
+                                      showInfo('Claiming NFT... Please approve the transaction in your wallet.');
                                       
                                       // Just call withdrawWinnerNFT directly - game should already be completed
                                       const result = await contractService.withdrawBattleRoyaleWinnerNFT(game.gameId);
@@ -1346,7 +1386,7 @@ const Profile = () => {
                                           console.warn('DB update failed:', dbError);
                                         }
                                         
-                                        showSuccess(`NFT claimed! TX: ${result.transactionHash?.substring(0, 10)}...`);
+                                        showSuccess(`🎉 NFT claimed! TX: ${result.transactionHash?.substring(0, 10)}...`);
                                         
                                         // Refresh claimables
                                         const claimablesResp = await fetch(`/api/users/${targetAddress}/claimables`);
@@ -1356,14 +1396,30 @@ const Profile = () => {
                                         }
                                       } else {
                                         console.error('🏆 [CLAIM-NFT] Failed:', result.error);
-                                        showError(`Failed to claim NFT: ${result.error}`);
+                                        
+                                        // Provide more helpful error messages
+                                        if (result.error?.includes('not completed on-chain')) {
+                                          showError('⚠️ Please complete the game on-chain first using the button above!');
+                                        } else if (result.error?.includes('not the winner')) {
+                                          showError('❌ You are not the winner of this game.');
+                                        } else if (result.error?.includes('already been claimed')) {
+                                          showError('ℹ️ NFT has already been claimed.');
+                                        } else {
+                                          showError(`Failed to claim NFT: ${result.error}`);
+                                        }
                                       }
                                     } catch (err) {
                                       console.error('🏆 [CLAIM-NFT] Error:', err);
                                       showError(`Error claiming NFT: ${err.message}`);
                                     }
                                   }}
-                                  style={{ background: 'linear-gradient(135deg, #FFD700, #FFA500)' }}
+                                  style={{ 
+                                    background: (!hasBlockchain || !isConnected)
+                                      ? 'rgba(128, 128, 128, 0.3)'
+                                      : 'linear-gradient(135deg, #FFD700, #FFA500)',
+                                    opacity: (!hasBlockchain || !isConnected) ? 0.5 : 1,
+                                    cursor: (!hasBlockchain || !isConnected) ? 'not-allowed' : 'pointer'
+                                  }}
                                 >
                                   🏆 2. Claim NFT
                                 </ActionButton>
