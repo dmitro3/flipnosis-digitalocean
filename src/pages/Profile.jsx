@@ -1345,19 +1345,14 @@ const Profile = () => {
 
                                 {/* Step 2: Claim NFT with user's wallet */}
                                 <ActionButton
-                                  disabled={!hasBlockchain || !isConnected}
+                                  disabled={!isConnected}
                                   title={
                                     !isConnected ? 'Please connect your wallet first' :
-                                    !hasBlockchain ? 'Blockchain service unavailable' :
                                     'Claim your NFT (must complete on-chain first, you pay gas)'
                                   }
                                   onClick={async () => {
                                     if (!isConnected) {
                                       showError('Please connect your wallet first!');
-                                      return;
-                                    }
-                                    if (!hasBlockchain) {
-                                      showError('Blockchain service is unavailable');
                                       return;
                                     }
                                     
@@ -1414,11 +1409,11 @@ const Profile = () => {
                                     }
                                   }}
                                   style={{ 
-                                    background: (!hasBlockchain || !isConnected)
+                                    background: !isConnected
                                       ? 'rgba(128, 128, 128, 0.3)'
                                       : 'linear-gradient(135deg, #FFD700, #FFA500)',
-                                    opacity: (!hasBlockchain || !isConnected) ? 0.5 : 1,
-                                    cursor: (!hasBlockchain || !isConnected) ? 'not-allowed' : 'pointer'
+                                    opacity: !isConnected ? 0.5 : 1,
+                                    cursor: !isConnected ? 'not-allowed' : 'pointer'
                                   }}
                                 >
                                   🏆 2. Claim NFT
@@ -1498,9 +1493,13 @@ const Profile = () => {
                               </GameInfo>
                               <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '160px' }}>
                                 <ActionButton
-                                  disabled={!hasBlockchain}
-                                  title={hasBlockchain ? '' : 'Blockchain service unavailable'}
+                                  disabled={!isConnected}
+                                  title={!isConnected ? 'Please connect your wallet first' : 'Withdraw your creator funds'}
                                   onClick={async () => {
+                                    if (!isConnected) {
+                                      showError('Please connect your wallet first!');
+                                      return;
+                                    }
                                     try {
                                       showInfo('Withdrawing creator funds...');
                                       const result = await contractService.withdrawBattleRoyaleCreatorFunds(game.gameId);
