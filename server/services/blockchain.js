@@ -30,7 +30,7 @@ class BlockchainService {
       "function usdcDeposits(bytes32) view returns (address depositor, uint256 amount, bool claimed, uint256 depositTime)",
       "function gameResults(bytes32) view returns (address winner, bool completed, uint256 completionTime)",
       // Battle Royale
-      "function createBattleRoyale(bytes32 gameId, address nftContract, uint256 tokenId, uint256 entryFee, uint256 serviceFee, bool isUnder20, uint256 minUnder20Wei)",
+      "function createBattleRoyale(bytes32 gameId, address nftContract, uint256 tokenId, uint256 entryFee, uint256 serviceFee, bool isUnder20, uint256 minUnder20Wei, bool creatorParticipates)",
       "function joinBattleRoyale(bytes32 gameId) payable",
       "function completeBattleRoyale(bytes32 gameId, address winner)",
       "function completeBattleRoyaleEarly(bytes32 gameId, address winner)",

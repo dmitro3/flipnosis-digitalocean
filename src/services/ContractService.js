@@ -74,7 +74,8 @@ const CONTRACT_ABI = [
       {"internalType": "uint256", "name": "entryFee", "type": "uint256"},
       {"internalType": "uint256", "name": "serviceFee", "type": "uint256"},
       {"internalType": "bool", "name": "isUnder20", "type": "bool"},
-      {"internalType": "uint256", "name": "minUnder20Wei", "type": "uint256"}
+      {"internalType": "uint256", "name": "minUnder20Wei", "type": "uint256"},
+      {"internalType": "bool", "name": "creatorParticipates", "type": "bool"}
     ],
     "name": "createBattleRoyale",
     "outputs": [],
