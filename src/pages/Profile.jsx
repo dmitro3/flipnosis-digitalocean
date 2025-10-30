@@ -1276,19 +1276,14 @@ const Profile = () => {
                               <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '160px' }}>
                                 {/* Step 1: Complete game on-chain with backend wallet (sets winner) */}
                                 <ActionButton
-                                  disabled={!hasBlockchain || !isConnected}
+                                  disabled={!isConnected}
                                   title={
                                     !isConnected ? 'Please connect your wallet first' :
-                                    !hasBlockchain ? 'Blockchain service unavailable' :
                                     'Complete this game on-chain first (backend will pay gas)'
                                   }
                                   onClick={async () => {
                                     if (!isConnected) {
                                       showError('Please connect your wallet first!');
-                                      return;
-                                    }
-                                    if (!hasBlockchain) {
-                                      showError('Blockchain service is unavailable');
                                       return;
                                     }
                                     
@@ -1333,11 +1328,11 @@ const Profile = () => {
                                     }
                                   }}
                                   style={{ 
-                                    background: (!hasBlockchain || !isConnected) 
+                                    background: !isConnected
                                       ? 'rgba(128, 128, 128, 0.3)' 
                                       : 'linear-gradient(135deg, #4A90E2, #357ABD)',
-                                    opacity: (!hasBlockchain || !isConnected) ? 0.5 : 1,
-                                    cursor: (!hasBlockchain || !isConnected) ? 'not-allowed' : 'pointer'
+                                    opacity: !isConnected ? 0.5 : 1,
+                                    cursor: !isConnected ? 'not-allowed' : 'pointer'
                                   }}
                                 >
                                   📝 1. Complete On-Chain
