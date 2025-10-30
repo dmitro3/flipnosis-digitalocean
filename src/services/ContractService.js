@@ -1643,12 +1643,12 @@ class ContractService {
       console.log('✅ NFT approval successful:', approvalResult.transactionHash)
       
       // Create Battle Royale on contract
+      // Contract requires 8 params including creatorParticipates
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'createBattleRoyale',
-        // Contract expects 7 params; creatorParticipates is handled off-chain/UI only
-        args: [gameIdBytes32, nftContract, BigInt(tokenId), BigInt(entryFee), BigInt(serviceFee), Boolean(isUnder20), BigInt(minUnder20Wei)],
+        args: [gameIdBytes32, nftContract, BigInt(tokenId), BigInt(entryFee), BigInt(serviceFee), Boolean(isUnder20), BigInt(minUnder20Wei), Boolean(creatorParticipates)],
         chain: BASE_CHAIN,
         account: this.walletClient.account
       })
