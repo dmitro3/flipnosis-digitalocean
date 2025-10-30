@@ -231,24 +231,51 @@ class BlockchainService {
    * Get Battle Royale game state from contract
    */
   async getBattleRoyaleGameState(gameId) {
+    console.log('🔍 [BLOCKCHAIN] getBattleRoyaleGameState called for:', gameId)
+    
     if (!this.provider) {
+      console.error('❌ [BLOCKCHAIN] Provider not initialized')
       return { success: false, error: 'Provider not initialized' }
     }
 
     try {
       const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.provider)
       const gameIdBytes32 = ethers.id(gameId)
+      
+      console.log('🔍 [BLOCKCHAIN] Converted gameId to bytes32:', {
+        original: gameId,
+        bytes32: gameIdBytes32,
+        contractAddress: this.contractAddress
+      })
 
+      console.log('🔍 [BLOCKCHAIN] Calling contract.getBattleRoyaleGame...')
       const game = await contract.getBattleRoyaleGame(gameIdBytes32)
       
+      console.log('🔍 [BLOCKCHAIN] Contract returned:', {
+        creator: game.creator,
+        nftContract: game.nftContract,
+        tokenId: game.tokenId?.toString(),
+        winner: game.winner,
+        completed: game.completed,
+        nftClaimed: game.nftClaimed,
+        creatorPaid: game.creatorPaid,
+        currentPlayers: game.currentPlayers?.toString(),
+        totalPool: game.totalPool?.toString()
+      })
+      
       if (game.creator === ethers.ZeroAddress) {
+        console.error('❌ [BLOCKCHAIN] Game does not exist - creator is zero address')
         return { success: false, error: 'Game does not exist on-chain' }
       }
 
+      console.log('✅ [BLOCKCHAIN] Game exists on-chain!')
+      
       return {
         success: true,
         gameState: {
           creator: game.creator,
+          nftContract: game.nftContract,
+          tokenId: game.tokenId?.toString(),
           winner: game.winner,
           completed: game.completed,
           nftClaimed: game.nftClaimed,
@@ -260,7 +287,12 @@ class BlockchainService {
         }
       }
     } catch (error) {
-      console.error('❌ Error getting Battle Royale game state:', error)
+      console.error('❌ [BLOCKCHAIN] Error getting Battle Royale game state:', error)
+      console.error('❌ [BLOCKCHAIN] Error details:', {
+        message: error.message,
+        code: error.code,
+        data: error.data
+      })
       return { success: false, error: error.message || 'Failed to get game state' }
     }
   }

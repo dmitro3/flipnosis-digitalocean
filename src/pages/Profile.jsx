@@ -1268,26 +1268,71 @@ const Profile = () => {
                                 </div>
                               </GameInfo>
                               <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '160px' }}>
+                                {/* Step 1: Complete game on-chain with backend wallet (sets winner) */}
                                 <ActionButton
                                   disabled={!hasBlockchain}
-                                  title={hasBlockchain ? '' : 'Blockchain service unavailable'}
+                                  title={hasBlockchain ? 'Complete this game on-chain first (small gas fee)' : 'Blockchain service unavailable'}
                                   onClick={async () => {
                                     try {
-                                      showInfo('Checking game state and claiming NFT...');
+                                      console.log('🔍 [MANUAL-COMPLETE] Starting manual completion for:', game.gameId);
+                                      showInfo('Completing game on-chain... Check console for detailed logs.');
                                       
-                                      // Get game data to find winner address
-                                      const gameData = await fetch(`/api/battle-royale/${game.gameId}`).then(r => r.json()).catch(() => null);
-                                      const winnerAddress = gameData?.winner_address || gameData?.winner || address;
+                                      // Call the new manual complete endpoint with extensive debugging
+                                      const response = await fetch(`/api/battle-royale/${game.gameId}/complete-manual`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ winner: address })
+                                      });
                                       
-                                      // Complete on-chain and claim (auto-completes if needed)
-                                      const result = await contractService.completeAndClaimBattleRoyaleNFT(
-                                        game.gameId, 
-                                        winnerAddress,
-                                        gameData?.current_players || gameData?.max_players || 8
-                                      );
+                                      const result = await response.json();
+                                      
+                                      console.log('🔍 [MANUAL-COMPLETE] Server response:', result);
+                                      console.log('🔍 [MANUAL-COMPLETE] Debug info:', result.debug);
                                       
                                       if (result.success) {
-                                        // Update database to mark NFT as claimed
+                                        if (result.alreadyCompleted) {
+                                          showSuccess('Game already completed! You can now claim your NFT.');
+                                        } else {
+                                          showSuccess(`Game completed on-chain! TX: ${result.transactionHash?.substring(0, 10)}... Now claim your NFT!`);
+                                        }
+                                        
+                                        // Refresh claimables
+                                        const claimablesResp = await fetch(`/api/users/${targetAddress}/claimables`);
+                                        if (claimablesResp.ok) {
+                                          const claimablesData = await claimablesResp.json();
+                                          setClaimables({ creator: claimablesData.creator || [], winner: claimablesData.winner || [] });
+                                        }
+                                      } else {
+                                        console.error('🔍 [MANUAL-COMPLETE] Failed:', result.error);
+                                        console.error('🔍 [MANUAL-COMPLETE] Debug:', result.debug);
+                                        showError(`Failed: ${result.error}. Check console for details.`);
+                                      }
+                                    } catch (err) {
+                                      console.error('🔍 [MANUAL-COMPLETE] Error:', err);
+                                      showError(`Error: ${err.message}. Check console for details.`);
+                                    }
+                                  }}
+                                  style={{ background: 'linear-gradient(135deg, #4A90E2, #357ABD)' }}
+                                >
+                                  📝 1. Complete On-Chain
+                                </ActionButton>
+
+                                {/* Step 2: Claim NFT with user's wallet */}
+                                <ActionButton
+                                  disabled={!hasBlockchain}
+                                  title={hasBlockchain ? 'Claim your NFT (must complete on-chain first)' : 'Blockchain service unavailable'}
+                                  onClick={async () => {
+                                    try {
+                                      console.log('🏆 [CLAIM-NFT] Starting NFT claim for:', game.gameId);
+                                      showInfo('Claiming NFT...');
+                                      
+                                      // Just call withdrawWinnerNFT directly - game should already be completed
+                                      const result = await contractService.withdrawBattleRoyaleWinnerNFT(game.gameId);
+                                      
+                                      console.log('🏆 [CLAIM-NFT] Result:', result);
+                                      
+                                      if (result.success) {
+                                        // Update database
                                         try {
                                           await fetch(`/api/battle-royale/${game.gameId}/mark-nft-claimed`, {
                                             method: 'POST',
@@ -1300,32 +1345,59 @@ const Profile = () => {
                                         } catch (dbError) {
                                           console.warn('DB update failed:', dbError);
                                         }
-                                        showSuccess('NFT claimed successfully! 🎉');
-                                        // Refresh claimables data
+                                        
+                                        showSuccess(`NFT claimed! TX: ${result.transactionHash?.substring(0, 10)}...`);
+                                        
+                                        // Refresh claimables
                                         const claimablesResp = await fetch(`/api/users/${targetAddress}/claimables`);
                                         if (claimablesResp.ok) {
                                           const claimablesData = await claimablesResp.json();
                                           setClaimables({ creator: claimablesData.creator || [], winner: claimablesData.winner || [] });
                                         }
                                       } else {
-                                        // Check specific error types
-                                        if (result.cannotClaim) {
-                                          showError(result.error || 'This game cannot have an NFT claim because it was never created on-chain.');
-                                        } else if (result.needsCompletion) {
-                                          showError(result.error || 'Game needs to be completed on-chain first. Please try again in a moment.');
-                                        } else {
-                                          showError(result.error || 'Failed to claim NFT');
-                                        }
+                                        console.error('🏆 [CLAIM-NFT] Failed:', result.error);
+                                        showError(`Failed to claim NFT: ${result.error}`);
                                       }
                                     } catch (err) {
-                                      console.error('Claim NFT error:', err);
-                                      showError(err.message || 'Failed to claim NFT');
+                                      console.error('🏆 [CLAIM-NFT] Error:', err);
+                                      showError(`Error claiming NFT: ${err.message}`);
                                     }
                                   }}
                                   style={{ background: 'linear-gradient(135deg, #FFD700, #FFA500)' }}
                                 >
-                                  🏆 Claim NFT
+                                  🏆 2. Claim NFT
                                 </ActionButton>
+
+                                {/* Debug button to check game state */}
+                                <button
+                                  onClick={async () => {
+                                    console.log('🔍 [DEBUG] Checking game state for:', game.gameId);
+                                    try {
+                                      const dbResp = await fetch(`/api/debug/game/${game.gameId}`);
+                                      const dbData = await dbResp.json();
+                                      console.log('🔍 [DEBUG] Database:', dbData);
+                                      
+                                      const onChainResp = await fetch(`/api/battle-royale/${game.gameId}/onchain-state`);
+                                      const onChainData = await onChainResp.json();
+                                      console.log('🔍 [DEBUG] On-chain:', onChainData);
+                                      
+                                      alert(`Check console for detailed game state for ${game.gameId}`);
+                                    } catch (err) {
+                                      console.error('🔍 [DEBUG] Error:', err);
+                                    }
+                                  }}
+                                  style={{
+                                    background: 'transparent',
+                                    border: '1px solid #666',
+                                    color: '#666',
+                                    padding: '0.5rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.75rem'
+                                  }}
+                                >
+                                  🔍 Debug
+                                </button>
                               </GameActions>
                             </div>
                           </GameHeader>

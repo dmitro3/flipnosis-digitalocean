@@ -74,11 +74,19 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
-  // Debug endpoint to check specific game
+  // Debug endpoint to check specific game (COMPREHENSIVE)
   router.get('/debug/game/:gameId', async (req, res) => {
     const { gameId } = req.params
     
+    const debug = {
+      gameId: gameId,
+      timestamp: new Date().toISOString(),
+      steps: []
+    }
+    
     try {
+      // Step 1: Check database
+      debug.steps.push('Checking database...')
       const game = await new Promise((resolve, reject) => {
         db.get('SELECT * FROM battle_royale_games WHERE id = ?', [gameId], (err, row) => {
           if (err) reject(err)
@@ -86,22 +94,73 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         })
       })
 
+      debug.database = {
+        found: !!game,
+        game: game || null
+      }
+      
       if (!game) {
-        return res.json({
-          success: false,
-          found: false,
-          message: `Game ${gameId} not found in database`
+        debug.steps.push('Game not found in database')
+        
+        // Check if there are ANY games
+        const count = await new Promise((resolve, reject) => {
+          db.get('SELECT COUNT(*) as count FROM battle_royale_games', [], (err, row) => {
+            if (err) reject(err)
+            else resolve(row?.count || 0)
+          })
         })
+        
+        debug.database.totalGamesInDb = count
+        debug.steps.push(`Total games in database: ${count}`)
+      } else {
+        debug.steps.push('Game found in database')
+      }
+
+      // Step 2: Check on-chain (if blockchain service available)
+      if (blockchainService && blockchainService.hasOwnerWallet()) {
+        debug.steps.push('Checking on-chain state...')
+        
+        const ethers = require('ethers')
+        const gameIdBytes32 = ethers.id(gameId)
+        debug.gameIdBytes32 = gameIdBytes32
+        
+        try {
+          const onChainState = await blockchainService.getBattleRoyaleGameState(gameId)
+          debug.onChain = {
+            found: onChainState.success,
+            state: onChainState.gameState || null,
+            error: onChainState.error || null
+          }
+          
+          if (onChainState.success) {
+            debug.steps.push('Game found on-chain')
+          } else {
+            debug.steps.push('Game NOT found on-chain: ' + onChainState.error)
+          }
+        } catch (e) {
+          debug.onChain = {
+            found: false,
+            error: e.message
+          }
+          debug.steps.push('Error checking on-chain: ' + e.message)
+        }
+      } else {
+        debug.steps.push('Blockchain service not available')
+        debug.onChain = { found: null, reason: 'Service not configured' }
       }
 
       res.json({
         success: true,
-        found: true,
-        game: game
+        debug: debug
       })
     } catch (error) {
-      console.error('Error fetching game:', error)
-      res.status(500).json({ error: 'Failed to fetch game', details: error.message })
+      console.error('Error in debug endpoint:', error)
+      debug.error = error.message
+      res.status(500).json({ 
+        error: 'Failed to debug game', 
+        details: error.message,
+        debug: debug
+      })
     }
   })
 
@@ -1922,109 +1981,202 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
-  // Route: Complete Battle Royale on-chain (called on-demand during withdrawal)
-  // This is now called by the winner when they try to claim, not automatically when game ends
-  router.post('/battle-royale/:gameId/complete', async (req, res) => {
+  // Route: Manual game completion with extensive debugging
+  // Winner clicks button to complete game on-chain before withdrawing
+  router.post('/battle-royale/:gameId/complete-manual', async (req, res) => {
     const { gameId } = req.params
     const { winner } = req.body
 
-    try {
-      if (!winner) return res.status(400).json({ error: 'Winner address required' })
+    const debug = {
+      step: '',
+      gameId: gameId,
+      winner: winner,
+      timestamp: new Date().toISOString()
+    }
 
-      if (!blockchainService.hasOwnerWallet()) {
-        return res.status(500).json({ error: 'Blockchain service not configured' })
+    try {
+      debug.step = '1. Validating input'
+      console.log('🔍 [COMPLETE-MANUAL] Step 1: Validating input', { gameId, winner })
+      
+      if (!winner) {
+        debug.error = 'Winner address required'
+        return res.status(400).json({ error: 'Winner address required', debug })
       }
 
-      // Check database first - this is our source of truth
+      debug.step = '2. Checking blockchain service'
+      console.log('🔍 [COMPLETE-MANUAL] Step 2: Checking blockchain service')
+      
+      if (!blockchainService.hasOwnerWallet()) {
+        debug.error = 'Blockchain service not configured'
+        return res.status(500).json({ error: 'Blockchain service not configured', debug })
+      }
+      debug.hasBlockchainService = true
+
+      debug.step = '3. Checking database for game'
+      console.log('🔍 [COMPLETE-MANUAL] Step 3: Checking database for game', gameId)
+      
       const game = await dbService.getBattleRoyaleGame(gameId)
+      
       if (!game) {
+        debug.error = 'Game not found in database'
+        debug.databaseChecked = true
+        console.error('❌ [COMPLETE-MANUAL] Game not in database:', gameId)
         return res.status(404).json({ 
           error: 'Game not found in database',
-          recovery: 'game_not_found'
+          hint: 'Game may not have been saved when created',
+          debug
+        })
+      }
+      
+      debug.gameInDatabase = true
+      debug.gameStatus = game.status
+      debug.gameWinner = game.winner_address
+      debug.gameCreator = game.creator
+      debug.nftDeposited = game.nft_deposited
+      console.log('✅ [COMPLETE-MANUAL] Game found in database:', debug)
+
+      debug.step = '4. Verifying winner matches database'
+      console.log('🔍 [COMPLETE-MANUAL] Step 4: Verifying winner')
+      
+      if (!game.winner_address) {
+        debug.error = 'No winner set in database yet'
+        console.error('❌ [COMPLETE-MANUAL] No winner in database')
+        return res.status(400).json({ 
+          error: 'Game has not been completed yet - no winner recorded',
+          debug
         })
       }
 
-      // Verify winner matches database
-      if (!game.winner_address || game.winner_address.toLowerCase() !== winner.toLowerCase()) {
+      if (game.winner_address.toLowerCase() !== winner.toLowerCase()) {
+        debug.error = 'Winner mismatch'
+        debug.expectedWinner = game.winner_address
+        debug.providedWinner = winner
+        console.error('❌ [COMPLETE-MANUAL] Winner mismatch:', debug)
         return res.status(403).json({ 
-          error: 'Winner address does not match game records',
+          error: 'You are not the winner of this game',
           databaseWinner: game.winner_address,
-          requestedWinner: winner
+          providedWinner: winner,
+          debug
         })
       }
+      
+      debug.winnerVerified = true
+      console.log('✅ [COMPLETE-MANUAL] Winner verified:', winner)
 
-      // Check on-chain state
+      debug.step = '5. Converting gameId to bytes32'
+      const ethers = require('ethers')
+      const gameIdBytes32 = ethers.id(gameId)
+      debug.gameIdBytes32 = gameIdBytes32
+      console.log('🔍 [COMPLETE-MANUAL] Step 5: GameId conversion', { 
+        original: gameId, 
+        bytes32: gameIdBytes32 
+      })
+
+      debug.step = '6. Checking on-chain state'
+      console.log('🔍 [COMPLETE-MANUAL] Step 6: Checking on-chain state')
+      
       const onChainState = await blockchainService.getBattleRoyaleGameState(gameId)
+      debug.onChainCheckResult = onChainState.success
       
       if (!onChainState.success) {
-        // Game doesn't exist on-chain
-        console.error(`❌ Game ${gameId} not found on-chain:`, onChainState.error)
+        debug.error = 'Game not found on-chain'
+        debug.onChainError = onChainState.error
+        console.error('❌ [COMPLETE-MANUAL] Game not on-chain:', onChainState.error)
         
         return res.status(404).json({ 
-          error: `Game ${gameId} does not exist on-chain. ${onChainState.error || 'Game was never successfully created.'}`,
-          onChainExists: false,
-          hint: 'The NFT may be stuck in the contract. Contact support for recovery.',
-          recovery: 'nft_stuck'
+          error: `Game does not exist on-chain`,
+          details: onChainState.error,
+          hint: 'The createBattleRoyale transaction may have failed. NFT might be stuck.',
+          gameIdBytes32: gameIdBytes32,
+          debug
         })
       }
+      
+      debug.onChainGameState = {
+        creator: onChainState.gameState.creator,
+        winner: onChainState.gameState.winner,
+        completed: onChainState.gameState.completed,
+        nftClaimed: onChainState.gameState.nftClaimed,
+        creatorPaid: onChainState.gameState.creatorPaid
+      }
+      console.log('✅ [COMPLETE-MANUAL] Game found on-chain:', debug.onChainGameState)
 
-      // Check if already completed on-chain
+      debug.step = '7. Checking if already completed'
       if (onChainState.gameState.completed) {
-        console.log(`✅ Game ${gameId} already completed on-chain`)
+        debug.alreadyCompleted = true
+        console.log('ℹ️ [COMPLETE-MANUAL] Game already completed on-chain')
+        
         // Update database if needed
         if (game.status !== 'completed') {
           await dbService.updateBattleRoyaleGame(gameId, {
-            status: 'completed',
-            completion_tx: onChainState.gameState.completionTx || 'already_completed'
+            status: 'completed'
           })
         }
+        
         return res.json({ 
           success: true, 
           alreadyCompleted: true,
-          message: 'Game already completed on-chain, you can now withdraw'
+          message: 'Game already completed on-chain',
+          canWithdrawNow: true,
+          debug
         })
       }
 
-      // Game exists on-chain but not completed yet - complete it now
-      console.log(`🏆 Completing game ${gameId} on-chain for winner ${winner}`)
+      debug.step = '8. Completing game on-chain'
+      console.log('🔍 [COMPLETE-MANUAL] Step 8: Calling completeBattleRoyaleOnChain')
+      console.log('   Winner:', winner)
+      console.log('   GameId:', gameId)
+      console.log('   GameId (bytes32):', gameIdBytes32)
+      
       const result = await blockchainService.completeBattleRoyaleOnChain(gameId, winner)
+      debug.completionResult = result.success
       
       if (!result.success) {
+        debug.error = 'Blockchain completion failed'
+        debug.completionError = result.error
+        console.error('❌ [COMPLETE-MANUAL] Blockchain completion failed:', result.error)
+        
         return res.status(500).json({ 
-          error: result.error || 'Failed to complete Battle Royale on-chain',
-          details: result.error
+          error: result.error || 'Failed to complete game on blockchain',
+          debug
         })
       }
 
-      // Update database
+      debug.transactionHash = result.transactionHash
+      debug.blockNumber = result.blockNumber
+      console.log('✅ [COMPLETE-MANUAL] Transaction successful:', debug.transactionHash)
+
+      debug.step = '9. Updating database'
       await dbService.updateBattleRoyaleGame(gameId, {
         status: 'completed',
         completion_tx: result.transactionHash,
         completion_block: result.blockNumber,
         completed_at: new Date().toISOString()
       })
+      console.log('✅ [COMPLETE-MANUAL] Database updated')
 
-      // Notify room
-      if (gameServer && gameServer.io) {
-        gameServer.io.to(gameId).emit('battle_royale_completed_on_chain', {
-          type: 'battle_royale_completed_on_chain',
-          gameId,
-          winner,
-          transactionHash: result.transactionHash
-        })
-      }
-
-      console.log(`✅ Game ${gameId} completed on-chain successfully`)
+      debug.step = '10. Success'
+      console.log('🎉 [COMPLETE-MANUAL] Game completion successful!')
+      
       res.json({ 
         success: true, 
         transactionHash: result.transactionHash,
-        message: 'Game completed on-chain, you can now withdraw your NFT'
+        blockNumber: result.blockNumber,
+        message: 'Game completed on-chain! You can now withdraw your NFT.',
+        canWithdrawNow: true,
+        debug
       })
+
     } catch (error) {
-      console.error('❌ Error completing Battle Royale on-chain:', error)
+      debug.step = 'ERROR'
+      debug.error = error.message
+      debug.stack = error.stack
+      console.error('💥 [COMPLETE-MANUAL] Unexpected error:', error)
+      
       res.status(500).json({ 
-        error: 'Failed to complete Battle Royale', 
-        details: error.message 
+        error: 'Unexpected error during completion', 
+        details: error.message,
+        debug
       })
     }
   })
@@ -2104,6 +2256,10 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
   
   // Create Battle Royale game
   router.post('/battle-royale/create', async (req, res) => {
+    console.log('\n🎮 ═══════════════════════════════════════════')
+    console.log('🎮 CREATING BATTLE ROYALE GAME')
+    console.log('🎮 ═══════════════════════════════════════════')
+    
     try {
       const {
         creator,
@@ -2119,11 +2275,20 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         room_type
       } = req.body
 
-      console.log('🎨 Room type received:', room_type)
-      console.log('🎨 Full request body:', req.body)
+      console.log('📥 Request body received:', {
+        creator,
+        nft_contract,
+        nft_token_id,
+        nft_name,
+        entry_fee,
+        service_fee,
+        creator_participates,
+        room_type
+      })
 
       // Validate required fields
       if (!creator || !nft_contract || !nft_token_id || !entry_fee) {
+        console.error('❌ Missing required fields')
         return res.status(400).json({
           error: 'Missing required fields: creator, nft_contract, nft_token_id, entry_fee'
         })
@@ -2131,6 +2296,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
 
       // Generate unique game ID with physics prefix
       const gameId = `physics_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+      console.log('🆔 Generated gameId:', gameId)
 
       // Create game in database
       const gameData = {
@@ -2150,18 +2316,43 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         status: 'filling' // Explicitly set initial status
       }
 
+      console.log('📦 Game data prepared:', gameData)
+
       // Create physics game in manager FIRST (to generate obstacles)
       let physicsGame = null
       if (gameServer && gameServer.physicsGameManager) {
+        console.log('🎮 Creating physics game in manager...')
         physicsGame = gameServer.physicsGameManager.createPhysicsGame(gameId, gameData)
         // Add obstacles to game_data for database storage
         gameData.game_data = {
           obstacles: physicsGame.obstacles
         }
+        console.log(`✅ Physics game created with ${physicsGame.obstacles?.length || 0} obstacles`)
+      } else {
+        console.warn('⚠️ Physics game manager not available')
       }
 
       // Save to database WITH obstacles (frontend handles on-chain create/approval)
+      console.log('💾 Saving game to database...')
+      console.log('💾 Database service available:', !!dbService)
+      console.log('💾 Database path:', dbService?.databasePath)
+      
       await dbService.createBattleRoyaleGame(gameData)
+      console.log('✅ Game saved to database successfully')
+      
+      // Verify it was saved
+      const savedGame = await dbService.getBattleRoyaleGame(gameId)
+      console.log('🔍 Verification - Game retrieved from DB:', !!savedGame)
+      if (savedGame) {
+        console.log('✅ Verified game in database:', {
+          id: savedGame.id,
+          creator: savedGame.creator,
+          status: savedGame.status,
+          nft_deposited: savedGame.nft_deposited
+        })
+      } else {
+        console.error('❌ WARNING: Game was not found in database after creation!')
+      }
 
       // Add creator as participant if they want to play
       console.log(`🔍 Creator participates check: ${creator_participates}, type: ${typeof creator_participates}`)
