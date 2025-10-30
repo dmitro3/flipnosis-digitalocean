@@ -77,12 +77,13 @@
     <input 
       type="text" 
       id="gameId" 
-      placeholder="Enter gameId (e.g., physics_1761840755237_3cb7dfdafa873010)"
-      value="physics_1761840755237_3cb7dfdafa873010"
+      placeholder="Enter gameId (e.g., physics_1761841924099_037b3f177a813354)"
+      value="physics_1761841924099_037b3f177a813354"
     />
     <br>
-    <button onclick="checkGame()">🔍 Check Game</button>
-    <button onclick="checkOnChain()">⛓️ Check On-Chain Only</button>
+    <button onclick="checkComprehensive()">🎯 FULL DIAGNOSTIC</button>
+    <button onclick="checkGame()">🔍 Check Database</button>
+    <button onclick="checkOnChain()">⛓️ Check On-Chain</button>
     <pre id="game-result"></pre>
   </div>
 
@@ -110,6 +111,68 @@
   </div>
 
   <script>
+    async function checkComprehensive() {
+      const gameId = document.getElementById('gameId').value;
+      const output = document.getElementById('game-result');
+      
+      if (!gameId) {
+        output.innerHTML = '<span class="error">Please enter a gameId</span>';
+        return;
+      }
+      
+      output.textContent = 'Running comprehensive diagnostic...';
+      
+      try {
+        const response = await fetch(`/api/debug/comprehensive/${gameId}`);
+        const data = await response.json();
+        
+        // Pretty print with highlights
+        let html = '<span class="info">═══ COMPREHENSIVE DIAGNOSTIC ═══</span>\n\n';
+        
+        // Server config
+        html += '<span class="warning">SERVER CONFIG:</span>\n';
+        html += `  RPC URL: ${data.server.rpcUrl}\n`;
+        html += `  Contract: ${data.server.contractAddress}\n`;
+        html += `  Has Owner Wallet: ${data.server.hasOwnerWallet}\n\n`;
+        
+        // Database
+        html += '<span class="warning">DATABASE:</span>\n';
+        html += `  Found: ${data.database.found ? '<span class="success">YES</span>' : '<span class="error">NO</span>'}\n`;
+        if (data.database.game) {
+          html += `  Winner: ${data.database.game.winner || 'Not set'}\n`;
+          html += `  Status: ${data.database.game.status}\n`;
+          html += `  NFT Deposited: ${data.database.game.nft_deposited}\n\n`;
+        }
+        
+        // Blockchain
+        html += '<span class="warning">BLOCKCHAIN:</span>\n';
+        html += `  Exists: ${data.blockchain.exists ? '<span class="success">YES</span>' : '<span class="error">NO</span>'}\n`;
+        if (data.blockchain.game) {
+          html += `  Creator: ${data.blockchain.game.creator}\n`;
+          html += `  Winner: ${data.blockchain.game.winner}\n`;
+          html += `  Completed: ${data.blockchain.game.completed}\n`;
+          html += `  NFT Claimed: ${data.blockchain.game.nftClaimed}\n`;
+          html += `  Token ID: ${data.blockchain.game.tokenId}\n\n`;
+        } else if (data.blockchain.error) {
+          html += `  <span class="error">Error: ${data.blockchain.error}</span>\n\n`;
+        }
+        
+        // Conversion
+        html += '<span class="warning">BYTES32 CONVERSION:</span>\n';
+        html += `  Original: ${data.conversion.original}\n`;
+        html += `  Bytes32: ${data.conversion.bytes32}\n\n`;
+        
+        html += '<span class="info">═══ FULL JSON ═══</span>\n';
+        html += JSON.stringify(data, null, 2);
+        
+        output.innerHTML = html;
+        console.log('🎯 Comprehensive diagnostic:', data);
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+        console.error('Error:', error);
+      }
+    }
+
     async function checkRecentGames() {
       const output = document.getElementById('recent-games');
       output.textContent = 'Loading...';

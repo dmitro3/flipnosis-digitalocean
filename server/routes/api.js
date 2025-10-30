@@ -39,6 +39,146 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     })
   })
 
+  // Comprehensive diagnostic endpoint
+  router.get('/debug/comprehensive/:gameId', async (req, res) => {
+    const { gameId } = req.params
+    const ethers = require('ethers')
+    
+    const diagnostic = {
+      gameId: gameId,
+      timestamp: new Date().toISOString(),
+      server: {
+        nodeEnv: process.env.NODE_ENV,
+        hasBlockchainService: !!blockchainService,
+        hasOwnerWallet: blockchainService?.hasOwnerWallet() || false,
+        contractAddress: blockchainService?.contractAddress || 'N/A',
+        rpcUrl: blockchainService?.rpcUrl || 'N/A'
+      },
+      database: {},
+      blockchain: {},
+      conversion: {}
+    }
+
+    try {
+      // Step 1: Check database
+      const game = await dbService.getBattleRoyaleGame(gameId)
+      diagnostic.database = {
+        found: !!game,
+        game: game ? {
+          id: game.id,
+          creator: game.creator,
+          winner: game.winner_address,
+          status: game.status,
+          nft_contract: game.nft_contract,
+          nft_token_id: game.nft_token_id,
+          nft_deposited: game.nft_deposited,
+          nft_claimed: game.nft_claimed
+        } : null
+      }
+
+      // Step 2: Check bytes32 conversion
+      const gameIdBytes32 = ethers.id(gameId)
+      diagnostic.conversion = {
+        original: gameId,
+        bytes32: gameIdBytes32
+      }
+
+      // Step 3: Try to read from blockchain DIRECTLY (bypass service)
+      if (blockchainService?.provider && blockchainService?.contractAddress) {
+        try {
+          const CONTRACT_ABI = [
+            {
+              "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}],
+              "name": "getBattleRoyaleGame",
+              "outputs": [{
+                "components": [
+                  {"internalType": "address", "name": "creator", "type": "address"},
+                  {"internalType": "address", "name": "nftContract", "type": "address"},
+                  {"internalType": "uint256", "name": "tokenId", "type": "uint256"},
+                  {"internalType": "uint256", "name": "entryFee", "type": "uint256"},
+                  {"internalType": "uint256", "name": "serviceFee", "type": "uint256"},
+                  {"internalType": "uint8", "name": "maxPlayers", "type": "uint8"},
+                  {"internalType": "uint8", "name": "currentPlayers", "type": "uint8"},
+                  {"internalType": "address", "name": "winner", "type": "address"},
+                  {"internalType": "bool", "name": "completed", "type": "bool"},
+                  {"internalType": "bool", "name": "creatorPaid", "type": "bool"},
+                  {"internalType": "bool", "name": "nftClaimed", "type": "bool"},
+                  {"internalType": "uint256", "name": "totalPool", "type": "uint256"},
+                  {"internalType": "uint256", "name": "createdAt", "type": "uint256"},
+                  {"internalType": "bool", "name": "isUnder20", "type": "bool"},
+                  {"internalType": "uint256", "name": "minUnder20Wei", "type": "uint256"}
+                ],
+                "internalType": "struct NFTFlipGame.BattleRoyaleGame",
+                "name": "",
+                "type": "tuple"
+              }],
+              "stateMutability": "view",
+              "type": "function"
+            }
+          ]
+          
+          const contract = new ethers.Contract(
+            blockchainService.contractAddress,
+            CONTRACT_ABI,
+            blockchainService.provider
+          )
+          
+          const onChainGame = await contract.getBattleRoyaleGame(gameIdBytes32)
+          
+          diagnostic.blockchain = {
+            directReadSucceeded: true,
+            game: {
+              creator: onChainGame.creator,
+              nftContract: onChainGame.nftContract,
+              tokenId: onChainGame.tokenId?.toString(),
+              winner: onChainGame.winner,
+              completed: onChainGame.completed,
+              nftClaimed: onChainGame.nftClaimed,
+              creatorPaid: onChainGame.creatorPaid,
+              currentPlayers: onChainGame.currentPlayers?.toString(),
+              totalPool: ethers.formatEther(onChainGame.totalPool)
+            },
+            exists: onChainGame.creator !== ethers.ZeroAddress
+          }
+        } catch (blockchainError) {
+          diagnostic.blockchain = {
+            directReadSucceeded: false,
+            error: blockchainError.message,
+            errorCode: blockchainError.code,
+            errorData: blockchainError.data
+          }
+        }
+      } else {
+        diagnostic.blockchain = {
+          error: 'Blockchain provider or contract address not available',
+          hasProvider: !!blockchainService?.provider,
+          hasContractAddress: !!blockchainService?.contractAddress
+        }
+      }
+
+      // Step 4: Test using service method
+      if (blockchainService?.hasOwnerWallet()) {
+        try {
+          const serviceResult = await blockchainService.getBattleRoyaleGameState(gameId)
+          diagnostic.blockchainService = {
+            methodSucceeded: serviceResult.success,
+            result: serviceResult
+          }
+        } catch (e) {
+          diagnostic.blockchainService = {
+            methodSucceeded: false,
+            error: e.message
+          }
+        }
+      }
+
+      res.json(diagnostic)
+    } catch (error) {
+      diagnostic.error = error.message
+      res.status(500).json(diagnostic)
+    }
+  })
+
   // Debug endpoint to check recent games in database
   router.get('/debug/recent-games', async (req, res) => {
     try {
