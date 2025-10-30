@@ -266,3 +266,4 @@ ssh root@159.69.242.154 "cd /opt/flipnosis/app/server && sqlite3 flipz.db < /tmp
 **Ready to continue!** The main blocker is adding the `room_type` column to the database. Once that's done, everything should work.
 
 
+
