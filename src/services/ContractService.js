@@ -150,6 +150,34 @@ const CONTRACT_ABI = [
   },
   {
     "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}],
+    "name": "getBattleRoyaleGame",
+    "outputs": [{
+      "components": [
+        {"internalType": "address", "name": "creator", "type": "address"},
+        {"internalType": "address", "name": "nftContract", "type": "address"},
+        {"internalType": "uint256", "name": "tokenId", "type": "uint256"},
+        {"internalType": "uint256", "name": "entryFee", "type": "uint256"},
+        {"internalType": "uint256", "name": "serviceFee", "type": "uint256"},
+        {"internalType": "uint8", "name": "maxPlayers", "type": "uint8"},
+        {"internalType": "uint8", "name": "currentPlayers", "type": "uint8"},
+        {"internalType": "address", "name": "winner", "type": "address"},
+        {"internalType": "bool", "name": "completed", "type": "bool"},
+        {"internalType": "bool", "name": "creatorPaid", "type": "bool"},
+        {"internalType": "bool", "name": "nftClaimed", "type": "bool"},
+        {"internalType": "uint256", "name": "totalPool", "type": "uint256"},
+        {"internalType": "uint256", "name": "createdAt", "type": "uint256"},
+        {"internalType": "bool", "name": "isUnder20", "type": "bool"},
+        {"internalType": "uint256", "name": "minUnder20Wei", "type": "uint256"}
+      ],
+      "internalType": "struct NFTFlipGame.BattleRoyaleGame",
+      "name": "",
+      "type": "tuple"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}],
     "name": "reclaimBattleRoyaleNFT",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -1654,22 +1682,39 @@ class ContractService {
         chain: BASE_CHAIN
       })
       
+      // Handle tuple/struct return - viem returns it as an array or object
+      // Extract fields from the struct
+      const creator = gameState[0] || gameState.creator
+      const winner = gameState[7] || gameState.winner || '0x0000000000000000000000000000000000000000'
+      const completed = gameState[8] || gameState.completed || false
+      const nftClaimed = gameState[10] || gameState.nftClaimed || false
+      const creatorPaid = gameState[9] || gameState.creatorPaid || false
+      const currentPlayers = gameState[6] || gameState.currentPlayers || 0
+      const maxPlayers = gameState[5] || gameState.maxPlayers || 8
+      
+      const winnerAddress = typeof winner === 'string' ? winner : winner?.toLowerCase() || '0x0000000000000000000000000000000000000000'
+      const zeroAddress = '0x0000000000000000000000000000000000000000'
+      
       return {
         success: true,
-        creator: gameState.creator,
-        winner: gameState.winner,
-        completed: gameState.completed,
-        nftClaimed: gameState.nftClaimed,
-        creatorPaid: gameState.creatorPaid,
-        currentPlayers: gameState.currentPlayers,
-        maxPlayers: gameState.maxPlayers,
-        canWithdraw: gameState.completed && 
-                     gameState.winner !== '0x0000000000000000000000000000000000000000' && 
-                     !gameState.nftClaimed
+        creator: typeof creator === 'string' ? creator : creator?.toString(),
+        winner: winnerAddress,
+        completed: Boolean(completed),
+        nftClaimed: Boolean(nftClaimed),
+        creatorPaid: Boolean(creatorPaid),
+        currentPlayers: Number(currentPlayers),
+        maxPlayers: Number(maxPlayers),
+        canWithdraw: Boolean(completed) && 
+                     winnerAddress !== zeroAddress && 
+                     !Boolean(nftClaimed)
       }
     } catch (error) {
       console.error('❌ Error getting Battle Royale game state:', error)
-      return { success: false, error: error.message }
+      // Check if it's because game doesn't exist
+      if (error.message?.includes('revert') || error.message?.includes('does not exist')) {
+        return { success: false, error: 'Game does not exist on-chain' }
+      }
+      return { success: false, error: error.message || 'Failed to get game state' }
     }
   }
 
