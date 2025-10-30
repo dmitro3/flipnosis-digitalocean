@@ -37,6 +37,7 @@ class BlockchainService {
       "function withdrawCreatorFunds(bytes32 gameId)",
       "function withdrawWinnerNFT(bytes32 gameId)",
       "function getBattleRoyaleGame(bytes32 gameId) view returns (tuple(address creator,address nftContract,uint256 tokenId,uint256 entryFee,uint256 serviceFee,uint8 maxPlayers,uint8 currentPlayers,address winner,bool completed,bool creatorPaid,bool nftClaimed,uint256 totalPool,uint256 createdAt,bool isUnder20,uint256 minUnder20Wei))",
+      "function battleRoyaleEntries(bytes32 gameId, address player) view returns (bool)",
       "event NFTDeposited(bytes32 indexed gameId, address indexed depositor, address nftContract, uint256 tokenId)",
       "event ETHDeposited(bytes32 indexed gameId, address indexed depositor, uint256 amount)",
       "event USDCDeposited(bytes32 indexed gameId, address indexed depositor, uint256 amount)",
@@ -199,6 +200,7 @@ class BlockchainService {
 
   /**
    * Complete Battle Royale (owner-only) and set winner
+   * Automatically chooses the correct function based on player count
    */
   async completeBattleRoyaleOnChain(gameId, winner) {
     console.log('🏆 Completing Battle Royale on blockchain:', { gameId, winner })
@@ -210,20 +212,69 @@ class BlockchainService {
       const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
       const gameIdBytes32 = ethers.id(gameId)
 
-      // Optional sanity read
-      try {
-        const brGame = await contract.getBattleRoyaleGame(gameIdBytes32)
-        if (!brGame || brGame.creator === ethers.ZeroAddress) {
-          return { success: false, error: 'Battle Royale game does not exist' }
-        }
-      } catch {}
+      // Get game state to check player count
+      console.log('🔍 Checking game state to determine completion method...')
+      const brGame = await contract.getBattleRoyaleGame(gameIdBytes32)
+      
+      if (!brGame || brGame.creator === ethers.ZeroAddress) {
+        return { success: false, error: 'Battle Royale game does not exist' }
+      }
 
-      const tx = await contract.completeBattleRoyale(gameIdBytes32, winner)
+      const currentPlayers = Number(brGame.currentPlayers)
+      const maxPlayers = Number(brGame.maxPlayers)
+      
+      console.log(`📊 Game state: ${currentPlayers}/${maxPlayers} players`)
+
+      // Verify winner is a participant
+      const isParticipant = await contract.battleRoyaleEntries(gameIdBytes32, winner)
+      if (!isParticipant) {
+        return { success: false, error: 'Winner must be a game participant' }
+      }
+
+      // Choose the right completion function based on player count
+      let tx
+      let methodUsed
+
+      if (currentPlayers === maxPlayers) {
+        // Full game - use completeBattleRoyale
+        console.log(`✅ Using completeBattleRoyale (full game with ${currentPlayers} players)`)
+        methodUsed = 'completeBattleRoyale'
+        tx = await contract.completeBattleRoyale(gameIdBytes32, winner)
+      } else if (currentPlayers >= 2 && currentPlayers < maxPlayers) {
+        // Partial game - use completeBattleRoyaleEarly
+        console.log(`✅ Using completeBattleRoyaleEarly (partial game with ${currentPlayers} players)`)
+        methodUsed = 'completeBattleRoyaleEarly'
+        tx = await contract.completeBattleRoyaleEarly(gameIdBytes32, winner)
+      } else {
+        return { 
+          success: false, 
+          error: `Game cannot be completed: must have at least 2 players (currently ${currentPlayers})` 
+        }
+      }
+
+      console.log(`⏳ Waiting for transaction confirmation: ${tx.hash}`)
       const receipt = await tx.wait()
-      return { success: true, transactionHash: tx.hash, blockNumber: receipt.blockNumber }
+      console.log(`✅ Game completed on-chain! Block: ${receipt.blockNumber}, Method: ${methodUsed}`)
+      
+      return { 
+        success: true, 
+        transactionHash: tx.hash, 
+        blockNumber: receipt.blockNumber,
+        methodUsed: methodUsed,
+        playerCount: currentPlayers
+      }
     } catch (error) {
       console.error('❌ Failed to complete Battle Royale on chain:', error)
-      return { success: false, error: error.message || 'Blockchain transaction failed' }
+      
+      // Provide more helpful error messages
+      let errorMessage = error.message || 'Blockchain transaction failed'
+      if (error.reason) {
+        errorMessage = error.reason
+      } else if (error.error?.message) {
+        errorMessage = error.error.message
+      }
+      
+      return { success: false, error: errorMessage }
     }
   }
 
