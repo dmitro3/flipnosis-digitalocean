@@ -3,58 +3,83 @@
 
 $SERVER_IP = "159.69.242.154"
 $SERVER_USER = "root"
+
+# Read sensitive values from environment variables (do NOT hardcode secrets)
+$PRIVATE_KEY               = $env:PRIVATE_KEY
+$CONTRACT_OWNER_KEY        = $env:CONTRACT_OWNER_KEY
+$RPC_URL                   = $env:RPC_URL
+$CONTRACT_ADDRESS          = $env:CONTRACT_ADDRESS
+$PLATFORM_FEE_RECEIVER     = $env:PLATFORM_FEE_RECEIVER
+$VITE_API_URL              = $env:VITE_API_URL
+$VITE_WS_URL               = $env:VITE_WS_URL
+$VITE_ALCHEMY_API_KEY      = $env:VITE_ALCHEMY_API_KEY
+$VITE_BASE_RPC_URL         = $env:VITE_BASE_RPC_URL
+$VITE_ETHEREUM_RPC_URL     = $env:VITE_ETHEREUM_RPC_URL
+$VITE_SEPOLIA_RPC_URL      = $env:VITE_SEPOLIA_RPC_URL
+$VITE_BASESCAN_API_KEY     = $env:VITE_BASESCAN_API_KEY
+$VITE_ETHERSCAN_API_KEY    = $env:VITE_ETHERSCAN_API_KEY
+$VITE_BSCSCAN_API_KEY      = $env:VITE_BSCSCAN_API_KEY
+$VITE_AVALANCHE_API_KEY    = $env:VITE_AVALANCHE_API_KEY
+$VITE_POLYGONSCAN_API_KEY  = $env:VITE_POLYGONSCAN_API_KEY
+
+# Fail fast if critical secrets are missing
+if (-not $PRIVATE_KEY -or -not $CONTRACT_OWNER_KEY -or -not $RPC_URL -or -not $CONTRACT_ADDRESS -or -not $PLATFORM_FEE_RECEIVER) {
+  Write-Host "❌ Required environment variables are missing. Please set: PRIVATE_KEY, CONTRACT_OWNER_KEY, RPC_URL, CONTRACT_ADDRESS, PLATFORM_FEE_RECEIVER" -ForegroundColor Red
+  exit 1
+}
+
 $ENV_CONTENT = @"
 # SERVER VARIABLES (for blockchain functionality)
 # ========================================
 
 # Private Key (for blockchain transactions)
-PRIVATE_KEY=57061f32e46f0e15d1a7e6a555d9c2ea46ce9fc7e76665bbfc883ac322b405a2
+PRIVATE_KEY=$PRIVATE_KEY
 
 # Contract Owner Key (server looks for this first)
-CONTRACT_OWNER_KEY=57061f32e46f0e15d1a7e6a555d9c2ea46ce9fc7e76665bbfc883ac322b405a2
+CONTRACT_OWNER_KEY=$CONTRACT_OWNER_KEY
 
 # RPC URL (server needs this exact name)
-RPC_URL=https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3
+RPC_URL=$RPC_URL
 
 # Contract Address
-CONTRACT_ADDRESS=0xa90abBDE769BC2901A8E68E6C9758B1Cd6699A5F
+CONTRACT_ADDRESS=$CONTRACT_ADDRESS
 
 # Database path
 DATABASE_PATH=./server/flipz.db
 
 # Platform Fee Receiver (REQUIRED - Admin wallet for fees)
-PLATFORM_FEE_RECEIVER=0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1
+PLATFORM_FEE_RECEIVER=$PLATFORM_FEE_RECEIVER
 
 # ========================================
 # FRONTEND VARIABLES (exposed to frontend)
 # ========================================
 
-# API URLs (REQUIRED - connects to Railway backend)
-VITE_API_URL=https://cryptoflipz2-production.up.railway.app
-VITE_WS_URL=wss://cryptoflipz2-production.up.railway.app
+# API URLs (REQUIRED - connects to backend)
+VITE_API_URL=$VITE_API_URL
+VITE_WS_URL=$VITE_WS_URL
 
 # Alchemy API Key for Base Mainnet
-VITE_ALCHEMY_API_KEY=hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3
+VITE_ALCHEMY_API_KEY=$VITE_ALCHEMY_API_KEY
 
 # Base RPC URL (Alchemy)
-VITE_BASE_RPC_URL=https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3
+VITE_BASE_RPC_URL=$VITE_BASE_RPC_URL
 
 # Platform Fee Receiver (for frontend display)
-VITE_PLATFORM_FEE_RECEIVER=0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1
+VITE_PLATFORM_FEE_RECEIVER=$PLATFORM_FEE_RECEIVER
 
 # Environment
 NODE_ENV=production
 
 # RPC URLs (Optional - for better performance)
-VITE_ETHEREUM_RPC_URL=your_ethereum_rpc_url_here
-VITE_SEPOLIA_RPC_URL=your_sepolia_rpc_url_here
+VITE_ETHEREUM_RPC_URL=$VITE_ETHEREUM_RPC_URL
+VITE_SEPOLIA_RPC_URL=$VITE_SEPOLIA_RPC_URL
 
 # API Keys for Contract Verification (Optional)
-VITE_BASESCAN_API_KEY=PD6BITPMKB19J57SJN1MB2XH5FQJ54GBE1
-VITE_ETHERSCAN_API_KEY=your_etherscan_api_key_here
-VITE_BSCSCAN_API_KEY=your_bscscan_api_key_here
-VITE_AVALANCHE_API_KEY=your_avalanche_api_key_here
-VITE_POLYGONSCAN_API_KEY=your_polygonscan_api_key_here
+VITE_BASESCAN_API_KEY=$VITE_BASESCAN_API_KEY
+VITE_ETHERSCAN_API_KEY=$VITE_ETHERSCAN_API_KEY
+VITE_BSCSCAN_API_KEY=$VITE_BSCSCAN_API_KEY
+VITE_AVALANCHE_API_KEY=$VITE_AVALANCHE_API_KEY
+VITE_POLYGONSCAN_API_KEY=$VITE_POLYGONSCAN_API_KEY
 
 # Gas Reporting (Optional)
 VITE_REPORT_GAS=true
