@@ -2148,7 +2148,14 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       
       if (!blockchainService.hasOwnerWallet()) {
         debug.error = 'Blockchain service not configured'
-        return res.status(500).json({ error: 'Blockchain service not configured', debug })
+        debug.diagnostic = 'CONTRACT_OWNER_KEY environment variable is missing or invalid. Server cannot sign transactions without this key.'
+        debug.solution = 'Please set CONTRACT_OWNER_KEY environment variable on the server with the private key of the contract owner wallet.'
+        console.error('❌ [COMPLETE-MANUAL] Blockchain service not configured - CONTRACT_OWNER_KEY missing')
+        return res.status(500).json({ 
+          error: 'Blockchain service not configured',
+          message: 'The server is missing the CONTRACT_OWNER_KEY environment variable. This is required for the server to complete games on-chain.',
+          debug 
+        })
       }
       debug.hasBlockchainService = true
 

@@ -1320,7 +1320,27 @@ const Profile = () => {
                                       } else {
                                         console.error('🔍 [MANUAL-COMPLETE] Failed:', result.error);
                                         console.error('🔍 [MANUAL-COMPLETE] Debug:', result.debug);
-                                        showError(`Failed: ${result.error}. Check console for details.`);
+                                        
+                                        // Provide more helpful error messages
+                                        let errorMessage = result.error || 'Failed to complete game'
+                                        if (result.message) {
+                                          errorMessage = result.message
+                                        } else if (result.error?.includes('Blockchain service not configured')) {
+                                          errorMessage = '❌ Server Configuration Error: The server is missing the CONTRACT_OWNER_KEY environment variable. This is a server-side issue that needs to be fixed by the server administrator. The server cannot complete games on-chain without this configuration.'
+                                        }
+                                        
+                                        showError(errorMessage)
+                                        
+                                        // Log detailed debug info to console
+                                        if (result.debug) {
+                                          console.error('🔍 [MANUAL-COMPLETE] Debug info:', result.debug)
+                                          if (result.debug.diagnostic) {
+                                            console.error('🔍 [MANUAL-COMPLETE] Diagnostic:', result.debug.diagnostic)
+                                          }
+                                          if (result.debug.solution) {
+                                            console.error('🔍 [MANUAL-COMPLETE] Solution:', result.debug.solution)
+                                          }
+                                        }
                                       }
                                     } catch (err) {
                                       console.error('🔍 [MANUAL-COMPLETE] Error:', err);
