@@ -474,6 +474,7 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     
     /**
      * @notice Create a Battle Royale game
+     * @param creatorParticipates If true, creator is automatically added as a participant (free entry)
      */
     function createBattleRoyale(
         bytes32 gameId,
@@ -482,13 +483,23 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         uint256 entryFee,
         uint256 serviceFee,
         bool isUnder20,
-        uint256 minUnder20Wei
+        uint256 minUnder20Wei,
+        bool creatorParticipates
     ) external nonReentrant whenNotPaused {
         require(battleRoyaleGames[gameId].creator == address(0), "Game already exists");
         require(entryFee > 0, "Entry fee must be greater than 0");
         
         // Transfer NFT to contract
         IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+        
+        uint8 initialPlayers = 0;
+        
+        // Auto-add creator as participant if they want to participate (free entry)
+        if (creatorParticipates) {
+            battleRoyaleEntries[gameId][msg.sender] = true;
+            battleRoyaleEntryAmounts[gameId][msg.sender] = 0; // Creator plays for free
+            initialPlayers = 1;
+        }
         
         // Create game
         battleRoyaleGames[gameId] = BattleRoyaleGame({
@@ -497,8 +508,8 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
             tokenId: tokenId,
             entryFee: entryFee,
             serviceFee: serviceFee,
-            maxPlayers: 8,
-            currentPlayers: 0,
+            maxPlayers: 4,
+            currentPlayers: initialPlayers,
             winner: address(0),
             completed: false,
             creatorPaid: false,
@@ -510,6 +521,11 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         });
         
         emit BattleRoyaleCreated(gameId, msg.sender, entryFee, serviceFee);
+        
+        // Emit join event for creator if they participate
+        if (creatorParticipates) {
+            emit BattleRoyaleJoined(gameId, msg.sender, 0);
+        }
     }
     
     /**
@@ -518,7 +534,6 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     function joinBattleRoyale(bytes32 gameId) external payable nonReentrant whenNotPaused {
         BattleRoyaleGame storage game = battleRoyaleGames[gameId];
         require(game.creator != address(0), "Game does not exist");
-        require(game.creator != msg.sender, "Creator cannot join own game");
         require(!game.completed, "Game already completed");
         require(game.currentPlayers < game.maxPlayers, "Game is full");
         require(!battleRoyaleEntries[gameId][msg.sender], "Already joined this game");
@@ -560,7 +575,8 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         require(game.creator != address(0), "Game does not exist");
         require(!game.completed, "Game already completed");
         require(game.currentPlayers == game.maxPlayers, "Game not full yet");
-        require(battleRoyaleEntries[gameId][winner], "Winner must be a participant");
+        // Allow creator as winner even if not in battleRoyaleEntries (they were auto-added during creation)
+        require(battleRoyaleEntries[gameId][winner] || winner == game.creator, "Winner must be a participant");
         
         game.winner = winner;
         game.completed = true;
@@ -578,12 +594,30 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         require(!game.completed, "Game already completed");
         require(game.currentPlayers >= 2, "Need at least 2 players");
         require(game.currentPlayers < game.maxPlayers, "Use completeBattleRoyale for full games");
-        require(battleRoyaleEntries[gameId][winner], "Winner must be a participant");
+        // Allow creator as winner even if not in battleRoyaleEntries (they were auto-added during creation)
+        require(battleRoyaleEntries[gameId][winner] || winner == game.creator, "Winner must be a participant");
         
         game.winner = winner;
         game.completed = true;
         
         emit BattleRoyaleCompleted(gameId, winner);
+    }
+    
+    /**
+     * @notice Creator starts Battle Royale game early (creator only)
+     * Allows game to start with 2+ players but less than max
+     * Only the creator can trigger this - gives them control to start when ready
+     */
+    function startBattleRoyaleEarly(bytes32 gameId) external nonReentrant whenNotPaused {
+        BattleRoyaleGame storage game = battleRoyaleGames[gameId];
+        require(game.creator != address(0), "Game does not exist");
+        require(game.creator == msg.sender, "Only creator can start early");
+        require(!game.completed, "Game already completed");
+        require(game.currentPlayers >= 2, "Need at least 2 players to start");
+        require(game.currentPlayers < game.maxPlayers, "Game is full - no need to start early");
+        
+        // Emit event to signal game can start early
+        emit BattleRoyaleStarted(gameId, game.currentPlayers);
     }
     
     /**

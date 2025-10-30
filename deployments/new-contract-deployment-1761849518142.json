@@ -1,0 +1,10 @@
+{
+  "network": "base",
+  "contractAddress": "0xa90abBDE769BC2901A8E68E6C9758B1Cd6699A5F",
+  "deployer": "0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1",
+  "deploymentTime": "2025-10-30T18:38:38.142Z",
+  "constructorArgs": {
+    "platformFeeReceiver": "0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1",
+    "usdcToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  }
+}

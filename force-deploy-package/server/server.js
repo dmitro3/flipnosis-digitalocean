@@ -20,7 +20,7 @@ const server = http.createServer(app)
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3000
 const DATABASE_PATH = path.join(__dirname, 'database.sqlite')
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0xB2FC2180e003D818621F4722FFfd7878A218581D'
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0xa90abBDE769BC2901A8E68E6C9758B1Cd6699A5F'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 

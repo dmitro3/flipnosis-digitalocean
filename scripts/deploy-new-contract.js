@@ -4,34 +4,22 @@ async function main() {
   console.log("🚀 Deploying new NFTFlipGame contract...");
   console.log("=" .repeat(60));
 
-  // New admin wallet (will be the contract owner)
-  const newAdminWallet = "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628";
+  // Get the signer (connected wallet) - will be the contract owner
+  const [signer] = await ethers.getSigners();
+  const signerAddress = await signer.getAddress();
+  console.log(`🔑 Connected Wallet (will be contract owner): ${signerAddress}`);
   
   // USDC token address on Base
   const usdcTokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
-  console.log(`👤 New Admin Wallet: ${newAdminWallet}`);
   console.log(`💰 USDC Token: ${usdcTokenAddress}`);
 
   try {
-    // Get the signer (connected wallet)
-    const [signer] = await ethers.getSigners();
-    const signerAddress = await signer.getAddress();
-    console.log(`🔑 Connected Wallet: ${signerAddress}`);
-
-    // Verify we're using the new wallet
-    if (signerAddress.toLowerCase() !== newAdminWallet.toLowerCase()) {
-      console.log("❌ ERROR: You need to connect with the new admin wallet!");
-      console.log("💡 Please connect wallet:", newAdminWallet);
-      console.log("💡 Currently connected:", signerAddress);
-      return;
-    }
-
     console.log("\n📦 Deploying NFTFlipGame contract...");
     
-    // Deploy the contract
+    // Deploy the contract - signer address will be the owner and platform fee receiver
     const NFTFlipGame = await ethers.getContractFactory("contracts/NFTFlipGame.sol:NFTFlipGame");
-    const contract = await NFTFlipGame.deploy(newAdminWallet, usdcTokenAddress);
+    const contract = await NFTFlipGame.deploy(signerAddress, usdcTokenAddress);
     
     console.log(`📝 Deploy transaction hash: ${contract.deploymentTransaction().hash}`);
     
@@ -63,10 +51,10 @@ async function main() {
     const deploymentInfo = {
       network: "base",
       contractAddress: contractAddress,
-      deployer: newAdminWallet,
+      deployer: signerAddress,
       deploymentTime: new Date().toISOString(),
       constructorArgs: {
-        platformFeeReceiver: newAdminWallet,
+        platformFeeReceiver: signerAddress,
         usdcToken: usdcTokenAddress
       }
     };

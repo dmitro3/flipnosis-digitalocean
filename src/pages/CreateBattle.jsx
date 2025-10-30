@@ -778,7 +778,8 @@ const CreateBattle = () => {
         entryFeeWei.toString(),
         serviceFeeWei.toString(),
         isUnder20,
-        minUnder20Wei.toString()
+        minUnder20Wei.toString(),
+        creatorParticipates
       )
       
       if (!createResult.success) {

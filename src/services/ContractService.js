@@ -276,7 +276,7 @@ const NFT_ABI = [
 
 class ContractService {
   constructor() {
-    this.contractAddress = '0xB2FC2180e003D818621F4722FFfd7878A218581D' // NEW SECURE CONTRACT - Deployed with new wallet
+    this.contractAddress = '0xa90abBDE769BC2901A8E68E6C9758B1Cd6699A5F' // Updated contract with creator participation fix
     this.walletClient = null
     this.publicClient = null
     this.userAddress = null
@@ -1623,7 +1623,7 @@ class ContractService {
   // ===== BATTLE ROYALE FUNCTIONS =====
 
   // Create Battle Royale game
-  async createBattleRoyale(gameId, nftContract, tokenId, entryFee, serviceFee, isUnder20, minUnder20Wei) {
+  async createBattleRoyale(gameId, nftContract, tokenId, entryFee, serviceFee, isUnder20, minUnder20Wei, creatorParticipates) {
     if (!this.isReady()) {
       return { success: false, error: 'Contract service not initialized' }
     }
@@ -1647,7 +1647,7 @@ class ContractService {
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'createBattleRoyale',
-        args: [gameIdBytes32, nftContract, BigInt(tokenId), BigInt(entryFee), BigInt(serviceFee), Boolean(isUnder20), BigInt(minUnder20Wei)],
+        args: [gameIdBytes32, nftContract, BigInt(tokenId), BigInt(entryFee), BigInt(serviceFee), Boolean(isUnder20), BigInt(minUnder20Wei), Boolean(creatorParticipates)],
         chain: BASE_CHAIN,
         account: this.walletClient.account
       })
@@ -1767,6 +1767,38 @@ class ContractService {
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
       console.error('❌ Error joining Battle Royale:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Start Battle Royale early (creator only)
+  async startBattleRoyaleEarly(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('🚀 Starting Battle Royale game early:', gameId)
+      
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'startBattleRoyaleEarly',
+        args: [gameIdBytes32],
+        chain: BASE_CHAIN,
+        account: this.walletClient.account
+      })
+      
+      console.log('🚀 Battle Royale early start tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Battle Royale started early successfully')
+
+      return { success: true, transactionHash: hash, receipt }
+    } catch (error) {
+      console.error('❌ Error starting Battle Royale early:', error)
       return { success: false, error: error.message }
     }
   }
