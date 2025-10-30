@@ -569,8 +569,10 @@ class PhysicsGameManager {
         // Cleanup physics
         this.physicsEngine.cleanupGamePhysics(gameId)
         
-        // Update database first with winner information
-        await this.updateGameInDatabase(gameId, winnerAddress)
+        // Update database first with winner information (fire and forget - don't block)
+        this.updateGameInDatabase(gameId, winnerAddress).catch(err => {
+          console.error(`❌ Error updating game in database: ${err.message}`)
+        })
         
         // Complete the game on blockchain to transfer NFT ownership
         this.completeGameOnBlockchain(gameId, winnerAddress, broadcast)

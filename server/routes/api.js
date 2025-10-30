@@ -1890,6 +1890,43 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
+  // Route: Check Battle Royale game on-chain state
+  router.get('/battle-royale/:gameId/onchain-state', async (req, res) => {
+    const { gameId } = req.params
+    
+    try {
+      if (!blockchainService.provider) {
+        return res.status(500).json({ 
+          error: 'Blockchain service not configured',
+          onchainAvailable: false 
+        })
+      }
+      
+      const result = await blockchainService.getBattleRoyaleGameState(gameId)
+      
+      if (result.success) {
+        res.json({
+          onchainAvailable: true,
+          ...result.gameState,
+          canWithdraw: result.gameState.completed && 
+                       result.gameState.winner !== '0x0000000000000000000000000000000000000000' && 
+                       !result.gameState.nftClaimed
+        })
+      } else {
+        res.status(404).json({
+          onchainAvailable: true,
+          error: result.error,
+          message: result.error === 'Game does not exist on-chain' 
+            ? 'Game was never created on-chain or gameId is incorrect'
+            : 'Failed to read game state'
+        })
+      }
+    } catch (error) {
+      console.error('❌ Error checking on-chain state:', error)
+      res.status(500).json({ error: 'Failed to check on-chain state', details: error.message })
+    }
+  })
+
   // Route: Check game contract status
   router.get('/games/:gameId/contract-status', async (req, res) => {
     const { gameId } = req.params

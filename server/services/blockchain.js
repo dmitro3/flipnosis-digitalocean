@@ -228,6 +228,44 @@ class BlockchainService {
   }
 
   /**
+   * Get Battle Royale game state from contract
+   */
+  async getBattleRoyaleGameState(gameId) {
+    if (!this.provider) {
+      return { success: false, error: 'Provider not initialized' }
+    }
+
+    try {
+      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.provider)
+      const gameIdBytes32 = ethers.id(gameId)
+
+      const game = await contract.getBattleRoyaleGame(gameIdBytes32)
+      
+      if (game.creator === ethers.ZeroAddress) {
+        return { success: false, error: 'Game does not exist on-chain' }
+      }
+
+      return {
+        success: true,
+        gameState: {
+          creator: game.creator,
+          winner: game.winner,
+          completed: game.completed,
+          nftClaimed: game.nftClaimed,
+          creatorPaid: game.creatorPaid,
+          currentPlayers: game.currentPlayers.toString(),
+          maxPlayers: game.maxPlayers.toString(),
+          entryFee: game.entryFee.toString(),
+          totalPool: game.totalPool.toString()
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error getting Battle Royale game state:', error)
+      return { success: false, error: error.message || 'Failed to get game state' }
+    }
+  }
+
+  /**
    * Complete Battle Royale early with fewer players (owner-only)
    */
   async completeBattleRoyaleEarlyOnChain(gameId, winner) {

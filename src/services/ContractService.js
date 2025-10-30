@@ -1636,6 +1636,43 @@ class ContractService {
     }
   }
 
+  // Check Battle Royale game state on-chain
+  async getBattleRoyaleGameState(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const gameState = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'getBattleRoyaleGame',
+        args: [gameIdBytes32],
+        chain: BASE_CHAIN
+      })
+      
+      return {
+        success: true,
+        creator: gameState.creator,
+        winner: gameState.winner,
+        completed: gameState.completed,
+        nftClaimed: gameState.nftClaimed,
+        creatorPaid: gameState.creatorPaid,
+        currentPlayers: gameState.currentPlayers,
+        maxPlayers: gameState.maxPlayers,
+        canWithdraw: gameState.completed && 
+                     gameState.winner !== '0x0000000000000000000000000000000000000000' && 
+                     !gameState.nftClaimed
+      }
+    } catch (error) {
+      console.error('❌ Error getting Battle Royale game state:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
   // Withdraw winner NFT from Battle Royale
   async withdrawBattleRoyaleWinnerNFT(gameId) {
     if (!this.isReady()) {
@@ -1644,6 +1681,56 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
+      
+      // First check on-chain state to provide better error messages
+      const gameState = await this.getBattleRoyaleGameState(gameId)
+      if (!gameState.success) {
+        return { 
+          success: false, 
+          error: `Cannot check game state: ${gameState.error}`,
+          needsCompletion: false
+        }
+      }
+      
+      if (!gameState.completed) {
+        return { 
+          success: false, 
+          error: 'Game is not completed on-chain yet. Please wait for the backend to complete the game.',
+          needsCompletion: true,
+          onchainState: gameState
+        }
+      }
+      
+      if (gameState.winner === '0x0000000000000000000000000000000000000000') {
+        return { 
+          success: false, 
+          error: 'Winner not set on-chain. Please contact support.',
+          needsCompletion: true,
+          onchainState: gameState
+        }
+      }
+      
+      const userAddress = this.walletClient.account.address.toLowerCase()
+      const winnerAddress = gameState.winner.toLowerCase()
+      
+      if (userAddress !== winnerAddress) {
+        return { 
+          success: false, 
+          error: `You are not the winner. Winner is ${gameState.winner}`,
+          needsCompletion: false,
+          onchainState: gameState
+        }
+      }
+      
+      if (gameState.nftClaimed) {
+        return { 
+          success: false, 
+          error: 'NFT has already been claimed',
+          needsCompletion: false,
+          onchainState: gameState
+        }
+      }
+      
       console.log('🏆 Withdrawing Battle Royale winner NFT for game:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
