@@ -1647,7 +1647,8 @@ class ContractService {
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'createBattleRoyale',
-        args: [gameIdBytes32, nftContract, BigInt(tokenId), BigInt(entryFee), BigInt(serviceFee), Boolean(isUnder20), BigInt(minUnder20Wei), Boolean(creatorParticipates)],
+        // Contract expects 7 params; creatorParticipates is handled off-chain/UI only
+        args: [gameIdBytes32, nftContract, BigInt(tokenId), BigInt(entryFee), BigInt(serviceFee), Boolean(isUnder20), BigInt(minUnder20Wei)],
         chain: BASE_CHAIN,
         account: this.walletClient.account
       })
