@@ -1448,7 +1448,7 @@
         saveGameState();
         
         if (currentRound > oldRound) {
-          console.log(`ðŸ”„ Round ${currentRound} started - FULL RESET`);
+          console.log(`ðŸ"„ Round ${currentRound} started - FULL RESET`);
           tubes.forEach((tube, i) => {
             tube.hasUsedPower = false;
             tube.power = 0;
@@ -1457,6 +1457,8 @@
             
             tube.isShattered = false;
             tube.isFlipping = false;
+            tube.flipStartTime = null; // âœ… FIX: Clear flip tracking
+            tube.currentFlipId = null; // âœ… FIX: Clear flip ID
             
             tube.tube.visible = true;
             tube.backing.visible = true;
@@ -1666,7 +1668,15 @@
         const coin = coins[data.playerSlot];
         
         if (tube && coin) {
+          // âœ… FIX: Check if already flipping and skip if so
+          if (tube.isFlipping) {
+            console.log(`âš ï¸ Coin ${data.playerSlot + 1} already flipping, ignoring duplicate flip request`);
+            return;
+          }
+          
+          // âœ… FIX: Set state BEFORE starting animation
           tube.isFlipping = true;
+          tube.flipStartTime = Date.now();
           
           animateCoinFlip(data.playerSlot, data.power, data.duration);
           
@@ -1682,7 +1692,15 @@
         const player = players[data.playerSlot];
         
         if (tube && coin && player) {
+          // âœ… FIX: Ensure we're actually in a flipping state before showing result
+          if (!tube.isFlipping && !tube.flipStartTime) {
+            console.log(`âš ï¸ Received result for coin ${data.playerSlot + 1} but it's not flipping - ignoring stale result`);
+            return;
+          }
+          
+          // âœ… FIX: Clear flipping state
           tube.isFlipping = false;
+          tube.flipStartTime = null;
           
           const targetRotationX = data.result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
           animateCoinLanding(coin, targetRotationX, data.accuracy || 'normal');
@@ -1691,7 +1709,7 @@
           
           if (data.wins !== undefined) {
             player.wins = data.wins;
-            console.log(`ðŸ“Š Updated player ${data.playerSlot + 1} wins from server: ${player.wins}`);
+            console.log(`ðŸ"Š Updated player ${data.playerSlot + 1} wins from server: ${player.wins}`);
             updateWinsDisplay(data.playerSlot);
           }
           
@@ -1943,7 +1961,10 @@
       
       if (!tube || !coin) return;
       
-      tube.isFlipping = true;
+      // âœ… FIX: Already set in startClientCoinFlipAnimation, but double-check
+      if (!tube.isFlipping) {
+        tube.isFlipping = true;
+      }
       
       const powerPercent = power / 100;
       const material = tube.selectedMaterial || coinMaterials[2];
@@ -1960,10 +1981,19 @@
       console.log(`ðŸŽ¬ Starting visual coin flip for slot ${playerSlot}: duration=${flipDuration}ms, speed=${flipSpeed}`);
       
       const startTime = Date.now();
+      const flipId = Date.now(); // âœ… FIX: Unique ID for this flip
+      tube.currentFlipId = flipId;
+      
       let wobblePhase = 0;
       let tumblePhase = 0;
       
       const animateFlip = () => {
+        // âœ… FIX: Stop animation if this flip was superseded or interrupted
+        if (tube.currentFlipId !== flipId || !tube.isFlipping) {
+          console.log(`ðŸ›' Animation stopped for slot ${playerSlot} - flip interrupted or superseded`);
+          return;
+        }
+        
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / flipDuration, 1);
         
@@ -3633,6 +3663,8 @@
         power: 0, // Power level (0-100)
         isShattered: false, // Glass shattered state
         isFlipping: false, // Coin flip state
+        flipStartTime: null, // âœ… FIX: Track when flip started for state validation
+        currentFlipId: null, // âœ… FIX: Unique ID to prevent animation conflicts
         glassShards: [], // Will hold glass shards when shattered
         winLight: null, // Win glow light
         loseLight: null, // Lose glow light
@@ -3644,12 +3676,38 @@
       });
     }
 
-    console.log('ðŸ”¥ Warming up pearl shaders...');
+    console.log('ðŸ"¥ Warming up pearl shaders AND glass shatter materials...');
     tubes.forEach((tube, i) => {
       tube.power = 1;
       tube.foamIntensity = 0.01;
       updatePearlColors(tube, 0.01, i);
     });
+    
+    // ðŸ"¥ PRE-WARM GLASS SHARD MATERIALS - Prevents first-flip lag!
+    const warmupShardGeometry = new THREE.BufferGeometry();
+    const warmupVertices = new Float32Array([0, 0, 0, 10, 0, 0, 5, 10, 0]);
+    warmupShardGeometry.setAttribute('position', new THREE.BufferAttribute(warmupVertices, 3));
+    const warmupShardMaterial = new THREE.MeshStandardMaterial({
+      color: 0xe0e0e0,
+      metalness: 0.95,
+      roughness: 0.1,
+      emissive: 0xc0c0c0,
+      emissiveIntensity: 0.4,
+      side: THREE.DoubleSide
+    });
+    const warmupShard = new THREE.Mesh(warmupShardGeometry, warmupShardMaterial);
+    warmupShard.position.set(-10000, -10000, -10000); // Off-screen
+    scene.add(warmupShard);
+    
+    // Force a render to compile the shader
+    webglRenderer.render(scene, camera);
+    
+    // Clean up warmup shard
+    setTimeout(() => {
+      scene.remove(warmupShard);
+      warmupShardGeometry.dispose();
+      warmupShardMaterial.dispose();
+    }, 200);
     
     setTimeout(() => {
       tubes.forEach((tube, i) => {
@@ -3657,7 +3715,7 @@
         tube.foamIntensity = 0;
         updatePearlColors(tube, 0, i);
       });
-      console.log('âœ… Shader warmup complete');
+      console.log('âœ… Shader + Glass warmup complete');
     }, 100);
 
     console.log('🎮 Game started - coin textures already applied during tube creation');
@@ -4728,14 +4786,22 @@
       
       console.log(`🪙 Material: ${material.name} - Speed: ${speedMult}x, Duration: ${durationMult}x`);
       
-      const result = Math.random() < 0.5 ? 'heads' : 'tails';
+      // âœ… FIX: Use sweet spot accuracy to influence outcome!
+      const accuracyData = calculateReleaseAccuracy(powerLevel);
+      const winChance = accuracyData.winChance;
       
-      const didWin = playerChoice === result;
+      // Random roll against win chance
+      const randomRoll = Math.random();
+      const didWin = randomRoll < winChance;
       
-      console.log(`🪙 Flipping coin ${tubeIndex + 1} for ${flipDuration.toFixed(0)}ms at speed ${baseFlipSpeed.toFixed(3)} - Result: ${result}, Choice: ${playerChoice}, Won: ${didWin}`);
+      // Result is based on whether they won, not pure random
+      const result = didWin ? playerChoice : (playerChoice === 'heads' ? 'tails' : 'heads');
+      
+      console.log(`🪙 Flipping coin ${tubeIndex + 1} - Power: ${powerLevel}%, Accuracy: ${accuracyData.accuracy}, Win Chance: ${(winChance * 100).toFixed(1)}%, Roll: ${(randomRoll * 100).toFixed(1)}%, Won: ${didWin}, Result: ${result}, Choice: ${playerChoice}`);
       
       const startTime = Date.now();
       
+      // âœ… FIX: Calculate natural landing rotation to prevent snapback
       const targetRotationX = result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
       
       tube.isFlipping = true;
@@ -4743,20 +4809,36 @@
       const startRotation = coin.rotation.x;
       const rotationsPerSecond = baseFlipSpeed * 60;
       const totalRotations = (rotationsPerSecond * (flipDuration / 1000)) / (Math.PI * 2);
-      const fullRotations = Math.floor(totalRotations);
-      const finalTarget = startRotation + (fullRotations * Math.PI * 2) + (targetRotationX - (startRotation % (Math.PI * 2)));
+      
+      // âœ… FIX: Calculate how many full rotations to do, then land naturally on target
+      // We want the coin to spin many times, then decelerate to land on the target face
+      const minFullRotations = Math.floor(totalRotations) - 1; // At least this many full spins
+      const targetRotationTotal = startRotation + (minFullRotations * Math.PI * 2) + targetRotationX;
       
       const animateFlip = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / flipDuration, 1);
         
-        const easeOutCubic = 1 - Math.pow(1 - progress, 3);
-        coin.rotation.x = startRotation + (finalTarget - startRotation) * easeOutCubic;
+        // âœ… FIX: Smooth deceleration curve - no snap!
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        coin.rotation.x = startRotation + (targetRotationTotal - startRotation) * easeOutQuart;
+        
+        // Wobble during flip for realism
+        if (progress < 0.9) {
+          coin.rotation.y = (Math.PI / 2) + Math.sin(progress * Math.PI * 8) * 0.1;
+          coin.rotation.z = Math.sin(progress * Math.PI * 6) * 0.05;
+        } else {
+          // Stabilize at the end
+          const stabilizeProgress = (progress - 0.9) / 0.1;
+          coin.rotation.y = (Math.PI / 2) + (1 - stabilizeProgress) * Math.sin(progress * Math.PI * 8) * 0.1;
+          coin.rotation.z = (1 - stabilizeProgress) * Math.sin(progress * Math.PI * 6) * 0.05;
+        }
         
         if (progress < 1) {
           requestAnimationFrame(animateFlip);
         } else {
-          coin.rotation.x = finalTarget;
+          // Final position - perfectly facing camera
+          coin.rotation.x = targetRotationTotal;
           coin.rotation.y = Math.PI / 2;
           coin.rotation.z = 0;
           
