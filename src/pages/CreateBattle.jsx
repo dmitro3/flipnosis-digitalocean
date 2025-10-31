@@ -26,7 +26,7 @@ const BattleContainer = styled.div`
   background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
   border: 3px solid #00ffff;
   border-radius: 20px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 0 50px rgba(0, 255, 255, 0.4);
   backdrop-filter: blur(10px);
   min-height: 90vh;
@@ -47,14 +47,12 @@ const FourBoxGrid = styled.div`
   grid-template-rows: auto auto;
   gap: 1.5rem;
   margin-top: 1.5rem;
-  max-height: 50vh;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto auto;
     gap: 1rem;
     margin-top: 1rem;
-    max-height: none;
   }
 `
 
@@ -80,7 +78,7 @@ const Box = styled.div`
   /* Make the Flip Price container (bottom left) taller */
   &:nth-child(3) {
     min-height: 375px;
-    max-height: 475px;
+    max-height: none;
   }
 
   @media (max-width: 768px) {
@@ -1079,7 +1077,7 @@ const CreateBattle = () => {
                           </span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                          <span>Service Fee:</span>
+                          <span>Service Fee (5%):</span>
                           <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                             <span>{(() => {
                               const n = parseFloat(totalEth || '0')
@@ -1091,17 +1089,6 @@ const CreateBattle = () => {
                             {ethPriceUSD > 0 && (
                               <span style={{ fontSize: '0.85rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
                                 ≈ ${((parseFloat(totalEth || '0') * 0.05) * ethPriceUSD).toFixed(2)} USD
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff69b4' }}>
-                          <span>Network Fee:</span>
-                          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                            <span>~0.001 ETH</span>
-                            {ethPriceUSD > 0 && (
-                              <span style={{ fontSize: '0.85rem', color: '#ff69b4', opacity: 0.8, marginTop: '0.15rem' }}>
-                                ≈ ${(0.001 * ethPriceUSD).toFixed(2)} USD
                               </span>
                             )}
                           </span>
