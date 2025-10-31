@@ -425,7 +425,7 @@ const BattleHeader = styled.div`
 `
 
 const BattleTitle = styled.h1`
-  font-size: 2.5rem;
+  font-size: 5rem;
   font-weight: 700;
   background: linear-gradient(135deg, #ff1493, #ff69b4);
   -webkit-background-clip: text;
@@ -435,7 +435,7 @@ const BattleTitle = styled.h1`
   text-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
 
   @media (max-width: 768px) {
-    font-size: 1.8rem;
+    font-size: 3.6rem;
     margin: 0 0 0.5rem 0;
   }
 `
@@ -648,7 +648,7 @@ const CreateBattle = () => {
       }
     }
     fetchPrice()
-    const interval = setInterval(fetchPrice, 30000) // Update every 30 seconds
+    const interval = setInterval(fetchPrice, 90000) // Update every 90 seconds
     return () => clearInterval(interval)
   }, [])
 

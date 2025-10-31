@@ -286,7 +286,7 @@ class ContractService {
     
     // Price caching for ETH/USD
     this.priceCache = { price: null, timestamp: 0 }
-    this.cacheDuration = 30000 // 30 seconds
+    this.cacheDuration = 90000 // 90 seconds
     
     // Force refresh price on page visibility change (user switches tabs back)
     if (typeof document !== 'undefined') {
@@ -844,8 +844,8 @@ class ContractService {
   async getETHPriceUSD() {
     const now = Date.now()
     
-    // Use cached price if it's still fresh (within 30 seconds)
-    if (this.priceCache.price && (now - this.priceCache.timestamp) < this.cacheDuration) {
+      // Use cached price if it's still fresh (within 90 seconds)
+      if (this.priceCache.price && (now - this.priceCache.timestamp) < this.cacheDuration) {
       console.log('💰 Using cached ETH price:', this.priceCache.price)
       return this.priceCache.price
     }

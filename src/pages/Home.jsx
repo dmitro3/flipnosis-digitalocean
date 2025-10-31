@@ -473,6 +473,7 @@ const Home = () => {
   const [error, setError] = useState(null)
   const [selectedFlip, setSelectedFlip] = useState(null)
   const [viewMode, setViewMode] = useState('grid') // Default to grid view, mobile will use list
+  const [ethPriceUSD, setEthPriceUSD] = useState(0)
 
   // Fetch data from database
   const fetchData = async () => {
@@ -559,6 +560,22 @@ const Home = () => {
   useEffect(() => {
     fetchData()
     // Note: Removed auto-refresh interval since WebSocket provides real-time updates
+  }, [])
+
+  // Fetch ETH price for USD display (uses cached service, won't spam CoinGecko)
+  useEffect(() => {
+    const fetchPrice = async () => {
+      try {
+        const price = await contractService.getETHPriceUSD()
+        setEthPriceUSD(price)
+      } catch (error) {
+        console.warn('Failed to fetch ETH price for display:', error)
+      }
+    }
+    fetchPrice()
+    // Refresh price every 90 seconds to stay current
+    const interval = setInterval(fetchPrice, 90000)
+    return () => clearInterval(interval)
   }, [])
 
   // Auto-select only when nothing is user-selected, and don't override a manual selection
@@ -1187,7 +1204,17 @@ const Home = () => {
                               {(() => {
                                 if (selectedFlip.gameType === 'battle-royale') {
                                   const fee = selectedFlip.entry_fee || 0
-                                  return parseFloat(fee).toFixed(6) + ' ETH'
+                                  const ethAmount = parseFloat(fee).toFixed(6)
+                                  return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                      <span>{ethAmount} ETH</span>
+                                      {ethPriceUSD > 0 && (
+                                        <span style={{ fontSize: '0.7rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
+                                          ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
+                                        </span>
+                                      )}
+                                    </div>
+                                  )
                                 } else {
                                   return (selectedFlip.priceUSD || 0).toFixed(2) + ' USD'
                                 }
@@ -1273,7 +1300,17 @@ const Home = () => {
                             {(() => {
                               if (selectedFlip.gameType === 'battle-royale') {
                                 const fee = selectedFlip.entry_fee || 0
-                                return parseFloat(fee).toFixed(6) + ' ETH'
+                                const ethAmount = parseFloat(fee).toFixed(6)
+                                return (
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <span>{ethAmount} ETH</span>
+                                    {ethPriceUSD > 0 && (
+                                      <span style={{ fontSize: '0.85rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
+                                        ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
+                                      </span>
+                                    )}
+                                  </div>
+                                )
                               } else {
                                 return (selectedFlip.priceUSD || 0).toFixed(2) + ' USD'
                               }
@@ -1696,7 +1733,17 @@ const Home = () => {
                               {(() => {
                                 if (item.gameType === 'battle-royale') {
                                   const fee = item.entry_fee || 0
-                                  return parseFloat(fee).toFixed(6) + ' ETH'
+                                  const ethAmount = parseFloat(fee).toFixed(6)
+                                  return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                      <span>{ethAmount} ETH</span>
+                                      {ethPriceUSD > 0 && (
+                                        <span style={{ fontSize: '0.7rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
+                                          ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
+                                        </span>
+                                      )}
+                                    </div>
+                                  )
                                 } else {
                                   return (item.priceUSD || 0).toFixed(2) + ' USD'
                                 }
@@ -1865,7 +1912,17 @@ const Home = () => {
                                   {(() => {
                                     if (item.gameType === 'battle-royale') {
                                       const fee = item.entry_fee || 0
-                                      return parseFloat(fee).toFixed(6) + ' ETH'
+                                      const ethAmount = parseFloat(fee).toFixed(6)
+                                      return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                          <span>{ethAmount} ETH</span>
+                                          {ethPriceUSD > 0 && (
+                                            <span style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
+                                              ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
+                                            </span>
+                                          )}
+                                        </div>
+                                      )
                                     } else {
                                       return (item.priceUSD || 0).toFixed(2) + ' USD'
                                     }
@@ -1884,7 +1941,17 @@ const Home = () => {
                                   {(() => {
                                     if (item.gameType === 'battle-royale') {
                                       const fee = item.entry_fee || 0
-                                      return parseFloat(fee).toFixed(6) + ' ETH'
+                                      const ethAmount = parseFloat(fee).toFixed(6)
+                                      return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                          <span>{ethAmount} ETH</span>
+                                          {ethPriceUSD > 0 && (
+                                            <span style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
+                                              ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
+                                            </span>
+                                          )}
+                                        </div>
+                                      )
                                     } else {
                                       return (item.priceUSD || 0).toFixed(2) + ' USD'
                                     }

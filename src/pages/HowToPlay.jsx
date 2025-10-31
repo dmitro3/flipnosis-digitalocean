@@ -46,6 +46,7 @@ const Title = styled.h1`
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+  font-family: 'Hyperwave', sans-serif;
 
   @media (max-width: 768px) {
     font-size: 2rem;
