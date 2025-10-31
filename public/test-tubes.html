@@ -1457,8 +1457,10 @@
             
             tube.isShattered = false;
             tube.isFlipping = false;
-            tube.flipStartTime = null; // âœ… FIX: Clear flip tracking
-            tube.currentFlipId = null; // âœ… FIX: Clear flip ID
+            tube.isLanding = false; // âœ… FIX: Clear landing flag
+            tube.flipStartTime = null; // Clear flip tracking
+            tube.currentFlipId = null; // Clear flip ID
+            tube.currentLandingId = null; // âœ… FIX: Clear landing ID
             
             tube.tube.visible = true;
             tube.backing.visible = true;
@@ -1603,7 +1605,8 @@
         const player = players[i];
         const coin = coins[i];
         
-        if (coin && !tube.isFlipping && !tube.isShattered) {
+        // âœ… FIX: Also skip if coin is landing!
+        if (coin && !tube.isFlipping && !tube.isShattered && !tube.isLanding) {
           if (player && !player.isEmpty) {
             if (player.choice === 'heads') {
               coin.rotation.x = Math.PI / 2;
@@ -1698,32 +1701,31 @@
             return;
           }
           
-          // âœ… FIX: STOP the flip animation by clearing flip state FIRST
-          // This will cause animateCoinFlip's loop to exit on next frame
+          // âœ… CRITICAL FIX: Set isLanding FIRST before clearing isFlipping!
+          // This prevents updateCoinRotationsFromPlayerChoices() from interfering
+          tube.isLanding = true;
+          
+          // âœ… THEN clear flip state to stop the flip animation
           tube.isFlipping = false;
           tube.flipStartTime = null;
-          tube.currentFlipId = null; // Cancel the flip animation
+          tube.currentFlipId = null;
           
-          // âœ… FIX: Wait a tiny bit for the flip animation to stop
+          // Start landing immediately - no delay, no vulnerability window!
+          const targetRotationX = data.result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
+          smoothLandCoin(coin, targetRotationX, data.accuracy || 'normal', tube, data.playerSlot);
+          
+          console.log(`âœ… Coin ${data.playerSlot + 1} landing to ${data.result} (server-side)`);
+          
+          if (data.wins !== undefined) {
+            player.wins = data.wins;
+            console.log(`ðŸ"Š Updated player ${data.playerSlot + 1} wins from server: ${player.wins}`);
+            updateWinsDisplay(data.playerSlot);
+          }
+          
+          // âœ… FIX: Show result AFTER landing completes
           setTimeout(() => {
-            const targetRotationX = data.result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
-            
-            // âœ… FIX: Smooth landing from CURRENT position (not predetermined)
-            smoothLandCoin(coin, targetRotationX, data.accuracy || 'normal', tube, data.playerSlot);
-            
-            console.log(`âœ… Coin ${data.playerSlot + 1} landed on ${data.result} facing camera (server-side)`);
-            
-            if (data.wins !== undefined) {
-              player.wins = data.wins;
-              console.log(`ðŸ"Š Updated player ${data.playerSlot + 1} wins from server: ${player.wins}`);
-              updateWinsDisplay(data.playerSlot);
-            }
-            
-            // âœ… FIX: Show result AFTER landing completes
-            setTimeout(() => {
-              showResult(data.playerSlot, data.won, data.result);
-            }, 800); // Wait for landing animation
-          }, 50); // Small delay to let flip animation exit
+            showResult(data.playerSlot, data.won, data.result);
+          }, 1300); // Wait for 1.2s landing + 100ms buffer
         }
       }
     }
@@ -1733,6 +1735,9 @@
       const startRotation = coin.rotation.x;
       const startY = coin.rotation.y;
       const startZ = coin.rotation.z;
+      
+      // âœ… FIX: Set landing flag to prevent other functions from overriding rotation
+      tube.isLanding = true;
       
       // Calculate shortest path to target
       const rotationCycles = Math.floor(startRotation / (Math.PI * 2));
@@ -1746,10 +1751,19 @@
       
       const landingDuration = 800; // Smooth 0.8 second landing
       const startTime = Date.now();
+      const landingId = Date.now(); // âœ… Unique ID for this landing
+      tube.currentLandingId = landingId;
       
       console.log(`ðŸŽ¯ Landing coin ${playerSlot + 1}: from ${startRotation.toFixed(2)} to ${finalRotation.toFixed(2)}`);
       
       const animateLanding = () => {
+        // âœ… FIX: Stop if landing was interrupted
+        if (tube.currentLandingId !== landingId) {
+          console.log(`ðŸ›' Landing animation stopped for coin ${playerSlot + 1} - interrupted`);
+          tube.isLanding = false;
+          return;
+        }
+        
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / landingDuration, 1);
         
@@ -1767,6 +1781,8 @@
           coin.rotation.x = finalRotation;
           coin.rotation.y = Math.PI / 2;
           coin.rotation.z = 0;
+          tube.isLanding = false; // âœ… Clear landing flag
+          tube.currentLandingId = null;
           console.log(`âœ… Coin ${playerSlot + 1} landing complete`);
         }
       };
@@ -3675,8 +3691,10 @@
         power: 0, // Power level (0-100)
         isShattered: false, // Glass shattered state
         isFlipping: false, // Coin flip state
-        flipStartTime: null, // âœ… FIX: Track when flip started for state validation
-        currentFlipId: null, // âœ… FIX: Unique ID to prevent animation conflicts
+        isLanding: false, // âœ… FIX: Coin landing state (prevents rotation override)
+        flipStartTime: null, // Track when flip started for state validation
+        currentFlipId: null, // Unique ID to prevent animation conflicts
+        currentLandingId: null, // âœ… FIX: Unique ID for landing animation
         glassShards: [], // Will hold glass shards when shattered
         winLight: null, // Win glow light
         loseLight: null, // Lose glow light
@@ -6090,11 +6108,18 @@
         
         coin.visible = true;
         
+        // ✅ FIX: Skip ALL position/rotation updates if landing!
+        if (tube.isLanding) {
+          // Landing animation has full control - don't touch anything!
+          return;
+        }
+        
         if (tube.isFlipping) {
           const tubeX = tube.tube.position.x;
           coin.position.x = tubeX;
           coin.position.y = 200;
           coin.position.z = 0;
+          // ✅ FIX: Don't touch rotation during flip - animation handles it
         } else if (tube.isFilling && !tube.isShattered) {
           const vibIntensity = (tube.power / 100) * 8; // 0 to 8 pixels
           const vibSpeed = (tube.power / 100) * 20; // Speed increases

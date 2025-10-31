@@ -186,6 +186,7 @@ class PhysicsGameManager {
         wins: 0, // Track wins for first-to-3-wins system
         choice: null,
         hasFired: false,
+        isFlipping: false, // ✅ FIX: Initialize flipping flag
         coin: null,
         isActive: true,
         slotNumber: slotNumber
@@ -304,22 +305,22 @@ class PhysicsGameManager {
     const normalizedAddress = address.toLowerCase()
     const player = game.players[normalizedAddress]
     
-    if (!player || !player.isActive || player.hasFired) {
-      console.warn(`❌ Player ${address} cannot fire in game ${gameId}`, {
-        player: !!player,
-        isActive: player?.isActive,
-        hasFired: player?.hasFired,
-        lives: player?.lives,
-        slotNumber: player?.slotNumber,
-        choice: player?.choice,
-        allPlayers: Object.keys(game.players),
-        allPlayerStates: Object.entries(game.players).map(([addr, p]) => ({
-          address: addr,
-          isActive: p.isActive,
-          hasFired: p.hasFired,
-          lives: p.lives,
-          choice: p.choice
-        }))
+    if (!player) {
+      console.warn(`❌ Player ${address} not found in game ${gameId}`)
+      return false
+    }
+    
+    if (!player.isActive) {
+      console.warn(`❌ Player ${address} is not active in game ${gameId}`)
+      return false
+    }
+    
+    // ✅ FIX: Check if already flipping/firing (prevent double-clicks/rapid requests)
+    if (player.hasFired || player.isFlipping) {
+      console.warn(`❌ Player ${address} already flipping/fired in game ${gameId}`, {
+        hasFired: player.hasFired,
+        isFlipping: player.isFlipping,
+        slotNumber: player.slotNumber
       })
       return false
     }
@@ -334,7 +335,9 @@ class PhysicsGameManager {
       return false
     }
 
+    // ✅ FIX: Set BOTH flags immediately to prevent race conditions
     player.hasFired = true
+    player.isFlipping = true
 
     // Run server-side physics simulation
     const simulationResult = this.physicsEngine.simulateCoinFlip(
@@ -409,6 +412,9 @@ class PhysicsGameManager {
     const won = result === player.choice
 
     console.log(`🎲 Player ${address} result: ${result} (chose ${player.choice}) - ${won ? 'WON' : 'LOST'}`)
+
+    // ✅ FIX: Clear flipping flag now that result is determined
+    player.isFlipping = false
 
     // Update wins (first to 3 wins system)
     if (won) {
@@ -630,6 +636,7 @@ class PhysicsGameManager {
           player.isActive = true
           player.choice = null
           player.hasFired = false
+          player.isFlipping = false // ✅ FIX: Clear flipping flag
           console.log(`🔄 Reset ${address} for tiebreaker: wins=${player.wins}`)
         })
         
@@ -673,7 +680,8 @@ class PhysicsGameManager {
             player.isActive = true
             player.choice = null
             player.hasFired = false
-            console.log(`🔄 Reset player state: isActive=${player.isActive}, choice=${player.choice}, hasFired=${player.hasFired}`)
+            player.isFlipping = false // ✅ FIX: Clear flipping flag
+            console.log(`🔄 Reset player state: isActive=${player.isActive}, choice=${player.choice}, hasFired=${player.hasFired}, isFlipping=${player.isFlipping}`)
           }
         })
         
