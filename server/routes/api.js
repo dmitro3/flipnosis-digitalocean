@@ -3153,12 +3153,13 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         }
       }
 
-      // Check if already claimed
-      if (onChainState && onChainState.success && onChainState.nftClaimed) {
-        return res.status(400).json({ error: 'NFT already claimed (verified on-chain)' })
-      }
-      if (game && game.nft_claimed) {
+      // Check if already claimed in database (skip on-chain check if we have a fresh transactionHash)
+      if (game && game.nft_claimed && !transactionHash) {
         return res.status(400).json({ error: 'NFT already marked as claimed in database' })
+      }
+      // Only check on-chain if no transactionHash provided (to avoid rejecting fresh claims)
+      if (!transactionHash && onChainState && onChainState.success && onChainState.nftClaimed) {
+        return res.status(400).json({ error: 'NFT already claimed (verified on-chain)' })
       }
 
       // Update database if game exists, otherwise just return success
