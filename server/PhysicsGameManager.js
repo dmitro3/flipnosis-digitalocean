@@ -44,7 +44,10 @@ class PhysicsGameManager {
       room_type: gameData.room_type || 'potion', // Add room type
       // Physics state
       physicsInitialized: false,
-      material: 'glass' // Default material
+      material: 'glass', // Default material
+      // ✅ FIX: Race condition prevention flags
+      isEndingRound: false, // Prevents simultaneous endRound calls
+      processingRoundEnd: false // Prevents duplicate round end processing
     }
 
     this.games.set(gameId, game)
@@ -434,8 +437,16 @@ class PhysicsGameManager {
       .filter(p => p.isActive)
       .every(p => p.hasFired)
 
-    if (allFired) {
-      this.endRound(gameId, broadcast).catch(err => console.error('Error ending round:', err))
+    // ✅ FIX: Prevent duplicate endRound calls when multiple players finish simultaneously
+    if (allFired && !game.isEndingRound) {
+      game.isEndingRound = true; // Set flag IMMEDIATELY to block other calls
+      console.log(`🏁 Round ending triggered for game ${gameId}`)
+      this.endRound(gameId, broadcast).catch(err => {
+        console.error('Error ending round:', err)
+        game.isEndingRound = false; // Reset flag on error
+      })
+    } else if (allFired && game.isEndingRound) {
+      console.log(`⚠️ Round end already in progress for game ${gameId}, skipping duplicate call`)
     } else if (broadcast) {
       this.broadcastState(gameId, broadcast)
     }
@@ -682,8 +693,9 @@ class PhysicsGameManager {
         // Start the new round timer FIRST
         this.startRoundTimer(gameId, broadcast)
         
-        // THEN reset the processing flag
+        // THEN reset the processing flags
         game.processingRoundEnd = false
+        game.isEndingRound = false // ✅ FIX: Reset race condition flag
         
         console.log(`🎮 Game ${gameId} - Round ${game.currentRound} started`)
       }
@@ -693,9 +705,10 @@ class PhysicsGameManager {
         this.broadcastState(gameId, broadcast)
       }
       
-      // Clear the processing flag if game is over
+      // Clear the processing flags if game is over
       if (game.phase === 'game_over') {
         game.processingRoundEnd = false
+        game.isEndingRound = false // ✅ FIX: Reset race condition flag
       }
       
     }, 2000) // Wait 2 seconds for auto-flips to process

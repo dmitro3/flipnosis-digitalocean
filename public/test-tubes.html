@@ -1698,25 +1698,80 @@
             return;
           }
           
-          // âœ… FIX: Clear flipping state
+          // âœ… FIX: STOP the flip animation by clearing flip state FIRST
+          // This will cause animateCoinFlip's loop to exit on next frame
           tube.isFlipping = false;
           tube.flipStartTime = null;
+          tube.currentFlipId = null; // Cancel the flip animation
           
-          const targetRotationX = data.result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
-          animateCoinLanding(coin, targetRotationX, data.accuracy || 'normal');
-          
-          console.log(`âœ… Coin ${data.playerSlot + 1} landed on ${data.result} facing camera (server-side)`);
-          
-          if (data.wins !== undefined) {
-            player.wins = data.wins;
-            console.log(`ðŸ"Š Updated player ${data.playerSlot + 1} wins from server: ${player.wins}`);
-            updateWinsDisplay(data.playerSlot);
-          }
-          
-          showResult(data.playerSlot, data.won, data.result);
-          
+          // âœ… FIX: Wait a tiny bit for the flip animation to stop
+          setTimeout(() => {
+            const targetRotationX = data.result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
+            
+            // âœ… FIX: Smooth landing from CURRENT position (not predetermined)
+            smoothLandCoin(coin, targetRotationX, data.accuracy || 'normal', tube, data.playerSlot);
+            
+            console.log(`âœ… Coin ${data.playerSlot + 1} landed on ${data.result} facing camera (server-side)`);
+            
+            if (data.wins !== undefined) {
+              player.wins = data.wins;
+              console.log(`ðŸ"Š Updated player ${data.playerSlot + 1} wins from server: ${player.wins}`);
+              updateWinsDisplay(data.playerSlot);
+            }
+            
+            // âœ… FIX: Show result AFTER landing completes
+            setTimeout(() => {
+              showResult(data.playerSlot, data.won, data.result);
+            }, 800); // Wait for landing animation
+          }, 50); // Small delay to let flip animation exit
         }
       }
+    }
+    
+    // âœ… NEW FUNCTION: Smooth landing that takes over from current rotation
+    function smoothLandCoin(coin, targetRotation, accuracy, tube, playerSlot) {
+      const startRotation = coin.rotation.x;
+      const startY = coin.rotation.y;
+      const startZ = coin.rotation.z;
+      
+      // Calculate shortest path to target
+      const rotationCycles = Math.floor(startRotation / (Math.PI * 2));
+      const currentInCycle = startRotation - (rotationCycles * Math.PI * 2);
+      let finalRotation = rotationCycles * (Math.PI * 2) + targetRotation;
+      
+      // If we're past the target in this cycle, go to next cycle's target
+      if (currentInCycle > targetRotation + Math.PI) {
+        finalRotation += Math.PI * 2;
+      }
+      
+      const landingDuration = 800; // Smooth 0.8 second landing
+      const startTime = Date.now();
+      
+      console.log(`ðŸŽ¯ Landing coin ${playerSlot + 1}: from ${startRotation.toFixed(2)} to ${finalRotation.toFixed(2)}`);
+      
+      const animateLanding = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / landingDuration, 1);
+        
+        // Smooth deceleration curve
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        
+        coin.rotation.x = startRotation + (finalRotation - startRotation) * easeOutQuart;
+        coin.rotation.y = startY + (Math.PI / 2 - startY) * easeOutQuart;
+        coin.rotation.z = startZ * (1 - easeOutQuart);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateLanding);
+        } else {
+          // Snap to exact final position
+          coin.rotation.x = finalRotation;
+          coin.rotation.y = Math.PI / 2;
+          coin.rotation.z = 0;
+          console.log(`âœ… Coin ${playerSlot + 1} landing complete`);
+        }
+      };
+      
+      animateLanding();
     }
     
     function updatePowerChargingVisual(data) {
@@ -2071,50 +2126,7 @@
       }, 2000);
     }
 
-    function animateCoinLanding(coin, targetRotation, accuracy) {
-      const currentRotation = coin.rotation.x;
-      const rotationCycles = Math.floor(currentRotation / (Math.PI * 2));
-      const finalRotation = rotationCycles * (Math.PI * 2) + targetRotation;
-      
-      let landingProgress = 0;
-      const landingDuration = 400; // 0.4 seconds
-      const startTime = Date.now();
-      
-      const startY = coin.rotation.y;
-      const startZ = coin.rotation.z;
-      
-      const animateLanding = () => {
-        const elapsed = Date.now() - startTime;
-        landingProgress = Math.min(elapsed / landingDuration, 1);
-        
-        let bounce;
-        if (landingProgress < 0.7) {
-          bounce = Math.pow(landingProgress / 0.7, 2);
-        } else {
-          const bounceProgress = (landingProgress - 0.7) / 0.3;
-          bounce = 1 - Math.pow(bounceProgress, 2) * 0.1;
-        }
-        
-        coin.rotation.x = currentRotation + (finalRotation - currentRotation) * bounce;
-        
-        coin.rotation.y = startY + (Math.PI / 2 - startY) * landingProgress;
-        coin.rotation.z = startZ * (1 - landingProgress);
-        
-        if (landingProgress < 1) {
-          requestAnimationFrame(animateLanding);
-        } else {
-          coin.rotation.x = finalRotation;
-          coin.rotation.y = Math.PI / 2;
-          coin.rotation.z = 0;
-          
-          if (accuracy === 'perfect') {
-            showPerfectTimingEffect(coin);
-          }
-        }
-      };
-      
-      animateLanding();
-    }
+    // âœ… REMOVED OLD animateCoinLanding - replaced with smoothLandCoin to prevent animation conflicts
 
     function showPerfectTimingEffect(coin) {
       const ringGeometry = new THREE.RingGeometry(35, 45, 32);
@@ -3676,18 +3688,54 @@
       });
     }
 
-    console.log('ðŸ"¥ Warming up pearl shaders AND glass shatter materials...');
-    tubes.forEach((tube, i) => {
-      tube.power = 1;
-      tube.foamIntensity = 0.01;
-      updatePearlColors(tube, 0.01, i);
+    console.log('ðŸ"¥ PRE-LOADING ALL ASSETS during initialization...');
+    
+    // âœ… FIX: Create a loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      color: #00ffff;
+      padding: 30px 50px;
+      border-radius: 15px;
+      border: 2px solid #00ffff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px;
+      z-index: 99999;
+      text-align: center;
+    `;
+    loadingIndicator.innerHTML = `
+      <div style="font-size: 24px; margin-bottom: 10px;">⚡ LOADING GAME</div>
+      <div style="font-size: 14px; opacity: 0.8;">Preloading materials...</div>
+    `;
+    document.body.appendChild(loadingIndicator);
+    
+    // âœ… FIX: Batch preload all materials and force shader compilation
+    const preloadMaterials = [];
+    
+    // 1. Pearl materials (all color variants)
+    const pearlColors = [0x00ff00, 0x00ddff, 0xff0088, 0xffff00];
+    pearlColors.forEach(color => {
+      const material = new THREE.MeshPhysicalMaterial({
+        color: color,
+        metalness: 0.0,
+        roughness: 0.3,
+        transparent: true,
+        opacity: 0.7,
+        emissive: color,
+        emissiveIntensity: 0.2,
+        toneMapped: false,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.05
+      });
+      preloadMaterials.push(material);
     });
     
-    // ðŸ"¥ PRE-WARM GLASS SHARD MATERIALS - Prevents first-flip lag!
-    const warmupShardGeometry = new THREE.BufferGeometry();
-    const warmupVertices = new Float32Array([0, 0, 0, 10, 0, 0, 5, 10, 0]);
-    warmupShardGeometry.setAttribute('position', new THREE.BufferAttribute(warmupVertices, 3));
-    const warmupShardMaterial = new THREE.MeshStandardMaterial({
+    // 2. Glass shard material (silver metallic)
+    const glassShardMaterial = new THREE.MeshStandardMaterial({
       color: 0xe0e0e0,
       metalness: 0.95,
       roughness: 0.1,
@@ -3695,27 +3743,62 @@
       emissiveIntensity: 0.4,
       side: THREE.DoubleSide
     });
-    const warmupShard = new THREE.Mesh(warmupShardGeometry, warmupShardMaterial);
-    warmupShard.position.set(-10000, -10000, -10000); // Off-screen
-    scene.add(warmupShard);
+    preloadMaterials.push(glassShardMaterial);
     
-    // Force a render to compile the shader
+    // 3. Result box materials
+    const resultMaterials = [
+      new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.8 }),
+      new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.8 })
+    ];
+    preloadMaterials.push(...resultMaterials);
+    
+    // âœ… FIX: Create dummy meshes off-screen to force shader compilation
+    const dummyGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const dummyMeshes = [];
+    
+    preloadMaterials.forEach((material, i) => {
+      const mesh = new THREE.Mesh(dummyGeometry, material);
+      mesh.position.set(-10000 - i * 10, -10000, -10000);
+      scene.add(mesh);
+      dummyMeshes.push(mesh);
+    });
+    
+    // âœ… FIX: Force multiple renders to compile all shader combinations
+    for (let i = 0; i < 3; i++) {
+      webglRenderer.render(scene, camera);
+    }
+    
+    console.log(`âœ… Pre-compiled ${preloadMaterials.length} materials`);
+    
+    // âœ… FIX: Warm up pearl colors for each tube
+    tubes.forEach((tube, i) => {
+      tube.power = 1;
+      tube.foamIntensity = 0.01;
+      updatePearlColors(tube, 0.01, i);
+    });
+    
+    // Force one more render with pearls visible
     webglRenderer.render(scene, camera);
     
-    // Clean up warmup shard
+    // Clean up after compilation
     setTimeout(() => {
-      scene.remove(warmupShard);
-      warmupShardGeometry.dispose();
-      warmupShardMaterial.dispose();
-    }, 200);
-    
-    setTimeout(() => {
+      // Remove dummy meshes
+      dummyMeshes.forEach(mesh => {
+        scene.remove(mesh);
+      });
+      dummyGeometry.dispose();
+      
+      // Reset tube states
       tubes.forEach((tube, i) => {
         tube.power = 0;
         tube.foamIntensity = 0;
         updatePearlColors(tube, 0, i);
       });
-      console.log('âœ… Shader + Glass warmup complete');
+      
+      // Remove loading indicator
+      loadingIndicator.remove();
+      
+      console.log('âœ… ALL ASSETS PRELOADED - Game ready!');
     }, 100);
 
     console.log('🎮 Game started - coin textures already applied during tube creation');
