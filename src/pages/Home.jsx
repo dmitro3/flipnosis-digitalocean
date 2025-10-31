@@ -817,11 +817,11 @@ const Home = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return '#00FF41' // Green
+      case 'active': return '#00FF00' // Bright Green
       case 'in_progress': return '#FFA500' // Orange
       case 'completed': return '#FF4444' // Red
       case 'cancelled': return '#808080' // Gray
-      default: return '#808080' // Gray
+      default: return '#00FF00' // Bright Green (for LIVE)
     }
   }
 
@@ -1208,11 +1208,27 @@ const Home = () => {
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.5rem',
-                          marginBottom: '0.5rem'
+                          marginBottom: '0.5rem',
+                          flexWrap: 'wrap'
                         }}>
                           <GameTitle style={{
                             fontSize: '1.2rem'
                           }}>{selectedFlip.nft.name}</GameTitle>
+                          <div style={{
+                            background: hexToRgba(getStatusColor(selectedFlip.status), 0.9),
+                            color: '#fff',
+                            padding: '0.3rem 0.6rem',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+                          }}>
+                            <span>{getStatusIcon(selectedFlip.status)}</span>
+                            <span>{getStatusText(selectedFlip.status)}</span>
+                          </div>
                           <div style={{
                             background: 'rgba(255, 255, 255, 0.1)',
                             padding: '0.3rem 0.6rem',
