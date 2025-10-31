@@ -431,7 +431,7 @@ const BattleTitle = styled.h1`
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0 0 0.8rem 0;
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Hyperwave', sans-serif;
   text-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
 
   @media (max-width: 768px) {
@@ -1073,9 +1073,9 @@ const CreateBattle = () => {
                           </span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00ff88' }}>
-                          <span>Your Earnings:</span>
+                          <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>Your Earnings:</span>
                           <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                            <span>{(() => {
+                            <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{(() => {
                               const n = parseFloat(totalEth || '0')
                               if (!n || n <= 0) return '0 ETH'
                               
@@ -1091,7 +1091,7 @@ const CreateBattle = () => {
                               return parseFloat(earnings.toFixed(6)).toString() + ' ETH'
                             })()}</span>
                             {ethPriceUSD > 0 && (
-                              <span style={{ fontSize: '0.85rem', color: '#00ff88', opacity: 0.8, marginTop: '0.15rem' }}>
+                              <span style={{ fontSize: '1rem', color: '#00ff88', opacity: 0.8, marginTop: '0.15rem', fontWeight: 'bold' }}>
                                 ≈ ${((() => {
                                   const n = parseFloat(totalEth || '0')
                                   if (!n || n <= 0) return 0
