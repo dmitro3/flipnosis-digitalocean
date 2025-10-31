@@ -7,7 +7,7 @@ import { useWallet } from '../contexts/WalletContext';
 import ProfileWithNotifications from './ProfileWithNotifications';
 import { 
   User, Gamepad2, Plus, Store, Palette, Settings, 
-  ExternalLink, Home, Crown, ChevronRight, Info, Trophy, Coins
+  ExternalLink, Home, Crown, ChevronRight, Info, Trophy, Coins, Award
 } from 'lucide-react';
 
 const MenuOverlay = styled.div`
@@ -197,12 +197,6 @@ const PortalMenu = ({ isOpen, onClose }) => {
   const ADMIN_WALLET = import.meta.env.VITE_PLATFORM_FEE_RECEIVER || '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1'
   const isAdmin = isConnected && address && address.toLowerCase() === ADMIN_WALLET.toLowerCase()
 
-  const handleInfoClick = () => {
-    // For mobile, we'll show a simple alert for now
-    // In a full implementation, you might want to show a modal
-    alert('About FLIPNOSIS\n\nFLIPNOSIS is a revolutionary NFT flipping game where players can create and participate in coin flip games with their NFTs and cryptocurrency.');
-  };
-
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
@@ -237,16 +231,12 @@ const PortalMenu = ({ isOpen, onClose }) => {
             <Coins size={16} />
             Token & Airdrop
           </MenuItem>
-          <MenuButtonItem onClick={handleInfoClick}>
-            <Info size={16} />
-            About FLIPNOSIS
-          </MenuButtonItem>
         </MenuSection>
 
         <Divider />
 
         <MenuSection>
-          <MenuSectionTitle>Features</MenuSectionTitle>
+          <MenuSectionTitle>MORE FEATURES - COMING SOON</MenuSectionTitle>
           <MenuButtonItem disabled>
             <Palette size={16} />
             Coin Factory
@@ -260,6 +250,11 @@ const PortalMenu = ({ isOpen, onClose }) => {
           <MenuButtonItem disabled>
             <Trophy size={16} />
             Leaderboard
+            <ComingSoonBadge>Coming Soon</ComingSoonBadge>
+          </MenuButtonItem>
+          <MenuButtonItem disabled>
+            <Award size={16} />
+            Competitions
             <ComingSoonBadge>Coming Soon</ComingSoonBadge>
           </MenuButtonItem>
         </MenuSection>

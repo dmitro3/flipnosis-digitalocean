@@ -1049,16 +1049,43 @@ const CreateBattle = () => {
                             )}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00ff88', marginBottom: '0.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <span>Service Fee (5%):</span>
+                          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <span>{(() => {
+                              const n = parseFloat(totalEth || '0')
+                              if (!n || n <= 0) return '0 ETH'
+                              
+                              // Service fee is 5% of the total pool amount
+                              // Note: Flat fee ($0.50/$1.00) is paid by players when joining, not by creator
+                              const serviceFee = n * 0.05
+                              
+                              // Check for minimum fee if under threshold (currently disabled)
+                              // If enabled: if total < $X and minFee > 5%, use minFee instead
+                              
+                              return parseFloat(serviceFee.toFixed(6)).toString() + ' ETH'
+                            })()}</span>
+                            {ethPriceUSD > 0 && (
+                              <span style={{ fontSize: '0.85rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
+                                ≈ ${((parseFloat(totalEth || '0') * 0.05) * ethPriceUSD).toFixed(2)} USD
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00ff88' }}>
                           <span>Your Earnings:</span>
                           <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                             <span>{(() => {
                               const n = parseFloat(totalEth || '0')
                               if (!n || n <= 0) return '0 ETH'
-                              // Service fee is 5% of the full total amount (not just pool from others)
-                              const serviceFee = n * 0.05
+                              
                               // Pool from others (what creator earns from)
                               const poolFromOthers = creatorParticipates ? n * 0.75 : n
+                              
+                              // Service fee is 5% of the total pool amount
+                              // Note: Flat fee is paid by players, not deducted from creator earnings
+                              const serviceFee = n * 0.05
+                              
                               // Earnings = pool from others - service fee
                               const earnings = poolFromOthers - serviceFee
                               return parseFloat(earnings.toFixed(6)).toString() + ' ETH'
@@ -1067,28 +1094,12 @@ const CreateBattle = () => {
                               <span style={{ fontSize: '0.85rem', color: '#00ff88', opacity: 0.8, marginTop: '0.15rem' }}>
                                 ≈ ${((() => {
                                   const n = parseFloat(totalEth || '0')
-                                  const serviceFee = n * 0.05
+                                  if (!n || n <= 0) return 0
                                   const poolFromOthers = creatorParticipates ? n * 0.75 : n
+                                  const serviceFee = n * 0.05
                                   const earnings = poolFromOthers - serviceFee
                                   return earnings * ethPriceUSD
                                 })()).toFixed(2)} USD
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                          <span>Service Fee (5%):</span>
-                          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                            <span>{(() => {
-                              const n = parseFloat(totalEth || '0')
-                              if (!n || n <= 0) return '0 ETH'
-                              // Service fee is 5% of the full total amount (creator pays fee on their portion too)
-                              const serviceFee = n * 0.05
-                              return parseFloat(serviceFee.toFixed(6)).toString() + ' ETH'
-                            })()}</span>
-                            {ethPriceUSD > 0 && (
-                              <span style={{ fontSize: '0.85rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
-                                ≈ ${((parseFloat(totalEth || '0') * 0.05) * ethPriceUSD).toFixed(2)} USD
                               </span>
                             )}
                           </span>
