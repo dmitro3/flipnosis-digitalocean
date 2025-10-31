@@ -2705,9 +2705,27 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       await dbService.addBattleRoyalePlayer(gameId, playerData)
 
       // Add player to physics game manager and broadcast
+      let gameAutoStarted = false
       if (gameServer && gameServer.physicsGameManager) {
         const added = await gameServer.physicsGameManager.addPlayer(gameId, player_address, dbService)
         if (added) {
+          // Get updated game state to check if we should autostart
+          const gameState = gameServer.physicsGameManager.getFullGameState(gameId)
+          
+          // Check if game should autostart (when max players reached)
+          if (gameState && gameState.currentPlayers >= gameState.maxPlayers && gameState.phase === 'waiting') {
+            console.log(`🚀 Game ${gameId} is full (${gameState.currentPlayers}/${gameState.maxPlayers} players) - auto-starting!`)
+            const startSuccess = gameServer.physicsGameManager.startGame(gameId, (room, event, payload) => {
+              gameServer.io.to(room).emit(event, payload)
+            })
+            
+            if (startSuccess) {
+              gameAutoStarted = true
+              console.log(`✅ Game ${gameId} auto-started`)
+            }
+          }
+          
+          // Broadcast state update
           gameServer.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
             gameServer.io.to(room).emit(event, payload)
           })
@@ -2718,7 +2736,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       const newParticipantCount = participants.length + 1
       await dbService.updateBattleRoyaleGame(gameId, {
         current_players: newParticipantCount,
-        status: newParticipantCount >= game.max_players ? 'ready' : 'filling'
+        status: gameAutoStarted ? 'active' : (newParticipantCount >= game.max_players ? 'ready' : 'filling')
       })
 
       console.log(`✅ Player ${player_address} joined 3D Physics Battle Royale ${gameId} in slot ${assignedSlot}`)

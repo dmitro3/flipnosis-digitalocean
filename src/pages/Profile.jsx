@@ -320,6 +320,76 @@ const TabButton = styled.button`
   }
 `;
 
+const ClaimsTabContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid rgba(157, 0, 255, 0.3);
+  padding-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+`;
+
+const ClaimsTabButton = styled.button`
+  background: ${props => props.active 
+    ? 'linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(157, 0, 255, 0.2))' 
+    : 'transparent'};
+  border: ${props => props.active ? '2px solid #00ffff' : '2px solid transparent'};
+  color: ${props => props.active ? '#fff' : 'rgba(255, 255, 255, 0.7)'};
+  font-size: 1rem;
+  font-weight: ${props => props.active ? 'bold' : 'normal'};
+  cursor: pointer;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  white-space: nowrap;
+  backdrop-filter: blur(5px);
+  box-shadow: ${props => props.active ? '0 0 20px rgba(0, 255, 255, 0.3)' : 'none'};
+  text-shadow: ${props => props.active ? '0 0 10px rgba(0, 255, 255, 0.5)' : 'none'};
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+    border-color: #9d00ff;
+    box-shadow: 0 0 25px rgba(157, 0, 255, 0.4);
+    color: #fff;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+`;
+
+const EarningsDisplay = styled.div`
+  background: linear-gradient(135deg, rgba(0, 200, 83, 0.2), rgba(0, 230, 118, 0.2));
+  border: 2px solid #00c853;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 0 20px rgba(0, 200, 83, 0.3);
+`;
+
+const EarningsLabel = styled.div`
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+`;
+
+const EarningsAmount = styled.div`
+  color: #00ff00;
+  font-size: 1.8rem;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+`;
+
 const TabContent = styled.div`
   background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
   border: 3px solid #9d00ff;
@@ -625,6 +695,9 @@ const Profile = () => {
   const [createdBattleRoyales, setCreatedBattleRoyales] = useState([]);
   const [participatedBattleRoyales, setParticipatedBattleRoyales] = useState([]);
   const [loadingBattleRoyales, setLoadingBattleRoyales] = useState(false);
+  
+  // Claims sub-tab state
+  const [claimsSubTab, setClaimsSubTab] = useState('winner');
 
   // Use profile address from URL or current user's address
   const targetAddress = profileAddress || address;
@@ -1226,12 +1299,28 @@ const Profile = () => {
 
         {activeTab === 'claims' && (
           <div>
-            <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+            <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
               Claims
             </h3>
             <p style={{ color: '#ccc', marginBottom: '1.5rem', fontSize: '1rem' }}>
               Withdraw your winnings and creator funds. Items disappear once claimed.
             </p>
+
+            {/* Claims Sub-Tabs */}
+            <ClaimsTabContainer>
+              <ClaimsTabButton 
+                active={claimsSubTab === 'winner'} 
+                onClick={() => setClaimsSubTab('winner')}
+              >
+                🏆 Winner NFT Claims ({claimables.winner?.length || 0})
+              </ClaimsTabButton>
+              <ClaimsTabButton 
+                active={claimsSubTab === 'creator'} 
+                onClick={() => setClaimsSubTab('creator')}
+              >
+                💰 Creator Fund Withdrawals ({claimables.creator?.length || 0})
+              </ClaimsTabButton>
+            </ClaimsTabContainer>
 
             {loadingBattleRoyales ? (
               <EmptyState>
@@ -1240,19 +1329,19 @@ const Profile = () => {
               </EmptyState>
             ) : (
               <>
-                {/* Winner NFT Claims */}
-                <h4 style={{ color: '#FFD700', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '1.2rem' }}>
-                  🏆 Winner NFT Claims
-                </h4>
-                {(() => {
-                  const winnerClaims = claimables.winner || [];
-                  return winnerClaims.length === 0 ? (
-                    <EmptyState style={{ marginBottom: '2rem' }}>
-                      <div>No NFT claims pending</div>
-                    </EmptyState>
-                  ) : (
-                    <div style={{ marginBottom: '2rem' }}>
-                      {winnerClaims.map(game => (
+                {/* Winner NFT Claims Tab */}
+                {claimsSubTab === 'winner' && (
+                  <>
+                    {(() => {
+                      const winnerClaims = claimables.winner || [];
+                      return winnerClaims.length === 0 ? (
+                        <EmptyState>
+                          <Trophy style={{ width: '3rem', height: '3rem', color: 'rgba(255, 255, 255, 0.3)', marginBottom: '0.5rem' }} />
+                          <div>No NFT claims pending</div>
+                        </EmptyState>
+                      ) : (
+                        <div>
+                          {winnerClaims.map(game => (
                         <GameCard key={`claim-winner-${game.gameId}`} style={{ marginBottom: '1rem' }}>
                           <GameHeader>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
@@ -1469,96 +1558,146 @@ const Profile = () => {
                           </GameHeader>
                         </GameCard>
                       ))}
-                    </div>
-                  );
-                })()}
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
 
-                {/* Creator Fund Withdrawals */}
-                <h4 style={{ color: '#00ffff', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '1.2rem' }}>
-💰 Creator Fund Withdrawals
-                </h4>
-                {(() => {
-                  const creatorClaims = claimables.creator || [];
-                  return creatorClaims.length === 0 ? (
-                    <EmptyState>
-                      <div>No creator withdrawals pending</div>
-                    </EmptyState>
-                  ) : (
-                    <div>
-                      {creatorClaims.map(game => (
-                        <GameCard key={`claim-creator-${game.gameId}`} style={{ marginBottom: '1rem' }}>
-                          <GameHeader>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
-                              <img 
-                                src={game.nft_image} 
-                                alt={game.nft_name}
-                                style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover', border: '2px solid rgba(255, 255, 255, 0.1)' }}
-                              />
-                              <GameInfo style={{ flex: 1, minWidth: '200px' }}>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '0.25rem' }}>
-                                  {game.nft_name}
-                                </div>
-                                <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '0.5rem' }}>
-                                  Collection: {game.nft_collection}
-                                </div>
-                                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
-                                  <div style={{ color: '#00ff00' }}>✅ Complete</div>
-                                  <div style={{ color: '#00ffff' }}>💰 Creator earnings: ${(game.entry_fee * game.max_players - game.service_fee).toFixed(2)}</div>
-                                </div>
-                              </GameInfo>
-                              <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '160px' }}>
-                                <ActionButton
-                                  disabled={!isConnected}
-                                  title={!isConnected ? 'Please connect your wallet first' : 'Withdraw your creator funds'}
-                                  onClick={async () => {
-                                    if (!isConnected) {
-                                      showError('Please connect your wallet first!');
-                                      return;
-                                    }
-                                    try {
-                                      showInfo('Withdrawing creator funds...');
-                                      const result = await contractService.withdrawBattleRoyaleCreatorFunds(game.gameId);
-                                      if (result.success) {
-                                        // Update database to mark creator as paid
-                                        try {
-                                          await fetch(`/api/battle-royale/${game.gameId}/mark-creator-paid`, {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({
-                                              creator: address,
-                                              transactionHash: result.transactionHash
-                                            })
-                                          });
-                                        } catch (dbError) {
-                                          console.warn('DB update failed:', dbError);
-                                        }
-                                        showSuccess('Creator funds withdrawn successfully! 💰');
-                                        // Refresh claimables data
-                                        const claimablesResp = await fetch(`/api/users/${targetAddress}/claimables`);
-                                        if (claimablesResp.ok) {
-                                          const claimablesData = await claimablesResp.json();
-                                          setClaimables({ creator: claimablesData.creator || [], winner: claimablesData.winner || [] });
-                                        }
-                                      } else {
-                                        showError(result.error || 'Failed to withdraw funds');
-                                      }
-                                    } catch (err) {
-                                      console.error('Withdraw funds error:', err);
-                                      showError(err.message || 'Failed to withdraw funds');
-                                    }
-                                  }}
-                                  style={{ background: 'linear-gradient(135deg, #00c853, #00e676)' }}
-                                >
-                                  💰 Withdraw Funds
-                                </ActionButton>
-                              </GameActions>
-                            </div>
-                          </GameHeader>
-                        </GameCard>
-                      ))}
-                    </div>
-                  );
-                })()}
+                {/* Creator Fund Withdrawals Tab */}
+                {claimsSubTab === 'creator' && (
+                  <>
+                    {(() => {
+                      const creatorClaims = claimables.creator || [];
+                      
+                      // Calculate total earnings
+                      const totalEarnings = creatorClaims.reduce((sum, game) => {
+                        const entryFee = parseFloat(game.entry_fee) || 0;
+                        const maxPlayers = parseInt(game.max_players) || 0;
+                        const serviceFee = parseFloat(game.service_fee) || 0;
+                        const earnings = (entryFee * maxPlayers) - serviceFee;
+                        return sum + Math.max(0, earnings); // Ensure non-negative
+                      }, 0);
+                      
+                      return creatorClaims.length === 0 ? (
+                        <EmptyState>
+                          <DollarSign style={{ width: '3rem', height: '3rem', color: 'rgba(255, 255, 255, 0.3)', marginBottom: '0.5rem' }} />
+                          <div>No creator withdrawals pending</div>
+                        </EmptyState>
+                      ) : (
+                        <div>
+                          {/* Total Earnings Display */}
+                          {creatorClaims.length > 0 && (
+                            <EarningsDisplay>
+                              <EarningsLabel>Total Pending Earnings</EarningsLabel>
+                              <EarningsAmount>
+                                {(totalEarnings).toFixed(4)} ETH
+                              </EarningsAmount>
+                            </EarningsDisplay>
+                          )}
+                          
+                          {creatorClaims.map(game => {
+                            const entryFee = parseFloat(game.entry_fee) || 0;
+                            const maxPlayers = parseInt(game.max_players) || 0;
+                            const serviceFee = parseFloat(game.service_fee) || 0;
+                            const earnings = Math.max(0, (entryFee * maxPlayers) - serviceFee);
+                            return (
+                              <GameCard key={`claim-creator-${game.gameId}`} style={{ marginBottom: '1rem' }}>
+                                <GameHeader>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
+                                    <img 
+                                      src={game.nft_image} 
+                                      alt={game.nft_name}
+                                      style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover', border: '2px solid rgba(255, 255, 255, 0.1)' }}
+                                    />
+                                    <GameInfo style={{ flex: 1, minWidth: '200px' }}>
+                                      <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '0.25rem' }}>
+                                        {game.nft_name}
+                                      </div>
+                                      <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '0.5rem' }}>
+                                        Collection: {game.nft_collection}
+                                      </div>
+                                      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                                        <div style={{ color: '#00ff00' }}>✅ Complete</div>
+                                        <div style={{ color: '#00ffff' }}>
+                                          👥 Players: {game.max_players || 0}
+                                        </div>
+                                        <div style={{ color: '#ccc' }}>
+                                          💵 Entry Fee: {game.entry_fee || 0} ETH
+                                        </div>
+                                      </div>
+                                      {/* Prominent Earnings Display */}
+                                      <div style={{
+                                        background: 'linear-gradient(135deg, rgba(0, 200, 83, 0.15), rgba(0, 230, 118, 0.15))',
+                                        border: '1px solid #00c853',
+                                        borderRadius: '8px',
+                                        padding: '0.75rem 1rem',
+                                        marginTop: '0.5rem'
+                                      }}>
+                                        <div style={{ color: '#00ffff', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                                          💰 Your Earnings:
+                                        </div>
+                                        <div style={{ color: '#00ff00', fontSize: '1.3rem', fontWeight: 'bold' }}>
+                                          {earnings.toFixed(4)} ETH
+                                        </div>
+                                      </div>
+                                    </GameInfo>
+                                    <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '160px' }}>
+                                      <ActionButton
+                                        disabled={!isConnected}
+                                        title={!isConnected ? 'Please connect your wallet first' : 'Withdraw your creator funds'}
+                                        onClick={async () => {
+                                          if (!isConnected) {
+                                            showError('Please connect your wallet first!');
+                                            return;
+                                          }
+                                          try {
+                                            showInfo('Withdrawing creator funds...');
+                                            const result = await contractService.withdrawBattleRoyaleCreatorFunds(game.gameId);
+                                            if (result.success) {
+                                              // Update database to mark creator as paid
+                                              try {
+                                                await fetch(`/api/battle-royale/${game.gameId}/mark-creator-paid`, {
+                                                  method: 'POST',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({
+                                                    creator: address,
+                                                    transactionHash: result.transactionHash
+                                                  })
+                                                });
+                                              } catch (dbError) {
+                                                console.warn('DB update failed:', dbError);
+                                              }
+                                              showSuccess('Creator funds withdrawn successfully! 💰');
+                                              // Refresh claimables data
+                                              const claimablesResp = await fetch(`/api/users/${targetAddress}/claimables`);
+                                              if (claimablesResp.ok) {
+                                                const claimablesData = await claimablesResp.json();
+                                                setClaimables({ creator: claimablesData.creator || [], winner: claimablesData.winner || [] });
+                                              }
+                                            } else {
+                                              showError(result.error || 'Failed to withdraw funds');
+                                            }
+                                          } catch (err) {
+                                            console.error('Withdraw funds error:', err);
+                                            showError(err.message || 'Failed to withdraw funds');
+                                          }
+                                        }}
+                                        style={{ background: 'linear-gradient(135deg, #00c853, #00e676)' }}
+                                      >
+                                        💰 Withdraw Funds
+                                      </ActionButton>
+                                    </GameActions>
+                                  </div>
+                                </GameHeader>
+                              </GameCard>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
               </>
             )}
           </div>

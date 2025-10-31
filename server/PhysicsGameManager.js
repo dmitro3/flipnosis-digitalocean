@@ -242,11 +242,14 @@ class PhysicsGameManager {
   // Start the game
   startGame(gameId, broadcast) {
     const game = this.games.get(gameId)
-    if (!game) return
+    if (!game) {
+      console.warn(`❌ Game ${gameId} not found`)
+      return false
+    }
 
     if (game.phase !== 'waiting') {
-      console.warn(`❌ Game ${gameId} already started`)
-      return
+      console.warn(`❌ Game ${gameId} already started (phase: ${game.phase})`)
+      return false
     }
 
     game.phase = 'round_active'
@@ -262,6 +265,8 @@ class PhysicsGameManager {
     if (broadcast) {
       this.broadcastState(gameId, broadcast)
     }
+
+    return true
   }
 
   // Set player choice (heads/tails)

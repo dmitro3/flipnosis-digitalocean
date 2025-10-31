@@ -106,6 +106,47 @@ class PhysicsSocketHandlers {
       console.log(`📊 Player slots:`, state.playerSlots)
       console.log(`📊 Players:`, Object.keys(state.players))
       
+      // Check if game should autostart (when max players reached)
+      if (state.currentPlayers >= state.maxPlayers && state.phase === 'waiting') {
+        console.log(`🚀 Game ${gameId} is full (${state.currentPlayers}/${state.maxPlayers} players) - auto-starting!`)
+        const startSuccess = gameManager.startGame(gameId, (room, event, data) => {
+          io.to(room).emit(event, data)
+        })
+        
+        if (startSuccess && dbService) {
+          try {
+            await dbService.updateBattleRoyaleGame(gameId, {
+              status: 'active',
+              current_players: state.currentPlayers
+            })
+            console.log(`✅ Game ${gameId} status updated to 'active' in database`)
+          } catch (error) {
+            console.error('❌ Failed to update DB status:', error)
+          }
+        }
+        
+        // Get the updated state after starting
+        const updatedState = gameManager.getFullGameState(gameId)
+        
+        // Broadcast state update with game starting
+        if (socketTracker) {
+          const gameSockets = socketTracker.getGameSockets(gameId)
+          if (gameSockets) {
+            gameSockets.forEach(socketId => {
+              const targetSocket = io.sockets.sockets.get(socketId)
+              if (targetSocket) {
+                targetSocket.emit('physics_state_update', updatedState)
+              }
+            })
+          }
+        } else {
+          io.to(roomId).emit('physics_state_update', updatedState)
+        }
+        
+        console.log(`✅ Game ${gameId} auto-started with ${updatedState.currentPlayers} players`)
+        return
+      }
+      
       // Broadcast using tracker
       console.log(`📡 Broadcasting updated state to ALL players`)
       if (socketTracker) {
