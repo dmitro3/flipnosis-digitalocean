@@ -825,6 +825,16 @@ const Home = () => {
     }
   }
 
+  // Helper function to convert hex color to rgba string
+  const hexToRgba = (hex, alpha = 0.9) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    if (!result) return `rgba(128, 128, 128, ${alpha})` // fallback to gray
+    const r = parseInt(result[1], 16)
+    const g = parseInt(result[2], 16)
+    const b = parseInt(result[3], 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+
   const isGameJoinable = (status) => {
     return status === 'waiting' || status === 'pending'
   }
@@ -1569,7 +1579,7 @@ const Home = () => {
                             position: 'absolute',
                             top: '0.25rem',
                             left: '0.25rem',
-                            background: `rgba(${getStatusColor(item.status).replace('#', '')}, 0.9)`,
+                            background: hexToRgba(getStatusColor(item.status), 0.9),
                             color: '#fff',
                             padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
                             borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
@@ -1577,7 +1587,9 @@ const Home = () => {
                             fontWeight: 'bold',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.1rem'
+                            gap: '0.1rem',
+                            zIndex: 10,
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
                           }}>
                             <span>{getStatusIcon(item.status)}</span>
                             <span>{getStatusText(item.status)}</span>
@@ -1752,7 +1764,7 @@ const Home = () => {
                               position: 'absolute',
                               top: '0.25rem',
                               left: '0.25rem',
-                              background: `rgba(${getStatusColor(item.status).replace('#', '')}, 0.9)`,
+                              background: hexToRgba(getStatusColor(item.status), 0.9),
                               color: '#fff',
                               padding: '0.1rem 0.2rem',
                               borderRadius: '0.15rem',
@@ -1760,7 +1772,9 @@ const Home = () => {
                               fontWeight: 'bold',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.1rem'
+                              gap: '0.1rem',
+                              zIndex: 10,
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
                             }}>
                               <span>{getStatusIcon(item.status)}</span>
                               <span>{getStatusText(item.status)}</span>

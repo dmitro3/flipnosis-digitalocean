@@ -1619,9 +1619,6 @@ const Profile = () => {
                                       </div>
                                       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
                                         <div style={{ color: '#00ff00' }}>✅ Complete</div>
-                                        <div style={{ color: '#00ffff' }}>
-                                          👥 Players: {game.max_players || 0}
-                                        </div>
                                         <div style={{ color: '#ccc' }}>
                                           💵 Entry Fee: {game.entry_fee || 0} ETH
                                         </div>
