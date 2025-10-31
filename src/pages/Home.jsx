@@ -1209,7 +1209,7 @@ const Home = () => {
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                       <span>{ethAmount} ETH</span>
                                       {ethPriceUSD > 0 && (
-                                        <span style={{ fontSize: '0.7rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
+                                        <span style={{ fontSize: '0.85rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
                                           ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
                                         </span>
                                       )}
@@ -1304,11 +1304,11 @@ const Home = () => {
                                 return (
                                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                     <span>{ethAmount} ETH</span>
-                                    {ethPriceUSD > 0 && (
-                                      <span style={{ fontSize: '0.85rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
-                                        ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
-                                      </span>
-                                    )}
+                                      {ethPriceUSD > 0 && (
+                                        <span style={{ fontSize: '0.95rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
+                                          ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
+                                        </span>
+                                      )}
                                   </div>
                                 )
                               } else {
@@ -1738,7 +1738,7 @@ const Home = () => {
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                       <span>{ethAmount} ETH</span>
                                       {ethPriceUSD > 0 && (
-                                        <span style={{ fontSize: '0.7rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
+                                        <span style={{ fontSize: '0.85rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
                                           ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
                                         </span>
                                       )}
@@ -1917,7 +1917,7 @@ const Home = () => {
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                           <span>{ethAmount} ETH</span>
                                           {ethPriceUSD > 0 && (
-                                            <span style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
+                                            <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
                                               ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
                                             </span>
                                           )}
@@ -1946,7 +1946,7 @@ const Home = () => {
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                           <span>{ethAmount} ETH</span>
                                           {ethPriceUSD > 0 && (
-                                            <span style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
+                                            <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
                                               ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
                                             </span>
                                           )}

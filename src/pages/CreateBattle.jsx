@@ -1024,7 +1024,7 @@ const CreateBattle = () => {
                               return parseFloat(perPlayer.toFixed(6)).toString() + ' ETH'
                             })()}</span>
                             {ethPriceUSD > 0 && (
-                              <span style={{ fontSize: '0.85rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
+                              <span style={{ fontSize: '0.95rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
                                 ≈ ${((parseFloat(totalEth || '0') / 4) * ethPriceUSD).toFixed(2)} USD
                               </span>
                             )}
@@ -1043,7 +1043,7 @@ const CreateBattle = () => {
                               return parseFloat(poolFromOthers.toFixed(6)).toString() + ' ETH'
                             })()}</span>
                             {ethPriceUSD > 0 && (
-                              <span style={{ fontSize: '0.85rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
+                              <span style={{ fontSize: '0.95rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
                                 ≈ ${((creatorParticipates ? parseFloat(totalEth || '0') * 0.75 : parseFloat(totalEth || '0')) * ethPriceUSD).toFixed(2)} USD
                               </span>
                             )}
@@ -1066,7 +1066,7 @@ const CreateBattle = () => {
                               return parseFloat(serviceFee.toFixed(6)).toString() + ' ETH'
                             })()}</span>
                             {ethPriceUSD > 0 && (
-                              <span style={{ fontSize: '0.85rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
+                              <span style={{ fontSize: '0.95rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
                                 ≈ ${((parseFloat(totalEth || '0') * 0.05) * ethPriceUSD).toFixed(2)} USD
                               </span>
                             )}
@@ -1091,7 +1091,7 @@ const CreateBattle = () => {
                               return parseFloat(earnings.toFixed(6)).toString() + ' ETH'
                             })()}</span>
                             {ethPriceUSD > 0 && (
-                              <span style={{ fontSize: '1rem', color: '#00ff88', opacity: 0.8, marginTop: '0.15rem', fontWeight: 'bold' }}>
+                              <span style={{ fontSize: '1.1rem', color: '#00ff88', opacity: 0.8, marginTop: '0.15rem', fontWeight: 'bold' }}>
                                 ≈ ${((() => {
                                   const n = parseFloat(totalEth || '0')
                                   if (!n || n <= 0) return 0
