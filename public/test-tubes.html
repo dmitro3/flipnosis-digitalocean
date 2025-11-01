@@ -1645,30 +1645,39 @@
             const coin = coins[index];
             const tube = tubes[index];
             if (coin && tube) {
-              // Only update position if coin is idle
+              // CRITICAL: Don't update anything from server during local animations
+              // The client animation handles everything during flipping
               if (tube.animationState === 'idle') {
                 const tubeX = tube.tube.position.x;
                 coin.position.set(tubeX, coinState.position.y, coinState.position.z);
                 
                 if (coinState.rotation && !coinState.isFlipping) {
-                  coin.quaternion.set(
+                  // CRITICAL: Use rotation, not quaternion, to avoid conflicts with animation
+                  // Quaternions override Euler rotations, which breaks our animation
+                  const euler = new THREE.Euler();
+                  euler.setFromQuaternion(new THREE.Quaternion(
                     coinState.rotation.x,
                     coinState.rotation.y,
                     coinState.rotation.z,
                     coinState.rotation.w
-                  );
+                  ));
+                  coin.rotation.copy(euler);
+                  coin.quaternion.set(0, 0, 0, 1); // Reset quaternion so rotation takes precedence
                 } else {
                   updateCoinRotationsFromPlayerChoices();
                 }
               }
               
-              // Update animation state based on server
+              // Update animation state based on server - but only if we're idle
+              // Don't let server override our active animations!
               if (coinState.isFlipping && tube.animationState === 'idle') {
-                tube.animationState = 'flipping';
-                tube.animationStartTime = Date.now();
+                // Server says flip started - let client handle it via physics_coin_flip_start event
+                // Don't set state here as that event handler will do it properly
               } else if (!coinState.isFlipping && tube.animationState === 'flipping') {
-                // Server says not flipping but we think we are - might be landing
-                if (Date.now() - tube.animationStartTime > 1000) {
+                // Server says not flipping but we're animating - don't interfere!
+                // Only reset if animation has been running for more than expected duration (10s)
+                if (Date.now() - tube.animationStartTime > 10000) {
+                  console.warn(`⚠️ Animation running too long, resetting state`);
                   tube.animationState = 'idle';
                   tube.animationEndTime = Date.now();
                 }
@@ -1710,6 +1719,9 @@
             y: coin.rotation.y,
             z: coin.rotation.z
           };
+          
+          // Ensure rotation order is set correctly
+          coin.rotation.order = 'XYZ';
           
           console.log(`🎬 Starting flip animation for coin ${data.playerSlot + 1} with ID: ${flipId}`);
           
@@ -2085,16 +2097,30 @@
       console.log(`ðŸŽ¬ Starting visual coin flip for slot ${playerSlot}: duration=${flipDuration}ms, speed=${flipSpeed}`);
       
       const startTime = Date.now();
-      const flipId = tube.flipId; // Use the flip ID from tube state // âœ… FIX: Unique ID for this flip
-      // flipId already set in startClientCoinFlipAnimation
+      const flipId = tube.flipId; // Use the flip ID from tube state
+      
+      if (!flipId) {
+        console.error(`❌ ERROR: No flipId in tube state for slot ${playerSlot}! Animation cannot start.`);
+        console.error('Tube state:', { animationState: tube.animationState, flipId: tube.flipId });
+        return;
+      }
+      
+      console.log(`🎬 animateCoinFlip: Starting animation loop for slot ${playerSlot} with flipId: ${flipId}`);
+      console.log(`🎬 Coin initial rotation: x=${coin.rotation.x.toFixed(3)}, y=${coin.rotation.y.toFixed(3)}, z=${coin.rotation.z.toFixed(3)}`);
+      console.log(`🎬 Flip speed: ${flipSpeed.toFixed(4)}, Duration: ${flipDuration}ms`);
       
       let wobblePhase = 0;
       let tumblePhase = 0;
       
       const animateFlip = () => {
-        // âœ… FIX: Stop animation if this flip was superseded or interrupted
+        // Stop animation if this flip was superseded or interrupted
         if (tube.flipId !== flipId || tube.animationState !== 'flipping') {
-          console.log(`ðŸ›' Animation stopped for slot ${playerSlot} - flip interrupted or superseded`);
+          console.log(`🛑 Animation stopped for slot ${playerSlot}:`, {
+            flipIdMatch: tube.flipId === flipId,
+            currentState: tube.animationState,
+            expectedFlipId: flipId,
+            actualFlipId: tube.flipId
+          });
           return;
         }
         
@@ -2103,13 +2129,23 @@
         
         const easeOut = 1 - Math.pow(1 - progress, 3);
         
+        // CRITICAL: Update rotation and sync quaternion
+        // THREE.js needs both to stay in sync when modifying rotation directly
+        coin.updateMatrix();
+        
         if (progress < 0.7) {
           const currentSpeed = flipSpeed * (1 - (progress / 0.7) * 0.3);
           coin.rotation.x += currentSpeed;
+          coin.quaternion.setFromEuler(coin.rotation); // Sync quaternion with rotation
+          // Debug first few frames
+          if (progress < 0.01) {
+            console.log(`🔄 Frame ${Math.floor(progress * 1000)}: rotation.x=${coin.rotation.x.toFixed(3)}, speed=${currentSpeed.toFixed(4)}`);
+          }
         } else {
           const decelProgress = (progress - 0.7) / 0.3;
           const currentSpeed = flipSpeed * 0.7 * (1 - decelProgress);
           coin.rotation.x += currentSpeed;
+          coin.quaternion.setFromEuler(coin.rotation); // Sync quaternion with rotation
         }
         
         wobblePhase += 0.15 * (1 - progress * 0.5);
@@ -2119,6 +2155,9 @@
         tumblePhase += 0.1 * (1 - progress * 0.5);
         const tumbleIntensity = tumbleAmount * (1 - easeOut);
         coin.rotation.z = Math.sin(tumblePhase * 0.7) * tumbleIntensity;
+        
+        // Sync quaternion with all rotation changes
+        coin.quaternion.setFromEuler(coin.rotation);
         
         if (progress < 1) {
           requestAnimationFrame(animateFlip);
