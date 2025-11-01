@@ -18,6 +18,7 @@ import { updateClientFromServerState } from './core/update-client-state.js';
 import { isMobile, updateMobileBackground } from './utils/helpers.js';
 import { playSound, stopSound, powerChargeSound } from './utils/audio.js';
 import { triggerHaptic } from './utils/haptics.js';
+import { TUBE_RADIUS, TUBE_HEIGHT } from './config.js';
 
 /**
  * Initialize the game
@@ -261,25 +262,35 @@ export async function initGame(params) {
     coinMaterials,
     isCharging,
     isServerSideMode,
+    TUBE_RADIUS,
+    TUBE_HEIGHT,
     updatePlayerCardChoice,
     applyCoinSelection,
     handleGameEnd,
     updateClientFromServerState: (state) => {
       updateClientFromServerState(state, {
+        gameOver,
         players,
         tubes,
         coins,
-        players,
-        coinOptions,
-        coinMaterials,
-        updatePlayerCardChoice,
-        applyCoinSelection,
-        handleGameEnd,
-        updateWinsDisplay,
+        scene,
+        physicsWorld,
+        playerSlot,
+        walletParam,
+        gameIdParam,
+        currentRound,
         updateRoundDisplay,
         updateTimerDisplay,
-        showGameStartNotification: () => console.log('🎮 Game started'),
-        showGameOverScreen: () => console.log('🏁 Game over')
+        saveGameState: (gameId, wallet, slot, round, players, tubes) => {
+          saveGameState(gameId, wallet, slot, round, players, tubes);
+        },
+        updateWinsDisplay,
+        updatePlayerCardButtons,
+        updatePearlColors: PearlPhysics.updatePearlColors,
+        showGameOverScreen: () => {
+          console.log('🏁 Game over');
+          gameOver = true;
+        }
       });
     },
     createMobilePlayerCards: () => {
@@ -314,7 +325,10 @@ export async function initGame(params) {
     showGamePhaseIndicator: () => console.log('📊 Phase indicator'),
     showGameStartNotification: () => console.log('🎮 Game started'),
     showGameOverScreen: () => console.log('🏁 Game over'),
-    loadGameState: () => loadGameState(gameIdParam, walletParam)
+    loadGameState: () => loadGameState(gameIdParam, walletParam),
+    updateCoinRotationsFromPlayerChoices: () => {
+      CoinManager.updateCoinRotationsFromPlayerChoices(tubes, players, coins);
+    }
   });
   
   // Update tube dependencies with socket

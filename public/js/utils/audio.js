@@ -5,10 +5,10 @@
 
 let isMuted = false;
 
-const glassBreakSound = new Audio('../Sound/glassclipped.mp3');
+const glassBreakSound = new Audio('/Sound/glassclipped.mp3');
 glassBreakSound.volume = 0.7;
 
-const powerChargeSound = new Audio('../Sound/powerclipped.mp3');
+const powerChargeSound = new Audio('/Sound/powerclipped.mp3');
 powerChargeSound.volume = 0.6;
 powerChargeSound.loop = true;
 

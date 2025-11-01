@@ -9,7 +9,8 @@ import { CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { COLORS, GAME_CONFIG } from '../config.js';
+import { GAME_CONFIG } from '../config.js';
+import { COLORS } from './game-state.js';
 
 /**
  * Initialize Three.js scene and all renderers

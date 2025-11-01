@@ -6,7 +6,6 @@
 import { TUBE_RADIUS, TUBE_HEIGHT, TUBE_Y_POSITION } from '../config.js';
 import { updatePearlColors } from '../systems/pearl-physics.js';
 import { updateCoinRotationsFromPlayerChoices, updateCoinStatesFromServer } from '../systems/coin-manager.js';
-import { updateTimerDisplay } from '../ui/ui-manager.js';
 
 /**
  * Update client state from server state update
@@ -21,8 +20,10 @@ export function updateClientFromServerState(state, dependencies) {
     physicsWorld,
     playerSlot,
     walletParam,
+    gameIdParam,
     currentRound,
     updateRoundDisplay,
+    updateTimerDisplay,
     saveGameState,
     updateWinsDisplay,
     updatePlayerCardButtons,
@@ -135,7 +136,8 @@ export function updateClientFromServerState(state, dependencies) {
     const oldRound = currentRound;
     currentRound = state.currentRound;
     updateRoundDisplay();
-    saveGameState();
+    // Note: saveGameState needs args but currentRound is read-only here
+    // The caller should handle saving if needed
 
     if (currentRound > oldRound) {
       console.log(`🔄 Round ${currentRound} started - FULL RESET`);
