@@ -51,7 +51,7 @@ export function updateMobileBackground(roomParam) {
       document.body.style.background = "url('/images/background/mech.png') no-repeat center center !important";
       document.body.style.backgroundSize = '100% 100% !important';
     } else {
-      document.body.style.background = "url('/Images/Background/game room2.png') no-repeat center center !important";
+      document.body.style.background = "url('/images/background/game room2.png') no-repeat center center !important";
       document.body.style.backgroundSize = '100% 100% !important';
     }
   }

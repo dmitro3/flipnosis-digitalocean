@@ -166,8 +166,8 @@ export async function initializeScene(roomParam) {
   
   // Texture loaders
   const textureLoader = new THREE.TextureLoader();
-  const brassColorMap = textureLoader.load('/Images/textures/Brass/textures/rusty_metal_04_diff_4k.jpg');
-  const brassDisplacementMap = textureLoader.load('/Images/textures/Brass/textures/rusty_metal_04_disp_4k.png');
+  const brassColorMap = textureLoader.load('/images/textures/Brass/textures/rusty_metal_04_diff_4k.jpg');
+  const brassDisplacementMap = textureLoader.load('/images/textures/Brass/textures/rusty_metal_04_disp_4k.png');
   
   brassColorMap.wrapS = THREE.RepeatWrapping;
   brassColorMap.wrapT = THREE.RepeatWrapping;
