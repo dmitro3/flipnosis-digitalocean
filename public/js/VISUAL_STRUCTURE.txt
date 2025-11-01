@@ -1,0 +1,121 @@
+┌─────────────────────────────────────────────────────────────┐
+│                    public/test-tubes.html                    │
+│                  (HTML structure only ~500 lines)             │
+│                                                               │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  <script type="module">                               │   │
+│  │    import { initGame } from './js/game-main.js';     │   │
+│  │    initGame();                                        │   │
+│  │  </script>                                            │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   js/game-main.js                            │
+│                  (Entry Point ~100 lines)                    │
+│                                                               │
+│  • Imports all modules                                       │
+│  • Initializes systems in order                              │
+│  • Starts animation loop                                     │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│ config.js    │    │ scene-setup  │    │ socket-      │
+│              │    │ .js           │    │ manager.js   │
+│ Constants    │    │              │    │              │
+│ Settings     │    │ Three.js     │    │ Socket.io    │
+│              │    │ Physics      │    │ Events       │
+└──────────────┘    └──────────────┘    └──────────────┘
+        │
+        └─────────────────────────────────────────┐
+                                                  │
+        ┌─────────────────────────────────────────┴────────┐
+        │                                                  │
+        ▼                                                  ▼
+┌──────────────────┐                          ┌──────────────────┐
+│  systems/        │                          │  core/           │
+│                  │                          │                  │
+│ • tube-creator   │                          │ • game-state     │
+│ • coin-manager   │                          │ • animation-loop │
+│ • pearl-physics  │                          └──────────────────┘
+│ • glass-shatter  │                                  │
+│ • power-system   │                                  │
+└──────────────────┘                                  │
+        │                                              │
+        └──────────────┬───────────────────────────────┘
+                       │
+                       ▼
+        ┌──────────────────────────────────┐
+        │          ui/                     │
+        │                                  │
+        │ • ui-manager                     │
+        │ • notifications                  │
+        │ • mobile-ui                      │
+        └──────────────────────────────────┘
+                       │
+                       ▼
+        ┌──────────────────────────────────┐
+        │          utils/                  │
+        │                                  │
+        │ • audio                          │
+        │ • haptics                        │
+        │ • helpers                        │
+        └──────────────────────────────────┘
+
+
+DATA FLOW:
+─────────
+test-tubes.html
+    └─> game-main.js (initializes)
+            ├─> config.js (reads constants)
+            ├─> scene-setup.js (creates scene)
+            ├─> socket-manager.js (connects to server)
+            ├─> tube-creator.js (creates 4 tubes + coins)
+            │       └─> Uses: scene, physicsWorld, config
+            ├─> coin-manager.js (coin logic)
+            │       └─> Uses: tubes, coins, players
+            ├─> pearl-physics.js (pearl simulation)
+            │       └─> Uses: tubes, physicsWorld
+            ├─> glass-shatter.js (shattering)
+            │       └─> Uses: scene, tubes, physicsWorld
+            ├─> power-system.js (power mechanics)
+            │       └─> Uses: tubes, socket
+            ├─> ui-manager.js (UI updates)
+            │       └─> Uses: tubes, players, gameState
+            └─> animation-loop.js (renders everything)
+                    └─> Uses: ALL modules
+
+
+IMPORT PATTERNS:
+────────────────
+// 1. Import functions
+import { functionName } from './module.js';
+
+// 2. Import everything
+import * as ModuleName from './module.js';
+
+// 3. Import class
+import { ClassName } from './module.js';
+
+// 4. Import with alias
+import { functionName as alias } from './module.js';
+
+
+EXPORT PATTERNS:
+────────────────
+// 1. Export function
+export function myFunction() { }
+
+// 2. Export class
+export class MyClass { }
+
+// 3. Export constant
+export const MY_CONSTANT = 100;
+
+// 4. Export default
+export default class MyClass { }
+
