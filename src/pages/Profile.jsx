@@ -698,6 +698,13 @@ const Profile = () => {
   
   // Claims sub-tab state
   const [claimsSubTab, setClaimsSubTab] = useState('winner');
+  
+  // Verification state for claim sections
+  // Tracks which games have been verified (completed on-chain)
+  const [verifiedGames, setVerifiedGames] = useState({
+    winner: new Set(), // Set of gameIds verified for winner claims
+    creator: new Set() // Set of gameIds verified for creator claims
+  });
 
   // Use profile address from URL or current user's address
   const targetAddress = profileAddress || address;
@@ -797,6 +804,48 @@ const Profile = () => {
         if (resp.ok) {
           const data = await resp.json()
           setClaimables({ creator: data.creator || [], winner: data.winner || [] })
+          
+          // Check on-chain completion status for each game to pre-mark as verified
+          const checkVerifiedGames = async () => {
+            const verifiedWinner = new Set()
+            const verifiedCreator = new Set()
+            
+            // Check winner games
+            if (data.winner && Array.isArray(data.winner)) {
+              for (const game of data.winner) {
+                try {
+                  const gameState = await contractService.getBattleRoyaleGameState(game.gameId)
+                  if (gameState.success && gameState.completed) {
+                    verifiedWinner.add(game.gameId)
+                  }
+                } catch (e) {
+                  console.warn(`Failed to check on-chain state for winner game ${game.gameId}:`, e)
+                }
+              }
+            }
+            
+            // Check creator games
+            if (data.creator && Array.isArray(data.creator)) {
+              for (const game of data.creator) {
+                try {
+                  const gameState = await contractService.getBattleRoyaleGameState(game.gameId)
+                  if (gameState.success && gameState.completed) {
+                    verifiedCreator.add(game.gameId)
+                  }
+                } catch (e) {
+                  console.warn(`Failed to check on-chain state for creator game ${game.gameId}:`, e)
+                }
+              }
+            }
+            
+            setVerifiedGames({
+              winner: verifiedWinner,
+              creator: verifiedCreator
+            })
+          }
+          
+          // Check on-chain status in background (non-blocking)
+          checkVerifiedGames().catch(e => console.warn('Failed to check verified games:', e))
         }
       } catch (e) {
         console.error('Failed to load claimables:', e)
@@ -1394,8 +1443,19 @@ const Profile = () => {
                                       console.log('🔍 [MANUAL-COMPLETE] Debug info:', result.debug);
                                       
                                       if (result.success) {
+                                        // Mark this game as verified for winner
+                                        setVerifiedGames(prev => ({
+                                          ...prev,
+                                          winner: new Set([...prev.winner, game.gameId])
+                                        }));
+                                        
                                         if (result.alreadyCompleted) {
                                           showSuccess('✅ Game already completed! You can now claim your NFT.');
+                                          // Also mark as verified if already completed
+                                          setVerifiedGames(prev => ({
+                                            ...prev,
+                                            winner: new Set([...prev.winner, game.gameId])
+                                          }));
                                         } else {
                                           showSuccess(`✅ Game completed on-chain! TX: ${result.transactionHash?.substring(0, 10)}... Now you can claim your NFT!`);
                                         }
@@ -1439,9 +1499,27 @@ const Profile = () => {
                                   style={{ 
                                     background: !isConnected
                                       ? 'rgba(128, 128, 128, 0.3)' 
-                                      : 'linear-gradient(135deg, #4A90E2, #357ABD)',
+                                      : 'linear-gradient(135deg, #00BFFF, #1E90FF, #00CED1)',
+                                    border: !isConnected ? '1px solid rgba(128, 128, 128, 0.3)' : '2px solid rgba(0, 191, 255, 0.5)',
+                                    boxShadow: !isConnected ? 'none' : '0 0 20px rgba(0, 191, 255, 0.5), 0 0 40px rgba(0, 191, 255, 0.3), inset 0 0 20px rgba(0, 191, 255, 0.1)',
+                                    textShadow: !isConnected ? 'none' : '0 0 10px rgba(0, 191, 255, 0.8)',
                                     opacity: !isConnected ? 0.5 : 1,
-                                    cursor: !isConnected ? 'not-allowed' : 'pointer'
+                                    cursor: !isConnected ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (isConnected) {
+                                      e.target.style.transform = 'scale(1.05)';
+                                      e.target.style.boxShadow = '0 0 30px rgba(0, 191, 255, 0.8), 0 0 60px rgba(0, 191, 255, 0.5)';
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (isConnected) {
+                                      e.target.style.transform = 'scale(1)';
+                                      e.target.style.boxShadow = '0 0 20px rgba(0, 191, 255, 0.5), 0 0 40px rgba(0, 191, 255, 0.3), inset 0 0 20px rgba(0, 191, 255, 0.1)';
+                                    }
                                   }}
                                 >
                                   📝 1. Complete On-Chain
@@ -1449,14 +1527,20 @@ const Profile = () => {
 
                                 {/* Step 2: Claim NFT with user's wallet */}
                                 <ActionButton
-                                  disabled={!isConnected}
+                                  disabled={!isConnected || !verifiedGames.winner.has(game.gameId)}
                                   title={
                                     !isConnected ? 'Please connect your wallet first' :
-                                    'Claim your NFT (must complete on-chain first, you pay gas)'
+                                    !verifiedGames.winner.has(game.gameId) ? 'Please verify/complete the game on-chain first using the button above' :
+                                    'Claim your NFT (you pay gas)'
                                   }
                                   onClick={async () => {
                                     if (!isConnected) {
                                       showError('Please connect your wallet first!');
+                                      return;
+                                    }
+                                    
+                                    if (!verifiedGames.winner.has(game.gameId)) {
+                                      showError('⚠️ Please verify/complete the game on-chain first using the button above!');
                                       return;
                                     }
                                     
@@ -1513,11 +1597,35 @@ const Profile = () => {
                                     }
                                   }}
                                   style={{ 
-                                    background: !isConnected
+                                    background: !isConnected || !verifiedGames.winner.has(game.gameId)
                                       ? 'rgba(128, 128, 128, 0.3)'
-                                      : 'linear-gradient(135deg, #FFD700, #FFA500)',
-                                    opacity: !isConnected ? 0.5 : 1,
-                                    cursor: !isConnected ? 'not-allowed' : 'pointer'
+                                      : 'linear-gradient(135deg, #FFD700, #FFA500, #FF8C00)',
+                                    border: !isConnected || !verifiedGames.winner.has(game.gameId) 
+                                      ? '1px solid rgba(128, 128, 128, 0.3)' 
+                                      : '2px solid rgba(255, 215, 0, 0.6)',
+                                    boxShadow: !isConnected || !verifiedGames.winner.has(game.gameId) 
+                                      ? 'none' 
+                                      : '0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 165, 0, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.2)',
+                                    textShadow: !isConnected || !verifiedGames.winner.has(game.gameId) 
+                                      ? 'none' 
+                                      : '0 0 10px rgba(255, 215, 0, 0.9)',
+                                    opacity: !isConnected || !verifiedGames.winner.has(game.gameId) ? 0.5 : 1,
+                                    cursor: !isConnected || !verifiedGames.winner.has(game.gameId) ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (isConnected && verifiedGames.winner.has(game.gameId)) {
+                                      e.target.style.transform = 'scale(1.05)';
+                                      e.target.style.boxShadow = '0 0 30px rgba(255, 215, 0, 0.9), 0 0 60px rgba(255, 165, 0, 0.6)';
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (isConnected && verifiedGames.winner.has(game.gameId)) {
+                                      e.target.style.transform = 'scale(1)';
+                                      e.target.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 165, 0, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.2)';
+                                    }
                                   }}
                                 >
                                   🏆 2. Claim NFT
@@ -1640,14 +1748,130 @@ const Profile = () => {
                                       </div>
                                     </GameInfo>
                                     <GameActions style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '160px' }}>
+                                      {/* Step 1: Complete game on-chain (verify) */}
                                       <ActionButton
                                         disabled={!isConnected}
-                                        title={!isConnected ? 'Please connect your wallet first' : 'Withdraw your creator funds'}
+                                        title={
+                                          !isConnected ? 'Please connect your wallet first' :
+                                          'Complete this game on-chain first (backend will pay gas)'
+                                        }
                                         onClick={async () => {
                                           if (!isConnected) {
                                             showError('Please connect your wallet first!');
                                             return;
                                           }
+                                          
+                                          if (!game.winner_address) {
+                                            showError('Game winner not found. Please contact support.');
+                                            return;
+                                          }
+                                          
+                                          try {
+                                            console.log('🔍 [CREATOR-VERIFY] Starting verification for:', game.gameId);
+                                            console.log('🔍 [CREATOR-VERIFY] Winner address:', game.winner_address);
+                                            showInfo('Completing game on-chain... This may take a moment.');
+                                            
+                                            // Call the manual complete endpoint with the winner address
+                                            const response = await fetch(`/api/battle-royale/${game.gameId}/complete-manual`, {
+                                              method: 'POST',
+                                              headers: { 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({ winner: game.winner_address })
+                                            });
+                                            
+                                            const result = await response.json();
+                                            
+                                            console.log('🔍 [CREATOR-VERIFY] Server response:', result);
+                                            
+                                            if (result.success) {
+                                              // Mark this game as verified for creator
+                                              setVerifiedGames(prev => ({
+                                                ...prev,
+                                                creator: new Set([...prev.creator, game.gameId])
+                                              }));
+                                              
+                                              if (result.alreadyCompleted) {
+                                                showSuccess('✅ Game already completed! You can now withdraw your funds.');
+                                                // Also mark as verified if already completed
+                                                setVerifiedGames(prev => ({
+                                                  ...prev,
+                                                  creator: new Set([...prev.creator, game.gameId])
+                                                }));
+                                              } else {
+                                                showSuccess(`✅ Game completed on-chain! TX: ${result.transactionHash?.substring(0, 10)}... Now you can withdraw your funds!`);
+                                              }
+                                              
+                                              // Refresh claimables
+                                              const claimablesResp = await fetch(`/api/users/${targetAddress}/claimables`);
+                                              if (claimablesResp.ok) {
+                                                const claimablesData = await claimablesResp.json();
+                                                setClaimables({ creator: claimablesData.creator || [], winner: claimablesData.winner || [] });
+                                              }
+                                            } else {
+                                              console.error('🔍 [CREATOR-VERIFY] Failed:', result.error);
+                                              
+                                              // Provide more helpful error messages
+                                              let errorMessage = result.error || 'Failed to complete game'
+                                              if (result.message) {
+                                                errorMessage = result.message
+                                              } else if (result.error?.includes('Blockchain service not configured')) {
+                                                errorMessage = '❌ Server Configuration Error: The server is missing the CONTRACT_OWNER_KEY environment variable. This is a server-side issue that needs to be fixed by the server administrator. The server cannot complete games on-chain without this configuration.'
+                                              }
+                                              
+                                              showError(errorMessage)
+                                            }
+                                          } catch (err) {
+                                            console.error('🔍 [CREATOR-VERIFY] Error:', err);
+                                            showError(`Error: ${err.message}. Check console for details.`);
+                                          }
+                                        }}
+                                        style={{ 
+                                          background: !isConnected
+                                            ? 'rgba(128, 128, 128, 0.3)' 
+                                            : 'linear-gradient(135deg, #9d00ff, #b026ff, #d946ef)',
+                                          border: !isConnected ? '1px solid rgba(128, 128, 128, 0.3)' : '2px solid rgba(157, 0, 255, 0.6)',
+                                          boxShadow: !isConnected ? 'none' : '0 0 20px rgba(157, 0, 255, 0.6), 0 0 40px rgba(176, 38, 255, 0.4), inset 0 0 20px rgba(157, 0, 255, 0.2)',
+                                          textShadow: !isConnected ? 'none' : '0 0 10px rgba(157, 0, 255, 0.9)',
+                                          opacity: !isConnected ? 0.5 : 1,
+                                          cursor: !isConnected ? 'not-allowed' : 'pointer',
+                                          transition: 'all 0.3s ease',
+                                          position: 'relative',
+                                          overflow: 'hidden'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          if (isConnected) {
+                                            e.target.style.transform = 'scale(1.05)';
+                                            e.target.style.boxShadow = '0 0 30px rgba(157, 0, 255, 0.9), 0 0 60px rgba(176, 38, 255, 0.6)';
+                                          }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          if (isConnected) {
+                                            e.target.style.transform = 'scale(1)';
+                                            e.target.style.boxShadow = '0 0 20px rgba(157, 0, 255, 0.6), 0 0 40px rgba(176, 38, 255, 0.4), inset 0 0 20px rgba(157, 0, 255, 0.2)';
+                                          }
+                                        }}
+                                      >
+                                        📝 1. Complete On-Chain
+                                      </ActionButton>
+
+                                      {/* Step 2: Withdraw creator funds */}
+                                      <ActionButton
+                                        disabled={!isConnected || !verifiedGames.creator.has(game.gameId)}
+                                        title={
+                                          !isConnected ? 'Please connect your wallet first' :
+                                          !verifiedGames.creator.has(game.gameId) ? 'Please verify/complete the game on-chain first using the button above' :
+                                          'Withdraw your creator funds'
+                                        }
+                                        onClick={async () => {
+                                          if (!isConnected) {
+                                            showError('Please connect your wallet first!');
+                                            return;
+                                          }
+                                          
+                                          if (!verifiedGames.creator.has(game.gameId)) {
+                                            showError('⚠️ Please verify/complete the game on-chain first using the button above!');
+                                            return;
+                                          }
+                                          
                                           try {
                                             showInfo('Withdrawing creator funds...');
                                             const result = await contractService.withdrawBattleRoyaleCreatorFunds(game.gameId);
@@ -1680,9 +1904,39 @@ const Profile = () => {
                                             showError(err.message || 'Failed to withdraw funds');
                                           }
                                         }}
-                                        style={{ background: 'linear-gradient(135deg, #00c853, #00e676)' }}
+                                        style={{ 
+                                          background: !isConnected || !verifiedGames.creator.has(game.gameId)
+                                            ? 'rgba(128, 128, 128, 0.3)'
+                                            : 'linear-gradient(135deg, #00ff9d, #00ff88, #00ff41)',
+                                          border: !isConnected || !verifiedGames.creator.has(game.gameId)
+                                            ? '1px solid rgba(128, 128, 128, 0.3)' 
+                                            : '2px solid rgba(0, 255, 157, 0.6)',
+                                          boxShadow: !isConnected || !verifiedGames.creator.has(game.gameId)
+                                            ? 'none' 
+                                            : '0 0 20px rgba(0, 255, 157, 0.6), 0 0 40px rgba(0, 255, 136, 0.4), inset 0 0 20px rgba(0, 255, 65, 0.2)',
+                                          textShadow: !isConnected || !verifiedGames.creator.has(game.gameId)
+                                            ? 'none' 
+                                            : '0 0 10px rgba(0, 255, 157, 0.9)',
+                                          opacity: !isConnected || !verifiedGames.creator.has(game.gameId) ? 0.5 : 1,
+                                          cursor: !isConnected || !verifiedGames.creator.has(game.gameId) ? 'not-allowed' : 'pointer',
+                                          transition: 'all 0.3s ease',
+                                          position: 'relative',
+                                          overflow: 'hidden'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          if (isConnected && verifiedGames.creator.has(game.gameId)) {
+                                            e.target.style.transform = 'scale(1.05)';
+                                            e.target.style.boxShadow = '0 0 30px rgba(0, 255, 157, 0.9), 0 0 60px rgba(0, 255, 136, 0.6)';
+                                          }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          if (isConnected && verifiedGames.creator.has(game.gameId)) {
+                                            e.target.style.transform = 'scale(1)';
+                                            e.target.style.boxShadow = '0 0 20px rgba(0, 255, 157, 0.6), 0 0 40px rgba(0, 255, 136, 0.4), inset 0 0 20px rgba(0, 255, 65, 0.2)';
+                                          }
+                                        }}
                                       >
-                                        💰 Withdraw Funds
+                                        💰 2. Withdraw Funds
                                       </ActionButton>
                                     </GameActions>
                                   </div>
