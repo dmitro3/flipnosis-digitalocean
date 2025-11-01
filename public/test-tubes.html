@@ -1632,33 +1632,30 @@
         const coin = coins[i];
         
         // âœ… FIX: Also skip if coin is landing!
-        if (coin && tube.animationState === 'idle' && 
-            Date.now() - tube.animationEndTime > 100) {
-          if (player && !player.isEmpty && player.choice) {
-            const targetRotation = {
-              x: player.choice === 'heads' ? Math.PI / 2 : 3 * Math.PI / 2,
-              y: Math.PI / 2,
-              z: 0
-            };
-            
-            // Smoothly interpolate to target rotation instead of snapping
-            coin.rotation.x += (targetRotation.x - coin.rotation.x) * 0.1;
-            coin.rotation.y += (targetRotation.y - coin.rotation.y) * 0.1;
-            coin.rotation.z += (targetRotation.z - coin.rotation.z) * 0.1;
-            
-            // Store as stable rotation
-            tube.lastStableRotation = {
-              x: coin.rotation.x,
-              y: coin.rotation.y,
-              z: coin.rotation.z
-            };
-          } else {
-            // No choice - maintain stable rotation
-            if (tube.lastStableRotation) {
-              coin.rotation.x += (tube.lastStableRotation.x - coin.rotation.x) * 0.05;
-              coin.rotation.y += (tube.lastStableRotation.y - coin.rotation.y) * 0.05;
-              coin.rotation.z += (tube.lastStableRotation.z - coin.rotation.z) * 0.05;
+        if (coin && !tube.isFlipping && !tube.isShattered) {
+          if (player && !player.isEmpty) {
+            // Only update rotation if player has made a choice and coin is not flipping
+            if (player.choice === 'heads') {
+              // Show heads face (standing on edge, heads facing camera)
+              coin.rotation.x = Math.PI / 2;
+              coin.rotation.y = Math.PI / 2;
+              coin.rotation.z = 0;
+            } else if (player.choice === 'tails') {
+              // Show tails face (standing on edge, tails facing camera)
+              coin.rotation.x = 3 * Math.PI / 2;
+              coin.rotation.y = Math.PI / 2;
+              coin.rotation.z = 0;
+            } else {
+              // If no choice made, default to standing on edge (heads position)
+              coin.rotation.x = Math.PI / 2;
+              coin.rotation.y = Math.PI / 2;
+              coin.rotation.z = 0;
             }
+          } else {
+            // For empty players, ensure coin is in default upright position (not sideways)
+            coin.rotation.x = Math.PI / 2;
+            coin.rotation.y = Math.PI / 2;
+            coin.rotation.z = 0;
           }
         }
       });
@@ -1850,18 +1847,16 @@
           
           requestAnimationFrame(animateLanding);
         } else {
-          // Final position - snap to nearest edge (heads or tails) for clean visual
-          const normalizedRotation = ((coin.rotation.x % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
-          const nearestEdge = normalizedRotation < Math.PI ? Math.PI / 2 : 3 * Math.PI / 2;
-          const fullRotations = Math.floor(coin.rotation.x / (Math.PI * 2));
-          coin.rotation.x = fullRotations * (Math.PI * 2) + nearestEdge;
+          // Final position - lock coin to final rotation based on result
+          const finalCycles = Math.floor(coin.rotation.x / (Math.PI * 2));
+          coin.rotation.x = finalCycles * (Math.PI * 2) + targetRotation;
           coin.rotation.y = Math.PI / 2;
           coin.rotation.z = 0;
           coin.quaternion.setFromEuler(coin.rotation);
           
           tube.animationState = 'idle';
           tube.landingId = null;
-          console.log(`✅ Coin ${playerSlot + 1} landed naturally at rotation ${coin.rotation.x.toFixed(2)}`);
+          console.log(`✅ Coin ${playerSlot + 1} landed on target rotation ${coin.rotation.x.toFixed(2)} facing camera (server-side)`);
         }
       };
       
