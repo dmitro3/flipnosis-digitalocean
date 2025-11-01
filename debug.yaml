@@ -1,0 +1,889 @@
+/test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5 The key "orientation" is not recognized and ignored.Understand this warning
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:934  GET https://flipnosis.fun/Images/Background/game%20room2.png 404 (Not Found)Understand this error
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1033 ðŸ” No wallet in URL, trying localStorage: 0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1040 ðŸ” Wallet detection debug: {urlParam: null, localStorage: '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1', ethereum: null, final: '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2476 ðŸ“· Camera positioned for shorter tubes with dual-layer support
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2489 ðŸŽ¨ WebGL Renderer initialized with transparency
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2520 âœ¨ Selective bloom composer created for layer 1 (pearls)!
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2937 ðŸŽ¨ Brass metallic textures loaded
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2979 âš™ï¸ Physics world created with gravity
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3054 ðŸŽ¨ Using potion room tube style: {glassColor: 13684944, glassOpacity: 0.15, glassEmissive: 5263440, glassEmissiveIntensity: 0.15, capColor: 13467442, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3218 âš™ï¸ Sealed physics container created for tube 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3451 ðŸŽ¯ Initial Player 1 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3749 âœ… Applied default Classic with  material to Empty's coin
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3218 âš™ï¸ Sealed physics container created for tube 2
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3451 ðŸŽ¯ Initial Player 2 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3749 âœ… Applied default Classic with  material to Empty's coin
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3218 âš™ï¸ Sealed physics container created for tube 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3451 ðŸŽ¯ Initial Player 3 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3749 âœ… Applied default Classic with  material to Empty's coin
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3218 âš™ï¸ Sealed physics container created for tube 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3451 ðŸŽ¯ Initial Player 4 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3749 âœ… Applied default Classic with  material to Empty's coin
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3781 ðŸ"¥ PRE-LOADING ALL ASSETS during initialization...
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3861 âœ… Pre-compiled 7 materials
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3894 🎮 Game started - coin textures already applied during tube creation
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5592 âœ… Game loaded! Hold CHARGE POWER button to fill tubes!
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5593 🎮 Server-authoritative game ready - all game logic managed by server
+4test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3739 âœ… Applied default Classic textures to Empty's coin
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2464 ðŸ–¼ï¸ Background image loaded! Size: 1791x1018 at distance 1900
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1128 âœ… Connected to server
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2398 ðŸ“‚ No saved game state found
+rusty_metal_04_diff_4k.jpg:1  GET https://flipnosis.fun/Images/textures/Brass/textures/rusty_metal_04_diff_4k.jpg 404 (Not Found)
+Image
+load @ three.module.js:43959
+load @ three.module.js:44162
+(anonymous) @ test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2926Understand this error
+default-avatar.png:1  GET https://flipnosis.fun/images/default-avatar.png 404 (Not Found)
+Image
+(anonymous) @ test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3470Understand this error
+rusty_metal_04_disp_4k.png:1  GET https://flipnosis.fun/Images/textures/Brass/textures/rusty_metal_04_disp_4k.png 404 (Not Found)
+Image
+load @ three.module.js:43959
+load @ three.module.js:44162
+(anonymous) @ test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2927Understand this error
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3891 âœ… ALL ASSETS PRELOADED - Game ready!
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5686 ðŸ” Raw participants data: (2) [{…}, {…}]
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5705 ðŸ‘¤ Slot 1: {raw: {…}, processed: {…}}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5705 ðŸ‘¤ Slot 2: {raw: {…}, processed: {…}}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5691 ðŸ“­ Slot 3: Empty
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5691 ðŸ“­ Slot 4: Empty
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5713 ðŸ“Š Participants mapped: (4) [{…}, {…}, {…}, {…}]
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5596 ðŸ”„ Updating player cards with real data...
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5599 ðŸ” Tube 1: {hasCardElement: true, player: 'Koda'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5606 ðŸŽ¯ Player 1 button logic (DEBUGGING MODE): {playerAddress: '0x6ba07382cf43e41abfc80dc43ffc96730194a3c1', isEmpty: false, showButtons: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5616 ðŸ“ Updating player 1: {name: 'Koda', address: '0x6ba07382cf43e41abfc80dc43ffc96730194a3c1', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5634 ðŸŽ¯ Player 1 empty slot logic: {isEmpty: false, hasExistingOverlay: true, playerName: 'Koda', playerAddress: '0x6ba07382cf43e41abfc80dc43ffc96730194a3c1'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5642 ðŸ§¹ Removing existing overlay from player slot 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5599 ðŸ” Tube 2: {hasCardElement: true, player: 'Lola'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5606 ðŸŽ¯ Player 2 button logic (DEBUGGING MODE): {playerAddress: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6', isEmpty: false, showButtons: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5616 ðŸ“ Updating player 2: {name: 'Lola', address: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5634 ðŸŽ¯ Player 2 empty slot logic: {isEmpty: false, hasExistingOverlay: true, playerName: 'Lola', playerAddress: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5642 ðŸ§¹ Removing existing overlay from player slot 2
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5599 ðŸ” Tube 3: {hasCardElement: true, player: 'Empty'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5606 ðŸŽ¯ Player 3 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5616 ðŸ“ Updating player 3: {name: 'Empty', address: '', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5634 ðŸŽ¯ Player 3 empty slot logic: {isEmpty: true, hasExistingOverlay: true, playerName: 'Empty', playerAddress: ''}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5642 ðŸ§¹ Removing existing overlay from player slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5647 âž• Adding pink X overlay to empty slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5599 ðŸ” Tube 4: {hasCardElement: true, player: 'Empty'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5606 ðŸŽ¯ Player 4 button logic (DEBUGGING MODE): {playerAddress: '', isEmpty: true, showButtons: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5616 ðŸ“ Updating player 4: {name: 'Empty', address: '', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5634 ðŸŽ¯ Player 4 empty slot logic: {isEmpty: true, hasExistingOverlay: true, playerName: 'Empty', playerAddress: ''}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5642 ðŸ§¹ Removing existing overlay from player slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5647 âž• Adding pink X overlay to empty slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6256 🎬 Frame 1 - Layer 0 mask: 1 Should be 1 for layer 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6264 ✅ Main scene (layer 0) rendered to screen
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6271 🎬 Frame 1 - Layer 1 mask: 2 Should be 2 for layer 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6277 ✅ Pearls (layer 1) rendered to bloom buffer
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6278 🔍 Bloom composer render target: Found
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6279 🔍 Bloom composer read buffer: Found
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6287 🎨 Bloom texture: Found
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6289 🎨 Bloom texture details: {width: 1543, height: 877, format: 1023, type: 1016}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6304 🔍 Tube 1 has 80 visible pearls on layer 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6304 🔍 Tube 2 has 80 visible pearls on layer 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6304 🔍 Tube 3 has 80 visible pearls on layer 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6304 🔍 Tube 4 has 80 visible pearls on layer 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6307 🔍 Total visible pearls on layer 1: 320
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6331 ✨ Bloom composite quad created!
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6354 ✅ Bloomed pearls composited on top
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6355 🎉 Selective bloom rendering complete!
+default-avatar.png:1  GET https://flipnosis.fun/images/default-avatar.png 404 (Not Found)Understand this error
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 59, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+favicon.ico:1  GET https://flipnosis.fun/favicon.ico 404 (Not Found)Understand this error
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5741  POST https://flipnosis.fun/api/battle-royale/physics_1761999770960_9be888bba54495c8/join 400 (Bad Request)
+(anonymous) @ test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5741
+(anonymous) @ test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5755Understand this error
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5750 âš ï¸ Join failed: Player already joined this game
+(anonymous) @ test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5750
+await in (anonymous)
+(anonymous) @ test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5755Understand this warning
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 58, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 57, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2644 ðŸŽ¨ Global change coin button clicked
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2654 ðŸŽ¨ Opening coin selector for player slot 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4245 ðŸ” Fetching profile for wallet: 0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4423 ðŸ”§ Forced material reset to: Graphite
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4250 ðŸ“Š Received profile data: {address: '0x6ba07382cf43e41abfc80dc43ffc96730194a3c1', name: 'Koda', avatar: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD…qi4SckjD6AXY0JQFewogdUJIQF/8A1fSKfg8QhF6B8L4H/9k=', headsImage: '', tailsImage: '', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4255 ðŸ’° Updated FLIP balance: 27650
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4256 ðŸ”“ Updated unlocked coins: (5) ['plain', 'skull', 'jestress', 'trump', 'mario']
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 56, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4438 🪙 Coin selection attempt: skull, unlocked: true, cost: 200
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4526 âœ… Coin selected: Skull
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4554 ðŸŽ¨ Updating coin selection visual feedback for: skull
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4569 âœ… Visual feedback applied to selected coin: Skull
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 55, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4639 ðŸ”´ APPLY CHANGES button clicked - closing modal
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4668 âœ… Applied Skull with Graphite material to Koda's coin
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4683 ðŸŽ¯ Sent coin update to server: Skull
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 55, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1324 🪙 Coin update received: {gameId: 'physics_1761999770960_9be888bba54495c8', playerAddress: '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1', playerSlot: 0, coinData: {…}}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1925 🪙 Updating coin for player 1: Skull
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1954 âœ… Applied Skull with Graphite material to Koda's coin
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 54, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 53, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 52, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 51, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 51, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1324 🪙 Coin update received: {gameId: 'physics_1761999770960_9be888bba54495c8', playerAddress: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', playerSlot: 1, coinData: {…}}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1925 🪙 Updating coin for player 2: Pharaoh
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1954 âœ… Applied Pharaoh with Graphite material to Lola's coin
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 50, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 49, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1319 ðŸŽ¯ Player choice update: {address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', playerSlot: 1, choice: 'heads', gameId: 'physics_1761999770960_9be888bba54495c8'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1973 ðŸŽ¯ Updating player choice: {address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', playerSlot: 1, choice: 'heads', gameId: 'physics_1761999770960_9be888bba54495c8'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1988 âœ… Updated player 2 choice to: heads
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 49, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 48, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=false
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: null, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3529 ðŸŽ¯ Local choice set for player 1: heads
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3550 ðŸŽ¯ Sent choice to server: heads
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1319 ðŸŽ¯ Player choice update: {address: '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1', playerSlot: 0, choice: 'heads', gameId: 'physics_1761999770960_9be888bba54495c8'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1973 ðŸŽ¯ Updating player choice: {address: '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1', playerSlot: 0, choice: 'heads', gameId: 'physics_1761999770960_9be888bba54495c8'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1988 âœ… Updated player 1 choice to: heads
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 48, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 47, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3568 ðŸ–±ï¸ Power button mousedown for player 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3582 âš¡ Charging power for tube 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3598 ðŸ“¢ Broadcast: Player 1 started charging
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2267 Audio play prevented: NotSupportedError: The element has no supported sources.
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 46, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 45, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3605 âš¡ Power released at 58%
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3618 ðŸ“¢ Broadcast: Player 1 stopped charging at 58.200000000000095%
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2191 ðŸŽ¯ Release accuracy: normal at 58.200000000000095% power (50.0% win chance)
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:3639 🪙 Sent flip request to server: power=58.200000000000095, choice=heads
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1333 ðŸ’¥ Glass shatter: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, power: 58.200000000000095}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4727 ðŸ’¥ Shattering glass for tube 1 at 58% power
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:4827 ðŸ’¥ Glass shattered! 54 shards + 80 liquid particles at 58% power
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2267 Audio play prevented: NotSupportedError: The element has no supported sources.
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1207 🪙 Coin flip started: {gameId: 'physics_1761999770960_9be888bba54495c8', playerAddress: '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1', playerSlot: 0, power: 58.200000000000095, angle: 0, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1692 ðŸŽ Received flip reward data: {amount: 50, color: '#ffffff', weight: 40}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1693 ðŸŽ Full data object: {gameId: 'physics_1761999770960_9be888bba54495c8', playerAddress: '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1', playerSlot: 0, power: 58.200000000000095, angle: 0, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1702 âš ï¸ Coin 1 already flipping, ignoring duplicate flip request
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 44, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 43, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1222 âš¡ Received charging start: {playerSlot: 1, address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6'}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1229 ðŸŒŠ Started pearl animation for tube 2
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1235 ðŸŒŠ Forced pearl visibility on charging start for tube 2
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 42, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1242 âš¡ Received charging stop: {playerSlot: 1, address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', finalPower: 39.00000000000005}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1248 ðŸ›‘ Stopped pearl animation for tube 2 at 39.00000000000005%
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 41, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 40, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 0, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1212 ðŸŽ² Coin flip result: {gameId: 'physics_1761999770960_9be888bba54495c8', playerAddress: '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1', playerSlot: 0, result: 'heads', won: true, …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1743 âš ï¸ Received result for coin 1 but it's not flipping - ignoring stale result
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 40, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:5039 ðŸ† Updated wins display for player 1: 1 wins
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 1, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 39, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 1, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 38, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 1, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 37, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 1, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 36, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 1, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 35, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 1, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 34, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 1, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 33, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 1, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 32, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 1, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 31, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1389 🎮 Player slot: 0
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2049 ðŸŽ¯ Power button for slot 0: display=block, pointerEvents=auto
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 0: isCurrentPlayer=true, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2054 ðŸŽ¯ Updated buttons for slot 1: isCurrentPlayer=false, hasChoice=true
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:2388 ðŸ’¾ Game state saved to localStorage: {gameId: 'physics_1761999770960_9be888bba54495c8', playerSlot: 0, currentRound: 1, playerWins: 1, playerChoice: 'heads', …}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6009 ðŸ”„ Creating mobile player cards... {tubes: 4, players: 4}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 1: {player: 'Koda', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Koda
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 2: {player: 'Lola', isEmpty: false}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6027 ✅ Created mobile box for Lola
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 3: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 3
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6014 ðŸ” Player 4: {player: 'Empty', isEmpty: true}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6035 â­ï¸ Created empty box for slot 4
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:6041 ðŸ“± Mobile player boxes created: 4 boxes
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1194 ðŸ“Š Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 30, players: 2}
+test-tubes.html?gameId=physics_1761999770960_9be888bba54495c8&room=potion:1352 🎮 Game is now round_active - Round 1

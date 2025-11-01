@@ -1456,6 +1456,14 @@
             tube.foamIntensity = 0;
             
             tube.isShattered = false;
+            // ✅ Reset animation state machine
+            tube.animationState = 'idle';
+            tube.animationStartTime = null;
+            tube.animationEndTime = null;
+            tube.flipId = null;
+            tube.landingId = null;
+            tube.lastStableRotation = null;
+            // Old properties (backwards compatibility)
             tube.isFlipping = false;
             tube.isLanding = false; // âœ… FIX: Clear landing flag
             tube.flipStartTime = null; // Clear flip tracking
@@ -3762,11 +3770,19 @@
         isFilling: false,
         power: 0, // Power level (0-100)
         isShattered: false, // Glass shattered state
-        isFlipping: false, // Coin flip state
-        isLanding: false, // âœ… FIX: Coin landing state (prevents rotation override)
-        flipStartTime: null, // Track when flip started for state validation
-        currentFlipId: null, // Unique ID to prevent animation conflicts
-        currentLandingId: null, // âœ… FIX: Unique ID for landing animation
+        // ✅ NEW: Animation state machine (replaces multiple boolean flags)
+        animationState: 'idle', // 'idle' | 'flipping' | 'landing' | 'shattered'
+        animationStartTime: null, // When current animation started
+        animationEndTime: null, // When current animation should end
+        flipId: null, // Unique ID for flip animation
+        landingId: null, // Unique ID for landing animation
+        lastStableRotation: null, // Last known stable rotation before animation
+        // Old properties kept for backwards compatibility (will be removed later)
+        isFlipping: false, // DEPRECATED: Use animationState instead
+        isLanding: false, // DEPRECATED: Use animationState instead
+        flipStartTime: null, // DEPRECATED
+        currentFlipId: null, // DEPRECATED: Use flipId instead
+        currentLandingId: null, // DEPRECATED: Use landingId instead
         glassShards: [], // Will hold glass shards when shattered
         winLight: null, // Win glow light
         loseLight: null, // Lose glow light
