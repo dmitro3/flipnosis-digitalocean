@@ -8,6 +8,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
+    @font-face {
+      font-family: 'Hyperwave';
+      src: url('/src/fonts/hyperwave-one.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    
     * {
       margin: 0;
       padding: 0;
@@ -461,13 +468,22 @@
       }
       
       .player-box .player-wins {
-        font-size: 6px;
+        font-size: 14px;
         color: #FFD700;
         font-weight: bold;
+        font-family: 'Hyperwave', sans-serif;
         text-shadow: 0 0 3px rgba(255, 215, 0, 0.5);
         line-height: 1;
         flex-shrink: 0;
         margin-left: 4px;
+      }
+      
+      .wins-display {
+        font-family: 'Hyperwave', sans-serif;
+        font-weight: bold;
+        color: #FFD700;
+        font-size: 18px;
+        text-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
       }
       
       .timer, .earnings {
@@ -3492,10 +3508,7 @@
           <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" style="width: 80px; height: 100px;" />
           <div class="player-info">
             <div class="player-name">${player.name}</div>
-            <div class="wins-display" style="display: flex; gap: 8px; margin-top: 8px; justify-content: center; align-items: center;">
-              <span class="trophy-symbol">ðŸ†</span>
-              <span style="color: #ffd700; font-size: 18px; font-weight: bold;">${player.wins}</span>
-            </div>
+            ${player.wins > 0 ? '<div class="wins-display" style="margin-top: 8px; justify-content: center; align-items: center;">WIN</div>' : ''}
           </div>
         </div>
         ${player.choice ? `
@@ -5058,9 +5071,26 @@
       
       if (!tube.cardElement) return;
       
-      const winsDisplay = tube.cardElement.querySelector('.wins-display span:last-child');
-      if (winsDisplay) {
-        winsDisplay.textContent = player.wins;
+      const winsDisplay = tube.cardElement.querySelector('.wins-display');
+      const playerInfo = tube.cardElement.querySelector('.player-info');
+      
+      if (player.wins > 0) {
+        // Show WIN text if player has wins
+        if (!winsDisplay && playerInfo) {
+          const winElement = document.createElement('div');
+          winElement.className = 'wins-display';
+          winElement.style.cssText = 'margin-top: 8px; justify-content: center; align-items: center;';
+          winElement.textContent = 'WIN';
+          playerInfo.appendChild(winElement);
+        } else if (winsDisplay) {
+          winsDisplay.textContent = 'WIN';
+          winsDisplay.style.display = 'block';
+        }
+      } else {
+        // Hide WIN text if player has no wins
+        if (winsDisplay) {
+          winsDisplay.style.display = 'none';
+        }
       }
       
       console.log(`ðŸ† Updated wins display for player ${tubeIndex + 1}: ${player.wins} wins`);
@@ -5669,9 +5699,25 @@
           playerAvatarElement.alt = player.name;
         }
         
-        const winsDisplay = tube.cardElement.querySelector('.wins-display span:last-child');
-        if (winsDisplay) {
-          winsDisplay.textContent = player.wins;
+        const winsDisplay = tube.cardElement.querySelector('.wins-display');
+        if (player.wins > 0) {
+          if (!winsDisplay) {
+            const playerInfo = tube.cardElement.querySelector('.player-info');
+            if (playerInfo) {
+              const winElement = document.createElement('div');
+              winElement.className = 'wins-display';
+              winElement.style.cssText = 'margin-top: 8px; justify-content: center; align-items: center;';
+              winElement.textContent = 'WIN';
+              playerInfo.appendChild(winElement);
+            }
+          } else {
+            winsDisplay.textContent = 'WIN';
+            winsDisplay.style.display = 'block';
+          }
+        } else {
+          if (winsDisplay) {
+            winsDisplay.style.display = 'none';
+          }
         }
         
         const existingOverlay = tube.cardElement.querySelector('.empty-slot-overlay');
@@ -6065,7 +6111,7 @@
             <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" />
             <div class="player-info">
               <div class="player-name">${player.name}</div>
-              <div class="player-wins">ðŸ† ${player.wins}</div>
+              ${player.wins > 0 ? '<div class="player-wins">WIN</div>' : ''}
             </div>
           `;
           console.log(`✅ Created mobile box for ${player.name}`);
@@ -6073,7 +6119,7 @@
           box.innerHTML = `
             <div class="player-info">
               <div class="player-name">Empty</div>
-              <div class="player-wins">-</div>
+              ${''}
             </div>
           `;
           console.log(`â­ï¸ Created empty box for slot ${i + 1}`);

@@ -315,9 +315,10 @@ class PhysicsGameManager {
       return false
     }
     
-    // ✅ FIX: Check if already flipping/firing (prevent double-clicks/rapid requests)
-    if (player.hasFired || player.isFlipping) {
-      console.warn(`❌ Player ${address} already flipping/fired in game ${gameId}`, {
+    // ✅ FIX: Check if already fired (prevent double-flips in same round)
+    // Note: isFlipping is only for tracking animation state, not for blocking
+    if (player.hasFired) {
+      console.warn(`❌ Player ${address} already flipped in this round for game ${gameId}`, {
         hasFired: player.hasFired,
         isFlipping: player.isFlipping,
         slotNumber: player.slotNumber
@@ -413,9 +414,9 @@ class PhysicsGameManager {
 
     console.log(`🎲 Player ${address} result: ${result} (chose ${player.choice}) - ${won ? 'WON' : 'LOST'}`)
 
-    // ✅ FIX: Clear both flags now that result is determined
+    // ✅ FIX: Clear isFlipping flag now that result is determined
+    // Note: hasFired should stay true until round ends (prevents same player from flipping twice in same round)
     player.isFlipping = false
-    player.hasFired = false // Allow player to flip again in next round
 
     // Update wins (first to 3 wins system)
     if (won) {
