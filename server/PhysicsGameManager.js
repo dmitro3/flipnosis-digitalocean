@@ -413,8 +413,9 @@ class PhysicsGameManager {
 
     console.log(`🎲 Player ${address} result: ${result} (chose ${player.choice}) - ${won ? 'WON' : 'LOST'}`)
 
-    // ✅ FIX: Clear flipping flag now that result is determined
+    // ✅ FIX: Clear both flags now that result is determined
     player.isFlipping = false
+    player.hasFired = false // Allow player to flip again in next round
 
     // Update wins (first to 3 wins system)
     if (won) {
