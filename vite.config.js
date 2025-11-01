@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => {
   console.log('Loaded safe environment variables for frontend:', safeEnv)
   
   return {
+    publicDir: 'public',
     plugins: [
       react({
         jsxImportSource: '@emotion/react',
