@@ -1606,60 +1606,77 @@
         const coin = coins[i];
         
         // âœ… FIX: Also skip if coin is landing!
-        if (coin && !tube.isFlipping && !tube.isShattered && !tube.isLanding) {
-          if (player && !player.isEmpty) {
-            if (player.choice === 'heads') {
-              coin.rotation.x = Math.PI / 2;
-              coin.rotation.y = Math.PI / 2;
-              coin.rotation.z = 0;
-            } else if (player.choice === 'tails') {
-              coin.rotation.x = 3 * Math.PI / 2;
-              coin.rotation.y = Math.PI / 2;
-              coin.rotation.z = 0;
-            } else {
-              coin.rotation.x = Math.PI / 2;
-              coin.rotation.y = Math.PI / 2;
-              coin.rotation.z = 0;
-            }
+        if (coin && tube.animationState === 'idle' && 
+            Date.now() - tube.animationEndTime > 100) {
+          if (player && !player.isEmpty && player.choice) {
+            const targetRotation = {
+              x: player.choice === 'heads' ? Math.PI / 2 : 3 * Math.PI / 2,
+              y: Math.PI / 2,
+              z: 0
+            };
+            
+            // Smoothly interpolate to target rotation instead of snapping
+            coin.rotation.x += (targetRotation.x - coin.rotation.x) * 0.1;
+            coin.rotation.y += (targetRotation.y - coin.rotation.y) * 0.1;
+            coin.rotation.z += (targetRotation.z - coin.rotation.z) * 0.1;
+            
+            // Store as stable rotation
+            tube.lastStableRotation = {
+              x: coin.rotation.x,
+              y: coin.rotation.y,
+              z: coin.rotation.z
+            };
           } else {
-            coin.rotation.x = Math.PI / 2;
-            coin.rotation.y = Math.PI / 2;
-            coin.rotation.z = 0;
+            // No choice - maintain stable rotation
+            if (tube.lastStableRotation) {
+              coin.rotation.x += (tube.lastStableRotation.x - coin.rotation.x) * 0.05;
+              coin.rotation.y += (tube.lastStableRotation.y - coin.rotation.y) * 0.05;
+              coin.rotation.z += (tube.lastStableRotation.z - coin.rotation.z) * 0.05;
+            }
           }
         }
       });
     }
     
     function updateCoinStatesFromServer(coinStates) {
-      coinStates.forEach((coinState, index) => {
-        if (coinState && coinState.position) {
-          const coin = coins[index];
-          const tube = tubes[index];
-          if (coin && tube) {
-            if (!tube.isFlipping) {
-              const tubeX = tube.tube.position.x;
-              coin.position.set(tubeX, coinState.position.y, coinState.position.z);
+      if (coinStates) {
+        coinStates.forEach((coinState, index) => {
+          if (coinState && coinState.position) {
+            const coin = coins[index];
+            const tube = tubes[index];
+            if (coin && tube) {
+              // Only update position if coin is idle
+              if (tube.animationState === 'idle') {
+                const tubeX = tube.tube.position.x;
+                coin.position.set(tubeX, coinState.position.y, coinState.position.z);
+                
+                if (coinState.rotation && !coinState.isFlipping) {
+                  coin.quaternion.set(
+                    coinState.rotation.x,
+                    coinState.rotation.y,
+                    coinState.rotation.z,
+                    coinState.rotation.w
+                  );
+                } else {
+                  updateCoinRotationsFromPlayerChoices();
+                }
+              }
               
-              if (coinState.rotation && coinState.isFlipping) {
-                coin.quaternion.set(
-                  coinState.rotation.x,
-                  coinState.rotation.y,
-                  coinState.rotation.z,
-                  coinState.rotation.w
-                );
-              } else {
-                updateCoinRotationsFromPlayerChoices();
+              // Update animation state based on server
+              if (coinState.isFlipping && tube.animationState === 'idle') {
+                tube.animationState = 'flipping';
+                tube.animationStartTime = Date.now();
+              } else if (!coinState.isFlipping && tube.animationState === 'flipping') {
+                // Server says not flipping but we think we are - might be landing
+                if (Date.now() - tube.animationStartTime > 1000) {
+                  tube.animationState = 'idle';
+                  tube.animationEndTime = Date.now();
+                }
               }
             }
-            
-            if (coinState.isFlipping) {
-              tubes[index].isFlipping = true;
-            } else {
-              tubes[index].isFlipping = false;
-            }
           }
-        }
-      });
+        });
+      }
     }
     
     function startClientCoinFlipAnimation(data) {
@@ -1672,13 +1689,13 @@
         
         if (tube && coin) {
           // âœ… FIX: Check if already flipping and skip if so
-          if (tube.isFlipping) {
+          if (tube.animationState !== 'idle') {
             console.log(`âš ï¸ Coin ${data.playerSlot + 1} already flipping, ignoring duplicate flip request`);
             return;
           }
           
           // âœ… FIX: Set state BEFORE starting animation
-          tube.isFlipping = true;
+          // Animation state set below
           tube.flipStartTime = Date.now();
           
           animateCoinFlip(data.playerSlot, data.power, data.duration);
@@ -1919,7 +1936,7 @@
       if (data.playerSlot >= 0 && data.playerSlot < 4) {
         const coin = coins[data.playerSlot];
         const tube = tubes[data.playerSlot];
-        if (coin && tube && !tube.isFlipping) {
+        if (coin && tube && tube.animationState === 'idle') {
           const angleRad = (data.angle * Math.PI) / 180;
           coin.rotation.z = angleRad;
         }
@@ -2033,9 +2050,11 @@
       if (!tube || !coin) return;
       
       // âœ… FIX: Already set in startClientCoinFlipAnimation, but double-check
-      if (!tube.isFlipping) {
-        tube.isFlipping = true;
-      }
+        // State already set in startClientCoinFlipAnimation
+        if (tube.animationState !== 'flipping') {
+          console.log(`⚠️ animateCoinFlip called but state is ${tube.animationState}`);
+          return;
+        }
       
       const powerPercent = power / 100;
       const material = tube.selectedMaterial || coinMaterials[2];
@@ -2053,14 +2072,14 @@
       
       const startTime = Date.now();
       const flipId = Date.now(); // âœ… FIX: Unique ID for this flip
-      tube.currentFlipId = flipId;
+      // flipId already set in startClientCoinFlipAnimation
       
       let wobblePhase = 0;
       let tumblePhase = 0;
       
       const animateFlip = () => {
         // âœ… FIX: Stop animation if this flip was superseded or interrupted
-        if (tube.currentFlipId !== flipId || !tube.isFlipping) {
+        if (tube.flipId !== flipId || tube.animationState !== 'flipping') {
           console.log(`ðŸ›' Animation stopped for slot ${playerSlot} - flip interrupted or superseded`);
           return;
         }
@@ -6108,21 +6127,26 @@
         
         coin.visible = true;
         
-        // ✅ FIX: Skip ALL position/rotation updates if landing!
-        if (tube.isLanding) {
-          // Landing animation has full control - don't touch anything!
-          return;
-        }
+        // Check animation state instead of multiple boolean flags
+        const isAnimating = tube.animationState !== 'idle';
+        const animationAge = Date.now() - tube.animationStartTime;
         
-        if (tube.isFlipping) {
-          const tubeX = tube.tube.position.x;
-          coin.position.x = tubeX;
-          coin.position.y = 200;
-          coin.position.z = 0;
-          // ✅ FIX: Don't touch rotation during flip - animation handles it
+        if (isAnimating) {
+          // During any animation, let the animation handler control position
+          // Don't interfere with position/rotation during animations
+          if (tube.animationState === 'flipping' && !tube.isFilling) {
+            // Flipping animation handles position
+            const tubeX = tube.tube.position.x;
+            coin.position.x = tubeX;
+            coin.position.y = 200;
+            coin.position.z = 0;
+          }
+          // Landing animation handles everything
+          // Shattered state handles everything
         } else if (tube.isFilling && !tube.isShattered) {
-          const vibIntensity = (tube.power / 100) * 8; // 0 to 8 pixels
-          const vibSpeed = (tube.power / 100) * 20; // Speed increases
+          // Power charging vibration
+          const vibIntensity = (tube.power / 100) * 8;
+          const vibSpeed = (tube.power / 100) * 20;
           
           const tubeX = tube.tube.position.x;
           coin.position.x = tubeX + Math.sin(frameCount * vibSpeed) * vibIntensity;
@@ -6130,12 +6154,19 @@
           coin.position.z = Math.sin(frameCount * vibSpeed * 0.7) * vibIntensity * 0.5;
           
           coin.rotation.z = Math.sin(frameCount * vibSpeed * 0.5) * (vibIntensity / 50);
-        } else if (!tube.isShattered && !tube.isFilling) {
+        } else {
+          // Truly idle - maintain stable position
           const tubeX = tube.tube.position.x;
           coin.position.x = tubeX;
           coin.position.y = 200;
           coin.position.z = 0;
-          coin.rotation.z = 0; // Only reset Z rotation, keep X and Y as set
+          
+          // Gently return to stable rotation if needed
+          if (tube.lastStableRotation) {
+            coin.rotation.x += (tube.lastStableRotation.x - coin.rotation.x) * 0.05;
+            coin.rotation.y += (tube.lastStableRotation.y - coin.rotation.y) * 0.05;
+            coin.rotation.z += (tube.lastStableRotation.z - coin.rotation.z) * 0.05;
+          }
         }
       });
       
