@@ -165,20 +165,69 @@ export async function initializeScene(roomParam) {
   physicsWorld.defaultContactMaterial.restitution = 0.3;
   console.log('⚛️ Physics world created with gravity');
   
+  // Create fallback textures first
+  const brassColorCanvas = document.createElement('canvas');
+  brassColorCanvas.width = 512;
+  brassColorCanvas.height = 512;
+  const brassColorCtx = brassColorCanvas.getContext('2d');
+  const brassGradient = brassColorCtx.createLinearGradient(0, 0, 512, 512);
+  brassGradient.addColorStop(0, '#8B6914');
+  brassGradient.addColorStop(1, '#CD853F');
+  brassColorCtx.fillStyle = brassGradient;
+  brassColorCtx.fillRect(0, 0, 512, 512);
+  const fallbackBrassColorMap = new THREE.CanvasTexture(brassColorCanvas);
+  fallbackBrassColorMap.wrapS = THREE.RepeatWrapping;
+  fallbackBrassColorMap.wrapT = THREE.RepeatWrapping;
+  
+  const brassDisplacementCanvas = document.createElement('canvas');
+  brassDisplacementCanvas.width = 512;
+  brassDisplacementCanvas.height = 512;
+  const brassDisplacementCtx = brassDisplacementCanvas.getContext('2d');
+  brassDisplacementCtx.fillStyle = '#808080';
+  brassDisplacementCtx.fillRect(0, 0, 512, 512);
+  const fallbackBrassDisplacementMap = new THREE.CanvasTexture(brassDisplacementCanvas);
+  fallbackBrassDisplacementMap.wrapS = THREE.RepeatWrapping;
+  fallbackBrassDisplacementMap.wrapT = THREE.RepeatWrapping;
+  
   // Texture loaders
   const textureLoader = new THREE.TextureLoader();
-  const brassColorMap = textureLoader.load('/images/textures/Brass/textures/rusty_metal_04_diff_4k.jpg');
-  const brassDisplacementMap = textureLoader.load('/images/textures/Brass/textures/rusty_metal_04_disp_4k.png');
+  let brassColorMap = fallbackBrassColorMap;
+  let brassDisplacementMap = fallbackBrassDisplacementMap;
   
-  brassColorMap.wrapS = THREE.RepeatWrapping;
-  brassColorMap.wrapT = THREE.RepeatWrapping;
-  brassColorMap.repeat.set(2, 2);
+  // Try to load real textures, fallback to canvas if they fail
+  try {
+    const loadedColorMap = textureLoader.load(
+      '/images/textures/Brass/textures/rusty_metal_04_diff_4k.jpg',
+      undefined,
+      undefined,
+      (error) => {
+        console.warn('⚠️ Brass color texture failed, using fallback:', error);
+      }
+    );
+    if (loadedColorMap && loadedColorMap.image && loadedColorMap.image.complete) {
+      brassColorMap = loadedColorMap;
+      brassColorMap.wrapS = THREE.RepeatWrapping;
+      brassColorMap.wrapT = THREE.RepeatWrapping;
+    }
+    
+    const loadedDisplacementMap = textureLoader.load(
+      '/images/textures/Brass/textures/rusty_metal_04_disp_4k.png',
+      undefined,
+      undefined,
+      (error) => {
+        console.warn('⚠️ Brass displacement texture failed, using fallback:', error);
+      }
+    );
+    if (loadedDisplacementMap && loadedDisplacementMap.image && loadedDisplacementMap.image.complete) {
+      brassDisplacementMap = loadedDisplacementMap;
+      brassDisplacementMap.wrapS = THREE.RepeatWrapping;
+      brassDisplacementMap.wrapT = THREE.RepeatWrapping;
+    }
+  } catch (error) {
+    console.warn('⚠️ Texture loading error, using fallbacks:', error);
+  }
   
-  brassDisplacementMap.wrapS = THREE.RepeatWrapping;
-  brassDisplacementMap.wrapT = THREE.RepeatWrapping;
-  brassDisplacementMap.repeat.set(2, 2);
-  
-  console.log('🎨 Brass metallic textures loaded');
+  console.log('🎨 Brass metallic textures initialized (with fallbacks)');
   
   // Tube alpha texture (cutout)
   const tubeAlphaCanvas = document.createElement('canvas');
