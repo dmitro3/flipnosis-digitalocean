@@ -1695,11 +1695,25 @@
           }
           
           // âœ… FIX: Set state BEFORE starting animation
-          // Animation state set below
-          tube.flipStartTime = Date.now();
+          // Generate unique flip ID
+          const flipId = `flip_${data.playerSlot}_${Date.now()}`;
+          
+          // Set animation state with timestamps
+          tube.animationState = 'flipping';
+          tube.animationStartTime = Date.now();
+          tube.animationEndTime = Date.now() + (data.duration || 8000);
+          tube.flipId = flipId;
+          
+          // Store current rotation as starting point
+          tube.lastStableRotation = {
+            x: coin.rotation.x,
+            y: coin.rotation.y,
+            z: coin.rotation.z
+          };
+          
+          console.log(`🎬 Starting flip animation for coin ${data.playerSlot + 1} with ID: ${flipId}`);
           
           animateCoinFlip(data.playerSlot, data.power, data.duration);
-          
           showFlipReward(data.playerSlot, data.flipReward);
         }
       }
@@ -2050,11 +2064,11 @@
       if (!tube || !coin) return;
       
       // âœ… FIX: Already set in startClientCoinFlipAnimation, but double-check
-        // State already set in startClientCoinFlipAnimation
-        if (tube.animationState !== 'flipping') {
-          console.log(`⚠️ animateCoinFlip called but state is ${tube.animationState}`);
-          return;
-        }
+      // State already set in startClientCoinFlipAnimation
+      if (tube.animationState !== 'flipping') {
+        console.log(`⚠️ animateCoinFlip called but state is ${tube.animationState}`);
+        return;
+      }
       
       const powerPercent = power / 100;
       const material = tube.selectedMaterial || coinMaterials[2];
@@ -2071,7 +2085,7 @@
       console.log(`ðŸŽ¬ Starting visual coin flip for slot ${playerSlot}: duration=${flipDuration}ms, speed=${flipSpeed}`);
       
       const startTime = Date.now();
-      const flipId = Date.now(); // âœ… FIX: Unique ID for this flip
+      const flipId = tube.flipId; // Use the flip ID from tube state // âœ… FIX: Unique ID for this flip
       // flipId already set in startClientCoinFlipAnimation
       
       let wobblePhase = 0;
