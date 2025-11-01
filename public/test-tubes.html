@@ -1512,9 +1512,11 @@
             const coin = coins[i];
             if (coin) {
               coin.position.set(tube.tube.position.x, 200, 0);
+              // Original orientation: coins facing the player (standing on edge)
               coin.rotation.x = Math.PI / 2;
               coin.rotation.y = Math.PI / 2;
               coin.rotation.z = 0;
+              coin.quaternion.setFromEuler(coin.rotation); // Sync quaternion
               
               if (tube.winLight) {
                 coin.remove(tube.winLight);
@@ -1752,16 +1754,15 @@
             return;
           }
           
-          // âœ… CRITICAL FIX: Set isLanding FIRST before clearing isFlipping!
+          // ✅ CRITICAL FIX: Update animation state to landing
           // This prevents updateCoinRotationsFromPlayerChoices() from interfering
-          tube.isLanding = true;
+          tube.animationState = 'landing';
           
-          // âœ… THEN clear flip state to stop the flip animation
-          tube.isFlipping = false;
-          tube.flipStartTime = null;
-          tube.currentFlipId = null;
+          // ✅ Clear flip state
+          tube.flipId = null;
           
           // Start landing immediately - no delay, no vulnerability window!
+          // Note: smoothLandCoin will let the coin decelerate naturally and land where physics stops it
           const targetRotationX = data.result === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
           smoothLandCoin(coin, targetRotationX, data.accuracy || 'normal', tube, data.playerSlot);
           
@@ -1787,54 +1788,64 @@
       const startY = coin.rotation.y;
       const startZ = coin.rotation.z;
       
-      // âœ… FIX: Set landing flag to prevent other functions from overriding rotation
-      tube.isLanding = true;
+      // ✅ FIX: Set landing state to prevent other functions from overriding rotation
+      tube.animationState = 'landing';
+      tube.landingId = `landing_${playerSlot}_${Date.now()}`;
       
-      // Calculate shortest path to target
-      const rotationCycles = Math.floor(startRotation / (Math.PI * 2));
-      const currentInCycle = startRotation - (rotationCycles * Math.PI * 2);
-      let finalRotation = rotationCycles * (Math.PI * 2) + targetRotation;
-      
-      // If we're past the target in this cycle, go to next cycle's target
-      if (currentInCycle > targetRotation + Math.PI) {
-        finalRotation += Math.PI * 2;
-      }
-      
-      const landingDuration = 800; // Smooth 0.8 second landing
+      // ✅ NEW: Let coin decelerate naturally instead of forcing to target
+      // The coin will naturally slow down and land where physics stops it
+      const landingDuration = 1200; // Smooth 1.2 second deceleration
       const startTime = Date.now();
-      const landingId = Date.now(); // âœ… Unique ID for this landing
-      tube.currentLandingId = landingId;
       
-      console.log(`ðŸŽ¯ Landing coin ${playerSlot + 1}: from ${startRotation.toFixed(2)} to ${finalRotation.toFixed(2)}`);
+      // Track rotation velocity for natural deceleration
+      let lastRotation = startRotation;
+      const initialSpeed = 0.15; // Base rotation speed when landing starts
+      let currentSpeed = initialSpeed;
+      
+      console.log(`🎯 Landing coin ${playerSlot + 1} naturally: starting from ${startRotation.toFixed(2)}`);
+      
+      const savedLandingId = tube.landingId; // Save for comparison
       
       const animateLanding = () => {
-        // âœ… FIX: Stop if landing was interrupted
-        if (tube.currentLandingId !== landingId) {
-          console.log(`ðŸ›' Landing animation stopped for coin ${playerSlot + 1} - interrupted`);
-          tube.isLanding = false;
+        // ✅ FIX: Stop if landing was interrupted
+        if (tube.landingId !== savedLandingId || tube.animationState !== 'landing') {
+          console.log(`🛑 Landing animation stopped for coin ${playerSlot + 1} - interrupted`);
+          tube.animationState = 'idle';
           return;
         }
         
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / landingDuration, 1);
         
-        // Smooth deceleration curve
-        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        // Natural deceleration - exponential decay
+        currentSpeed = initialSpeed * Math.pow(0.92, progress * 15);
         
-        coin.rotation.x = startRotation + (finalRotation - startRotation) * easeOutQuart;
-        coin.rotation.y = startY + (Math.PI / 2 - startY) * easeOutQuart;
-        coin.rotation.z = startZ * (1 - easeOutQuart);
-        
+        // Apply decelerating rotation
         if (progress < 1) {
+          coin.rotation.x += currentSpeed;
+          
+          // Gradually stabilize Y and Z rotations
+          const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+          coin.rotation.y = startY + (Math.PI / 2 - startY) * easeOutQuart;
+          coin.rotation.z = startZ * (1 - easeOutQuart);
+          
+          // Sync quaternion
+          coin.quaternion.setFromEuler(coin.rotation);
+          
           requestAnimationFrame(animateLanding);
         } else {
-          // Snap to exact final position
-          coin.rotation.x = finalRotation;
+          // Final position - snap to nearest edge (heads or tails) for clean visual
+          const normalizedRotation = ((coin.rotation.x % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+          const nearestEdge = normalizedRotation < Math.PI ? Math.PI / 2 : 3 * Math.PI / 2;
+          const fullRotations = Math.floor(coin.rotation.x / (Math.PI * 2));
+          coin.rotation.x = fullRotations * (Math.PI * 2) + nearestEdge;
           coin.rotation.y = Math.PI / 2;
           coin.rotation.z = 0;
-          tube.isLanding = false; // âœ… Clear landing flag
-          tube.currentLandingId = null;
-          console.log(`âœ… Coin ${playerSlot + 1} landing complete`);
+          coin.quaternion.setFromEuler(coin.rotation);
+          
+          tube.animationState = 'idle';
+          tube.landingId = null;
+          console.log(`✅ Coin ${playerSlot + 1} landed naturally at rotation ${coin.rotation.x.toFixed(2)}`);
         }
       };
       
@@ -5120,6 +5131,11 @@
         pointer-events: none;
       `;
       
+      // ✅ Build announcement message: "Heads you won" or "Tails you lost" etc.
+      const resultMessage = didWin 
+        ? `${result.charAt(0).toUpperCase() + result.slice(1)} you won!` 
+        : `${result.charAt(0).toUpperCase() + result.slice(1)} you lost`;
+      
       resultBox.innerHTML = `
         <div style="
           display: flex;
@@ -5142,10 +5158,22 @@
           </div>
         </div>
         <div style="
-          font-size: 20px;
+          font-size: 24px;
           color: #ffffff;
           text-transform: uppercase;
           letter-spacing: 2px;
+          font-weight: bold;
+          margin-bottom: 8px;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        ">
+          ${resultMessage}
+        </div>
+        <div style="
+          font-size: 18px;
+          color: #cccccc;
+          text-transform: uppercase;
+          letter-spacing: 1px;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
         ">

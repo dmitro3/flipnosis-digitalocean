@@ -447,7 +447,15 @@ class PhysicsGameManager {
     // ✅ FIX: Prevent duplicate endRound calls when multiple players finish simultaneously
     if (allFired && !game.isEndingRound) {
       game.isEndingRound = true; // Set flag IMMEDIATELY to block other calls
-      console.log(`🏁 Round ending triggered for game ${gameId}`)
+      
+      // ✅ Cancel the round timer since all players have finished
+      if (this.timers.has(gameId)) {
+        console.log(`⏰ Cancelling round timer for game ${gameId} - all players have finished`)
+        clearInterval(this.timers.get(gameId))
+        this.timers.delete(gameId)
+      }
+      
+      console.log(`🏁 Round ending triggered for game ${gameId} - all players finished`)
       this.endRound(gameId, broadcast).catch(err => {
         console.error('Error ending round:', err)
         game.isEndingRound = false; // Reset flag on error

@@ -306,6 +306,8 @@ const TokenAirdrop = () => {
               <TokenName>Marketplace</TokenName>
               <TokenDescription>
                 Spend <strong>FLIP</strong> tokens on collectable community created skins for your coins
+                <br /><br />
+                New coin v coin game mode allows users to flip collectable coins against each other.
               </TokenDescription>
             </TokenCard>
             
