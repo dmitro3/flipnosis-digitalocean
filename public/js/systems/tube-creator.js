@@ -111,6 +111,7 @@ export function createTubes(dependencies) {
     gameIdParam,
     walletParam,
     playerSlot,
+    currentRound,
     // Callback functions
     saveGameState,
     updatePlayerCardButtons,
@@ -583,7 +584,7 @@ export function createTubes(dependencies) {
         players[i].choice = choice;
         console.log(`🎯 Local choice set for player ${i + 1}: ${choice}`);
         updateCoinRotationsFromPlayerChoicesFunc(tubes, players, coins);
-        saveGameState();
+        // Note: saveGameState should be called by the caller with proper arguments
 
         const choiceBadge = cardElement.querySelector('.choice-badge');
         const choiceButtonsContainer = cardElement.querySelector('.choice-buttons');

@@ -227,16 +227,17 @@ export async function initGame(params) {
     gameIdParam,
     walletParam,
     playerSlot,
+    currentRound,
     saveGameState: (gameId, wallet, slot, round, players, tubes) => {
-      saveGameState(gameId, wallet, slot, round, players, tubes);
+      saveGameState(gameId || gameIdParam, wallet || walletParam, slot, round || currentRound, players, tubes);
     },
     updatePlayerCardButtons,
     showChoiceRequiredMessage,
     showSweetSpotFeedback: PowerSystem.showSweetSpotFeedback,
     shatterGlassFunc,
     flipCoinWithPower,
-    updateCoinRotationsFromPlayerChoicesFunc: () => {
-      CoinManager.updateCoinRotationsFromPlayerChoices(tubes, players, coins);
+    updateCoinRotationsFromPlayerChoicesFunc: (t, p, c) => {
+      CoinManager.updateCoinRotationsFromPlayerChoices(t || tubes, p || players, c || coins);
     }
   };
   
