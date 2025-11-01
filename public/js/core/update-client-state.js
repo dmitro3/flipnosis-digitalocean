@@ -4,7 +4,6 @@
  */
 
 import { TUBE_RADIUS, TUBE_HEIGHT, TUBE_Y_POSITION } from '../config.js';
-import { updatePearlColors } from '../systems/pearl-physics.js';
 import { updateCoinRotationsFromPlayerChoices, updateCoinStatesFromServer } from '../systems/coin-manager.js';
 
 /**
@@ -27,6 +26,7 @@ export function updateClientFromServerState(state, dependencies) {
     saveGameState,
     updateWinsDisplay,
     updatePlayerCardButtons,
+    updatePearlColors,
     showGameOverScreen
   } = dependencies;
 
