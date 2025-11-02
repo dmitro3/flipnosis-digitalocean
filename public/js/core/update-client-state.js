@@ -112,7 +112,10 @@ export function updateClientFromServerState(state, dependencies) {
       console.log(`🎮 Server detected player slot: ${detectedSlot} (current local slot: ${playerSlot})`);
 
       // Update playerSlot if we have a mutable reference, otherwise use detected slot for operations
-      let slotToUse = playerSlot;
+      // Get current slot value from ref if available, otherwise use passed value
+      const currentSlotValue = playerSlotRef ? playerSlotRef.value : playerSlot;
+      let slotToUse = currentSlotValue;
+      
       if (detectedSlot >= 0 && detectedSlot < 4) {
         if (playerSlotRef) {
           // Update via mutable reference
@@ -156,7 +159,9 @@ export function updateClientFromServerState(state, dependencies) {
                   choiceBadge.className = `choice-badge ${serverPlayer.choice}`;
                 } else {
                   choiceBadge.style.display = 'none';
-                  if (playerSlot === serverPlayer.slotNumber) {
+                  // Use slot from ref if available, otherwise use passed value
+                  const currentSlot = playerSlotRef ? playerSlotRef.value : playerSlot;
+                  if (currentSlot === serverPlayer.slotNumber) {
                     choiceButtons.style.display = 'flex';
                   } else {
                     choiceButtons.style.display = 'none';
@@ -302,17 +307,20 @@ export function updateClientFromServerState(state, dependencies) {
 
               if (choiceButtons && choiceBadge) {
                 choiceBadge.style.display = 'none';
-                if (playerSlot >= 0 && playerSlot === i) {
+                // Use slot from ref if available, otherwise use passed value
+                const currentSlot = playerSlotRef ? playerSlotRef.value : playerSlot;
+                if (currentSlot >= 0 && currentSlot === i) {
                   choiceButtons.style.display = 'flex';
 
-                const choiceBtnElements = tube.cardElement.querySelectorAll('.choice-btn');
-                choiceBtnElements.forEach(btn => {
-                  btn.style.opacity = '1';
-                  btn.style.transform = 'scale(1)';
-                  btn.style.boxShadow = '';
-                });
-              } else {
-                choiceButtons.style.display = 'none';
+                  const choiceBtnElements = tube.cardElement.querySelectorAll('.choice-btn');
+                  choiceBtnElements.forEach(btn => {
+                    btn.style.opacity = '1';
+                    btn.style.transform = 'scale(1)';
+                    btn.style.boxShadow = '';
+                  });
+                } else {
+                  choiceButtons.style.display = 'none';
+                }
               }
             }
           }
