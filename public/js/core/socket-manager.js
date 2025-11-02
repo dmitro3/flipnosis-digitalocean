@@ -48,7 +48,7 @@ export function initializeSocket(dependencies) {
     saveGameState,
     updatePearlColors,
     showFloatingMessage,
-    showGameOverScreen,
+    showGameOverScreen: showGameOverScreenFromDeps,
     showCoinSelector,
     showXPAwardNotification,
     showGamePhaseIndicator,
@@ -58,6 +58,16 @@ export function initializeSocket(dependencies) {
     showResult,
     updateCoinRotationsFromPlayerChoices
   } = dependencies;
+
+  // Use the function from dependencies, with a fallback
+  const showGameOverScreen = showGameOverScreenFromDeps || (() => {
+    console.error('❌ showGameOverScreen was not provided in dependencies');
+  });
+
+  if (!showGameOverScreenFromDeps) {
+    console.error('❌ showGameOverScreen missing from dependencies!');
+    console.log('Available keys:', Object.keys(dependencies).filter(k => k.includes('Game') || k.includes('game')));
+  }
 
   if (typeof io === 'undefined') {
     console.error('❌ Socket.io not loaded');
@@ -140,6 +150,13 @@ export function initializeSocket(dependencies) {
       players: state?.players ? Object.keys(state.players).length : 0
     });
     Object.assign(gameState, state);
+    
+    // Ensure showGameOverScreen is available
+    if (typeof showGameOverScreen === 'undefined') {
+      console.error('❌ showGameOverScreen is undefined in socket-manager');
+      console.log('Available dependencies:', Object.keys(dependencies));
+    }
+    
     updateClientFromServerState(state, {
       gameOver,
       players,
@@ -156,7 +173,7 @@ export function initializeSocket(dependencies) {
       updateWinsDisplay,
       updatePlayerCardButtons,
       updatePearlColors,
-      showGameOverScreen,
+      showGameOverScreen: showGameOverScreen || (() => console.error('❌ showGameOverScreen not available')),
       TUBE_RADIUS,
       TUBE_HEIGHT
     });

@@ -61,14 +61,26 @@ export function updateClientFromServerState(state, dependencies) {
 
       if (winnerIndex >= 0) {
         console.log(`🏆 Server declared winner: ${players[winnerIndex].name}`);
-        showGameOverScreen(winnerIndex, players[winnerIndex].name);
+        if (typeof showGameOverScreen === 'function') {
+          showGameOverScreen(winnerIndex, players[winnerIndex].name);
+        } else {
+          console.error('❌ showGameOverScreen is not a function:', typeof showGameOverScreen);
+        }
       } else {
         console.log(`🏆 Server declared winner but couldn't find player: ${state.winner}`);
-        showGameOverScreen(-1, state.winner);
+        if (typeof showGameOverScreen === 'function') {
+          showGameOverScreen(-1, state.winner);
+        } else {
+          console.error('❌ showGameOverScreen is not a function:', typeof showGameOverScreen);
+        }
       }
     } else {
       console.log(`🏆 Server declared game over with no winner`);
-      showGameOverScreen(-1, null);
+      if (typeof showGameOverScreen === 'function') {
+        showGameOverScreen(-1, null);
+      } else {
+        console.error('❌ showGameOverScreen is not a function:', typeof showGameOverScreen);
+      }
     }
   }
 
