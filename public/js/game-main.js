@@ -632,7 +632,7 @@ export async function initGame(params) {
     updateCoinRotationsFromPlayerChoices: () => {
       CoinManager.updateCoinRotationsFromPlayerChoices(tubes, players, coins);
     }
-  });
+  };
   
   const socket = await initializeSocket(socketDeps);
   
