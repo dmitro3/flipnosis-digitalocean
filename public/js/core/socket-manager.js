@@ -198,8 +198,9 @@ export function initializeSocket(dependencies) {
       // showGameOverScreenLocal is always a function (even if it's a no-op fallback)
       const safeShowGameOverScreen = showGameOverScreenLocal;
       
-      // Pass playerSlot as mutable reference
+      // Pass playerSlot and currentRound as mutable references
       const playerSlotRef = { value: playerSlot };
+      const currentRoundRef = { value: currentRound };
       
       // Wrap updateClientFromServerState in try-catch since it can throw async errors
       try {
@@ -214,7 +215,8 @@ export function initializeSocket(dependencies) {
           playerSlotRef, // Mutable reference for updates
           walletParam,
           gameIdParam,
-          currentRound,
+          currentRound: currentRoundRef.value,
+          currentRoundRef, // Mutable reference for updates
           updateTimerDisplay,
           updateRoundDisplay,
           saveGameState,

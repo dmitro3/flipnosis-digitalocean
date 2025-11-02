@@ -28,6 +28,7 @@ export function updateClientFromServerState(state, dependencies) {
     walletParam,
     gameIdParam,
     currentRound,
+    currentRoundRef, // Mutable reference for updating currentRound
     updateRoundDisplay,
     updateTimerDisplay,
     saveGameState,
@@ -185,14 +186,22 @@ export function updateClientFromServerState(state, dependencies) {
   }
 
   if (state.currentRound !== undefined) {
-    const oldRound = currentRound;
-    currentRound = state.currentRound;
+    // Get current round value from ref if available, otherwise use passed value
+    const currentRoundValue = currentRoundRef ? currentRoundRef.value : currentRound;
+    const oldRound = currentRoundValue;
+    
+    // Update via mutable reference if available, otherwise use passed value for comparison
+    if (currentRoundRef) {
+      currentRoundRef.value = state.currentRound;
+    }
+    const newRound = currentRoundRef ? currentRoundRef.value : state.currentRound;
+    
     updateRoundDisplay();
     // Note: saveGameState needs args but currentRound is read-only here
     // The caller should handle saving if needed
 
-    if (currentRound > oldRound) {
-      console.log(`🔄 Round ${currentRound} started - FULL RESET`);
+    if (newRound > oldRound) {
+      console.log(`🔄 Round ${newRound} started - FULL RESET`);
       tubes.forEach((tube, i) => {
         tube.hasUsedPower = false;
         tube.power = 0;
@@ -340,7 +349,7 @@ export function updateClientFromServerState(state, dependencies) {
         mobilePowerValue.textContent = '0';
       }
 
-      console.log(`✅ Round ${currentRound} reset complete - players can charge and choose again`);
+      console.log(`✅ Round ${newRound} reset complete - players can charge and choose again`);
       updatePlayerCardButtons();
     }
   }

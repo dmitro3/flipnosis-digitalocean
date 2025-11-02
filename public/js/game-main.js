@@ -482,8 +482,9 @@ export async function initGame(params) {
     handleGameEnd,
     updateClientFromServerState: (state, overrideDeps) => {
       // Use override dependencies if provided (from socket-manager), otherwise use local ones
-      // Pass playerSlot as part of a mutable object so it can be updated
+      // Pass playerSlot and currentRound as part of mutable objects so they can be updated
       const playerSlotRef = { value: playerSlot };
+      const currentRoundRef = { value: currentRound };
       const deps = overrideDeps || {
         gameOver,
         players,
@@ -495,7 +496,8 @@ export async function initGame(params) {
         playerSlotRef, // Mutable reference
         walletParam,
         gameIdParam,
-        currentRound,
+        currentRound: currentRoundRef.value,
+        currentRoundRef, // Mutable reference
         updateRoundDisplay,
         updateTimerDisplay,
         saveGameState: (gameId, wallet, slot, round, players, tubes) => {
@@ -512,6 +514,11 @@ export async function initGame(params) {
       if (deps.playerSlotRef && deps.playerSlotRef.value !== playerSlot) {
         playerSlot = deps.playerSlotRef.value;
         console.log(`🔄 Updated playerSlot to: ${playerSlot}`);
+      }
+      // Update currentRound if it was modified
+      if (deps.currentRoundRef && deps.currentRoundRef.value !== currentRound) {
+        currentRound = deps.currentRoundRef.value;
+        console.log(`🔄 Updated currentRound to: ${currentRound}`);
       }
       return result;
     },
@@ -640,7 +647,9 @@ export async function initGame(params) {
   // Now that socket exists, update showCoinSelector to use it
   socketDeps.showCoinSelector = (tubeIndex) => {
     console.log(`🪙 showCoinSelector called for tube ${tubeIndex}`);
-    import('../ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
+    // Import path relative to game-main.js location (js/ folder)
+    // game-main.js is in js/, coin-selector.js is in js/ui/, so we use ./ui/coin-selector.js
+    import('./ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
       showSelector(tubeIndex, {
         tubes,
         players,
