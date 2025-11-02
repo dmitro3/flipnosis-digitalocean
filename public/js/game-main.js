@@ -503,10 +503,40 @@ export async function initGame(params) {
       updateClientFromServerState(state, deps);
     },
     createMobilePlayerCards: () => {
-      // Mobile UI creation
-      if (isMobile()) {
-        console.log('📱 Creating mobile player cards');
+      const container = document.getElementById('mobile-player-cards');
+      if (!container) {
+        return;
       }
+
+      console.log('📱 Creating mobile player cards...', { tubes: tubes.length, players: players.length });
+      container.innerHTML = '';
+      
+      for (let i = 0; i < 4; i++) {
+        const player = players[i];
+        const box = document.createElement('div');
+        box.className = 'player-box';
+        
+        if (player && !player.isEmpty) {
+          box.innerHTML = `
+            <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" />
+            <div class="player-info">
+              <div class="player-name">${player.name}</div>
+              <div class="player-wins">🏆 ${player.wins}</div>
+            </div>
+          `;
+        } else {
+          box.innerHTML = `
+            <div class="player-info">
+              <div class="player-name">Empty</div>
+              <div class="player-wins">-</div>
+            </div>
+          `;
+        }
+        
+        container.appendChild(box);
+      }
+      
+      console.log(`📱 Mobile player boxes created: ${container.children.length} boxes`);
     },
     startClientCoinFlipAnimation,
     showCoinFlipResult,
@@ -530,9 +560,24 @@ export async function initGame(params) {
     showGamePhaseIndicator: () => console.log('📊 Phase indicator'),
     showGameStartNotification: () => console.log('🎮 Game started'),
     showGameOverScreen,
-    showCoinSelector: () => {
-      console.log('🪙 Showing coin selector');
-      // TODO: Implement coin selector UI
+    showCoinSelector: (tubeIndex) => {
+      import('../ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
+        showSelector(tubeIndex, {
+          tubes,
+          players,
+          coinOptions,
+          coinMaterials,
+          walletParam,
+          gameIdParam,
+          playerSlot,
+          socket,
+          isServerSideMode,
+          webglRenderer,
+          applyCoinSelection
+        });
+      }).catch(err => {
+        console.error('❌ Failed to load coin selector:', err);
+      });
     },
     loadGameState: () => loadGameState(gameIdParam, walletParam),
     updateCoinRotationsFromPlayerChoices: () => {
@@ -583,6 +628,134 @@ export async function initGame(params) {
   
   console.log('✅ Game initialized successfully');
   
+  // Function to load participants from API and update players
+  const loadParticipants = async () => {
+    if (!gameIdParam) {
+      console.warn('⚠️ Cannot load participants: no gameId');
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/battle-royale/${encodeURIComponent(gameIdParam)}`);
+      if (!res.ok) {
+        console.warn('⚠️ Failed to load participants:', res.status);
+        return;
+      }
+      
+      const data = await res.json();
+      const parts = (data?.game?.participants || []).slice().sort((a, b) => (a.slot_number || 0) - (b.slot_number || 0));
+      console.log('👥 Raw participants data:', parts);
+      
+      // Update players array
+      for (let idx = 0; idx < 4; idx++) {
+        const p = parts[idx];
+        if (!p) {
+          // Empty slot
+          if (!players[idx] || players[idx].isEmpty) {
+            players[idx] = {
+              id: idx + 1,
+              name: 'Empty',
+              wins: 0,
+              address: '',
+              choice: null,
+              avatar: '/images/default-avatar.png',
+              isEmpty: true
+            };
+          }
+        } else {
+          // Player exists
+          players[idx] = {
+            id: idx + 1,
+            name: p.username || p.name || `Player ${idx + 1}`,
+            wins: p.wins || 0,
+            address: p.player_address || '',
+            choice: null,
+            avatar: p.avatar || '/images/default-avatar.png',
+            isEmpty: false
+          };
+          
+          // If this is the current player, set playerSlot
+          if (walletParam && p.player_address && p.player_address.toLowerCase() === walletParam.toLowerCase()) {
+            playerSlot = idx;
+            console.log(`🎮 Current player slot set to: ${playerSlot}`);
+          }
+        }
+        
+        // Update tube card if it exists
+        if (tubes[idx] && tubes[idx].cardElement) {
+          const card = tubes[idx].cardElement;
+          const nameEl = card.querySelector('.player-name');
+          const avatarEl = card.querySelector('.player-avatar');
+          const winsEl = card.querySelector('.wins-display span:last-child');
+          const overlayEl = card.querySelector('.empty-slot-overlay');
+          
+          if (nameEl) nameEl.textContent = players[idx].name;
+          if (avatarEl) {
+            avatarEl.src = players[idx].avatar;
+            avatarEl.alt = players[idx].name;
+          }
+          if (winsEl) winsEl.textContent = players[idx].wins;
+          
+          // Remove empty overlay if player exists
+          if (overlayEl && !players[idx].isEmpty) {
+            overlayEl.remove();
+          } else if (!overlayEl && players[idx].isEmpty) {
+            // Add empty overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'empty-slot-overlay';
+            overlay.style.cssText = `
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: rgba(0, 0, 50, 0.9);
+              border-radius: 16px;
+              z-index: 10;
+            `;
+            card.appendChild(overlay);
+          }
+        }
+      }
+      
+      console.log('✅ Participants loaded:', players);
+      updatePlayerCardButtons();
+      // Call createMobilePlayerCards via socket dependency if available, otherwise create directly
+      const container = document.getElementById('mobile-player-cards');
+      if (container) {
+        container.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+          const player = players[i];
+          const box = document.createElement('div');
+          box.className = 'player-box';
+          
+          if (player && !player.isEmpty) {
+            box.innerHTML = `
+              <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" />
+              <div class="player-info">
+                <div class="player-name">${player.name}</div>
+                <div class="player-wins">🏆 ${player.wins}</div>
+              </div>
+            `;
+          } else {
+            box.innerHTML = `
+              <div class="player-info">
+                <div class="player-name">Empty</div>
+                <div class="player-wins">-</div>
+              </div>
+            `;
+          }
+          container.appendChild(box);
+        }
+      }
+      
+      return players;
+    } catch (err) {
+      console.error('❌ Failed to load participants:', err);
+      return players;
+    }
+  };
+  
   // Return game objects for debugging/external access
   return {
     scene,
@@ -597,6 +770,7 @@ export async function initGame(params) {
     socket,
     gameState,
     playerSlot,
+    loadParticipants,
     currentRound,
     gameOver,
     isServerSideMode

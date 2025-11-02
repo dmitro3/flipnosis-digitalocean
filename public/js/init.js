@@ -122,17 +122,13 @@ async function initialize() {
     if (gameIdParam && roleParam !== 'spectator') {
       console.log('🔗 Loading participants and joining game...');
       
-      // Load participants
-      try {
-        const res = await fetch(`/api/battle-royale/${encodeURIComponent(gameIdParam)}`);
-        if (res.ok) {
-          const data = await res.json();
-          console.log('👥 Participants loaded:', data);
-        } else {
-          console.warn('⚠️ Failed to load participants:', res.status);
+      // Load participants using the game instance function
+      if (gameInstance && typeof gameInstance.loadParticipants === 'function') {
+        try {
+          await gameInstance.loadParticipants();
+        } catch (err) {
+          console.warn('⚠️ Participants load failed:', err);
         }
-      } catch (err) {
-        console.warn('⚠️ Participants load failed:', err);
       }
       
       // Join game
@@ -150,6 +146,10 @@ async function initialize() {
           const data = await res.json().catch(() => ({}));
           if (res.ok) {
             console.log('✅ Joined game on server:', data);
+            // Reload participants after joining to get updated state
+            if (gameInstance && typeof gameInstance.loadParticipants === 'function') {
+              setTimeout(() => gameInstance.loadParticipants(), 500);
+            }
           } else {
             console.warn('⚠️ Join failed:', data?.error || res.statusText);
           }
