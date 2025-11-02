@@ -4,6 +4,7 @@
  * Preserves all server communication, API calls, and database field references
  */
 
+import { io } from 'socket.io-client';
 import { loadGameState } from './game-state.js';
 import { powerChargeSound } from '../utils/audio.js';
 
@@ -81,12 +82,14 @@ export function initializeSocket(dependencies) {
     console.log('✅ showGameOverScreen found in dependencies, type:', typeof showGameOverScreenFromDeps);
   }
 
-  if (typeof io === 'undefined') {
-    console.error('❌ Socket.io not loaded');
-    return null;
-  }
-
-  const socket = io();
+  // io is now imported as ES module
+  // Vite proxy handles /socket.io requests to backend server
+  const socket = io({
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 10,
+    reconnectionDelay: 2000
+  });
 
   socket.on('connect', () => {
     console.log('✅ Connected to server');

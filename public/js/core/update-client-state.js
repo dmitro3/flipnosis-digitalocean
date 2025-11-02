@@ -305,22 +305,21 @@ export function updateClientFromServerState(state, dependencies) {
             const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
             const choiceBadge = tube.cardElement.querySelector('.choice-badge');
 
-              if (choiceButtons && choiceBadge) {
-                choiceBadge.style.display = 'none';
-                // Use slot from ref if available, otherwise use passed value
-                const currentSlot = playerSlotRef ? playerSlotRef.value : playerSlot;
-                if (currentSlot >= 0 && currentSlot === i) {
-                  choiceButtons.style.display = 'flex';
+            if (choiceButtons && choiceBadge) {
+              choiceBadge.style.display = 'none';
+              // Use slot from ref if available, otherwise use passed value
+              const currentSlot = playerSlotRef ? playerSlotRef.value : playerSlot;
+              if (currentSlot >= 0 && currentSlot === i) {
+                choiceButtons.style.display = 'flex';
 
-                  const choiceBtnElements = tube.cardElement.querySelectorAll('.choice-btn');
-                  choiceBtnElements.forEach(btn => {
-                    btn.style.opacity = '1';
-                    btn.style.transform = 'scale(1)';
-                    btn.style.boxShadow = '';
-                  });
-                } else {
-                  choiceButtons.style.display = 'none';
-                }
+                const choiceBtnElements = tube.cardElement.querySelectorAll('.choice-btn');
+                choiceBtnElements.forEach(btn => {
+                  btn.style.opacity = '1';
+                  btn.style.transform = 'scale(1)';
+                  btn.style.boxShadow = '';
+                });
+              } else {
+                choiceButtons.style.display = 'none';
               }
             }
           }
