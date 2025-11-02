@@ -102,8 +102,34 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // ===== STATIC FILES =====
 const distPath = path.join(__dirname, '..', 'dist')
+const publicPath = path.join(__dirname, '..', 'public')
 console.log('📁 Checking dist path:', distPath)
 console.log('📁 Dist exists:', fs.existsSync(distPath))
+console.log('📁 Checking public path:', publicPath)
+console.log('📁 Public exists:', fs.existsSync(publicPath))
+
+// Serve public folder first (for test-tubes.html and game assets)
+if (fs.existsSync(publicPath)) {
+  app.use(express.static(publicPath, {
+    setHeaders: (res, filePath) => {
+      console.log('📁 Serving public file:', filePath)
+      
+      // Set proper MIME types
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+      } else if (filePath.endsWith('.jsx')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+      } else if (filePath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css; charset=utf-8')
+      } else if (filePath.endsWith('.html')) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8')
+      } else if (filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        res.setHeader('Cache-Control', 'public, max-age=86400')
+      }
+    }
+  }))
+  console.log('✅ Serving static files from:', publicPath)
+}
 
 if (fs.existsSync(distPath)) {
   // Serve static files from the dist directory only (but not for API routes)
@@ -113,7 +139,7 @@ if (fs.existsSync(distPath)) {
     }
     return express.static(distPath, {
       setHeaders: (res, filePath) => {
-        console.log('📁 Serving static file:', filePath)
+        console.log('📁 Serving dist file:', filePath)
         
         // Set proper MIME types for JavaScript files
         if (filePath.endsWith('.js')) {
@@ -304,18 +330,24 @@ initializeServices()
     })
 
     // Specific route for test-tubes.html to ensure it's served correctly
-    if (fs.existsSync(distPath)) {
-      app.get('/test-tubes.html', (req, res) => {
-        console.log('🎮 Serving test-tubes.html with query params:', req.query)
-        const testTubesPath = path.join(distPath, 'test-tubes.html')
-        if (fs.existsSync(testTubesPath)) {
-          res.sendFile(testTubesPath)
-        } else {
-          console.error('❌ test-tubes.html not found at:', testTubesPath)
-          res.status(404).json({ error: 'test-tubes.html not found' })
-        }
-      })
-    }
+    app.get('/test-tubes.html', (req, res) => {
+      console.log('🎮 Serving test-tubes.html with query params:', req.query)
+      
+      // Check public folder first, then dist folder
+      const publicTestTubesPath = path.join(publicPath, 'test-tubes.html')
+      const distTestTubesPath = path.join(distPath, 'test-tubes.html')
+      
+      if (fs.existsSync(publicTestTubesPath)) {
+        console.log('✅ Serving test-tubes.html from public folder')
+        res.sendFile(publicTestTubesPath)
+      } else if (fs.existsSync(distTestTubesPath)) {
+        console.log('✅ Serving test-tubes.html from dist folder')
+        res.sendFile(distTestTubesPath)
+      } else {
+        console.error('❌ test-tubes.html not found in public or dist')
+        res.status(404).json({ error: 'test-tubes.html not found' })
+      }
+    })
 
     // Catch-all for SPA (only if dist exists)
     // Exclude test-tubes.html and API routes from catch-all
