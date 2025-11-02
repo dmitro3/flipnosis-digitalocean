@@ -60,13 +60,16 @@ export function initializeSocket(dependencies) {
   } = dependencies;
 
   // Use the function from dependencies, with a fallback
-  const showGameOverScreen = showGameOverScreenFromDeps || (() => {
+  const showGameOverScreenLocal = showGameOverScreenFromDeps || (() => {
     console.error('❌ showGameOverScreen was not provided in dependencies');
   });
 
   if (!showGameOverScreenFromDeps) {
     console.error('❌ showGameOverScreen missing from dependencies!');
     console.log('Available keys:', Object.keys(dependencies).filter(k => k.includes('Game') || k.includes('game')));
+    console.log('All dependency keys:', Object.keys(dependencies));
+  } else {
+    console.log('✅ showGameOverScreen found in dependencies, type:', typeof showGameOverScreenFromDeps);
   }
 
   if (typeof io === 'undefined') {
@@ -151,11 +154,10 @@ export function initializeSocket(dependencies) {
     });
     Object.assign(gameState, state);
     
-    // Ensure showGameOverScreen is available
-    if (typeof showGameOverScreen === 'undefined') {
-      console.error('❌ showGameOverScreen is undefined in socket-manager');
-      console.log('Available dependencies:', Object.keys(dependencies));
-    }
+    // Ensure showGameOverScreen is available - use the local constant
+    const safeShowGameOverScreen = showGameOverScreenLocal || (() => {
+      console.error('❌ showGameOverScreen not available - using fallback');
+    });
     
     updateClientFromServerState(state, {
       gameOver,
@@ -173,7 +175,7 @@ export function initializeSocket(dependencies) {
       updateWinsDisplay,
       updatePlayerCardButtons,
       updatePearlColors,
-      showGameOverScreen: showGameOverScreen || (() => console.error('❌ showGameOverScreen not available')),
+      showGameOverScreen: safeShowGameOverScreen,
       TUBE_RADIUS,
       TUBE_HEIGHT
     });
