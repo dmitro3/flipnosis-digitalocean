@@ -59,15 +59,24 @@ export function initializeSocket(dependencies) {
     updateCoinRotationsFromPlayerChoices
   } = dependencies;
 
-  // Use the function from dependencies, with a fallback
-  const showGameOverScreenLocal = showGameOverScreenFromDeps || (() => {
-    console.error('❌ showGameOverScreen was not provided in dependencies');
-  });
+  // Use the function from dependencies, with a fallback - ALWAYS ensure it exists
+  const showGameOverScreenLocal = (showGameOverScreenFromDeps && typeof showGameOverScreenFromDeps === 'function')
+    ? showGameOverScreenFromDeps 
+    : ((winnerIndex, winnerName) => {
+        console.warn('⚠️ showGameOverScreen was not provided or is not a function', {
+          winnerIndex,
+          winnerName,
+          wasProvided: showGameOverScreenFromDeps !== undefined,
+          type: typeof showGameOverScreenFromDeps
+        });
+      });
 
-  if (!showGameOverScreenFromDeps) {
-    console.error('❌ showGameOverScreen missing from dependencies!');
-    console.log('Available keys:', Object.keys(dependencies).filter(k => k.includes('Game') || k.includes('game')));
-    console.log('All dependency keys:', Object.keys(dependencies));
+  if (!showGameOverScreenFromDeps || typeof showGameOverScreenFromDeps !== 'function') {
+    console.warn('⚠️ showGameOverScreen missing or invalid from dependencies!', {
+      wasProvided: showGameOverScreenFromDeps !== undefined,
+      type: typeof showGameOverScreenFromDeps,
+      availableKeys: Object.keys(dependencies).filter(k => k.includes('Game') || k.includes('game'))
+    });
   } else {
     console.log('✅ showGameOverScreen found in dependencies, type:', typeof showGameOverScreenFromDeps);
   }
@@ -162,57 +171,58 @@ export function initializeSocket(dependencies) {
       
       Object.assign(gameState, state);
       
-      // Ensure showGameOverScreen is available - use the local constant
-      // Create a safe wrapper that always exists and is a function
-      let safeShowGameOverScreen;
-      try {
-        safeShowGameOverScreen = (typeof showGameOverScreenLocal === 'function') 
-          ? showGameOverScreenLocal 
-          : ((winnerIndex, winnerName) => {
-              console.warn('⚠️ showGameOverScreen not available - game over screen cannot be shown', {
-                winnerIndex,
-                winnerName
-              });
-            });
-      } catch (e) {
-        console.error('❌ Error creating safeShowGameOverScreen wrapper:', e);
-        safeShowGameOverScreen = () => console.warn('⚠️ showGameOverScreen unavailable');
-      }
+      // Ensure showGameOverScreen is available - use the local constant which is always defined
+      // showGameOverScreenLocal is always a function (even if it's a no-op fallback)
+      const safeShowGameOverScreen = showGameOverScreenLocal;
       
       // Pass playerSlot as mutable reference
       const playerSlotRef = { value: playerSlot };
       
-      updateClientFromServerState(state, {
-        gameOver,
-        players,
-        tubes,
-        coins,
-        scene,
-        physicsWorld,
-        playerSlot: playerSlotRef.value,
-        playerSlotRef, // Mutable reference for updates
-        walletParam,
-        gameIdParam,
-        currentRound,
-        updateTimerDisplay,
-        updateRoundDisplay,
-        saveGameState,
-        updateWinsDisplay,
-        updatePlayerCardButtons,
-        updatePearlColors,
-        showGameOverScreen: safeShowGameOverScreen,
-        TUBE_RADIUS,
-        TUBE_HEIGHT
-      });
-      
-      // Update parent playerSlot if it was modified
-      if (playerSlotRef.value !== playerSlot) {
-        // Note: playerSlot is passed by value, so we can't update it here
-        // The update should happen in game-main.js's updateClientFromServerState wrapper
-        console.log(`🔄 Detected slot change: ${playerSlot} -> ${playerSlotRef.value}`);
+      // Wrap updateClientFromServerState in try-catch since it can throw async errors
+      try {
+        updateClientFromServerState(state, {
+          gameOver,
+          players,
+          tubes,
+          coins,
+          scene,
+          physicsWorld,
+          playerSlot: playerSlotRef.value,
+          playerSlotRef, // Mutable reference for updates
+          walletParam,
+          gameIdParam,
+          currentRound,
+          updateTimerDisplay,
+          updateRoundDisplay,
+          saveGameState,
+          updateWinsDisplay,
+          updatePlayerCardButtons,
+          updatePearlColors,
+          showGameOverScreen: safeShowGameOverScreen,
+          TUBE_RADIUS,
+          TUBE_HEIGHT
+        });
+        
+        // Update parent playerSlot if it was modified
+        if (playerSlotRef.value !== playerSlot) {
+          // Note: playerSlot is passed by value, so we can't update it here
+          // The update should happen in game-main.js's updateClientFromServerState wrapper
+          console.log(`🔄 Detected slot change: ${playerSlot} -> ${playerSlotRef.value}`);
+        }
+      } catch (updateError) {
+        console.error('❌ Error in updateClientFromServerState:', updateError);
+        console.error('Update error details:', {
+          message: updateError.message,
+          stack: updateError.stack,
+          statePhase: state?.phase
+        });
       }
       
-      createMobilePlayerCards();
+      try {
+        createMobilePlayerCards();
+      } catch (cardsError) {
+        console.error('❌ Error creating mobile player cards:', cardsError);
+      }
     } catch (error) {
       console.error('❌ Error in physics_state_update handler:', error);
       console.error('Error details:', {
