@@ -624,31 +624,42 @@ export async function initGame(params) {
       }, 3000);
     },
     showGameOverScreen,
-    showCoinSelector: ((tubeIndex) => {
-      console.log(`🪙 showCoinSelector called for tube ${tubeIndex}`);
-      import('../ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
-        showSelector(tubeIndex, {
-          tubes,
-          players,
-          coinOptions,
-          coinMaterials,
-          walletParam,
-          gameIdParam,
-          playerSlot,
-          socket,
-          isServerSideMode,
-          webglRenderer,
-          applyCoinSelection
-        });
-      }).catch(err => {
-        console.error('❌ Failed to load coin selector:', err);
-      });
-    }),
+    showCoinSelector: (tubeIndex) => {
+      // This is a placeholder - will be replaced after socket is created
+      console.warn(`⚠️ showCoinSelector called before socket is ready for tube ${tubeIndex}`);
+    },
     loadGameState: () => loadGameState(gameIdParam, walletParam),
     updateCoinRotationsFromPlayerChoices: () => {
       CoinManager.updateCoinRotationsFromPlayerChoices(tubes, players, coins);
     }
   });
+  
+  const socket = await initializeSocket(socketDeps);
+  
+  // Now that socket exists, update showCoinSelector to use it
+  socketDeps.showCoinSelector = (tubeIndex) => {
+    console.log(`🪙 showCoinSelector called for tube ${tubeIndex}`);
+    import('../ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
+      showSelector(tubeIndex, {
+        tubes,
+        players,
+        coinOptions,
+        coinMaterials,
+        walletParam,
+        gameIdParam,
+        playerSlot,
+        socket, // Socket is now available
+        isServerSideMode,
+        webglRenderer,
+        applyCoinSelection
+      });
+    }).catch(err => {
+      console.error('❌ Failed to load coin selector:', err);
+    });
+  };
+  
+  // Store reference for button access
+  showCoinSelectorFunc = socketDeps.showCoinSelector;
   
   // Update tube dependencies with socket
   tubeDependencies.socket = socket;
