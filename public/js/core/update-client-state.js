@@ -34,8 +34,20 @@ export function updateClientFromServerState(state, dependencies) {
     updateWinsDisplay,
     updatePlayerCardButtons,
     updatePearlColors,
-    showGameOverScreen
+    showGameOverScreen // This should always be passed, but if not, use no-op
   } = dependencies || {};
+  
+  // Ensure showGameOverScreen is always a function (never undefined/null)
+  const safeShowGameOverScreenFunc = (showGameOverScreen && typeof showGameOverScreen === 'function')
+    ? showGameOverScreen
+    : ((winnerIndex, winnerName) => {
+        console.warn('⚠️ showGameOverScreen not available, cannot show game over screen', {
+          winnerIndex,
+          winnerName,
+          wasPassed: showGameOverScreen !== undefined,
+          type: typeof showGameOverScreen
+        });
+      });
 
   if (gameOver && state && state.phase !== 'game_over') {
     console.log('🛑 Ignoring state update after game over:', state.phase);
@@ -68,37 +80,25 @@ export function updateClientFromServerState(state, dependencies) {
 
       if (winnerIndex >= 0) {
         console.log(`🏆 Server declared winner: ${players[winnerIndex].name}`);
-        if (showGameOverScreen && typeof showGameOverScreen === 'function') {
-          try {
-            showGameOverScreen(winnerIndex, players[winnerIndex].name);
-          } catch (error) {
-            console.error('❌ Error calling showGameOverScreen:', error);
-          }
-        } else {
-          console.error('❌ showGameOverScreen is not a function:', typeof showGameOverScreen);
-        }
-      } else {
-        console.log(`🏆 Server declared winner but couldn't find player: ${state.winner}`);
-        if (showGameOverScreen && typeof showGameOverScreen === 'function') {
-          try {
-            showGameOverScreen(-1, state.winner);
-          } catch (error) {
-            console.error('❌ Error calling showGameOverScreen:', error);
-          }
-        } else {
-          console.error('❌ showGameOverScreen is not a function:', typeof showGameOverScreen);
-        }
-      }
-    } else {
-      console.log(`🏆 Server declared game over with no winner`);
-      if (showGameOverScreen && typeof showGameOverScreen === 'function') {
         try {
-          showGameOverScreen(-1, null);
+          safeShowGameOverScreenFunc(winnerIndex, players[winnerIndex].name);
         } catch (error) {
           console.error('❌ Error calling showGameOverScreen:', error);
         }
       } else {
-        console.error('❌ showGameOverScreen is not a function:', typeof showGameOverScreen);
+        console.log(`🏆 Server declared winner but couldn't find player: ${state.winner}`);
+        try {
+          safeShowGameOverScreenFunc(-1, state.winner);
+        } catch (error) {
+          console.error('❌ Error calling showGameOverScreen:', error);
+        }
+      }
+    } else {
+      console.log(`🏆 Server declared game over with no winner`);
+      try {
+        safeShowGameOverScreenFunc(-1, null);
+      } catch (error) {
+        console.error('❌ Error calling showGameOverScreen:', error);
       }
     }
   }

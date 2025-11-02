@@ -641,14 +641,15 @@ export async function initGame(params) {
   const loadParticipants = async () => {
     if (!gameIdParam) {
       console.warn('⚠️ Cannot load participants: no gameId');
-      return;
+      return players;
     }
     
     try {
+      console.log(`📡 Fetching participants for game: ${gameIdParam}`);
       const res = await fetch(`/api/battle-royale/${encodeURIComponent(gameIdParam)}`);
       if (!res.ok) {
-        console.warn('⚠️ Failed to load participants:', res.status);
-        return;
+        console.warn('⚠️ Failed to load participants:', res.status, res.statusText);
+        return players;
       }
       
       const data = await res.json();
@@ -727,8 +728,9 @@ export async function initGame(params) {
         }
       }
       
-      console.log('✅ Participants loaded:', players);
+      console.log('✅ Participants loaded and cards updated:', players.map(p => ({ name: p.name, isEmpty: p.isEmpty })));
       updatePlayerCardButtons();
+      
       // Call createMobilePlayerCards via socket dependency if available, otherwise create directly
       const container = document.getElementById('mobile-player-cards');
       if (container) {
@@ -761,9 +763,18 @@ export async function initGame(params) {
       return players;
     } catch (err) {
       console.error('❌ Failed to load participants:', err);
+      console.error('Error stack:', err.stack);
       return players;
     }
   };
+  
+  // Auto-load participants after a short delay to ensure everything is ready
+  setTimeout(() => {
+    if (gameIdParam && typeof loadParticipants === 'function') {
+      console.log('🔄 Auto-loading participants after initialization...');
+      loadParticipants().catch(err => console.error('Auto-load failed:', err));
+    }
+  }, 1000);
   
   // Return game objects for debugging/external access
   return {

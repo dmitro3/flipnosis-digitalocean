@@ -168,33 +168,44 @@ export function initializeSocket(dependencies) {
     
     // Pass playerSlot as mutable reference
     const playerSlotRef = { value: playerSlot };
-    updateClientFromServerState(state, {
-      gameOver,
-      players,
-      tubes,
-      coins,
-      scene,
-      physicsWorld,
-      playerSlot: playerSlotRef.value,
-      playerSlotRef, // Mutable reference for updates
-      walletParam,
-      gameIdParam,
-      currentRound,
-      updateTimerDisplay,
-      updateRoundDisplay,
-      saveGameState,
-      updateWinsDisplay,
-      updatePlayerCardButtons,
-      updatePearlColors,
-      showGameOverScreen: safeShowGameOverScreen,
-      TUBE_RADIUS,
-      TUBE_HEIGHT
-    });
-    // Update parent playerSlot if it was modified
-    if (playerSlotRef.value !== playerSlot) {
-      // Note: playerSlot is passed by value, so we can't update it here
-      // The update should happen in game-main.js's updateClientFromServerState wrapper
-      console.log(`🔄 Detected slot change: ${playerSlot} -> ${playerSlotRef.value}`);
+    try {
+      updateClientFromServerState(state, {
+        gameOver,
+        players,
+        tubes,
+        coins,
+        scene,
+        physicsWorld,
+        playerSlot: playerSlotRef.value,
+        playerSlotRef, // Mutable reference for updates
+        walletParam,
+        gameIdParam,
+        currentRound,
+        updateTimerDisplay,
+        updateRoundDisplay,
+        saveGameState,
+        updateWinsDisplay,
+        updatePlayerCardButtons,
+        updatePearlColors,
+        showGameOverScreen: safeShowGameOverScreen,
+        TUBE_RADIUS,
+        TUBE_HEIGHT
+      });
+      // Update parent playerSlot if it was modified
+      if (playerSlotRef.value !== playerSlot) {
+        // Note: playerSlot is passed by value, so we can't update it here
+        // The update should happen in game-main.js's updateClientFromServerState wrapper
+        console.log(`🔄 Detected slot change: ${playerSlot} -> ${playerSlotRef.value}`);
+      }
+    } catch (error) {
+      console.error('❌ Error in updateClientFromServerState:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        hasSafeShowGameOverScreen: typeof safeShowGameOverScreen,
+        showGameOverScreenLocalType: typeof showGameOverScreenLocal
+      });
+      // Continue anyway - don't block state updates
     }
     createMobilePlayerCards();
   });

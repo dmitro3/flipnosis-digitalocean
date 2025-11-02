@@ -122,13 +122,21 @@ async function initialize() {
     if (gameIdParam && roleParam !== 'spectator') {
       console.log('🔗 Loading participants and joining game...');
       
-      // Load participants using the game instance function
+      // Load participants immediately using the game instance function
       if (gameInstance && typeof gameInstance.loadParticipants === 'function') {
         try {
+          console.log('👥 Calling loadParticipants...');
           await gameInstance.loadParticipants();
+          console.log('✅ Participants loaded successfully');
         } catch (err) {
-          console.warn('⚠️ Participants load failed:', err);
+          console.error('❌ Participants load failed:', err);
+          console.error('Error stack:', err.stack);
         }
+      } else {
+        console.warn('⚠️ gameInstance.loadParticipants is not available', {
+          hasGameInstance: !!gameInstance,
+          hasLoadParticipants: gameInstance && typeof gameInstance.loadParticipants
+        });
       }
       
       // Join game
@@ -148,16 +156,21 @@ async function initialize() {
             console.log('✅ Joined game on server:', data);
             // Reload participants after joining to get updated state
             if (gameInstance && typeof gameInstance.loadParticipants === 'function') {
-              setTimeout(() => gameInstance.loadParticipants(), 500);
+              setTimeout(() => {
+                console.log('🔄 Reloading participants after join...');
+                gameInstance.loadParticipants().catch(err => console.error('Reload failed:', err));
+              }, 500);
             }
           } else {
             // Check if error is "already joined" - that's actually fine
             const errorMsg = data?.error || res.statusText || '';
             if (errorMsg.toLowerCase().includes('already joined')) {
               console.log('✅ Player already in game - this is fine, reloading participants');
-              // Reload participants to ensure we have the latest state
+              // Reload participants immediately to ensure we have the latest state
               if (gameInstance && typeof gameInstance.loadParticipants === 'function') {
-                setTimeout(() => gameInstance.loadParticipants(), 500);
+                // Don't use setTimeout - load immediately
+                console.log('🔄 Reloading participants immediately...');
+                gameInstance.loadParticipants().catch(err => console.error('Reload failed:', err));
               }
             } else {
               console.warn('⚠️ Join failed:', errorMsg);
