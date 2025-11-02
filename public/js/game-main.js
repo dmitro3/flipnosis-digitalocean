@@ -629,7 +629,7 @@ export async function initGame(params) {
   // Now that socket exists, update showCoinSelector to use it
   socketDeps.showCoinSelector = (tubeIndex) => {
     console.log(`🪙 showCoinSelector called for tube ${tubeIndex}`);
-    import('../ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
+    import('./ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
       showSelector(tubeIndex, {
         tubes,
         players,
