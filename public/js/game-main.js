@@ -538,7 +538,7 @@ export async function initGame(params) {
         
         if (player && !player.isEmpty) {
           box.innerHTML = `
-            <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" />
+            <img src="${player.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg=='}" class="player-avatar" alt="${player.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg==';" />
             <div class="player-info">
               <div class="player-name">${player.name}</div>
               <div class="player-wins">🏆 ${player.wins}</div>
@@ -648,23 +648,47 @@ export async function initGame(params) {
   socketDeps.showCoinSelector = (tubeIndex) => {
     console.log(`🪙 showCoinSelector called for tube ${tubeIndex}`);
     // Use absolute path from root to ensure it resolves correctly on production server
-    import('/js/ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
-      showSelector(tubeIndex, {
-        tubes,
-        players,
-        coinOptions,
-        coinMaterials,
-        walletParam,
-        gameIdParam,
-        playerSlot,
-        socket, // Socket is now available
-        isServerSideMode,
-        webglRenderer,
-        applyCoinSelection
+    // Try multiple path variations in case of server routing issues
+    const paths = [
+      '/js/ui/coin-selector.js',
+      './js/ui/coin-selector.js',
+      'js/ui/coin-selector.js'
+    ];
+    
+    let pathIndex = 0;
+    const tryImport = () => {
+      if (pathIndex >= paths.length) {
+        console.error('❌ Failed to load coin selector from all paths:', paths);
+        alert('Failed to load coin selector. Please refresh the page.');
+        return;
+      }
+      
+      const path = paths[pathIndex];
+      console.log(`🔄 Trying to load coin selector from: ${path}`);
+      
+      import(path).then(({ showCoinSelector: showSelector }) => {
+        console.log(`✅ Successfully loaded coin selector from: ${path}`);
+        showSelector(tubeIndex, {
+          tubes,
+          players,
+          coinOptions,
+          coinMaterials,
+          walletParam,
+          gameIdParam,
+          playerSlot,
+          socket, // Socket is now available
+          isServerSideMode,
+          webglRenderer,
+          applyCoinSelection
+        });
+      }).catch(err => {
+        console.warn(`⚠️ Failed to load from ${path}, trying next path...`, err);
+        pathIndex++;
+        tryImport();
       });
-    }).catch(err => {
-      console.error('❌ Failed to load coin selector:', err);
-    });
+    };
+    
+    tryImport();
   };
   
   // Store reference for button access
@@ -773,23 +797,33 @@ export async function initGame(params) {
             showCoinSelectorFunc(currentPlayerSlot);
           } else {
             // Fallback: import and call directly
-            import('/js/ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
-              showSelector(currentPlayerSlot, {
-                tubes,
-                players,
-                coinOptions,
-                coinMaterials,
-                walletParam,
-                gameIdParam,
-                playerSlot,
-                socket,
-                isServerSideMode,
-                webglRenderer,
-                applyCoinSelection
-              });
-            }).catch(err => {
-              console.error('❌ Failed to load coin selector:', err);
-            });
+            const tryCoinSelectorImport = async () => {
+              const paths = ['/js/ui/coin-selector.js', './js/ui/coin-selector.js', 'js/ui/coin-selector.js'];
+              for (const path of paths) {
+                try {
+                  const { showCoinSelector: showSelector } = await import(path);
+                  showSelector(currentPlayerSlot, {
+                    tubes,
+                    players,
+                    coinOptions,
+                    coinMaterials,
+                    walletParam,
+                    gameIdParam,
+                    playerSlot,
+                    socket,
+                    isServerSideMode,
+                    webglRenderer,
+                    applyCoinSelection
+                  });
+                  return;
+                } catch (err) {
+                  console.warn(`⚠️ Failed to load from ${path}, trying next...`, err);
+                }
+              }
+              console.error('❌ Failed to load coin selector from all paths');
+              alert('Failed to load coin selector. Please refresh the page.');
+            };
+            tryCoinSelectorImport();
           }
         } else {
           console.warn('⚠️ Player slot not found for coin selection', {
@@ -833,23 +867,33 @@ export async function initGame(params) {
             showCoinSelectorFunc(currentPlayerSlot);
           } else {
             // Fallback: import and call directly
-            import('/js/ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
-              showSelector(currentPlayerSlot, {
-                tubes,
-                players,
-                coinOptions,
-                coinMaterials,
-                walletParam,
-                gameIdParam,
-                playerSlot,
-                socket,
-                isServerSideMode,
-                webglRenderer,
-                applyCoinSelection
-              });
-            }).catch(err => {
-              console.error('❌ Failed to load coin selector:', err);
-            });
+            const tryCoinSelectorImport = async () => {
+              const paths = ['/js/ui/coin-selector.js', './js/ui/coin-selector.js', 'js/ui/coin-selector.js'];
+              for (const path of paths) {
+                try {
+                  const { showCoinSelector: showSelector } = await import(path);
+                  showSelector(currentPlayerSlot, {
+                    tubes,
+                    players,
+                    coinOptions,
+                    coinMaterials,
+                    walletParam,
+                    gameIdParam,
+                    playerSlot,
+                    socket,
+                    isServerSideMode,
+                    webglRenderer,
+                    applyCoinSelection
+                  });
+                  return;
+                } catch (err) {
+                  console.warn(`⚠️ Failed to load from ${path}, trying next...`, err);
+                }
+              }
+              console.error('❌ Failed to load coin selector from all paths');
+              alert('Failed to load coin selector. Please refresh the page.');
+            };
+            tryCoinSelectorImport();
           }
         } else {
           console.warn('⚠️ Player slot not found for coin selection', {
@@ -892,7 +936,7 @@ export async function initGame(params) {
             wins: 0,
             address: '',
             choice: null,
-            avatar: '/images/default-avatar.png',
+            avatar: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg==',
             isEmpty: true
           };
         }
@@ -903,7 +947,7 @@ export async function initGame(params) {
           wins: p.wins || 0,
           address: p.player_address || '',
           choice: null,
-          avatar: p.avatar || '/images/default-avatar.png',
+          avatar: p.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg==',
           isEmpty: false
         };
         
@@ -939,7 +983,10 @@ export async function initGame(params) {
         
         if (nameEl) nameEl.textContent = player.name;
         if (avatarEl) {
-          avatarEl.src = player.avatar || '/images/default-avatar.png';
+          avatarEl.src = player.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg==';
+          avatarEl.onerror = function() {
+            this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg==';
+          };
           avatarEl.alt = player.name;
         }
         if (winsEl) winsEl.textContent = player.wins;
@@ -979,7 +1026,7 @@ export async function initGame(params) {
           
           if (player && !player.isEmpty) {
             box.innerHTML = `
-              <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" />
+              <img src="${player.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg=='}" class="player-avatar" alt="${player.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg==';" />
               <div class="player-info">
                 <div class="player-name">${player.name}</div>
                 <div class="player-wins">🏆 ${player.wins}</div>

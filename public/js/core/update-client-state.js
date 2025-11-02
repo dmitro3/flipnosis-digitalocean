@@ -187,10 +187,11 @@ export function updateClientFromServerState(state, dependencies) {
 
   if (state.currentRound !== undefined) {
     // Get current round value from ref if available, otherwise use passed value
-    const currentRoundValue = currentRoundRef ? currentRoundRef.value : currentRound;
+    // Never assign directly to currentRound - always use currentRoundRef
+    const currentRoundValue = currentRoundRef ? currentRoundRef.value : (typeof currentRound !== 'undefined' ? currentRound : 1);
     const oldRound = currentRoundValue;
     
-    // Update via mutable reference if available, otherwise use passed value for comparison
+    // Update via mutable reference if available
     if (currentRoundRef) {
       currentRoundRef.value = state.currentRound;
     }

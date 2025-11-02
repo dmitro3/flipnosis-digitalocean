@@ -1,5 +1,43 @@
 # Server Push Problem & Fix Summary
 
+## QUICK FIX INSTRUCTIONS
+
+**When local changes don't appear on production server after Git push:**
+
+1. **Upload files directly to `public/` folder on server:**
+   ```powershell
+   scp public/test-tubes.html root@159.69.242.154:/opt/flipnosis/app/public/
+   scp public/js/game-main.js root@159.69.242.154:/opt/flipnosis/app/public/js/
+   scp public/js/core/socket-manager.js root@159.69.242.154:/opt/flipnosis/app/public/js/core/
+   scp public/js/core/update-client-state.js root@159.69.242.154:/opt/flipnosis/app/public/js/core/
+   scp public/js/init.js root@159.69.242.154:/opt/flipnosis/app/public/js/
+   ```
+
+2. **Verify files are there:**
+   ```bash
+   ssh root@159.69.242.154 "ls -lh /opt/flipnosis/app/public/js/game-main.js"
+   ssh root@159.69.242.154 "grep -n 'CHANGE COIN' /opt/flipnosis/app/public/js/game-main.js"
+   ```
+
+3. **Restart the server:**
+   ```bash
+   ssh root@159.69.242.154 "pm2 restart flipnosis-app"
+   ```
+
+4. **Check server status:**
+   ```bash
+   ssh root@159.69.242.154 "pm2 status flipnosis-app"
+   ```
+
+**Alternative: Use the deployment script:**
+```powershell
+.\deploy-public-files-direct.ps1
+```
+
+**Why this works:** Server serves from `public/` folder first, so direct upload bypasses the build process that's causing stale files.
+
+---
+
 ## THE PROBLEM
 
 Your local development server (localhost:5173) was showing features like the "CHANGE COIN" button, but your production server (Hetzner) wasn't showing them, even after Git deployments.

@@ -210,11 +210,43 @@ async function initialize() {
 // Start initialization when DOM is ready
 console.log('📜 Init script loaded, document.readyState:', document.readyState);
 
-if (document.readyState === 'loading') {
-  console.log('⏳ Waiting for DOMContentLoaded...');
-  document.addEventListener('DOMContentLoaded', initialize);
-} else {
-  console.log('✅ DOM already loaded, initializing immediately...');
-  initialize();
+// Wrap initialization in try-catch to handle external errors (like SES lockdown)
+function safeInitialize() {
+  try {
+    if (document.readyState === 'loading') {
+      console.log('⏳ Waiting for DOMContentLoaded...');
+      document.addEventListener('DOMContentLoaded', () => {
+        try {
+          initialize();
+        } catch (err) {
+          console.error('❌ Error in DOMContentLoaded handler:', err);
+          // Try to continue anyway
+          setTimeout(() => {
+            try {
+              initialize();
+            } catch (retryErr) {
+              console.error('❌ Retry initialization failed:', retryErr);
+              alert('Failed to initialize game. Please refresh the page.');
+            }
+          }, 100);
+        }
+      });
+    } else {
+      console.log('✅ DOM already loaded, initializing immediately...');
+      initialize();
+    }
+  } catch (err) {
+    console.error('❌ Error in safeInitialize:', err);
+    // Still try to initialize after a delay
+    setTimeout(() => {
+      try {
+        initialize();
+      } catch (retryErr) {
+        console.error('❌ Retry initialization failed:', retryErr);
+      }
+    }, 500);
+  }
 }
+
+safeInitialize();
 
