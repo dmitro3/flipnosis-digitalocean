@@ -870,7 +870,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         { id: 'listing_1755432977848_761c57c637678810', nft_token_id: 2378, price_usd: 0.15 }
       ]
 
-      const ADMIN_ADDRESS = process.env.PLATFORM_FEE_RECEIVER || '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1'
+      const ADMIN_ADDRESS = process.env.PLATFORM_FEE_RECEIVER || '0x3618cf0af757f3f2b9824202e7f4a79f41d66297'
       
       let restoredCount = 0
       

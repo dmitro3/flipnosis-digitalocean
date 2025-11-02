@@ -5,14 +5,14 @@ async function main() {
   console.log("=" .repeat(70));
 
   // NEW admin wallet (will be the contract owner)
-  const newAdminWallet = "0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1";
+  const newAdminWallet = "0x3618cf0af757f3f2b9824202e7f4a79f41d66297";
   
   // USDC token address on Base
   const usdcTokenAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
   console.log(`👤 NEW Admin Wallet: ${newAdminWallet}`);
   console.log(`💰 USDC Token: ${usdcTokenAddress}`);
-  console.log(`🔒 OLD Compromised Wallet: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628`);
+    console.log(`🔒 OLD Compromised Wallet: 0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1`);
 
   try {
     // Get the signer (connected wallet)

@@ -300,7 +300,7 @@ class BlockchainService {
       })
 
       // Verify contract address matches expected
-      const expectedContractAddress = '0xa90abBDE769BC2901A8E68E6C9758B1Cd6699A5F'
+      const expectedContractAddress = '0x1800C075E5a939B8184A50A7efdeC5E1fFF8dd29'
       if (this.contractAddress.toLowerCase() !== expectedContractAddress.toLowerCase()) {
         console.error('❌ [BLOCKCHAIN] Contract address mismatch!', {
           expected: expectedContractAddress,

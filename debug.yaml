@@ -1,0 +1,442 @@
+PLayer 1
+📜 Init script loaded, document.readyState: interactive
+init.js?v=9:217 ✅ DOM already loaded, initializing immediately...
+init.js?v=9:13 🚀 Starting game initialization...
+init.js?v=9:14 📍 Current location: https://flipnosis.fun/test-tubes.html?gameId=physics_1762107101884_6a916e5fcab5c133&room=potion
+init.js?v=9:32 ✅ DOM elements found: info, container
+init.js?v=9:42 📋 URL Parameters: {gameId: 'physics_1762107101884_6a916e5fcab5c133', role: 'player', wallet: 'none', room: 'potion', hasToken: false}
+init.js?v=9:53 🔍 Wallet from localStorage: 0x6BA0...
+init.js?v=9:102 📦 Calling initGame()...
+game-main.js:28 🎮 Initializing game...
+scene-setup.js:33 📷 Camera positioned for shorter tubes with dual-layer support
+scene-setup.js:47 🎨 WebGL Renderer initialized with transparency
+scene-setup.js:77 ✨ Selective bloom composer created for layer 1 (pearls)!
+test-tubes.html?gameId=physics_1762107101884_6a916e5fcab5c133&room=potion:1078 🎮 Game page loaded
+scene-setup.js:130 🖼️ Background image loaded! Size: 1791x1018
+scene-setup.js:166 ⚛️ Physics world created with gravity
+scene-setup.js:230 🎨 Brass metallic textures initialized (with fallbacks)
+tube-creator.js:126 🎨 Using potion room tube style: {glassColor: 13684944, glassOpacity: 0.15, glassEmissive: 5263440, glassEmissiveIntensity: 0.15, capColor: 13467442, …}
+tube-creator.js:287 ⚛️ Sealed physics container created for tube 1
+tube-creator.js:803 ✅ Applied default Classic with Graphite material to Empty's coin
+tube-creator.js:287 ⚛️ Sealed physics container created for tube 2
+tube-creator.js:803 ✅ Applied default Classic with Graphite material to Empty's coin
+tube-creator.js:287 ⚛️ Sealed physics container created for tube 3
+tube-creator.js:803 ✅ Applied default Classic with Graphite material to Empty's coin
+tube-creator.js:287 ⚛️ Sealed physics container created for tube 4
+tube-creator.js:803 ✅ Applied default Classic with Graphite material to Empty's coin
+tube-creator.js:843 🔥 PRE-LOADING ALL ASSETS during initialization...
+tube-creator.js:915 ✅ Pre-compiled 7 materials
+tube-creator.js:941 🎮 Game started - coin textures already applied during tube creation
+socket-manager.js:82 ✅ showGameOverScreen found in dependencies, type: function
+socket-manager.js:102 🔌 Production mode: Connecting to same origin
+game-main.js:706 ✅ Game initialized successfully
+init.js?v=9:113 ✅ Game initialized successfully! {scene: Scene, camera: PerspectiveCamera, webglRenderer: WebGLRenderer, cssRenderer: CSS3DRenderer, bloomComposer: EffectComposer, …}
+init.js?v=9:123 🔗 Loading participants and joining game...
+init.js?v=9:128 👥 Calling loadParticipants...
+game-main.js:815 📡 Fetching participants for game: physics_1762107101884_6a916e5fcab5c133
+tube-creator.js:938 ✅ ALL ASSETS PRELOADED - Game ready!
+4tube-creator.js:793 ✅ Applied default Classic textures to Empty's coin
+game-main.js:824 👥 Raw participants data: (2) [{…}, {…}]
+game-main.js:852 👤 Slot 1: {raw: {…}, processed: {…}}
+game-main.js:860 🎮 Current player slot set to: 0
+game-main.js:852 👤 Slot 2: {raw: {…}, processed: {…}}
+game-main.js:830 📭 Slot 3: Empty
+game-main.js:830 📭 Slot 4: Empty
+game-main.js:870 ✅ Participants mapped: (4) [{…}, {…}, {…}, {…}]
+game-main.js:892 ✅ Removed overlay from player slot 1
+game-main.js:892 ✅ Removed overlay from player slot 2
+game-main.js:127 🔄 Updated player card buttons
+init.js?v=9:130 ✅ Participants loaded successfully
+socket-manager.js:115 ✅ Connected to server
+game-state.js:131 📂 No saved game state found
+test-tubes.html?gameId=physics_1762107101884_6a916e5fcab5c133&room=potion:1082  GET https://flipnosis.fun/images/default-avatar.png 404 (Not Found)Understand this error
+init.js?v=9:145  POST https://flipnosis.fun/api/battle-royale/physics_1762107101884_6a916e5fcab5c133/join 400 (Bad Request)
+initialize @ init.js?v=9:145
+await in initialize
+(anonymous) @ init.js?v=9:218Understand this error
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 58, players: 2}
+update-client-state.js:63 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:209 ⏱️ Timer: 58
+socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
+    at updateClientFromServerState (update-client-state.js:189:18)
+    at updateClientFromServerState (game-main.js:510:22)
+    at Et.<anonymous> (socket-manager.js:206:9)
+    at k.emit (index.js:136:20)
+    at Et.emitEvent (socket.js:538:20)
+    at Et.onevent (socket.js:525:18)
+    at Et.onpacket (socket.js:495:22)
+    at k.emit (index.js:136:20)
+    at manager.js:209:18
+(anonymous) @ socket-manager.js:236
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
+(anonymous) @ socket-manager.js:237
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:552 📱 Mobile player boxes created: 4 boxes
+init.js?v=9:168 ✅ Player already in game - this is fine, reloading participants
+init.js?v=9:172 🔄 Reloading participants immediately...
+game-main.js:815 📡 Fetching participants for game: physics_1762107101884_6a916e5fcab5c133
+game-main.js:824 👥 Raw participants data: (2) [{…}, {…}]
+game-main.js:852 👤 Slot 1: {raw: {…}, processed: {…}}
+game-main.js:860 🎮 Current player slot set to: 0
+game-main.js:852 👤 Slot 2: {raw: {…}, processed: {…}}
+game-main.js:830 📭 Slot 3: Empty
+game-main.js:830 📭 Slot 4: Empty
+game-main.js:870 ✅ Participants mapped: (4) [{…}, {…}, {…}, {…}]
+game-main.js:127 🔄 Updated player card buttons
+default-avatar.png:1  GET https://flipnosis.fun/images/default-avatar.png 404 (Not Found)Understand this error
+favicon.ico:1  GET https://flipnosis.fun/favicon.ico 404 (Not Found)Understand this error
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 57, players: 2}
+update-client-state.js:63 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:209 ⏱️ Timer: 57
+socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
+    at updateClientFromServerState (update-client-state.js:189:18)
+    at updateClientFromServerState (game-main.js:510:22)
+    at Et.<anonymous> (socket-manager.js:206:9)
+    at k.emit (index.js:136:20)
+    at Et.emitEvent (socket.js:538:20)
+    at Et.onevent (socket.js:525:18)
+    at Et.onpacket (socket.js:495:22)
+    at k.emit (index.js:136:20)
+    at manager.js:209:18
+(anonymous) @ socket-manager.js:236
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
+(anonymous) @ socket-manager.js:237
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:552 📱 Mobile player boxes created: 4 boxes
+game-main.js:954 🔄 Auto-loading participants after initialization (fallback)...
+game-main.js:815 📡 Fetching participants for game: physics_1762107101884_6a916e5fcab5c133
+game-main.js:824 👥 Raw participants data: (2) [{…}, {…}]
+game-main.js:852 👤 Slot 1: {raw: {…}, processed: {…}}
+game-main.js:860 🎮 Current player slot set to: 0
+game-main.js:852 👤 Slot 2: {raw: {…}, processed: {…}}
+game-main.js:830 📭 Slot 3: Empty
+game-main.js:830 📭 Slot 4: Empty
+game-main.js:870 ✅ Participants mapped: (4) [{…}, {…}, {…}, {…}]
+game-main.js:127 🔄 Updated player card buttons
+default-avatar.png:1  GET https://flipnosis.fun/images/default-avatar.png 404 (Not Found)Understand this error
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 56, players: 2}
+update-client-state.js:63 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:209 ⏱️ Timer: 56
+socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
+    at updateClientFromServerState (update-client-state.js:189:18)
+    at updateClientFromServerState (game-main.js:510:22)
+    at Et.<anonymous> (socket-manager.js:206:9)
+    at k.emit (index.js:136:20)
+    at Et.emitEvent (socket.js:538:20)
+    at Et.onevent (socket.js:525:18)
+    at Et.onpacket (socket.js:495:22)
+    at k.emit (index.js:136:20)
+    at manager.js:209:18
+(anonymous) @ socket-manager.js:236
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
+(anonymous) @ socket-manager.js:237
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:552 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 55, players: 2}
+update-client-state.js:63 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:209 ⏱️ Timer: 55
+socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
+    at updateClientFromServerState (update-client-state.js:189:18)
+    at updateClientFromServerState (game-main.js:510:22)
+    at Et.<anonymous> (socket-manager.js:206:9)
+    at k.emit (index.js:136:20)
+    at Et.emitEvent (socket.js:538:20)
+    at Et.onevent (socket.js:525:18)
+    at Et.onpacket (socket.js:495:22)
+    at k.emit (index.js:136:20)
+    at manager.js:209:18
+(anonymous) @ socket-manager.js:236
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
+(anonymous) @ socket-manager.js:237
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:552 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 54, players: 2}
+update-client-state.js:63 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:209 ⏱️ Timer: 54
+socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
+    at updateClientFromServerState (update-client-state.js:189:18)
+    at updateClientFromServerState (game-main.js:510:22)
+    at Et.<anonymous> (socket-manager.js:206:9)
+    at k.emit (index.js:136:20)
+    at Et.emitEvent (socket.js:538:20)
+    at Et.onevent (socket.js:525:18)
+    at Et.onpacket (socket.js:495:22)
+    at k.emit (index.js:136:20)
+    at manager.js:209:18
+(anonymous) @ socket-manager.js:236
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
+(anonymous) @ socket-manager.js:237
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:552 📱 Mobile player boxes created: 4 boxes
+game-main.js:752 🪙 Global change coin button clicked
+game-main.js:762 🪙 Opening coin selector for player slot 0
+game-main.js:642 🪙 showCoinSelector called for tube 0
+coin-selector.js:1 Failed to load module script: Expected a JavaScript-or-Wasm module script but the server responded with a MIME type of "text/html". Strict MIME type checking is enforced for module scripts per HTML spec.Understand this error
+game-main.js:658 ❌ Failed to load coin selector: TypeError: Failed to fetch dynamically imported module: https://flipnosis.fun/ui/coin-selector.js
+(anonymous) @ game-main.js:658
+Promise.catch
+socketDeps.showCoinSelector @ game-main.js:657
+(anonymous) @ game-main.js:765Understand this error
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 53, players: 2}
+update-client-state.js:63 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:209 ⏱️ Timer: 53
+socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
+    at updateClientFromServerState (update-client-state.js:189:18)
+    at updateClientFromServerState (game-main.js:510:22)
+    at Et.<anonymous> (socket-manager.js:206:9)
+    at k.emit (index.js:136:20)
+    at Et.emitEvent (socket.js:538:20)
+    at Et.onevent (socket.js:525:18)
+    at Et.onpacket (socket.js:495:22)
+    at k.emit (index.js:136:20)
+    at manager.js:209:18
+(anonymous) @ socket-manager.js:236
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
+(anonymous) @ socket-manager.js:237
+k.emit @ index.js:136
+emitEvent @ socket.js:538
+onevent @ socket.js:525
+onpacket @ socket.js:495
+k.emit @ index.js:136
+(anonymous) @ manager.js:209
+Promise.then
+(anonymous) @ globals.js:4
+ondecoded @ manager.js:208
+k.emit @ index.js:136
+add @ index.js:142
+ondata @ manager.js:195
+k.emit @ index.js:136
+q @ socket.js:259
+k.emit @ index.js:136
+onPacket @ transport.js:99
+onData @ transport.js:91
+ws.onmessage @ websocket.js:48Understand this error
+game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:552 📱 Mobile player boxes created: 4 boxes
+
+Player 2
+
+SES Removing unpermitted intrinsics lockdown-install.js:1:203117
+  Removing intrinsics.%MapPrototype%.getOrInsert lockdown-install.js:1:202962
+  Removing intrinsics.%MapPrototype%.getOrInsertComputed lockdown-install.js:1:202962
+  Removing intrinsics.%WeakMapPrototype%.getOrInsert lockdown-install.js:1:202962
+  Removing intrinsics.%WeakMapPrototype%.getOrInsertComputed lockdown-install.js:1:202962
+  Removing intrinsics.%DatePrototype%.toTemporalInstant lockdown-install.js:1:202962
+SES_UNCAUGHT_EXCEPTION: SyntaxError: unexpected token: ')' lockdown-install.js:1:145467
+🎮 Game page loaded test-tubes.html:1078:13

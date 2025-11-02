@@ -7,7 +7,7 @@ async function main() {
   const BASE_ADDRESSES = {
     ETH_USD_PRICE_FEED: "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70", // Chainlink ETH/USD on Base
     USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base
-    FEE_RECIPIENT: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628" // Using deployer address as fee recipient
+    FEE_RECIPIENT: "0x3618cf0af757f3f2b9824202e7f4a79f41d66297" // New secure wallet address
   };
 
   // Get the deployer account

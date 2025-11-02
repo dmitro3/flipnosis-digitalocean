@@ -5,7 +5,7 @@ async function main() {
   console.log("=" .repeat(60));
 
   // Current deployed contract address
-  const contractAddress = "0xB2FC2180e003D818621F4722FFfd7878A218581D";
+  const contractAddress = "0x1800C075E5a939B8184A50A7efdeC5E1fFF8dd29";
   
   console.log(`📍 Contract Address: ${contractAddress}`);
   console.log(`🔗 BaseScan: https://basescan.org/address/${contractAddress}`);

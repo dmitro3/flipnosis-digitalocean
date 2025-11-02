@@ -15,12 +15,12 @@ module.exports = {
       HTTPS_PORT: 3001,
 
       // Blockchain configuration (server-side)
-      CONTRACT_ADDRESS: '0xa90abBDE769BC2901A8E68E6C9758B1Cd6699A5F',
+      CONTRACT_ADDRESS: '0x1800C075E5a939B8184A50A7efdeC5E1fFF8dd29',
       RPC_URL: 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3',
       CONTRACT_OWNER_KEY: process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY, // Use environment variable
 
       // Platform/config
-      PLATFORM_FEE_RECEIVER: process.env.PLATFORM_FEE_RECEIVER || '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1',
+      PLATFORM_FEE_RECEIVER: process.env.PLATFORM_FEE_RECEIVER || '0x3618cf0af757f3f2b9824202e7f4a79f41d66297',
       DATABASE_PATH: './server/database.sqlite'
     },
     error_file: './logs/err.log',

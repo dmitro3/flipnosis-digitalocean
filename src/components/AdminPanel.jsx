@@ -194,7 +194,7 @@ const CONTRACT_ABI = [
 
 // Contract addresses for different chains
 const CONTRACT_ADDRESSES = {
-              'base': '0xa90abBDE769BC2901A8E68E6C9758B1Cd6699A5F', // Updated contract with creator participation fix
+              'base': '0x1800C075E5a939B8184A50A7efdeC5E1fFF8dd29', // Updated contract with creator participation fix
   'ethereum': '0x...',
   'bnb': '0x...',
   'avalanche': '0x...',
@@ -211,7 +211,7 @@ const CHAIN_CONFIGS = {
 }
 
 // Admin wallet address (update this)
-const ADMIN_WALLET = import.meta.env.VITE_PLATFORM_FEE_RECEIVER || '0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1' // Admin wallet address
+const ADMIN_WALLET = import.meta.env.VITE_PLATFORM_FEE_RECEIVER || '0x3618cf0af757f3f2b9824202e7f4a79f41d66297' // Admin wallet address
 
 // Styled Components
 const AdminContainer = styled.div`

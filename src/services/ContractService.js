@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+﻿import { ethers } from 'ethers'
 import { base } from 'viem/chains'
 import { Alchemy, Network } from 'alchemy-sdk'
 
@@ -277,7 +277,7 @@ const NFT_ABI = [
 
 class ContractService {
   constructor() {
-    this.contractAddress = '0xa90abBDE769BC2901A8E68E6C9758B1Cd6699A5F' // Updated contract with creator participation fix
+    this.contractAddress = '0x1800C075E5a939B8184A50A7efdeC5E1fFF8dd29' // Updated contract with creator participation fix
     this.walletClient = null
     this.publicClient = null
     this.userAddress = null
@@ -295,7 +295,7 @@ class ContractService {
           // If user comes back to tab and cache is older than 10 seconds, refresh
           const age = Date.now() - this.priceCache.timestamp
           if (age > 10000) {
-            console.log('🔄 Page became visible, refreshing ETH price cache')
+            console.log('ðŸ”„ Page became visible, refreshing ETH price cache')
             this.priceCache.timestamp = 0 // Force refresh on next call
           }
         }
@@ -305,12 +305,12 @@ class ContractService {
 
   async initialize(walletClient, publicClient) {
     if (this._initialized && this.walletClient === walletClient) {
-      console.log('⚡ Contract service already initialized')
+      console.log('âš¡ Contract service already initialized')
       return { success: true }
     }
 
     if (!walletClient || !publicClient) {
-      console.error('❌ Missing required clients')
+      console.error('âŒ Missing required clients')
       return { success: false, error: 'Wallet or public client missing' }
     }
 
@@ -331,10 +331,10 @@ class ContractService {
       })
 
       this._initialized = true
-      console.log('✅ Contract service initialized with address:', this.userAddress)
+      console.log('âœ… Contract service initialized with address:', this.userAddress)
       return { success: true }
     } catch (error) {
-      console.error('❌ Error initializing contract service:', error)
+      console.error('âŒ Error initializing contract service:', error)
       return { success: false, error: error.message }
     }
   }
@@ -363,7 +363,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('🔓 Approving NFT for transfer:', { nftContract, tokenId })
+      console.log('ðŸ”“ Approving NFT for transfer:', { nftContract, tokenId })
       
       // First check if we own the NFT
       const owner = await this.publicClient.readContract({
@@ -387,12 +387,12 @@ class ContractService {
         })
         
         if (currentApproved.toLowerCase() === this.contractAddress.toLowerCase()) {
-          console.log('✅ NFT already approved')
+          console.log('âœ… NFT already approved')
           return { success: true, transactionHash: null, alreadyApproved: true }
         }
       } catch (checkError) {
         // If getApproved fails, continue with approval
-        console.log('⚠️ Could not check current approval status, proceeding with approval')
+        console.log('âš ï¸ Could not check current approval status, proceeding with approval')
       }
       
       // Approve the contract to transfer the NFT
@@ -405,7 +405,7 @@ class ContractService {
         account: this.walletClient.account
       })
 
-      console.log('🔓 NFT approval tx:', hash)
+      console.log('ðŸ”“ NFT approval tx:', hash)
       
       let receipt = null
       let verificationAttempts = 0
@@ -413,7 +413,7 @@ class ContractService {
       
       // Try to get receipt, but don't fail if RPC is slow
       try {
-        console.log('⏳ Waiting for transaction receipt...')
+        console.log('â³ Waiting for transaction receipt...')
         receipt = await this.publicClient.waitForTransactionReceipt({ 
           hash,
           confirmations: 1,
@@ -425,10 +425,10 @@ class ContractService {
           throw new Error('Transaction reverted - NFT approval failed on-chain')
         }
         
-        console.log('✅ Transaction confirmed in block:', receipt.blockNumber)
+        console.log('âœ… Transaction confirmed in block:', receipt.blockNumber)
       } catch (receiptError) {
-        console.warn('⚠️ Could not get receipt within timeout:', receiptError.message)
-        console.log('📝 Transaction was submitted. Will verify approval by checking contract state...')
+        console.warn('âš ï¸ Could not get receipt within timeout:', receiptError.message)
+        console.log('ðŸ“ Transaction was submitted. Will verify approval by checking contract state...')
         // Don't fail yet - transaction might have succeeded but RPC is slow
         // We'll verify by reading the contract state directly
       }
@@ -437,7 +437,7 @@ class ContractService {
       // Try multiple times with delays to account for RPC node indexing lag
       while (verificationAttempts < maxVerificationAttempts) {
         try {
-          console.log(`🔍 Verification attempt ${verificationAttempts + 1}/${maxVerificationAttempts}...`)
+          console.log(`ðŸ” Verification attempt ${verificationAttempts + 1}/${maxVerificationAttempts}...`)
           
           const approvedAddress = await this.publicClient.readContract({
             address: nftContract,
@@ -448,12 +448,12 @@ class ContractService {
           
           if (approvedAddress.toLowerCase() === this.contractAddress.toLowerCase()) {
             // Success! Approval exists on-chain
-            console.log('✅ NFT approval verified on-chain')
+            console.log('âœ… NFT approval verified on-chain')
             return { success: true, transactionHash: hash, receipt }
           } else {
             // Not approved yet - might be RPC lag
             if (verificationAttempts < maxVerificationAttempts - 1) {
-              console.log('⏳ Approval not found yet, waiting 3 seconds for RPC to sync...')
+              console.log('â³ Approval not found yet, waiting 3 seconds for RPC to sync...')
               await new Promise(resolve => setTimeout(resolve, 3000))
               verificationAttempts++
               continue
@@ -465,16 +465,16 @@ class ContractService {
           
         } catch (readError) {
           if (verificationAttempts < maxVerificationAttempts - 1) {
-            console.warn(`⚠️ Read attempt ${verificationAttempts + 1} failed:`, readError.message)
-            console.log('⏳ Waiting 3 seconds before retry...')
+            console.warn(`âš ï¸ Read attempt ${verificationAttempts + 1} failed:`, readError.message)
+            console.log('â³ Waiting 3 seconds before retry...')
             await new Promise(resolve => setTimeout(resolve, 3000))
             verificationAttempts++
           } else {
             // All attempts exhausted
-            console.error('❌ Failed to verify approval on-chain after multiple attempts')
+            console.error('âŒ Failed to verify approval on-chain after multiple attempts')
             // Still return success with hash if we have it - transaction was submitted
             if (hash) {
-              console.warn('⚠️ Returning transaction hash even though verification failed - transaction may still be pending')
+              console.warn('âš ï¸ Returning transaction hash even though verification failed - transaction may still be pending')
               return { success: true, transactionHash: hash, receipt: null, verificationFailed: true }
             }
             throw new Error(`Transaction submitted but could not verify approval: ${readError.message}`)
@@ -489,7 +489,7 @@ class ContractService {
       throw new Error('Approval verification failed after maximum attempts')
       
     } catch (error) {
-      console.error('❌ Error approving NFT:', error)
+      console.error('âŒ Error approving NFT:', error)
       
       if (error.message?.includes('User rejected')) {
         return { success: false, error: 'Transaction cancelled by user' }
@@ -510,12 +510,12 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('📦 Depositing NFT for game:', { gameId, nftContract, tokenId })
+      console.log('ðŸ“¦ Depositing NFT for game:', { gameId, nftContract, tokenId })
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
       // Check if NFT is already deposited for this game
-      console.log('🔍 Checking existing deposit for game:', gameIdBytes32)
+      console.log('ðŸ” Checking existing deposit for game:', gameIdBytes32)
       
       try {
         const existingDeposit = await this.publicClient.readContract({
@@ -525,15 +525,15 @@ class ContractService {
           args: [gameIdBytes32]
         })
         
-        console.log('🔍 Existing deposit data:', existingDeposit)
+        console.log('ðŸ” Existing deposit data:', existingDeposit)
         
         if (existingDeposit && existingDeposit[0] && existingDeposit[0] !== '0x0000000000000000000000000000000000000000') {
-          console.log('⚠️ NFT already deposited for this game by:', existingDeposit[0])
+          console.log('âš ï¸ NFT already deposited for this game by:', existingDeposit[0])
           return { success: true, alreadyDeposited: true, transactionHash: 'already-deposited' }
         }
       } catch (checkError) {
-        console.log('⚠️ Could not check existing deposit:', checkError)
-        console.log('⚠️ Continuing with deposit...')
+        console.log('âš ï¸ Could not check existing deposit:', checkError)
+        console.log('âš ï¸ Continuing with deposit...')
       }
       
       const hash = await this.walletClient.writeContract({
@@ -545,7 +545,7 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('📦 NFT deposit tx:', hash)
+      console.log('ðŸ“¦ NFT deposit tx:', hash)
       
       const receipt = await this.publicClient.waitForTransactionReceipt({ 
         hash,
@@ -553,10 +553,10 @@ class ContractService {
         timeout: 60_000
       })
       
-      console.log('✅ NFT deposit confirmed')
+      console.log('âœ… NFT deposit confirmed')
       
       // Verify the deposit was successful - wait a bit more for contract state to update
-      console.log('🔍 Verifying NFT deposit...')
+      console.log('ðŸ” Verifying NFT deposit...')
       
       // Wait a bit more for contract state to update
       await new Promise(resolve => setTimeout(resolve, 3000))
@@ -572,47 +572,47 @@ class ContractService {
           args: [gameIdBytes32]
         })
         
-        console.log('🔍 Verification result:', verifyDeposit)
+        console.log('ðŸ” Verification result:', verifyDeposit)
         
         // Check if the deposit was recorded - handle both array and object formats
         if (Array.isArray(verifyDeposit)) {
           // If it's an array, check the first element (depositor address)
           isVerified = verifyDeposit[0] && verifyDeposit[0] !== '0x0000000000000000000000000000000000000000'
-          console.log('🔍 Array format - depositor:', verifyDeposit[0])
+          console.log('ðŸ” Array format - depositor:', verifyDeposit[0])
         } else if (verifyDeposit && typeof verifyDeposit === 'object') {
           // If it's an object, check the depositor field
           isVerified = verifyDeposit.depositor && verifyDeposit.depositor !== '0x0000000000000000000000000000000000000000'
-          console.log('🔍 Object format - depositor:', verifyDeposit.depositor)
+          console.log('ðŸ” Object format - depositor:', verifyDeposit.depositor)
         }
         
         if (isVerified) {
-          console.log('✅ NFT deposit verified successfully')
+          console.log('âœ… NFT deposit verified successfully')
         } else {
-          console.log('⚠️ NFT deposit verification failed - but transaction succeeded')
-          console.log('⚠️ This might be a contract state sync issue or ABI mismatch')
+          console.log('âš ï¸ NFT deposit verification failed - but transaction succeeded')
+          console.log('âš ï¸ This might be a contract state sync issue or ABI mismatch')
           
           // Try alternative verification using isGameReady
           try {
-            console.log('🔍 Trying alternative verification with isGameReady...')
+            console.log('ðŸ” Trying alternative verification with isGameReady...')
             const gameReady = await this.publicClient.readContract({
               address: this.contractAddress,
               abi: CONTRACT_ABI,
               functionName: 'isGameReady',
               args: [gameIdBytes32]
             })
-            console.log('🔍 isGameReady result:', gameReady)
+            console.log('ðŸ” isGameReady result:', gameReady)
             
             if (gameReady) {
-              console.log('✅ Alternative verification successful - game is ready!')
+              console.log('âœ… Alternative verification successful - game is ready!')
               isVerified = true
             }
           } catch (altVerificationError) {
-            console.log('⚠️ Alternative verification also failed:', altVerificationError)
+            console.log('âš ï¸ Alternative verification also failed:', altVerificationError)
           }
         }
       } catch (verificationError) {
-        console.log('⚠️ Verification failed with error:', verificationError)
-        console.log('⚠️ But transaction succeeded, so continuing...')
+        console.log('âš ï¸ Verification failed with error:', verificationError)
+        console.log('âš ï¸ But transaction succeeded, so continuing...')
       }
       
       // Return success even if verification fails - transaction succeeded
@@ -626,7 +626,7 @@ class ContractService {
       }
       
     } catch (error) {
-      console.error('❌ Error depositing NFT:', error)
+      console.error('âŒ Error depositing NFT:', error)
       
       if (error.message?.includes('NFT already deposited')) {
         return { success: false, error: 'NFT already deposited for this game' }
@@ -641,7 +641,7 @@ class ContractService {
 
   // Create game - approve and deposit NFT
   async createGame(gameId, nftContract, tokenId, priceInMicrodollars, paymentType = 0) {
-    console.log('🎮 Creating game (approve + deposit NFT):', {
+    console.log('ðŸŽ® Creating game (approve + deposit NFT):', {
       gameId,
       nftContract,
       tokenId,
@@ -661,7 +661,7 @@ class ContractService {
       return depositResult
       
     } catch (error) {
-      console.error('❌ Error creating game:', error)
+      console.error('âŒ Error creating game:', error)
       return { success: false, error: error.message }
     }
   }
@@ -703,7 +703,7 @@ class ContractService {
       const totalGasCost = BigInt(Math.floor(Number(gasCost) * 1.2))
       const totalRequired = ethAmountWei + totalGasCost
       
-      console.log('💰 Balance check:', {
+      console.log('ðŸ’° Balance check:', {
         balance: balance.toString(),
         ethAmount: ethAmountWei.toString(),
         gasCost: gasCost.toString(),
@@ -722,7 +722,7 @@ class ContractService {
         gasCost: ethers.formatEther(totalGasCost)
       }
     } catch (error) {
-      console.error('❌ Error checking balance:', error)
+      console.error('âŒ Error checking balance:', error)
       return { success: false, error: error.message }
     }
   }
@@ -735,7 +735,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('💰 Starting ETH deposit for game:', gameId, 'Price USD:', priceUSD)
+      console.log('ðŸ’° Starting ETH deposit for game:', gameId, 'Price USD:', priceUSD)
       
       // Check balance first
       const balanceCheck = await this.checkDepositBalance(priceUSD)
@@ -768,7 +768,7 @@ class ContractService {
       const ethAmountRounded = Math.round(ethAmount * 1000000) / 1000000
       const ethAmountWei = ethers.parseEther(ethAmountRounded.toString())
       
-      console.log('💰 Deposit details:', {
+      console.log('ðŸ’° Deposit details:', {
         priceUSD,
         ethPriceUSD,
         ethAmount,
@@ -787,7 +787,7 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('💰 Gas estimate:', gasEstimate.toString())
+      console.log('ðŸ’° Gas estimate:', gasEstimate.toString())
       
       // Add 20% buffer to gas estimate
       const gasLimit = BigInt(Math.floor(Number(gasEstimate) * 1.2))
@@ -803,7 +803,7 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('💰 ETH deposit tx:', hash)
+      console.log('ðŸ’° ETH deposit tx:', hash)
       
       const receipt = await this.publicClient.waitForTransactionReceipt({ 
         hash,
@@ -811,11 +811,11 @@ class ContractService {
         timeout: 60_000
       })
       
-      console.log('✅ ETH deposit confirmed')
+      console.log('âœ… ETH deposit confirmed')
       return { success: true, transactionHash: hash, receipt, ethAmount: ethAmountWei.toString() }
       
     } catch (error) {
-      console.error('❌ Error depositing ETH:', error)
+      console.error('âŒ Error depositing ETH:', error)
       
       if (error.message?.includes('ETH already deposited')) {
         return { success: false, error: 'ETH already deposited for this game' }
@@ -846,12 +846,12 @@ class ContractService {
     
       // Use cached price if it's still fresh (within 90 seconds)
       if (this.priceCache.price && (now - this.priceCache.timestamp) < this.cacheDuration) {
-      console.log('💰 Using cached ETH price:', this.priceCache.price)
+      console.log('ðŸ’° Using cached ETH price:', this.priceCache.price)
       return this.priceCache.price
     }
 
     try {
-      console.log('💰 Fetching fresh ETH price from Chainlink API...')
+      console.log('ðŸ’° Fetching fresh ETH price from Chainlink API...')
       
       // Fetch from CoinGecko (free, reliable, uses Chainlink data)
       const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')
@@ -870,15 +870,15 @@ class ContractService {
       // Cache the fresh price
       this.priceCache = { price, timestamp: now }
       
-      console.log('✅ Fresh ETH price fetched and cached:', price)
+      console.log('âœ… Fresh ETH price fetched and cached:', price)
       return price
       
     } catch (error) {
-      console.error('❌ Failed to fetch ETH price:', error.message)
+      console.error('âŒ Failed to fetch ETH price:', error.message)
       
       // Use cached price as fallback if available
       if (this.priceCache.price) {
-        console.log('🔄 Using cached ETH price as fallback:', this.priceCache.price)
+        console.log('ðŸ”„ Using cached ETH price as fallback:', this.priceCache.price)
         return this.priceCache.price
       }
       
@@ -903,10 +903,10 @@ class ContractService {
         args: [gameIdBytes32]
       })
       
-      console.log(`🎮 Game ${gameId} ready status:`, isReady)
+      console.log(`ðŸŽ® Game ${gameId} ready status:`, isReady)
       return { success: true, isReady }
     } catch (error) {
-      console.error('❌ Error checking game ready status:', error)
+      console.error('âŒ Error checking game ready status:', error)
       return { success: false, error: error.message }
     }
   }
@@ -927,10 +927,10 @@ class ContractService {
         args: [gameIdBytes32]
       })
       
-      console.log(`🎮 Game ${gameId} participants:`, { nftPlayer, cryptoPlayer })
+      console.log(`ðŸŽ® Game ${gameId} participants:`, { nftPlayer, cryptoPlayer })
       return { success: true, nftPlayer, cryptoPlayer }
     } catch (error) {
-      console.error('❌ Error getting game participants:', error)
+      console.error('âŒ Error getting game participants:', error)
       return { success: false, error: error.message }
     }
   }
@@ -944,7 +944,7 @@ class ContractService {
     }
 
     try {
-      console.log('🔍 Loading NFTs owned by contract:', this.contractAddress)
+      console.log('ðŸ” Loading NFTs owned by contract:', this.contractAddress)
       
       let allNFTs = []
       let pageKey = null
@@ -962,14 +962,14 @@ class ContractService {
         pageKey = nftsForOwner.pageKey
       } while (pageKey)
 
-      console.log('📦 Found NFTs owned by contract (Alchemy):', allNFTs.length)
+      console.log('ðŸ“¦ Found NFTs owned by contract (Alchemy):', allNFTs.length)
 
       // Verify ownership on-chain to filter out stale data
       const verifiedNFTs = []
       
       for (const nft of allNFTs) {
         try {
-          console.log(`🔍 Verifying ownership of ${nft.contract.address}:${nft.tokenId}...`)
+          console.log(`ðŸ” Verifying ownership of ${nft.contract.address}:${nft.tokenId}...`)
           
           // Check actual ownership on blockchain
           const actualOwner = await this.publicClient.readContract({
@@ -979,10 +979,10 @@ class ContractService {
             args: [BigInt(nft.tokenId)]
           })
           
-          console.log(`🔍 Actual owner: ${actualOwner}, Contract: ${this.contractAddress}`)
+          console.log(`ðŸ” Actual owner: ${actualOwner}, Contract: ${this.contractAddress}`)
           
           if (actualOwner.toLowerCase() === this.contractAddress.toLowerCase()) {
-            console.log(`✅ Contract actually owns ${nft.contract.address}:${nft.tokenId}`)
+            console.log(`âœ… Contract actually owns ${nft.contract.address}:${nft.tokenId}`)
             
             let imageUrl = ''
             if (nft.media && nft.media.length > 0) {
@@ -1012,18 +1012,18 @@ class ContractService {
               source: 'alchemy_verified',
             })
           } else {
-            console.log(`❌ Contract does NOT own ${nft.contract.address}:${nft.tokenId} (stale Alchemy data)`)
+            console.log(`âŒ Contract does NOT own ${nft.contract.address}:${nft.tokenId} (stale Alchemy data)`)
           }
         } catch (verifyError) {
-          console.warn(`⚠️ Could not verify ownership of ${nft.contract.address}:${nft.tokenId}:`, verifyError.message)
+          console.warn(`âš ï¸ Could not verify ownership of ${nft.contract.address}:${nft.tokenId}:`, verifyError.message)
           // Skip this NFT if we can't verify ownership
         }
       }
 
-      console.log('📦 Verified NFTs actually owned by contract:', verifiedNFTs.length)
+      console.log('ðŸ“¦ Verified NFTs actually owned by contract:', verifiedNFTs.length)
       return { success: true, nfts: verifiedNFTs }
     } catch (error) {
-      console.error('❌ Error loading contract NFTs:', error)
+      console.error('âŒ Error loading contract NFTs:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1093,10 +1093,10 @@ class ContractService {
         }
       }
       
-      console.log(`🎮 Game ${gameId} state:`, gameState)
+      console.log(`ðŸŽ® Game ${gameId} state:`, gameState)
       return { success: true, gameState }
     } catch (error) {
-      console.error('❌ Error getting game state:', error)
+      console.error('âŒ Error getting game state:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1111,15 +1111,15 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('📦 Using DIRECT NFT transfer (bypasses game system):', { nftContracts, tokenIds, recipients })
+      console.log('ðŸ“¦ Using DIRECT NFT transfer (bypasses game system):', { nftContracts, tokenIds, recipients })
       
       // BULLETPROOF APPROACH: Use direct NFT transfer that bypasses the game system entirely
       // This works for ANY NFT owned by the contract, regardless of game state
       
       if (nftContracts.length === 1) {
         // Single NFT - use directTransferNFT
-        console.log('📦 Transferring single NFT directly...')
-        console.log('📦 Transfer details:', {
+        console.log('ðŸ“¦ Transferring single NFT directly...')
+        console.log('ðŸ“¦ Transfer details:', {
           nftContract: nftContracts[0],
           tokenId: tokenIds[0],
           recipient: recipients[0],
@@ -1137,38 +1137,38 @@ class ContractService {
             account: this.walletClient.account,
             gas: 200000n // Increased gas limit
           })
-          console.log('📦 Transaction hash received:', hash)
+          console.log('ðŸ“¦ Transaction hash received:', hash)
         } catch (writeError) {
-          console.error('❌ Error writing contract transaction:', writeError)
+          console.error('âŒ Error writing contract transaction:', writeError)
           return { success: false, error: `Transaction failed: ${writeError.message}` }
         }
         
         // Wait for confirmation
         let receipt
         try {
-          console.log('⏳ Waiting for transaction confirmation...')
+          console.log('â³ Waiting for transaction confirmation...')
           receipt = await this.publicClient.waitForTransactionReceipt({ 
             hash,
             confirmations: 1,
             timeout: 120_000 // Increased timeout
           })
-          console.log('✅ Transaction confirmed:', receipt.status)
+          console.log('âœ… Transaction confirmed:', receipt.status)
           
           if (receipt.status === 'reverted') {
-            console.error('❌ Transaction was reverted!')
+            console.error('âŒ Transaction was reverted!')
             return { success: false, error: 'Transaction was reverted by the contract' }
           }
           
         } catch (receiptError) {
-          console.error('❌ Error waiting for receipt:', receiptError)
+          console.error('âŒ Error waiting for receipt:', receiptError)
           return { success: false, error: `Transaction confirmation failed: ${receiptError.message}` }
         }
         
-        console.log('✅ Direct NFT transfer successful:', hash)
+        console.log('âœ… Direct NFT transfer successful:', hash)
         
         // Verify the transfer by checking the new owner
         try {
-          console.log('🔍 Verifying NFT transfer...')
+          console.log('ðŸ” Verifying NFT transfer...')
           await new Promise(resolve => setTimeout(resolve, 3000)) // Wait for state to update
           
           const newOwner = await this.publicClient.readContract({
@@ -1178,16 +1178,16 @@ class ContractService {
             args: [BigInt(tokenIds[0])]
           })
           
-          console.log('🔍 NFT owner after transfer:', newOwner)
-          console.log('🔍 Expected recipient:', recipients[0])
+          console.log('ðŸ” NFT owner after transfer:', newOwner)
+          console.log('ðŸ” Expected recipient:', recipients[0])
           
           if (newOwner.toLowerCase() === recipients[0].toLowerCase()) {
-            console.log('✅ NFT transfer verified successfully!')
+            console.log('âœ… NFT transfer verified successfully!')
           } else {
-            console.warn('⚠️ NFT transfer verification failed - owner mismatch')
+            console.warn('âš ï¸ NFT transfer verification failed - owner mismatch')
           }
         } catch (verifyError) {
-          console.warn('⚠️ Could not verify NFT transfer:', verifyError.message)
+          console.warn('âš ï¸ Could not verify NFT transfer:', verifyError.message)
         }
         
         return { 
@@ -1199,11 +1199,11 @@ class ContractService {
         
       } else {
         // Multiple NFTs - use directBatchTransferNFTs
-        console.log('📦 Transferring multiple NFTs directly...')
+        console.log('ðŸ“¦ Transferring multiple NFTs directly...')
         
         let hash
         try {
-          console.log('📦 Batch transfer details:', {
+          console.log('ðŸ“¦ Batch transfer details:', {
             nftContracts,
             tokenIds: tokenIds.map(id => BigInt(id)),
             recipients,
@@ -1219,19 +1219,19 @@ class ContractService {
             account: this.walletClient.account,
             gas: 500000n // Increased gas limit for batch transfer
           })
-          console.log('📦 Batch transaction hash received:', hash)
+          console.log('ðŸ“¦ Batch transaction hash received:', hash)
         } catch (writeError) {
-          console.error('❌ Batch transfer failed:', writeError.message)
+          console.error('âŒ Batch transfer failed:', writeError.message)
           
           // Check if this is an "internal error" - usually means the contract doesn't own the NFTs
           if (writeError.message.includes('internal error') || writeError.message.includes('InternalRpcError')) {
-            console.log('🔄 Internal error detected - trying individual transfers as fallback...')
+            console.log('ðŸ”„ Internal error detected - trying individual transfers as fallback...')
             
             const results = []
             
             for (let i = 0; i < nftContracts.length; i++) {
               try {
-                console.log(`📦 Transferring NFT ${i + 1}/${nftContracts.length}: ${nftContracts[i]}:${tokenIds[i]}`)
+                console.log(`ðŸ“¦ Transferring NFT ${i + 1}/${nftContracts.length}: ${nftContracts[i]}:${tokenIds[i]}`)
                 
                 // First check if the contract actually owns this NFT
                 const owner = await this.publicClient.readContract({
@@ -1241,11 +1241,11 @@ class ContractService {
                   args: [BigInt(tokenIds[i])]
                 })
                 
-                console.log(`🔍 NFT ${nftContracts[i]}:${tokenIds[i]} owner:`, owner)
-                console.log(`🔍 Contract address:`, this.contractAddress)
+                console.log(`ðŸ” NFT ${nftContracts[i]}:${tokenIds[i]} owner:`, owner)
+                console.log(`ðŸ” Contract address:`, this.contractAddress)
                 
                 if (owner.toLowerCase() !== this.contractAddress.toLowerCase()) {
-                  console.warn(`⚠️ Contract doesn't own NFT ${nftContracts[i]}:${tokenIds[i]} - skipping`)
+                  console.warn(`âš ï¸ Contract doesn't own NFT ${nftContracts[i]}:${tokenIds[i]} - skipping`)
                   results.push({
                     success: false,
                     error: 'Contract does not own this NFT',
@@ -1272,7 +1272,7 @@ class ContractService {
                 })
                 
                 if (receipt.status === 'reverted') {
-                  console.error(`❌ Individual transfer reverted for ${nftContracts[i]}:${tokenIds[i]}`)
+                  console.error(`âŒ Individual transfer reverted for ${nftContracts[i]}:${tokenIds[i]}`)
                   results.push({
                     success: false,
                     error: 'Transaction reverted',
@@ -1284,14 +1284,14 @@ class ContractService {
                     hash: individualHash,
                     nft: `${nftContracts[i]}:${tokenIds[i]}`
                   })
-                  console.log(`✅ Individual transfer successful: ${individualHash}`)
+                  console.log(`âœ… Individual transfer successful: ${individualHash}`)
                 }
                 
                 // Wait a bit between transfers
                 await new Promise(resolve => setTimeout(resolve, 2000))
                 
               } catch (individualError) {
-                console.error(`❌ Individual transfer failed for ${nftContracts[i]}:${tokenIds[i]}:`, individualError.message)
+                console.error(`âŒ Individual transfer failed for ${nftContracts[i]}:${tokenIds[i]}:`, individualError.message)
                 results.push({
                   success: false,
                   error: individualError.message,
@@ -1318,25 +1318,25 @@ class ContractService {
         if (hash) {
           let receipt
           try {
-            console.log('⏳ Waiting for batch transaction confirmation...')
+            console.log('â³ Waiting for batch transaction confirmation...')
             receipt = await this.publicClient.waitForTransactionReceipt({ 
               hash,
               confirmations: 1,
               timeout: 120_000 // Increased timeout
             })
-            console.log('✅ Batch transaction confirmed:', receipt.status)
+            console.log('âœ… Batch transaction confirmed:', receipt.status)
             
             if (receipt.status === 'reverted') {
-              console.error('❌ Batch transaction was reverted!')
+              console.error('âŒ Batch transaction was reverted!')
               return { success: false, error: 'Batch transaction was reverted by the contract' }
             }
             
           } catch (receiptError) {
-            console.error('❌ Error waiting for batch receipt:', receiptError)
+            console.error('âŒ Error waiting for batch receipt:', receiptError)
             return { success: false, error: `Batch transaction confirmation failed: ${receiptError.message}` }
           }
           
-          console.log('✅ Direct batch NFT transfer successful:', hash)
+          console.log('âœ… Direct batch NFT transfer successful:', hash)
           return { 
             success: true, 
             transactionHash: hash,
@@ -1347,7 +1347,7 @@ class ContractService {
       }
       
     } catch (error) {
-      console.error('❌ Error in direct NFT transfer:', error)
+      console.error('âŒ Error in direct NFT transfer:', error)
       
       // Check if this is an RPC error but we might have a transaction hash
       const errorMessage = error.message || error.toString()
@@ -1357,14 +1357,14 @@ class ContractService {
         const extractedHash = hashMatch[0]
         // Validate that this looks like a real transaction hash
         if (extractedHash.length === 66 && extractedHash.startsWith('0x')) {
-          console.log('🔍 Found valid transaction hash in error, transaction may have succeeded:', extractedHash)
+          console.log('ðŸ” Found valid transaction hash in error, transaction may have succeeded:', extractedHash)
           return { 
             success: true, 
             transactionHash: extractedHash,
             message: `Transaction sent (hash: ${extractedHash}) but RPC returned error. Check blockchain explorer to confirm.`
           }
         } else {
-          console.log('⚠️ Found hash-like string but it appears invalid:', extractedHash)
+          console.log('âš ï¸ Found hash-like string but it appears invalid:', extractedHash)
         }
       }
       
@@ -1380,7 +1380,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('🚨 Emergency withdrawing NFT for game:', gameId, 'to recipient:', recipient)
+      console.log('ðŸš¨ Emergency withdrawing NFT for game:', gameId, 'to recipient:', recipient)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -1392,7 +1392,7 @@ class ContractService {
           functionName: 'nftDeposits',
           args: [gameIdBytes32]
         })
-        console.log('🔍 NFT deposit data for game:', {
+        console.log('ðŸ” NFT deposit data for game:', {
           gameId,
           gameIdBytes32,
           depositData: nftDepositData
@@ -1401,7 +1401,7 @@ class ContractService {
         // Parse the deposit data to understand the issue
         if (nftDepositData && Array.isArray(nftDepositData) && nftDepositData.length >= 4) {
           const [depositor, nftContract, tokenId, claimed] = nftDepositData
-          console.log('🔍 Parsed NFT deposit details:', {
+          console.log('ðŸ” Parsed NFT deposit details:', {
             depositor,
             nftContract,
             tokenId: tokenId?.toString(),
@@ -1411,17 +1411,17 @@ class ContractService {
           })
           
           if (depositor === '0x0000000000000000000000000000000000000000') {
-            console.error('❌ NFT deposit not found: depositor is zero address')
+            console.error('âŒ NFT deposit not found: depositor is zero address')
             return { success: false, error: 'NFT deposit not found in contract' }
           }
           
           if (claimed === true) {
-            console.error('❌ NFT already claimed: cannot withdraw again')
+            console.error('âŒ NFT already claimed: cannot withdraw again')
             return { success: false, error: 'NFT already claimed/withdrawn' }
           }
         }
       } catch (e) {
-        console.warn('⚠️ Could not read NFT deposit data:', e.message)
+        console.warn('âš ï¸ Could not read NFT deposit data:', e.message)
       }
       
       const hash = await this.walletClient.writeContract({
@@ -1434,17 +1434,17 @@ class ContractService {
         gas: 150000n  // Set reasonable gas limit slightly higher for emergency withdraw
       })
       
-      console.log('🚨 Emergency NFT withdraw tx:', hash)
+      console.log('ðŸš¨ Emergency NFT withdraw tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ 
         hash,
         confirmations: 1,
         timeout: 60_000
       })
-      console.log('✅ Emergency NFT withdraw confirmed')
+      console.log('âœ… Emergency NFT withdraw confirmed')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error emergency withdrawing NFT:', error)
+      console.error('âŒ Error emergency withdrawing NFT:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1457,7 +1457,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('🚨 Emergency withdrawing ETH for game:', gameId, 'to recipient:', recipient)
+      console.log('ðŸš¨ Emergency withdrawing ETH for game:', gameId, 'to recipient:', recipient)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -1470,13 +1470,13 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('🚨 Emergency ETH withdraw tx:', hash)
+      console.log('ðŸš¨ Emergency ETH withdraw tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Emergency ETH withdraw confirmed')
+      console.log('âœ… Emergency ETH withdraw confirmed')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error emergency withdrawing ETH:', error)
+      console.error('âŒ Error emergency withdrawing ETH:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1489,7 +1489,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('🚨 Emergency withdrawing USDC for game:', gameId, 'to recipient:', recipient)
+      console.log('ðŸš¨ Emergency withdrawing USDC for game:', gameId, 'to recipient:', recipient)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -1502,13 +1502,13 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('🚨 Emergency USDC withdraw tx:', hash)
+      console.log('ðŸš¨ Emergency USDC withdraw tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Emergency USDC withdraw confirmed')
+      console.log('âœ… Emergency USDC withdraw confirmed')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error emergency withdrawing USDC:', error)
+      console.error('âŒ Error emergency withdrawing USDC:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1521,10 +1521,10 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('🏆 Winner withdrawing winnings for game:', gameId)
+      console.log('ðŸ† Winner withdrawing winnings for game:', gameId)
       
       const winnerAddress = this.walletClient.account.address
-      console.log('🏆 Winner address:', winnerAddress)
+      console.log('ðŸ† Winner address:', winnerAddress)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -1537,9 +1537,9 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('🏆 Winner withdrawal tx:', hash)
+      console.log('ðŸ† Winner withdrawal tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Winner withdrawal confirmed')
+      console.log('âœ… Winner withdrawal confirmed')
 
       return { 
         success: true, 
@@ -1549,7 +1549,7 @@ class ContractService {
       }
       
     } catch (error) {
-      console.error('❌ Error withdrawing winnings:', error)
+      console.error('âŒ Error withdrawing winnings:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1570,7 +1570,7 @@ class ContractService {
       
       return ethAmountWei
     } catch (error) {
-      console.error('❌ Error calculating ETH amount:', error)
+      console.error('âŒ Error calculating ETH amount:', error)
       throw error
     }
   }
@@ -1589,7 +1589,7 @@ class ContractService {
       const data = await response.json()
       const games = data.games || []
       
-      console.log(`🔍 Searching ${games.length} games for NFT matches...`)
+      console.log(`ðŸ” Searching ${games.length} games for NFT matches...`)
       
       for (let i = 0; i < nftContracts.length; i++) {
         const targetContract = nftContracts[i].toLowerCase()
@@ -1601,7 +1601,7 @@ class ContractService {
           if (game.nft_token_id && game.nft_token_id.toString() === targetTokenId) {
             if (!game.nft_contract || game.nft_contract.toLowerCase() === targetContract) {
               foundGameId = game.id.toString()
-              console.log(`✅ Found NFT ${targetContract}:${targetTokenId} in game ${foundGameId}`)
+              console.log(`âœ… Found NFT ${targetContract}:${targetTokenId} in game ${foundGameId}`)
               break
             }
           }
@@ -1610,13 +1610,13 @@ class ContractService {
         gameIds.push(foundGameId)
         
         if (!foundGameId) {
-          console.warn(`⚠️ Could not find game ID for NFT ${targetContract}:${targetTokenId}`)
+          console.warn(`âš ï¸ Could not find game ID for NFT ${targetContract}:${targetTokenId}`)
         }
       }
       
       return gameIds
     } catch (error) {
-      console.error('❌ Error finding game IDs:', error)
+      console.error('âŒ Error finding game IDs:', error)
       return []
     }
   }
@@ -1631,17 +1631,17 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('🏆 Creating Battle Royale game:', gameId)
+      console.log('ðŸ† Creating Battle Royale game:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
       // First approve NFT transfer
-      console.log('🔐 Approving NFT transfer...')
+      console.log('ðŸ” Approving NFT transfer...')
       const approvalResult = await this.approveNFT(nftContract, tokenId)
       if (!approvalResult.success) {
         throw new Error('NFT approval failed: ' + approvalResult.error)
       }
-      console.log('✅ NFT approval successful:', approvalResult.transactionHash)
+      console.log('âœ… NFT approval successful:', approvalResult.transactionHash)
       
       // Create Battle Royale on contract
       // Contract requires 8 params including creatorParticipates
@@ -1654,7 +1654,7 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('🏆 Battle Royale creation tx:', hash)
+      console.log('ðŸ† Battle Royale creation tx:', hash)
       
       let receipt = null
       let verificationAttempts = 0
@@ -1662,7 +1662,7 @@ class ContractService {
       
       // Try to get receipt, but don't fail if RPC is slow
       try {
-        console.log('⏳ Waiting for transaction receipt...')
+        console.log('â³ Waiting for transaction receipt...')
         receipt = await this.publicClient.waitForTransactionReceipt({ 
           hash,
           timeout: 120000 // 2 minute timeout
@@ -1673,10 +1673,10 @@ class ContractService {
           throw new Error('Transaction reverted - Battle Royale creation failed on-chain')
         }
         
-        console.log('✅ Transaction confirmed in block:', receipt.blockNumber)
+        console.log('âœ… Transaction confirmed in block:', receipt.blockNumber)
       } catch (receiptError) {
-        console.warn('⚠️ Could not get receipt within timeout:', receiptError.message)
-        console.log('📝 Transaction was submitted. Will verify game exists on-chain directly...')
+        console.warn('âš ï¸ Could not get receipt within timeout:', receiptError.message)
+        console.log('ðŸ“ Transaction was submitted. Will verify game exists on-chain directly...')
         // Don't fail yet - transaction might have succeeded but RPC is slow
         // We'll verify by reading the contract state directly
       }
@@ -1685,7 +1685,7 @@ class ContractService {
       // Try multiple times with delays to account for RPC node indexing lag
       while (verificationAttempts < maxVerificationAttempts) {
         try {
-          console.log(`🔍 Verification attempt ${verificationAttempts + 1}/${maxVerificationAttempts}...`)
+          console.log(`ðŸ” Verification attempt ${verificationAttempts + 1}/${maxVerificationAttempts}...`)
           
           const gameState = await this.publicClient.readContract({
             address: this.contractAddress,
@@ -1697,7 +1697,7 @@ class ContractService {
           if (gameState.creator === '0x0000000000000000000000000000000000000000') {
             // Game doesn't exist yet - might be RPC lag
             if (verificationAttempts < maxVerificationAttempts - 1) {
-              console.log('⏳ Game not found yet, waiting 5 seconds for RPC to sync...')
+              console.log('â³ Game not found yet, waiting 5 seconds for RPC to sync...')
               await new Promise(resolve => setTimeout(resolve, 5000))
               verificationAttempts++
               continue
@@ -1708,7 +1708,7 @@ class ContractService {
           }
           
           // Success! Game exists on-chain
-          console.log('✅ Game verified on-chain:', {
+          console.log('âœ… Game verified on-chain:', {
             creator: gameState.creator,
             nftContract: gameState.nftContract,
             tokenId: gameState.tokenId.toString(),
@@ -1719,13 +1719,13 @@ class ContractService {
           
         } catch (readError) {
           if (verificationAttempts < maxVerificationAttempts - 1) {
-            console.warn(`⚠️ Read attempt ${verificationAttempts + 1} failed:`, readError.message)
-            console.log('⏳ Waiting 5 seconds before retry...')
+            console.warn(`âš ï¸ Read attempt ${verificationAttempts + 1} failed:`, readError.message)
+            console.log('â³ Waiting 5 seconds before retry...')
             await new Promise(resolve => setTimeout(resolve, 5000))
             verificationAttempts++
           } else {
             // All attempts exhausted
-            console.error('❌ Failed to verify game on-chain after multiple attempts')
+            console.error('âŒ Failed to verify game on-chain after multiple attempts')
             throw new Error(`Transaction submitted but could not verify game creation: ${readError.message}`)
           }
         }
@@ -1734,7 +1734,7 @@ class ContractService {
       // Should never reach here, but just in case
       throw new Error('Game verification failed after maximum attempts')
     } catch (error) {
-      console.error('❌ Error creating Battle Royale:', error)
+      console.error('âŒ Error creating Battle Royale:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1747,7 +1747,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('🎮 Joining Battle Royale game:', gameId)
+      console.log('ðŸŽ® Joining Battle Royale game:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       const entryAmountWei = ethers.parseEther(entryAmount.toString())
@@ -1762,13 +1762,13 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('🎮 Battle Royale join tx:', hash)
+      console.log('ðŸŽ® Battle Royale join tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Joined Battle Royale successfully')
+      console.log('âœ… Joined Battle Royale successfully')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error joining Battle Royale:', error)
+      console.error('âŒ Error joining Battle Royale:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1781,7 +1781,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('🚀 Starting Battle Royale game early:', gameId)
+      console.log('ðŸš€ Starting Battle Royale game early:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -1794,13 +1794,13 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('🚀 Battle Royale early start tx:', hash)
+      console.log('ðŸš€ Battle Royale early start tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Battle Royale started early successfully')
+      console.log('âœ… Battle Royale started early successfully')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error starting Battle Royale early:', error)
+      console.error('âŒ Error starting Battle Royale early:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1813,7 +1813,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('🏆 Completing Battle Royale game:', gameId, 'Winner:', winnerAddress)
+      console.log('ðŸ† Completing Battle Royale game:', gameId, 'Winner:', winnerAddress)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -1826,13 +1826,13 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('🏆 Battle Royale completion tx:', hash)
+      console.log('ðŸ† Battle Royale completion tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Battle Royale completed successfully')
+      console.log('âœ… Battle Royale completed successfully')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error completing Battle Royale:', error)
+      console.error('âŒ Error completing Battle Royale:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1845,7 +1845,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('💰 Withdrawing Battle Royale creator funds for game:', gameId)
+      console.log('ðŸ’° Withdrawing Battle Royale creator funds for game:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -1858,13 +1858,13 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('💰 Creator funds withdrawal tx:', hash)
+      console.log('ðŸ’° Creator funds withdrawal tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Creator funds withdrawn successfully')
+      console.log('âœ… Creator funds withdrawn successfully')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error withdrawing creator funds:', error)
+      console.error('âŒ Error withdrawing creator funds:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1914,7 +1914,7 @@ class ContractService {
                      !Boolean(nftClaimed)
       }
     } catch (error) {
-      console.error('❌ Error getting Battle Royale game state:', error)
+      console.error('âŒ Error getting Battle Royale game state:', error)
       // Check if it's because game doesn't exist
       if (error.message?.includes('revert') || error.message?.includes('does not exist')) {
         return { success: false, error: 'Game does not exist on-chain' }
@@ -1951,7 +1951,7 @@ class ContractService {
       
       // Step 2: Complete game on-chain if not already completed
       if (!gameState.success || !gameState.completed || !gameState.winner || gameState.winner === '0x0000000000000000000000000000000000000000') {
-        console.log('📝 Completing game on-chain first...')
+        console.log('ðŸ“ Completing game on-chain first...')
         
         // Complete via API (backend has contract owner wallet)
         const completeResponse = await fetch(`/api/battle-royale/${gameId}/complete`, {
@@ -1999,7 +1999,7 @@ class ContractService {
       }
       
       // Step 3: Withdraw the NFT
-      console.log('🏆 Withdrawing NFT...')
+      console.log('ðŸ† Withdrawing NFT...')
       const result = await this.withdrawBattleRoyaleWinnerNFT(gameId)
       
       if (result.success) {
@@ -2013,7 +2013,7 @@ class ContractService {
       return result
       
     } catch (error) {
-      console.error('❌ Error in completeAndClaimBattleRoyaleNFT:', error)
+      console.error('âŒ Error in completeAndClaimBattleRoyaleNFT:', error)
       return { success: false, error: error.message || 'Failed to complete and claim NFT' }
     }
   }
@@ -2076,7 +2076,7 @@ class ContractService {
         }
       }
       
-      console.log('🏆 Withdrawing Battle Royale winner NFT for game:', gameId)
+      console.log('ðŸ† Withdrawing Battle Royale winner NFT for game:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -2089,13 +2089,13 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('🏆 Winner NFT withdrawal tx:', hash)
+      console.log('ðŸ† Winner NFT withdrawal tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Winner NFT withdrawn successfully')
+      console.log('âœ… Winner NFT withdrawn successfully')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error withdrawing winner NFT:', error)
+      console.error('âŒ Error withdrawing winner NFT:', error)
       return { success: false, error: error.message }
     }
   }
@@ -2108,7 +2108,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('🔙 Reclaiming NFT from cancelled Battle Royale game:', gameId)
+      console.log('ðŸ”™ Reclaiming NFT from cancelled Battle Royale game:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -2121,13 +2121,13 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('🔙 NFT reclaim tx:', hash)
+      console.log('ðŸ”™ NFT reclaim tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ NFT reclaimed successfully')
+      console.log('âœ… NFT reclaimed successfully')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error reclaiming NFT:', error)
+      console.error('âŒ Error reclaiming NFT:', error)
       return { success: false, error: error.message }
     }
   }
@@ -2140,7 +2140,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('❌ Cancelling Battle Royale game:', gameId)
+      console.log('âŒ Cancelling Battle Royale game:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -2153,13 +2153,13 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('❌ Game cancellation tx:', hash)
+      console.log('âŒ Game cancellation tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Game cancelled successfully')
+      console.log('âœ… Game cancelled successfully')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error cancelling game:', error)
+      console.error('âŒ Error cancelling game:', error)
       return { success: false, error: error.message }
     }
   }
@@ -2172,7 +2172,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('💸 Withdrawing Battle Royale entry fee for game:', gameId)
+      console.log('ðŸ’¸ Withdrawing Battle Royale entry fee for game:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -2185,13 +2185,13 @@ class ContractService {
         account: this.walletClient.account
       })
       
-      console.log('💸 Entry withdrawal tx:', hash)
+      console.log('ðŸ’¸ Entry withdrawal tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Entry fee withdrawn successfully')
+      console.log('âœ… Entry fee withdrawn successfully')
 
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
-      console.error('❌ Error withdrawing entry:', error)
+      console.error('âŒ Error withdrawing entry:', error)
       return { success: false, error: error.message }
     }
   }
@@ -2214,7 +2214,7 @@ class ContractService {
       
       return { success: true, canWithdraw }
     } catch (error) {
-      console.error('❌ Error checking withdraw eligibility:', error)
+      console.error('âŒ Error checking withdraw eligibility:', error)
       return { success: false, canWithdraw: false, error: error.message }
     }
   }

@@ -5,10 +5,10 @@ async function main() {
   console.log("=" .repeat(60));
 
   // Current deployed contract address
-  const contractAddress = "0xB2FC2180e003D818621F4722FFfd7878A218581D";
+  const contractAddress = "0x1800C075E5a939B8184A50A7efdeC5E1fFF8dd29";
   
   // NEW SECURE FEE RECEIVER ADDRESS - UPDATE THIS TO YOUR SECURE WALLET
-  const newFeeReceiver = "0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1"; // Using your current owner address as secure fee receiver
+  const newFeeReceiver = "0x3618cf0af757f3f2b9824202e7f4a79f41d66297"; // New secure wallet address
   
   console.log(`📍 Contract Address: ${contractAddress}`);
   console.log(`💰 New Fee Receiver: ${newFeeReceiver}`);

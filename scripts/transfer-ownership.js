@@ -4,14 +4,14 @@ async function main() {
   console.log("🔄 Transferring contract ownership...");
   console.log("=" .repeat(60));
 
-  // Contract address on Base
-  const contractAddress = "0xB2FC2180e003D818621F4722FFfd7878A218581D";
+  // Contract address on Base (CURRENT CONTRACT)
+  const contractAddress = "0xa90abBDE769BC2901A8E68E6C9758B1Cd6699A5F";
   
-  // Old admin wallet (current owner)
-  const oldAdminWallet = "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628";
+  // Old admin wallet (current owner - COMPROMISED)
+  const oldAdminWallet = "0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1";
   
-  // New admin wallet (new owner)
-  const newAdminWallet = "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628";
+  // New admin wallet (new owner - SECURE)
+  const newAdminWallet = "0x3618cf0af757f3f2b9824202e7f4a79f41d66297";
 
   console.log(`📍 Contract Address: ${contractAddress}`);
   console.log(`👤 Current Owner: ${oldAdminWallet}`);

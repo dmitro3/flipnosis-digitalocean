@@ -25,7 +25,7 @@ You mentioned you already have this feature:
 1. Go to your admin panel
 2. Search for NFT: `0x035003062428fD92384317d7a853d8b4Dff9888a` token `4734`
 3. Click "Withdraw NFT"
-4. Send it back to the creator: `0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1`
+4. Send it back to the creator: `0x3618cf0af757f3f2b9824202e7f4a79f41d66297`
 
 ### Option 2: Use Contract Owner Wallet Directly
 
@@ -39,7 +39,7 @@ const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, contractOwn
 await contract.directTransferNFT(
   "0x035003062428fD92384317d7a853d8b4Dff9888a", // NFT contract
   "4734",                                        // Token ID
-  "0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1"  // Creator address
+  "0x3618cf0af757f3f2b9824202e7f4a79f41d66297"  // Creator address (new secure wallet)
 );
 ```
 
@@ -52,7 +52,7 @@ Go to the contract on BaseScan and call `directTransferNFT`:
 4. Enter:
    - `nftContract`: `0x035003062428fD92384317d7a853d8b4Dff9888a`
    - `tokenId`: `4734`
-   - `recipient`: `0x6BA07382CF43E41aBfC80dC43FFc96730194A3c1`
+   - `recipient`: `0x3618cf0af757f3f2b9824202e7f4a79f41d66297`
 5. Execute transaction
 
 ## ✅ Why This Won't Happen Again
