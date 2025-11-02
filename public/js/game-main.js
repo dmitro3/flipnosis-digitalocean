@@ -138,12 +138,30 @@ export async function initGame(params) {
   
   const updateRoundDisplay = () => {
     console.log(`📊 Round ${currentRound}`);
-    // This will be implemented by UI manager
+    // Update desktop round display
+    const roundNumberEl = document.getElementById('round-number');
+    if (roundNumberEl) {
+      roundNumberEl.textContent = currentRound;
+    }
+    // Update mobile round display
+    const mobileRoundNumberEl = document.getElementById('mobile-round-number');
+    if (mobileRoundNumberEl) {
+      mobileRoundNumberEl.textContent = currentRound;
+    }
   };
   
   const updateTimerDisplay = (time) => {
     console.log(`⏱️ Timer: ${time}`);
-    // This will be implemented by UI manager
+    // Update desktop timer display
+    const timerValueEl = document.getElementById('timer-value');
+    if (timerValueEl) {
+      timerValueEl.textContent = time;
+    }
+    // Update mobile timer display
+    const mobileTimerValueEl = document.getElementById('mobile-timer-value');
+    if (mobileTimerValueEl) {
+      mobileTimerValueEl.textContent = time;
+    }
   };
   
   const showCoinFlipResult = (data) => {
@@ -288,9 +306,10 @@ export async function initGame(params) {
         updateWinsDisplay,
         updatePlayerCardButtons,
         updatePearlColors: PearlPhysics.updatePearlColors,
-        showGameOverScreen: () => {
-          console.log('🏁 Game over');
+        showGameOverScreen: (winnerIndex, winnerName) => {
+          console.log('🏁 Game over - Winner:', winnerName || 'None');
           gameOver = true;
+          // TODO: Show game over screen UI
         }
       });
     },
@@ -316,16 +335,20 @@ export async function initGame(params) {
     },
     updatePearlColors: PearlPhysics.updatePearlColors,
     showFloatingMessage,
-    showCoinSelector: () => {
-      console.log('🪙 Showing coin selector');
-      // This will be implemented by UI manager
-    },
     showResult,
     updateRoundDisplay,
     showXPAwardNotification: () => console.log('⭐ XP awarded'),
     showGamePhaseIndicator: () => console.log('📊 Phase indicator'),
     showGameStartNotification: () => console.log('🎮 Game started'),
-    showGameOverScreen: () => console.log('🏁 Game over'),
+    showGameOverScreen: (winnerIndex, winnerName) => {
+      console.log('🏁 Game over - Winner:', winnerName || 'None');
+      gameOver = true;
+      // TODO: Show game over screen UI
+    },
+    showCoinSelector: () => {
+      console.log('🪙 Showing coin selector');
+      // TODO: Implement coin selector UI
+    },
     loadGameState: () => loadGameState(gameIdParam, walletParam),
     updateCoinRotationsFromPlayerChoices: () => {
       CoinManager.updateCoinRotationsFromPlayerChoices(tubes, players, coins);

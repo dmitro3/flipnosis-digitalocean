@@ -959,6 +959,21 @@
   
   <div id="container"></div>
   
+  <!-- Desktop Game Info (Timer & Round) -->
+  <div class="game-info" id="game-info" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10001; background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95)); border: 2px solid #9d00ff; border-radius: 12px; padding: 12px 20px; font-family: 'Orbitron', sans-serif; color: white; box-shadow: 0 0 20px rgba(157, 0, 255, 0.6); text-align: center; min-width: 200px;">
+    <div class="desktop-timer-layout" style="display: block;">
+      <div class="round-display" style="font-size: 16px; color: #00ffff; margin-bottom: 8px;">ROUND <span id="round-number">1</span></div>
+      <div class="timer-display" style="font-size: 24px; color: #00ff00; font-weight: bold;"><span id="timer-value">60</span>s</div>
+    </div>
+    <div class="mobile-timer-round" style="display: none;">
+      <span class="round-text">R<span id="mobile-round-number">1</span></span>
+      <span class="timer-text"><span id="mobile-timer-value">60</span>s</span>
+    </div>
+  </div>
+  
+  <!-- Change Coin Button (Desktop) -->
+  <button id="change-coin-btn" class="floating-btn" style="position: fixed; top: 20px; left: 20px; z-index: 10001; background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2)); border: 3px solid #00ffff; border-radius: 50%; color: #00ffff; font-size: 24px; width: 60px; height: 60px; cursor: pointer; box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; transition: all 0.3s ease;">🪙</button>
+  
   <!-- Responsive Mobile Layout -->
   <div id="mobile-ui" class="mobile-ui">
     <!-- Player Cards -->
