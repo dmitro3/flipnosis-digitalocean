@@ -83,12 +83,32 @@ export function initializeSocket(dependencies) {
   }
 
   // io is now imported as ES module
-  // Vite proxy handles /socket.io requests to backend server
-  const socket = io({
+  // Determine socket URL based on environment
+  let socketUrl = undefined; // Default to current origin (same origin = same protocol/host/port)
+  
+  // Development: Connect directly to backend server
+  // Production: Use same origin (backend serves frontend)
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const isViteDev = isLocalhost && window.location.port === '5173';
+  
+  if (isViteDev) {
+    // Vite dev server (port 5173) - connect directly to backend (port 3000)
+    socketUrl = `http://localhost:3000`;
+    console.log('🔌 Development mode: Connecting to http://localhost:3000');
+  } else {
+    // Production or same-origin: use current origin (undefined = same origin)
+    // This works because backend serves the frontend on the same server
+    socketUrl = undefined;
+    console.log('🔌 Production mode: Connecting to same origin');
+  }
+  
+  const socket = io(socketUrl, {
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionAttempts: 10,
-    reconnectionDelay: 2000
+    reconnectionDelay: 2000,
+    forceNew: false,
+    autoConnect: true
   });
 
   socket.on('connect', () => {
