@@ -533,7 +533,7 @@ export function createTubes(dependencies) {
     cardElement.innerHTML = `
       ${emptySlotOverlay}
       <div class="card-header">
-        <img src="${player.avatar || '/images/default-avatar.png'}" class="player-avatar" alt="${player.name}" style="width: 80px; height: 100px;" />
+        <img src="${player.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNjZkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+RijwvdGV4dD48L3N2Zz4='}" class="player-avatar" alt="${player.name}" style="width: 80px; height: 100px;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNjZkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+RijwvdGV4dD48L3N2Zz4='" />
         <div class="player-info">
           <div class="player-name">${player.name}</div>
           ${player.wins > 0 ? '<div class="wins-display" style="margin-top: 8px; justify-content: center; align-items: center;">WIN</div>' : ''}

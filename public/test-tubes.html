@@ -53,7 +53,7 @@
     /* ===== RESPONSIVE MOBILE-FIRST DESIGN ===== */
     
     .mobile-ui {
-      display: none;
+      display: none !important;
     }
     
     @media (max-width: 768px) {
@@ -737,7 +737,20 @@
       margin-bottom: 10px;
     }
     
-    @media (min-width: 768px) {
+    @media (min-width: 769px) {
+      .mobile-ui {
+        display: none !important;
+      }
+      
+      .floating-btn.change-coin-btn,
+      .floating-btn.chat-btn,
+      .floating-btn.fullscreen-btn,
+      .floating-earnings,
+      .bottom-panel,
+      .player-cards {
+        display: none !important;
+      }
+      
       .game-info .desktop-timer-layout {
         display: block !important;
       }
@@ -747,6 +760,14 @@
       }
       
       .game-info button {
+        display: block !important;
+      }
+      
+      #change-coin-btn {
+        display: flex !important;
+      }
+      
+      .player-card {
         display: block !important;
       }
     }

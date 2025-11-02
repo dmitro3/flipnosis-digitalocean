@@ -68,8 +68,63 @@ export async function initGame(params) {
   
   // Helper functions that need to be passed to modules
   const updatePlayerCardButtons = () => {
-    // This will be set up later when UI manager is available
-    console.log('🔄 Updating player card buttons');
+    tubes.forEach((tube, i) => {
+      if (tube.cardElement) {
+        const player = players[i];
+        if (!player || player.isEmpty) return;
+        
+        // Determine if this is the current player's slot
+        const isCurrentPlayer = isServerSideMode ? (playerSlot === i) : true;
+        
+        // Update choice buttons visibility
+        const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
+        const choiceBadge = tube.cardElement.querySelector('.choice-badge');
+        
+        if (isCurrentPlayer) {
+          // Show choice buttons for current player only if they haven't made a choice yet
+          if (player.choice) {
+            // Player has made a choice - show the badge
+            if (choiceButtons) choiceButtons.style.display = 'none';
+            if (choiceBadge) {
+              choiceBadge.style.display = 'inline-block';
+              choiceBadge.textContent = player.choice.toUpperCase();
+              choiceBadge.className = `choice-badge ${player.choice}`;
+            }
+          } else {
+            // Player hasn't made a choice yet - show buttons
+            if (choiceBadge) choiceBadge.style.display = 'none';
+            if (choiceButtons) choiceButtons.style.display = 'flex';
+          }
+        } else if (player.choice) {
+          // Show choice badge for other players
+          if (choiceButtons) choiceButtons.style.display = 'none';
+          if (choiceBadge) {
+            choiceBadge.style.display = 'block';
+            choiceBadge.textContent = player.choice.toUpperCase();
+            choiceBadge.className = `choice-badge ${player.choice}`;
+          }
+        } else {
+          // Hide everything for other players without choices
+          if (choiceButtons) choiceButtons.style.display = 'none';
+          if (choiceBadge) choiceBadge.style.display = 'none';
+        }
+        
+        // Update action buttons visibility
+        const actionButtons = tube.cardElement.querySelectorAll('.action-btn');
+        
+        if (isCurrentPlayer) {
+          // Show action buttons for current player
+          actionButtons.forEach(btn => {
+            btn.style.display = 'block';
+            btn.style.pointerEvents = 'auto';
+          });
+        } else {
+          // Hide action buttons for other players
+          actionButtons.forEach(btn => btn.style.display = 'none');
+        }
+      }
+    });
+    console.log('🔄 Updated player card buttons');
   };
   
   const showChoiceRequiredMessage = (slot) => {
@@ -227,7 +282,143 @@ export async function initGame(params) {
   const animateCoinFlip = (slot, power, duration) => {
     CoinManager.animateCoinFlip(slot, power, duration, tubes, coins, coinMaterials);
   };
-  
+
+  // Define showGameOverScreen before it's used in initializeSocket
+  const showGameOverScreen = (winnerIndex, winnerName) => {
+    console.log('🏁 GAME OVER - Showing end screen');
+    
+    // Prevent duplicate game over screens
+    if (gameOver) {
+      console.log('⚠️ Game over screen already shown, ignoring duplicate call');
+      return;
+    }
+    
+    // Stop any ongoing game mechanics
+    gameOver = true;
+    
+    // Determine if current player won
+    const didCurrentPlayerWin = (playerSlot === winnerIndex);
+    
+    console.log(`🏁 Game Over Debug:`, {
+      playerSlot,
+      winnerIndex,
+      didCurrentPlayerWin,
+      winnerName
+    });
+    
+    // Show immediate game over overlay
+    const existingOverlay = document.getElementById('game-over-overlay');
+    if (existingOverlay) {
+      existingOverlay.remove();
+    }
+    
+    const gameOverDiv = document.createElement('div');
+    gameOverDiv.id = 'game-over-overlay';
+    gameOverDiv.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      font-family: 'Orbitron', sans-serif;
+    `;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = `
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 4px solid ${didCurrentPlayerWin ? '#FFD700' : '#ff0000'};
+      border-radius: 25px;
+      padding: 50px;
+      text-align: center;
+      box-shadow: 0 0 50px ${didCurrentPlayerWin ? 'rgba(255, 215, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)'};
+      max-width: 600px;
+      width: 90%;
+    `;
+    
+    // Show different content based on win/lose
+    if (didCurrentPlayerWin && winnerIndex >= 0) {
+      contentDiv.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
+        <div style="font-size: 48px; font-weight: bold; color: #FFD700; margin-bottom: 20px;">
+          VICTORY!
+        </div>
+        <div style="font-size: 24px; color: #ffffff; margin-bottom: 30px;">
+          ${winnerName || 'You'} won the game!
+        </div>
+        <button onclick="location.reload()" style="
+          background: linear-gradient(135deg, #00ff00, #39ff14);
+          border: none;
+          border-radius: 15px;
+          padding: 15px 30px;
+          font-family: 'Orbitron', sans-serif;
+          font-size: 18px;
+          font-weight: bold;
+          color: #000;
+          cursor: pointer;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          transition: all 0.3s ease;
+        ">Play Again</button>
+      `;
+    } else if (winnerIndex >= 0) {
+      contentDiv.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 20px;">😢</div>
+        <div style="font-size: 48px; font-weight: bold; color: #ff0000; margin-bottom: 20px;">
+          DEFEAT
+        </div>
+        <div style="font-size: 24px; color: #ffffff; margin-bottom: 30px;">
+          ${winnerName || 'Unknown'} won the game
+        </div>
+        <button onclick="location.reload()" style="
+          background: linear-gradient(135deg, #ff4444, #cc0000);
+          border: none;
+          border-radius: 15px;
+          padding: 15px 30px;
+          font-family: 'Orbitron', sans-serif;
+          font-size: 18px;
+          font-weight: bold;
+          color: #fff;
+          cursor: pointer;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          transition: all 0.3s ease;
+        ">Play Again</button>
+      `;
+    } else {
+      contentDiv.innerHTML = `
+        <div style="font-size: 80px; margin-bottom: 20px;">⏸️</div>
+        <div style="font-size: 48px; font-weight: bold; color: #ffaa00; margin-bottom: 20px;">
+          GAME OVER
+        </div>
+        <div style="font-size: 24px; color: #ffffff; margin-bottom: 30px;">
+          The game has ended
+        </div>
+        <button onclick="location.reload()" style="
+          background: linear-gradient(135deg, #9d00ff, #c44aff);
+          border: none;
+          border-radius: 15px;
+          padding: 15px 30px;
+          font-family: 'Orbitron', sans-serif;
+          font-size: 18px;
+          font-weight: bold;
+          color: #fff;
+          cursor: pointer;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          transition: all 0.3s ease;
+        ">Play Again</button>
+      `;
+    }
+    
+    gameOverDiv.appendChild(contentDiv);
+    document.body.appendChild(gameOverDiv);
+  };
+
   // 5. Create tubes (this also creates coins)
   const tubeDependencies = {
     scene,
@@ -307,11 +498,7 @@ export async function initGame(params) {
         updateWinsDisplay,
         updatePlayerCardButtons,
         updatePearlColors: PearlPhysics.updatePearlColors,
-        showGameOverScreen: (winnerIndex, winnerName) => {
-          console.log('🏁 Game over - Winner:', winnerName || 'None');
-          gameOver = true;
-          // TODO: Show game over screen UI
-        }
+        showGameOverScreen
       };
       updateClientFromServerState(state, deps);
     },
@@ -342,11 +529,7 @@ export async function initGame(params) {
     showXPAwardNotification: () => console.log('⭐ XP awarded'),
     showGamePhaseIndicator: () => console.log('📊 Phase indicator'),
     showGameStartNotification: () => console.log('🎮 Game started'),
-    showGameOverScreen: (winnerIndex, winnerName) => {
-      console.log('🏁 Game over - Winner:', winnerName || 'None');
-      gameOver = true;
-      // TODO: Show game over screen UI
-    },
+    showGameOverScreen,
     showCoinSelector: () => {
       console.log('🪙 Showing coin selector');
       // TODO: Implement coin selector UI
