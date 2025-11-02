@@ -557,14 +557,6 @@ export async function initGame(params) {
     updatePlayerChoice,
     updateCoinFromServer,
     shatterGlass: shatterGlassFunc,
-    updatePlayerCardButtons,
-    updateWinsDisplay,
-    updateTimerDisplay,
-    updateRoundDisplay,
-    saveGameState: (gameId, wallet, slot, round, players, tubes) => {
-      saveGameState(gameId, wallet, slot, round, players, tubes);
-    },
-    updatePearlColors: PearlPhysics.updatePearlColors,
     showFloatingMessage,
     showResult,
     showXPAwardNotification: () => console.log('⭐ XP awarded'),
@@ -622,7 +614,6 @@ export async function initGame(params) {
         }, 500);
       }, 3000);
     },
-    showGameOverScreen,
     showCoinSelector: (tubeIndex) => {
       // This is a placeholder - will be replaced after socket is created
       console.warn(`⚠️ showCoinSelector called before socket is ready for tube ${tubeIndex}`);
