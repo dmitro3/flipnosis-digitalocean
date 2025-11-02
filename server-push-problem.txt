@@ -1,0 +1,48 @@
+# Server Push Problem & Fix Summary
+
+## THE PROBLEM
+
+Your local development server (localhost:5173) was showing features like the "CHANGE COIN" button, but your production server (Hetzner) wasn't showing them, even after Git deployments.
+
+**Root Cause:**
+- Your server serves files from TWO locations (in priority order):
+  1. `public/` folder (takes priority)
+  2. `dist/` folder (fallback)
+- When you Git deploy, it runs `npm run build` which creates files in `dist/`
+- BUT: The build was using stale/cached files, so your changes never made it to production
+- Files in `public/` override `dist/`, but Git wasn't updating `public/` properly
+
+## THE FIX
+
+**We deployed directly to the `public/` folder to bypass the build process:**
+
+1. **Fixed syntax errors:**
+   - `game-main.js:635` - Changed `});` to `};` (wrong closing brace)
+   - `update-client-state.js:327` - Fixed indentation and brace structure
+
+2. **Fixed socket.io import issues:**
+   - Changed from `<script>` tag to ES module import
+   - Added `socket.io-client` to import map in `test-tubes.html`
+   - Updated socket connection to detect dev vs production environments
+
+3. **Direct deployment:**
+   - Uploaded files directly to `/opt/flipnosis/app/public/` on server
+   - Bypassed the build process entirely
+   - Restarted the server
+
+## FILES CHANGED
+
+1. `public/test-tubes.html` - Added socket.io-client to import map
+2. `public/js/core/socket-manager.js` - ES module import + connection logic
+3. `public/js/game-main.js` - Syntax fix
+4. `public/js/core/update-client-state.js` - Syntax fix
+5. `vite.config.js` - Added proxy config (for dev only)
+
+## KEY TAKEAWAY
+
+Your server prioritizes `public/` folder over `dist/`. Either:
+- Deploy directly to `public/` folder (what we did), OR
+- Fix your Git post-receive hook to properly update `public/` after building to `dist/`
+
+The direct upload worked because we updated the files that the server actually serves first.
+
