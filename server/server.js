@@ -306,12 +306,21 @@ initializeServices()
 
     // Setup API routes - pass gameServerInstance with error handling
     try {
+      console.log('🔧 Initializing API routes...')
+      console.log('  - dbService exists:', !!dbService)
+      console.log('  - dbService.db exists:', !!dbService?.db)
+      console.log('  - blockchainService exists:', !!blockchainService)
+      console.log('  - gameServer exists:', !!gameServerInstance)
+      
       const apiRouter = createApiRoutes(dbService, blockchainService, gameServerInstance)
       app.use('/api', apiRouter)
-      console.log('✅ API routes configured')
+      console.log('✅ API routes configured and registered at /api')
+      console.log('  - Routes available: /api/listings, /api/users/:address/games, /api/profile/:address, etc.')
     } catch (error) {
       console.error('❌ Error setting up API routes:', error)
       console.error('⚠️ Server will continue but API routes may be limited')
+      console.error('📋 Error details:', error.message)
+      console.error('📋 Stack:', error.stack)
     }
     
     // Health check endpoint

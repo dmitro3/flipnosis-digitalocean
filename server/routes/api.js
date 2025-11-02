@@ -5,6 +5,19 @@ const { XPService } = require('../services/xpService')
 
 function createApiRoutes(dbService, blockchainService, gameServer) {
   const router = express.Router()
+  
+  // Validate dbService and db connection
+  if (!dbService) {
+    console.error('❌ CRITICAL: dbService is null/undefined in createApiRoutes')
+    throw new Error('dbService is required for API routes')
+  }
+  
+  if (!dbService.db) {
+    console.error('❌ CRITICAL: dbService.db is null/undefined in createApiRoutes')
+    console.error('📁 Database path:', dbService.databasePath)
+    throw new Error('Database connection not initialized - check DATABASE_PATH configuration')
+  }
+  
   const db = dbService.db
   
   // gameServer is now properly passed in and available
@@ -35,7 +48,26 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       status: 'ok', 
       server: 'clean-architecture', 
       timestamp: new Date().toISOString(),
-      hasContractOwner: blockchainService.hasOwnerWallet()
+      hasContractOwner: blockchainService.hasOwnerWallet(),
+      databaseConnected: !!db,
+      databasePath: dbService.databasePath
+    })
+  })
+  
+  // Test endpoint to verify routes are working
+  router.get('/test', (req, res) => {
+    res.json({
+      message: 'API routes are working!',
+      timestamp: new Date().toISOString(),
+      routes: {
+        listings: '/api/listings',
+        userGames: '/api/users/:address/games',
+        profile: '/api/profile/:address'
+      },
+      database: {
+        connected: !!db,
+        path: dbService.databasePath
+      }
     })
   })
 
