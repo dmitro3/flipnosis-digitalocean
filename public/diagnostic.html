@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Diagnostic Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #000; color: #0f0; }
+    .pass { color: #0f0; }
+    .fail { color: #f00; }
+    .test { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+  </style>
+</head>
+<body>
+  <h1>🔬 Game Diagnostic Test</h1>
+  <div id="results"></div>
+  
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+      }
+    }
+  </script>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  
+  <script type="module">
+    const results = document.getElementById('results');
+    
+    function addTest(name, passed, details) {
+      const div = document.createElement('div');
+      div.className = 'test';
+      div.innerHTML = `
+        <strong class="${passed ? 'pass' : 'fail'}">${passed ? '✅' : '❌'} ${name}</strong><br>
+        <small>${details}</small>
+      `;
+      results.appendChild(div);
+    }
+    
+    // Test 1: Can we import Three.js?
+    try {
+      const THREE = await import('three');
+      addTest('Three.js Import', true, `Version: ${THREE.REVISION}`);
+    } catch (e) {
+      addTest('Three.js Import', false, e.message);
+    }
+    
+    // Test 2: Can we import Cannon.js?
+    try {
+      const CANNON = await import('cannon-es');
+      addTest('Cannon.js Import', true, `Loaded successfully`);
+    } catch (e) {
+      addTest('Cannon.js Import', false, e.message);
+    }
+    
+    // Test 3: Is Socket.IO loaded?
+    if (typeof io !== 'undefined') {
+      addTest('Socket.IO', true, `Loaded successfully`);
+    } else {
+      addTest('Socket.IO', false, 'io is not defined');
+    }
+    
+    // Test 4: Can we import our game modules?
+    try {
+      const config = await import('./js/config.js');
+      addTest('Game Config Module', true, `NUM_TUBES: ${config.NUM_TUBES}, TUBE_HEIGHT: ${config.TUBE_HEIGHT}`);
+    } catch (e) {
+      addTest('Game Config Module', false, e.message);
+    }
+    
+    // Test 5: Can we import game-main?
+    try {
+      const gamemain = await import('./js/game-main.js');
+      addTest('Game Main Module', true, `initGame function: ${typeof gamemain.initGame}`);
+    } catch (e) {
+      addTest('Game Main Module', false, e.message);
+    }
+    
+    // Test 6: Can we import init.js?
+    try {
+      await import('./js/init.js');
+      addTest('Init Module', true, `Loaded successfully`);
+    } catch (e) {
+      addTest('Init Module', false, e.message);
+    }
+    
+    // Test 7: Can we import scene-setup?
+    try {
+      const scene = await import('./js/core/scene-setup.js');
+      addTest('Scene Setup Module', true, `initializeScene function: ${typeof scene.initializeScene}`);
+    } catch (e) {
+      addTest('Scene Setup Module', false, e.message);
+    }
+    
+    // Test 8: Can we import tube-creator?
+    try {
+      const tubes = await import('./js/systems/tube-creator.js');
+      addTest('Tube Creator Module', true, `createTubes function: ${typeof tubes.createTubes}`);
+    } catch (e) {
+      addTest('Tube Creator Module', false, e.message);
+    }
+  </script>
+</body>
+</html>
+
