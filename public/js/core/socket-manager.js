@@ -155,9 +155,16 @@ export function initializeSocket(dependencies) {
     Object.assign(gameState, state);
     
     // Ensure showGameOverScreen is available - use the local constant
-    const safeShowGameOverScreen = showGameOverScreenLocal || (() => {
-      console.error('❌ showGameOverScreen not available - using fallback');
-    });
+    // Create a safe wrapper that always exists and is a function
+    const safeShowGameOverScreen = (typeof showGameOverScreenLocal === 'function') 
+      ? showGameOverScreenLocal 
+      : ((winnerIndex, winnerName) => {
+          console.error('❌ showGameOverScreen not available - game over screen cannot be shown', {
+            winnerIndex,
+            winnerName,
+            showGameOverScreenLocalType: typeof showGameOverScreenLocal
+          });
+        });
     
     updateClientFromServerState(state, {
       gameOver,
@@ -168,6 +175,7 @@ export function initializeSocket(dependencies) {
       physicsWorld,
       playerSlot,
       walletParam,
+      gameIdParam,
       currentRound,
       updateTimerDisplay,
       updateRoundDisplay,
