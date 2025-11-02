@@ -455,8 +455,11 @@ export async function initGame(params) {
   tubes.push(...tubeResult.tubes);
   coins.push(...tubeResult.coins);
   
+  // Store showCoinSelector function for later use
+  let showCoinSelectorFunc = null;
+  
   // 6. Initialize socket connection
-  const socket = await initializeSocket({
+  const socketDeps = {
     gameIdParam,
     walletParam,
     playerSlot,
@@ -567,9 +570,62 @@ export async function initGame(params) {
     updateRoundDisplay,
     showXPAwardNotification: () => console.log('⭐ XP awarded'),
     showGamePhaseIndicator: () => console.log('📊 Phase indicator'),
-    showGameStartNotification: () => console.log('🎮 Game started'),
+    showGameStartNotification: () => {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #00ff00, #39ff14);
+        border: 3px solid #00ff00;
+        border-radius: 20px;
+        padding: 40px 60px;
+        text-align: center;
+        font-family: 'Orbitron', sans-serif;
+        color: #000;
+        font-size: 32px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        box-shadow: 0 0 60px rgba(0, 255, 0, 0.8);
+        z-index: 10001;
+        animation: gameStartPulse 0.5s ease-out;
+      `;
+      
+      notification.innerHTML = `
+        <div style="margin-bottom: 10px;">🎮</div>
+        <div>GAME STARTED!</div>
+        <div style="font-size: 18px; margin-top: 10px;">Round 1 Beginning</div>
+      `;
+      
+      const style = document.createElement('style');
+      if (!document.getElementById('game-start-animation')) {
+        style.id = 'game-start-animation';
+        style.textContent = `
+          @keyframes gameStartPulse {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'gameStartPulse 0.5s ease-out reverse';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 500);
+      }, 3000);
+    },
     showGameOverScreen,
-    showCoinSelector: (tubeIndex) => {
+    showCoinSelector: ((tubeIndex) => {
+      console.log(`🪙 showCoinSelector called for tube ${tubeIndex}`);
       import('../ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
         showSelector(tubeIndex, {
           tubes,
@@ -587,7 +643,7 @@ export async function initGame(params) {
       }).catch(err => {
         console.error('❌ Failed to load coin selector:', err);
       });
-    },
+    }),
     loadGameState: () => loadGameState(gameIdParam, walletParam),
     updateCoinRotationsFromPlayerChoices: () => {
       CoinManager.updateCoinRotationsFromPlayerChoices(tubes, players, coins);
@@ -637,6 +693,105 @@ export async function initGame(params) {
   
   console.log('✅ Game initialized successfully');
   
+  // Setup change coin button (like reference implementation)
+  setTimeout(() => {
+    const changeCoinBox = document.createElement('div');
+    changeCoinBox.id = 'change-coin-box';
+    changeCoinBox.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 240px;
+      width: 160px;
+      height: 50px;
+      padding: 0;
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      border: 4px solid #ff8f00;
+      border-radius: 12px;
+      color: #fff;
+      z-index: 10001;
+      pointer-events: auto;
+    `;
+    
+    changeCoinBox.innerHTML = `
+      <button id="global-change-coin-btn" style="
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        background: linear-gradient(135deg, #ffd700, #ffed4e);
+        border: 4px solid #ff8f00;
+        border-radius: 8px;
+        color: #6a1b9a;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 900;
+        font-size: 16px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 0 15px rgba(255, 235, 59, 0.6);
+        transition: all 0.3s ease;
+      ">CHANGE COIN</button>
+    `;
+    document.body.appendChild(changeCoinBox);
+    
+    const globalChangeCoinBtn = document.getElementById('global-change-coin-btn');
+    if (globalChangeCoinBtn) {
+      globalChangeCoinBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        console.log('🪙 Global change coin button clicked');
+        
+        let currentPlayerSlot = playerSlot;
+        
+        if (currentPlayerSlot === undefined || currentPlayerSlot < 0) {
+          currentPlayerSlot = players.findIndex(p => p.address && walletParam && p.address.toLowerCase() === walletParam.toLowerCase());
+          console.log(`🔍 Fallback search found player slot: ${currentPlayerSlot}`);
+        }
+        
+        if (currentPlayerSlot !== undefined && currentPlayerSlot >= 0) {
+          console.log(`🪙 Opening coin selector for player slot ${currentPlayerSlot}`);
+          // Use the stored showCoinSelector function
+          if (showCoinSelectorFunc) {
+            showCoinSelectorFunc(currentPlayerSlot);
+          } else {
+            // Fallback: import and call directly
+            import('./ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
+              showSelector(currentPlayerSlot, {
+                tubes,
+                players,
+                coinOptions,
+                coinMaterials,
+                walletParam,
+                gameIdParam,
+                playerSlot,
+                socket,
+                isServerSideMode,
+                webglRenderer,
+                applyCoinSelection
+              });
+            }).catch(err => {
+              console.error('❌ Failed to load coin selector:', err);
+            });
+          }
+        } else {
+          console.warn('⚠️ Player slot not found for coin selection', {
+            playerSlot,
+            walletParam,
+            players: players.map((p, i) => ({ slot: i, address: p.address, name: p.name }))
+          });
+        }
+      });
+    }
+    
+    // Also hook up mobile button if it exists
+    const mobileChangeCoinBtn = document.getElementById('mobile-change-coin');
+    if (mobileChangeCoinBtn) {
+      mobileChangeCoinBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const globalBtn = document.getElementById('global-change-coin-btn');
+        if (globalBtn) globalBtn.click();
+      });
+    }
+  }, 100);
+  
   // Function to load participants from API and update players
   const loadParticipants = async () => {
     if (!gameIdParam) {
@@ -656,79 +811,91 @@ export async function initGame(params) {
       const parts = (data?.game?.participants || []).slice().sort((a, b) => (a.slot_number || 0) - (b.slot_number || 0));
       console.log('👥 Raw participants data:', parts);
       
-      // Update players array
-      for (let idx = 0; idx < 4; idx++) {
+      // Completely replace players array (like reference implementation)
+      const newPlayers = [1, 2, 3, 4].map((slot, idx) => {
         const p = parts[idx];
         if (!p) {
-          // Empty slot
-          if (!players[idx] || players[idx].isEmpty) {
-            players[idx] = {
-              id: idx + 1,
-              name: 'Empty',
-              wins: 0,
-              address: '',
-              choice: null,
-              avatar: '/images/default-avatar.png',
-              isEmpty: true
-            };
-          }
-        } else {
-          // Player exists
-          players[idx] = {
+          console.log(`📭 Slot ${idx + 1}: Empty`);
+          return {
             id: idx + 1,
-            name: p.username || p.name || `Player ${idx + 1}`,
-            wins: p.wins || 0,
-            address: p.player_address || '',
+            name: 'Empty',
+            wins: 0,
+            address: '',
             choice: null,
-            avatar: p.avatar || '/images/default-avatar.png',
-            isEmpty: false
+            avatar: '/images/default-avatar.png',
+            isEmpty: true
           };
-          
-          // If this is the current player, set playerSlot
-          if (walletParam && p.player_address && p.player_address.toLowerCase() === walletParam.toLowerCase()) {
-            playerSlot = idx;
-            console.log(`🎮 Current player slot set to: ${playerSlot}`);
-          }
         }
         
-        // Update tube card if it exists
-        if (tubes[idx] && tubes[idx].cardElement) {
-          const card = tubes[idx].cardElement;
-          const nameEl = card.querySelector('.player-name');
-          const avatarEl = card.querySelector('.player-avatar');
-          const winsEl = card.querySelector('.wins-display span:last-child');
-          const overlayEl = card.querySelector('.empty-slot-overlay');
-          
-          if (nameEl) nameEl.textContent = players[idx].name;
-          if (avatarEl) {
-            avatarEl.src = players[idx].avatar;
-            avatarEl.alt = players[idx].name;
-          }
-          if (winsEl) winsEl.textContent = players[idx].wins;
-          
-          // Remove empty overlay if player exists
-          if (overlayEl && !players[idx].isEmpty) {
-            overlayEl.remove();
-          } else if (!overlayEl && players[idx].isEmpty) {
-            // Add empty overlay
-            const overlay = document.createElement('div');
-            overlay.className = 'empty-slot-overlay';
-            overlay.style.cssText = `
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background: rgba(0, 0, 50, 0.9);
-              border-radius: 16px;
-              z-index: 10;
-            `;
-            card.appendChild(overlay);
-          }
+        const playerData = {
+          id: idx + 1,
+          name: p.username || p.name || `Player ${idx + 1}`,
+          wins: p.wins || 0,
+          address: p.player_address || '',
+          choice: null,
+          avatar: p.avatar || '/images/default-avatar.png',
+          isEmpty: false
+        };
+        
+        console.log(`👤 Slot ${idx + 1}:`, {
+          raw: p,
+          processed: playerData
+        });
+        
+        // If this is the current player, set playerSlot
+        if (walletParam && p.player_address && p.player_address.toLowerCase() === walletParam.toLowerCase()) {
+          playerSlot = idx;
+          console.log(`🎮 Current player slot set to: ${playerSlot}`);
         }
-      }
+        
+        return playerData;
+      });
       
-      console.log('✅ Participants loaded and cards updated:', players.map(p => ({ name: p.name, isEmpty: p.isEmpty })));
+      // Replace the entire players array
+      players.length = 0;
+      players.push(...newPlayers);
+      
+      console.log('✅ Participants mapped:', players.map(p => ({ name: p.name, isEmpty: p.isEmpty })));
+      
+      // Update all player cards
+      tubes.forEach((tube, idx) => {
+        const player = players[idx];
+        if (!tube.cardElement || !player) return;
+        
+        const nameEl = tube.cardElement.querySelector('.player-name');
+        const avatarEl = tube.cardElement.querySelector('.player-avatar');
+        const winsEl = tube.cardElement.querySelector('.wins-display span:last-child');
+        const overlayEl = tube.cardElement.querySelector('.empty-slot-overlay');
+        
+        if (nameEl) nameEl.textContent = player.name;
+        if (avatarEl) {
+          avatarEl.src = player.avatar || '/images/default-avatar.png';
+          avatarEl.alt = player.name;
+        }
+        if (winsEl) winsEl.textContent = player.wins;
+        
+        // Remove empty overlay if player exists
+        if (overlayEl && !player.isEmpty) {
+          overlayEl.remove();
+          console.log(`✅ Removed overlay from player slot ${idx + 1}`);
+        } else if (!overlayEl && player.isEmpty) {
+          // Add empty overlay
+          const overlay = document.createElement('div');
+          overlay.className = 'empty-slot-overlay';
+          overlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 50, 0.9);
+            border-radius: 16px;
+            z-index: 10;
+          `;
+          tube.cardElement.appendChild(overlay);
+        }
+      });
+      
       updatePlayerCardButtons();
       
       // Call createMobilePlayerCards via socket dependency if available, otherwise create directly
@@ -769,12 +936,18 @@ export async function initGame(params) {
   };
   
   // Auto-load participants after a short delay to ensure everything is ready
+  // This is a fallback in case init.js doesn't call it
   setTimeout(() => {
     if (gameIdParam && typeof loadParticipants === 'function') {
-      console.log('🔄 Auto-loading participants after initialization...');
+      console.log('🔄 Auto-loading participants after initialization (fallback)...');
       loadParticipants().catch(err => console.error('Auto-load failed:', err));
+    } else {
+      console.warn('⚠️ Cannot auto-load participants:', {
+        hasGameId: !!gameIdParam,
+        hasLoadParticipants: typeof loadParticipants
+      });
     }
-  }, 1000);
+  }, 1500);
   
   // Return game objects for debugging/external access
   return {

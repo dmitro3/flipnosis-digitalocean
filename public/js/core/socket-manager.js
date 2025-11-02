@@ -146,29 +146,42 @@ export function initializeSocket(dependencies) {
   });
 
   socket.on('physics_state_update', (state) => {
-    console.log('📊 Received physics state update:', {
-      phase: state?.phase,
-      currentRound: state?.currentRound,
-      roundTimer: state?.roundTimer,
-      players: state?.players ? Object.keys(state.players).length : 0
-    });
-    Object.assign(gameState, state);
-    
-    // Ensure showGameOverScreen is available - use the local constant
-    // Create a safe wrapper that always exists and is a function
-    const safeShowGameOverScreen = (typeof showGameOverScreenLocal === 'function') 
-      ? showGameOverScreenLocal 
-      : ((winnerIndex, winnerName) => {
-          console.error('❌ showGameOverScreen not available - game over screen cannot be shown', {
-            winnerIndex,
-            winnerName,
-            showGameOverScreenLocalType: typeof showGameOverScreenLocal
-          });
-        });
-    
-    // Pass playerSlot as mutable reference
-    const playerSlotRef = { value: playerSlot };
+    // Wrap everything in try-catch to prevent any errors from blocking state updates
     try {
+      console.log('📊 Received physics state update:', {
+        phase: state?.phase,
+        currentRound: state?.currentRound,
+        roundTimer: state?.roundTimer,
+        players: state?.players ? Object.keys(state.players).length : 0
+      });
+      
+      if (!state) {
+        console.warn('⚠️ Received null/undefined state update');
+        return;
+      }
+      
+      Object.assign(gameState, state);
+      
+      // Ensure showGameOverScreen is available - use the local constant
+      // Create a safe wrapper that always exists and is a function
+      let safeShowGameOverScreen;
+      try {
+        safeShowGameOverScreen = (typeof showGameOverScreenLocal === 'function') 
+          ? showGameOverScreenLocal 
+          : ((winnerIndex, winnerName) => {
+              console.warn('⚠️ showGameOverScreen not available - game over screen cannot be shown', {
+                winnerIndex,
+                winnerName
+              });
+            });
+      } catch (e) {
+        console.error('❌ Error creating safeShowGameOverScreen wrapper:', e);
+        safeShowGameOverScreen = () => console.warn('⚠️ showGameOverScreen unavailable');
+      }
+      
+      // Pass playerSlot as mutable reference
+      const playerSlotRef = { value: playerSlot };
+      
       updateClientFromServerState(state, {
         gameOver,
         players,
@@ -191,23 +204,25 @@ export function initializeSocket(dependencies) {
         TUBE_RADIUS,
         TUBE_HEIGHT
       });
+      
       // Update parent playerSlot if it was modified
       if (playerSlotRef.value !== playerSlot) {
         // Note: playerSlot is passed by value, so we can't update it here
         // The update should happen in game-main.js's updateClientFromServerState wrapper
         console.log(`🔄 Detected slot change: ${playerSlot} -> ${playerSlotRef.value}`);
       }
+      
+      createMobilePlayerCards();
     } catch (error) {
-      console.error('❌ Error in updateClientFromServerState:', error);
+      console.error('❌ Error in physics_state_update handler:', error);
       console.error('Error details:', {
         message: error.message,
         stack: error.stack,
-        hasSafeShowGameOverScreen: typeof safeShowGameOverScreen,
-        showGameOverScreenLocalType: typeof showGameOverScreenLocal
+        statePhase: state?.phase,
+        hasShowGameOverScreenLocal: typeof showGameOverScreenLocal !== 'undefined'
       });
-      // Continue anyway - don't block state updates
+      // Continue anyway - don't block future state updates
     }
-    createMobilePlayerCards();
   });
 
   socket.on('physics_coin_flip_start', (data) => {

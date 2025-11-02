@@ -1,0 +1,1176 @@
+const socketIO = require('socket.io')
+const PhysicsGameManager = require('../PhysicsGameManager')
+const SocketTracker = require('./SocketTracker')
+const { FlipCollectionService } = require('../services/FlipCollectionService')
+// const FlipService = require('../services/FlipService') // Temporarily disabled for debugging
+
+  // ===== CLEAN SERVER ARCHITECTURE =====
+
+// Server handles ALL game logic - clients only send actions and render state
+
+// Helper function to check if battle royale handlers are available
+function isBattleRoyaleAvailable(handlers) {
+  return handlers && handlers.battleRoyaleHandlers && handlers.battleRoyaleManager
+}
+
+class GameServer {
+  constructor(io, dbService, blockchainService = null) {
+    this.io = io
+    this.dbService = dbService
+    this.blockchainService = blockchainService
+    
+    // Initialize managers FIRST
+    // this.gameManager = new GameManager() // TODO: Not implemented yet - for 1v1 games
+    
+    // ⚠️ DEPRECATED: Old battle royale system - removed broken imports
+    // Current client (test-tubes.html) uses ONLY PhysicsGameManager
+    this.battleRoyaleManager = null
+    
+    // ✅ ACTIVE: Physics-based game system (current implementation)
+    this.physicsGameManager = new PhysicsGameManager(blockchainService, dbService)
+    
+    // this.flipService = new FlipService() // Temporarily disabled for debugging
+    this.flipService = null // Placeholder
+    
+    // Initialize socket tracker for reliable broadcasting
+    this.socketTracker = new SocketTracker()
+    
+    // Initialize FLIP collection service
+    this.flipCollectionService = new FlipCollectionService(dbService ? dbService.databasePath : null)
+    
+    // Then instantiate handlers (FIXED: They are classes, not modules)
+    // this.oneVOneHandlers = require('./1v1SocketHandlers') // TODO: Not implemented yet
+    const PhysicsSocketHandlersClass = require('./PhysicsSocketHandlers')
+    
+    // ⚠️ DEPRECATED: Old handlers - removed broken imports
+    this.battleRoyaleHandlers = null
+    
+    // ✅ ACTIVE: Physics handlers (current implementation)
+    this.physicsHandlers = new PhysicsSocketHandlersClass()
+    
+    this.socketData = new Map() // socketId -> { address, gameId, roomId, role }
+    this.userSockets = new Map() // address -> socketId
+    this.battleRoyaleRooms = new Map() // gameId -> Set of socketIds
+    this.flipCollectionServiceReady = false // Track if service is ready
+    
+    console.log('✅ SocketService: Managers initialized:', {
+      battleRoyaleManager: !!this.battleRoyaleManager,
+      battleRoyaleHandlers: !!this.battleRoyaleHandlers,
+      physicsGameManager: !!this.physicsGameManager,
+      physicsHandlers: !!this.physicsHandlers,
+      socketTracker: !!this.socketTracker
+    })
+  }
+
+  // ===== INITIALIZATION =====
+initialize(server, dbService) {
+    console.log('🚀 Initializing Clean Game Server...')
+    
+    this.dbService = dbService
+    
+    // Add Battle Royale DB service - removed broken import
+    if (dbService && dbService.db) {
+      this.battleRoyaleDBService = null
+    }
+    
+    // Initialize FLIP collection service with proper error handling
+    if (this.flipCollectionService && this.dbService) {
+      this.flipCollectionService.databasePath = this.dbService.databasePath
+      this.flipCollectionService.initialize()
+        .then(() => {
+          console.log('✅ FLIP Collection Service initialized')
+          this.flipCollectionServiceReady = true
+        })
+        .catch(error => {
+          console.error('❌ Failed to initialize FLIP Collection Service:', error)
+          // Don't fail the entire server, just disable FLIP features
+          this.flipCollectionService = null
+          this.flipCollectionServiceReady = false
+        })
+    } else {
+      this.flipCollectionServiceReady = false
+    }
+    this.io = socketIO(server, {
+      cors: { 
+        origin: ['https://flipnosis.fun', 'https://www.flipnosis.fun', 'http://localhost:3000', 'http://localhost:5173'],
+        credentials: true 
+      },
+      transports: ['websocket', 'polling'],
+      allowEIO3: true
+    })
+
+    this.setupEventHandlers()
+    console.log('✅ Clean Game Server initialized successfully')
+    
+    return this.io
+  }
+
+  // ===== EVENT HANDLERS SETUP =====
+  setupEventHandlers() {
+    this.io.on('connection', (socket) => {
+      console.log('✅ New connection:', socket.id)
+
+      // Wrap all socket handlers in try-catch to prevent crashes
+      const safeHandler = (handler) => async (data) => {
+        try {
+          await handler(data)
+        } catch (error) {
+          console.error('❌ Socket handler error:', error)
+          socket.emit('error', { message: 'An error occurred processing your request' })
+        }
+      }
+
+      // Room management
+      socket.on('join_room', safeHandler((data) => this.handleJoinRoom(socket, data)))
+      
+      // Chat system (preserved)
+      socket.on('chat_message', safeHandler((data) => this.handleChatMessage(socket, data)))
+      
+      // Offer system (preserved - only for notifications)
+      
+      // Deposit system removed - using polling instead
+      
+      // ===== BATTLE ROYALE ACTIONS =====
+      socket.on('join_battle_royale_room', safeHandler(async (data) => {
+        console.log(`📥 join_battle_royale_room from ${socket.id}`, data)
+        const { roomId } = data
+        const rawId = roomId.replace('game_', '')
+        const isPhysics = rawId.startsWith('physics_') || roomId.includes('physics_')
+        const gameId = rawId
+        
+        // Always join socket.io room for broadcasting, including physics games
+        const normalizedRoom = roomId.startsWith('game_') ? roomId : `game_${gameId}`
+        socket.join(normalizedRoom)
+        this.socketData.set(socket.id, { address: data.address, roomId: normalizedRoom })
+        
+        // Track user socket mapping for FLIP collection notifications
+        if (data.address) {
+          this.userSockets.set(data.address.toLowerCase(), socket.id)
+          console.log(`🔗 Mapped ${data.address} to socket ${socket.id}`)
+        }
+        
+        console.log(`✅ ${data.address} joined room ${normalizedRoom}`)
+        
+        // Track socket for reliable broadcasting
+        if (this.socketTracker) {
+          this.socketTracker.addSocketToGame(gameId.replace('physics_', ''), socket.id, data.address)
+        }
+        
+        // Physics games: send current physics state immediately if available
+        if (isPhysics) {
+          console.log(`🎮 Physics game room join: ${gameId}`)
+          const state = this.physicsGameManager.getFullGameState(gameId)
+          if (state) {
+            socket.emit('physics_state_update', state)
+          } else {
+            // Trigger load via request handler path
+            const gameData = await this.dbService.getBattleRoyaleGame(gameId)
+            if (gameData) {
+              // Use loadGameFromDatabase to prevent creating multiple instances
+              const game = await this.physicsGameManager.loadGameFromDatabase(gameId, this.dbService)
+              if (game) {
+                const loadedState = this.physicsGameManager.getFullGameState(gameId)
+                if (loadedState) socket.emit('physics_state_update', loadedState)
+              }
+            }
+          }
+          return
+        }
+        
+        // Old battle royale games - disabled (missing handlers)
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
+        return this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(
+          socket, 
+          data, 
+          this.battleRoyaleManager, 
+          this.io,
+          this.dbService,
+          this.socketTracker
+        )
+      }))
+
+      socket.on('join_battle_royale', safeHandler(async (data) => {
+        console.log(`📥 join_battle_royale from ${socket.id}`, data)
+        const { gameId, address } = data || {}
+        if (gameId && (gameId.startsWith('physics_') || `${gameId}`.includes('physics_'))) {
+          // Physics game join via socket: add player to manager, persist, and broadcast
+          const added = await this.physicsGameManager.addPlayer(gameId, address, this.dbService)
+          if (added) {
+            try {
+              await this.dbService.addBattleRoyalePlayer(gameId, {
+                player_address: address.toLowerCase(),
+                slot_number: this.physicsGameManager.getGame(gameId).currentPlayers,
+                entry_paid: !!data?.betAmount,
+                entry_payment_hash: data?.payment_hash || null
+              })
+            } catch (e) {
+              console.warn('⚠️ Failed to persist player join (continuing):', e?.message)
+            }
+            this.physicsGameManager.broadcastState(gameId, (room, event, payload) => {
+              this.io.to(room).emit(event, payload)
+            })
+          } else {
+            socket.emit('battle_royale_error', { message: 'Failed to join physics game' })
+          }
+          return
+        }
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
+        return this.battleRoyaleHandlers.handleJoinBattleRoyale(
+          socket, 
+          data, 
+          this.battleRoyaleManager, 
+          this.io, 
+          this.dbService,
+          this.socketTracker
+        )
+      }))
+
+      // battle_royale_update_coin removed - coin management handled by PhysicsGameManager only
+
+      socket.on('spectate_battle_royale', safeHandler((data) => {
+        console.log(`📥 spectate_battle_royale from ${socket.id}`)
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
+        return this.battleRoyaleHandlers.handleSpectateBattleRoyale(
+          socket, 
+          data, 
+          this.battleRoyaleManager
+        )
+      }))
+
+      socket.on('request_battle_royale_state', safeHandler(async (data) => {
+        console.log(`📥 request_battle_royale_state from ${socket.id}`)
+        const { gameId } = data
+        
+        // Check if this is a physics game (all new games are)
+        if (gameId && gameId.startsWith('physics_')) {
+          // Load physics game from database if not in memory
+          let game = this.physicsGameManager.getGame(gameId)
+          
+          if (!game) {
+            // Load from database using loadGameFromDatabase to prevent multiple instances
+            const gameData = await this.dbService.getBattleRoyaleGame(gameId)
+            if (gameData) {
+              console.log(`🔄 Loading physics game from database: ${gameId}`)
+              game = await this.physicsGameManager.loadGameFromDatabase(gameId, this.dbService)
+            }
+          }
+          
+          // Send physics state
+          const state = this.physicsGameManager.getFullGameState(gameId)
+          if (state) {
+            console.log(`✅ Sending physics state for ${gameId} - Phase: ${state.phase}, Players: ${state.currentPlayers}`)
+            socket.emit('physics_state_update', state)
+          } else {
+            socket.emit('physics_error', { message: 'Game not found' })
+          }
+        } else {
+          // Old battle royale games
+          if (!isBattleRoyaleAvailable(this)) {
+            socket.emit('error', { message: 'Battle Royale system not available' })
+            return
+          }
+          return this.battleRoyaleHandlers.handleRequestBattleRoyaleState(
+            socket, 
+            data, 
+            this.battleRoyaleManager,
+            this.dbService
+          )
+        }
+      }))
+
+      socket.on('battle_royale_player_choice', safeHandler((data) => {
+        console.log(`📥 battle_royale_player_choice from ${socket.id}`, data)
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
+        return this.battleRoyaleHandlers.handleBattleRoyalePlayerChoice(
+          socket, 
+          data, 
+          this.battleRoyaleManager, 
+          this.io
+        )
+      }))
+
+      // battle_royale_flip_coin removed - coin flipping handled by PhysicsGameManager only
+
+      // Shield deploy
+      socket.on('battle_royale_deploy_shield', safeHandler((data) => {
+        console.log(`📥 battle_royale_deploy_shield from ${socket.id}`, data)
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
+        return this.battleRoyaleHandlers.handleBattleRoyaleDeployShield(
+          socket,
+          data,
+          this.battleRoyaleManager,
+          this.io
+        )
+      }))
+
+      // Lightning round activate
+      socket.on('battle_royale_activate_lightning', safeHandler((data) => {
+        console.log(`📥 battle_royale_activate_lightning from ${socket.id}`, data)
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
+        return this.battleRoyaleHandlers.handleBattleRoyaleActivateLightning(
+          socket,
+          data,
+          this.battleRoyaleManager,
+          this.io
+        )
+      }))
+
+      // ===== GLASS TUBE GAME FLIP HANDLERS =====
+      // Temporarily disabled for debugging
+      /*
+      socket.on('request_coin_flip', safeHandler(async (flipRequest) => {
+        console.log(`🪙 request_coin_flip from ${socket.id}`, flipRequest)
+        try {
+          const response = await this.flipService.startFlipSession(flipRequest)
+          socket.emit('flip_session_started', response)
+          console.log(`✅ Flip session started: ${response.flipId}`)
+        } catch (error) {
+          console.error('❌ Error starting flip session:', error)
+          socket.emit('flip_error', { 
+            error: error.message,
+            request: flipRequest 
+          })
+        }
+      }))
+
+      socket.on('resolve_flip', safeHandler(async (resolveRequest) => {
+        console.log(`🎯 resolve_flip from ${socket.id}`, resolveRequest)
+        try {
+          const { flipId } = resolveRequest
+          if (!flipId) {
+            throw new Error('Invalid resolve request: missing flipId')
+          }
+
+          const result = await this.flipService.resolveFlipSession(flipId)
+          
+          // Send result to all players in the game room
+          const gameId = result.gameId || 'unknown'
+          this.io.to(`game_${gameId}`).emit('coin_flip_result', result)
+          
+          console.log(`🎲 Flip resolved: ${flipId} -> ${result.result}`)
+        } catch (error) {
+          console.error('❌ Error resolving flip:', error)
+          socket.emit('flip_error', { 
+            error: error.message,
+            request: resolveRequest 
+          })
+        }
+      }))
+
+      socket.on('verify_flip', safeHandler(async (verifyRequest) => {
+        console.log(`🔍 verify_flip from ${socket.id}`, verifyRequest)
+        try {
+          const { flipId } = verifyRequest
+          if (!flipId) {
+            throw new Error('Invalid verify request: missing flipId')
+          }
+
+          const verification = await this.flipService.verifyFlipResult(flipId)
+          socket.emit('flip_verification', verification)
+          
+          console.log(`✅ Flip verified: ${flipId}`)
+        } catch (error) {
+          console.error('❌ Error verifying flip:', error)
+          socket.emit('flip_error', { 
+            error: error.message,
+            request: verifyRequest 
+          })
+        }
+      }))
+      */
+
+      socket.on('battle_royale_start_early', safeHandler((data) => {
+        console.log(`📥 battle_royale_start_early from ${socket.id}`, data)
+        const { gameId, address } = data || {}
+        // If this is a physics game, route to physics start logic for compatibility with clients
+        if (gameId && (gameId.startsWith('physics_') || `${gameId}`.includes('physics_'))) {
+          const game = this.physicsGameManager.getGame(gameId)
+          if (!game) {
+            socket.emit('physics_error', { message: 'Game not found' })
+            return
+          }
+          if (game.creator?.toLowerCase() !== address?.toLowerCase()) {
+            socket.emit('physics_error', { message: 'Only creator can start game' })
+            return
+          }
+          this.physicsGameManager.startGame(gameId, (room, event, payload) => {
+            console.log(`📡 Broadcasting to room ${room}:`, { event, payload: { phase: payload?.phase, currentRound: payload?.currentRound } })
+            this.io.to(room).emit(event, payload)
+          })
+          return
+        }
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
+        return this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(
+          socket, 
+          data, 
+          this.battleRoyaleManager, 
+          this.io, 
+          this.dbService
+        )
+      }))
+
+      // ===== PHYSICS GAME ACTIONS =====
+      socket.on('physics_join_room', safeHandler((data) => {
+        console.log(`🔥 physics_join_room from ${socket.id}`, data)
+        return this.physicsHandlers.handleJoinPhysicsRoom(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io,
+          this.dbService,
+          this.socketTracker
+        )
+      }))
+
+      socket.on('physics_request_state', safeHandler((data) => {
+        console.log(`🔥 physics_request_state from ${socket.id}`, data)
+        return this.physicsHandlers.handleRequestPhysicsState(
+          socket, 
+          data, 
+          this.physicsGameManager,
+          this.dbService
+        )
+      }))
+
+      socket.on('physics_join', safeHandler((data) => {
+        console.log(`🔥 physics_join from ${socket.id}`, data)
+        
+        // Track user socket mapping for FLIP collection notifications
+        if (data.address) {
+          this.userSockets.set(data.address.toLowerCase(), socket.id)
+          console.log(`🔗 Mapped ${data.address} to socket ${socket.id}`)
+        }
+        
+        return this.physicsHandlers.handleJoinPhysics(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io,
+          this.dbService,
+          this.socketTracker
+        )
+      }))
+
+      socket.on('physics_set_choice', safeHandler((data) => {
+        console.log(`🔥 physics_set_choice from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsSetChoice(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      socket.on('physics_flip_coin', safeHandler((data) => {
+        console.log(`🔥 physics_flip_coin from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsFlipCoin(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      socket.on('physics_update_coin', safeHandler((data) => {
+        console.log(`🔥 physics_update_coin from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsUpdateCoin(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io,
+          this.dbService,
+          this.socketTracker
+        )
+      }))
+
+      socket.on('physics_start_early', safeHandler((data) => {
+        console.log(`🔥 physics_start_early from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsStartEarly(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io,
+          this.dbService
+        )
+      }))
+
+      socket.on('physics_spectate', safeHandler((data) => {
+        console.log(`🔥 physics_spectate from ${socket.id}`, data)
+        return this.physicsHandlers.handleSpectatePhysics(
+          socket, 
+          data, 
+          this.physicsGameManager
+        )
+      }))
+
+      socket.on('physics_update_material', safeHandler((data) => {
+        console.log(`🔥 physics_update_material from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsUpdateMaterial(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      socket.on('physics_request_update', safeHandler((data) => {
+        console.log(`🔥 physics_request_update from ${socket.id}`, data)
+        return this.physicsHandlers.handleRequestPhysicsUpdate(
+          socket, 
+          data, 
+          this.physicsGameManager
+        )
+      }))
+
+      socket.on('physics_charge_power', safeHandler((data) => {
+        console.log(`🔥 physics_charge_power from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsChargePower(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      // 🎯 NEW: Handle power charging start
+      socket.on('physics_power_charging_start', safeHandler((data) => {
+        console.log(`🔥 physics_power_charging_start from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsPowerChargingStart(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      // 🎯 NEW: Handle power charging stop
+      socket.on('physics_power_charging_stop', safeHandler((data) => {
+        console.log(`🔥 physics_power_charging_stop from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsPowerChargingStop(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      socket.on('physics_update_coin_angle', safeHandler((data) => {
+        console.log(`🔥 physics_update_coin_angle from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsUpdateCoinAngle(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
+      // ===== COIN UNLOCKING SYSTEM =====
+      socket.on('get_player_profile', safeHandler(async (data) => {
+        console.log(`👤 get_player_profile from ${socket.id}`, data)
+        try {
+          const { address } = data
+          if (!address) {
+            socket.emit('error', { message: 'Address is required' })
+            return
+          }
+
+          const profile = await this.dbService.getProfileByAddress(address)
+          console.log(`📊 Raw profile from DB:`, profile)
+          if (!profile) {
+            // Create default profile if doesn't exist
+            const defaultProfile = {
+              address: address,
+              flip_balance: 0,
+              unlocked_coins: '["plain"]',
+              custom_coin_heads: null,
+              custom_coin_tails: null
+            }
+            await this.dbService.createOrUpdateProfile(defaultProfile)
+            console.log(`✅ Created new profile:`, defaultProfile)
+            socket.emit('player_profile_data', defaultProfile)
+          } else {
+          // Ensure the profile has the new fields with defaults
+          // NOTE: FLIP tokens are now stored in 'flip_balance' field
+          const profileWithDefaults = {
+            ...profile,
+            flip_balance: profile.flip_balance || profile.xp || 0, // Use flip_balance field, fallback to xp for old profiles
+            unlocked_coins: profile.unlocked_coins || '["plain"]',
+            custom_coin_heads: profile.headsImage || profile.custom_coin_heads || null,
+            custom_coin_tails: profile.tailsImage || profile.custom_coin_tails || null
+          }
+            console.log(`📊 Profile with defaults:`, profileWithDefaults)
+            socket.emit('player_profile_data', profileWithDefaults)
+          }
+        } catch (error) {
+          console.error('❌ Error getting player profile:', error)
+          socket.emit('error', { message: 'Failed to get player profile' })
+        }
+      }))
+
+      // Check Master Field balance
+      socket.on('get_master_field_balance', safeHandler(async (data) => {
+        console.log(`💰 get_master_field_balance from ${socket.id}`)
+        try {
+          const MASTER_ADDRESS = '0x0000000000000000000000000000000000000000'
+          const masterProfile = await this.dbService.getProfileByAddress(MASTER_ADDRESS)
+          const masterBalance = masterProfile ? (masterProfile.xp || 0) : 0
+          
+          socket.emit('master_field_balance', { 
+            balance: masterBalance,
+            address: MASTER_ADDRESS
+          })
+          console.log(`💰 Master Field balance: ${masterBalance} FLIP`)
+        } catch (error) {
+          console.error('❌ Error getting Master Field balance:', error)
+          socket.emit('error', { message: 'Failed to get Master Field balance' })
+        }
+      }))
+
+      socket.on('unlock_coin', safeHandler(async (data) => {
+        console.log(`\n${'='.repeat(60)}`)
+        console.log(`🔓 COIN UNLOCK REQUEST`)
+        console.log(`Socket: ${socket.id}`)
+        console.log(`Data:`, JSON.stringify(data, null, 2))
+        
+        const { address, coinId, cost } = data
+        
+        // Validate input
+        if (!address || !coinId || cost === undefined) {
+          console.error(`❌ Missing required fields`)
+          socket.emit('coin_unlocked', { 
+            success: false, 
+            error: `Missing required fields: ${!address ? 'address' : !coinId ? 'coinId' : 'cost'}` 
+          })
+          return
+        }
+
+        try {
+          // Step 1: Get profile
+          console.log(`\n1️⃣ Getting profile for: ${address}`)
+          const profile = await this.dbService.getProfileByAddress(address)
+          
+          if (!profile) {
+            console.error(`❌ Profile not found`)
+            socket.emit('coin_unlocked', { success: false, error: 'Profile not found' })
+            return
+          }
+          
+          console.log(`✅ Profile found`)
+          console.log(`   flip_balance: ${profile.flip_balance}`)
+          console.log(`   xp: ${profile.xp}`)
+          console.log(`   unlocked_coins: ${profile.unlocked_coins}`)
+
+          // Step 2: Validate unlock
+          const currentBalance = profile.flip_balance || profile.xp || 0
+          const unlockedCoins = JSON.parse(profile.unlocked_coins || '["plain"]')
+          
+          console.log(`\n2️⃣ Validating unlock`)
+          console.log(`   Current balance: ${currentBalance} FLIP`)
+          console.log(`   Cost: ${cost} FLIP`)
+          console.log(`   Already unlocked: ${unlockedCoins.join(', ')}`)
+          
+          if (unlockedCoins.includes(coinId)) {
+            console.error(`❌ Coin already unlocked`)
+            socket.emit('coin_unlocked', { success: false, error: 'Coin already unlocked' })
+            return
+          }
+          
+          if (currentBalance < cost) {
+            console.error(`❌ Insufficient balance`)
+            socket.emit('coin_unlocked', { 
+              success: false, 
+              error: `Insufficient FLIP balance. Have: ${currentBalance}, Need: ${cost}` 
+            })
+            return
+          }
+          
+          console.log(`✅ Validation passed`)
+
+          // Step 3: Update profile using direct SQL
+          const newBalance = currentBalance - cost
+          const newUnlockedCoins = [...unlockedCoins, coinId]
+          
+          console.log(`\n3️⃣ Updating profile`)
+          console.log(`   New balance: ${newBalance} FLIP`)
+          console.log(`   New unlocked coins: ${newUnlockedCoins.join(', ')}`)
+          
+          // Use direct SQL to ensure it works
+          await new Promise((resolve, reject) => {
+            this.dbService.db.run(`
+              UPDATE profiles 
+              SET flip_balance = ?, 
+                  xp = ?, 
+                  unlocked_coins = ?,
+                  updated_at = CURRENT_TIMESTAMP
+              WHERE address = ?
+            `, [newBalance, newBalance, JSON.stringify(newUnlockedCoins), address.toLowerCase()], function(err) {
+              if (err) {
+                console.error(`❌ SQL Error:`, err)
+                reject(err)
+              } else {
+                console.log(`✅ Profile updated (${this.changes} rows)`)
+                resolve(this.changes)
+              }
+            })
+          })
+
+          // Step 4: Update Master Field
+          const MASTER_ADDRESS = '0x0000000000000000000000000000000000000000'
+          
+          console.log(`\n4️⃣ Updating Master Field`)
+          const masterProfile = await this.dbService.getProfileByAddress(MASTER_ADDRESS)
+          const currentMasterBalance = masterProfile ? (masterProfile.flip_balance || masterProfile.xp || 0) : 0
+          const newMasterBalance = currentMasterBalance + cost
+          
+          console.log(`   Master balance: ${currentMasterBalance} → ${newMasterBalance}`)
+          
+          if (masterProfile) {
+            await new Promise((resolve, reject) => {
+              this.dbService.db.run(`
+                UPDATE profiles 
+                SET flip_balance = ?, xp = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE address = ?
+              `, [newMasterBalance, newMasterBalance, MASTER_ADDRESS], function(err) {
+                if (err) reject(err)
+                else resolve()
+              })
+            })
+          } else {
+            await this.dbService.createOrUpdateProfile({
+              address: MASTER_ADDRESS,
+              username: 'Master Field',
+              flip_balance: newMasterBalance,
+              xp: newMasterBalance,
+              unlocked_coins: '["plain"]'
+            })
+          }
+          
+          console.log(`✅ Master Field updated`)
+
+          // Step 5: Record transaction
+          console.log(`\n5️⃣ Recording transaction`)
+          await this.dbService.recordCoinUnlockTransaction(
+            address, 
+            coinId, 
+            cost, 
+            currentBalance, 
+            newBalance
+          )
+          console.log(`✅ Transaction recorded`)
+
+          // Step 6: Send success response
+          console.log(`\n✅ UNLOCK SUCCESSFUL`)
+          console.log(`${'='.repeat(60)}\n`)
+          
+          socket.emit('coin_unlocked', { 
+            success: true, 
+            newBalance: newBalance,
+            unlockedCoins: newUnlockedCoins
+          })
+
+        } catch (error) {
+          console.error(`\n❌ UNLOCK FAILED`)
+          console.error(`Error:`, error.message)
+          console.error(`Stack:`, error.stack)
+          console.error(`${'='.repeat(60)}\n`)
+          
+          socket.emit('coin_unlocked', { 
+            success: false, 
+            error: `Server error: ${error.message}` 
+          })
+        }
+      }))
+
+      // Award FLIP tokens for coin flips
+      socket.on('award_flip_tokens', safeHandler(async (data) => {
+        console.log(`💰 award_flip_tokens from ${socket.id}`, data)
+        const { gameId, address, amount, reason } = data
+        
+        try {
+          // Record FLIP earning (not immediately added to XP - collected later)
+          await this.flipCollectionService.recordFlipEarning(gameId, address, amount, reason)
+          
+          // Send confirmation back to client
+          socket.emit('flip_tokens_awarded', {
+            success: true,
+            amount: amount,
+            message: `+${amount} FLIP earned! Collect at game end.`
+          })
+          
+          console.log(`✅ Recorded ${amount} FLIP earnings for ${address}`)
+        } catch (error) {
+          console.error('Error recording FLIP tokens:', error)
+          socket.emit('flip_tokens_awarded', {
+            success: false,
+            error: 'Failed to record FLIP tokens'
+          })
+        }
+      }))
+
+      // Award FLIP tokens directly when game ends
+      socket.on('award_flip_tokens_final', safeHandler(async (data) => {
+        console.log(`🎁 award_flip_tokens_final from ${socket.id}`, data)
+        const { gameId, address, totalFlip, gameResult } = data
+        
+        try {
+          // Award FLIP tokens directly to player's profile
+          const result = await new Promise((resolve, reject) => {
+            this.dbService.db.run(
+              `UPDATE profiles 
+               SET flip_balance = COALESCE(flip_balance, 0) + ?, xp = xp + ?, updated_at = CURRENT_TIMESTAMP
+               WHERE address = ?`,
+              [totalFlip, totalFlip, address.toLowerCase()],
+              function(err) {
+                if (err) {
+                  reject(err)
+                } else {
+                  resolve({ changes: this.changes })
+                }
+              }
+            )
+          })
+          
+          if (result.changes > 0) {
+            // Send success confirmation to client
+            socket.emit('flip_tokens_awarded_final', {
+              success: true,
+              totalFlip: totalFlip,
+              gameResult: gameResult,
+              message: `+${totalFlip} FLIP tokens added to your profile!`
+            })
+            
+            console.log(`✅ Awarded ${totalFlip} FLIP tokens directly to ${address}`)
+          } else {
+            // Player profile doesn't exist, create one
+            await new Promise((resolve, reject) => {
+              this.dbService.db.run(
+                `INSERT INTO profiles (address, flip_balance, xp, created_at, updated_at)
+                 VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [address.toLowerCase(), totalFlip, totalFlip],
+                function(err) {
+                  if (err) {
+                    reject(err)
+                  } else {
+                    resolve()
+                  }
+                }
+              )
+            })
+            
+            socket.emit('flip_tokens_awarded_final', {
+              success: true,
+              totalFlip: totalFlip,
+              gameResult: gameResult,
+              message: `+${totalFlip} FLIP tokens added to your new profile!`
+            })
+            
+            console.log(`✅ Created new profile and awarded ${totalFlip} FLIP tokens to ${address}`)
+          }
+        } catch (error) {
+          console.error('Error awarding FLIP tokens directly:', error)
+          socket.emit('flip_tokens_awarded_final', {
+            success: false,
+            error: 'Failed to award FLIP tokens'
+          })
+        }
+      }))
+
+      // Collect FLIP tokens
+      socket.on('collect_flip_tokens', safeHandler(async (data) => {
+        console.log(`💎 collect_flip_tokens from ${socket.id}`, data)
+        const { collectionId, address } = data
+        
+        // Check if service is ready
+        if (!this.flipCollectionService || !this.flipCollectionServiceReady) {
+          console.error('❌ FlipCollectionService not ready for collection')
+          socket.emit('flip_tokens_collected', {
+            success: false,
+            error: 'FLIP collection service not available'
+          })
+          return
+        }
+        
+        try {
+          const result = await this.flipCollectionService.collectFlipTokens(collectionId, address)
+          
+          // Send confirmation back to client
+          socket.emit('flip_tokens_collected', {
+            success: true,
+            collected: result.collected,
+            gameResult: result.gameResult,
+            message: `+${result.collected} XP collected!`
+          })
+          
+          console.log(`✅ Collected ${result.collected} FLIP for ${address}`)
+        } catch (error) {
+          console.error('Error collecting FLIP tokens:', error)
+          socket.emit('flip_tokens_collected', {
+            success: false,
+            error: error.message
+          })
+        }
+      }))
+
+      // Claim NFT for winner
+      socket.on('claim_nft', safeHandler(async (data) => {
+        console.log(`🏆 claim_nft from ${socket.id}`, data)
+        const { collectionId, address } = data
+        
+        try {
+          const result = await this.flipCollectionService.claimNFT(collectionId, address)
+          
+          // Send confirmation back to client
+          socket.emit('nft_claimed', {
+            success: true,
+            nftClaimed: result.nftClaimed,
+            message: 'NFT claimed successfully!'
+          })
+          
+          console.log(`✅ NFT claimed for ${address}`)
+        } catch (error) {
+          console.error('Error claiming NFT:', error)
+          socket.emit('nft_claimed', {
+            success: false,
+            error: error.message
+          })
+        }
+      }))
+
+      // Claim NFT prize for Battle Royale winner
+      socket.on('claim_nft_prize', safeHandler(async (data) => {
+        console.log(`🏆 claim_nft_prize from ${socket.id}`, data)
+        const { gameId, address } = data
+        
+        try {
+          if (!this.blockchainService || !this.blockchainService.hasOwnerWallet()) {
+            throw new Error('Blockchain service not configured')
+          }
+          
+          // Call smart contract to claim NFT prize
+          const result = await this.blockchainService.withdrawWinnerNFT(gameId, address)
+          
+          if (result.success) {
+            // Send confirmation back to client
+            socket.emit('nft_prize_claimed', {
+              success: true,
+              transactionHash: result.transactionHash,
+              message: 'NFT prize claimed successfully!'
+            })
+            
+            console.log(`✅ NFT prize claimed for ${address} in game ${gameId}`)
+          } else {
+            throw new Error(result.error || 'Failed to claim NFT prize')
+          }
+        } catch (error) {
+          console.error('Error claiming NFT prize:', error)
+          socket.emit('nft_prize_claimed', {
+            success: false,
+            error: error.message
+          })
+        }
+      }))
+
+      // Handle game over event for FLIP collection
+      socket.on('game_over', safeHandler(async (data) => {
+        console.log(`🏁 Game over event from ${socket.id}`, data)
+        const { gameId, winner, finalState } = data
+        
+        if (this.flipCollectionService && finalState && finalState.players) {
+          console.log(`🎁 Creating collection sessions for ${Object.keys(finalState.players).length} players`)
+          
+          // Create collection sessions for all players
+          for (const [address, playerData] of Object.entries(finalState.players)) {
+            try {
+              const gameResult = address.toLowerCase() === winner?.toLowerCase() ? 'won' : 'lost'
+              console.log(`🎁 Creating collection for ${address}: ${gameResult}`)
+              
+              const collection = await this.flipCollectionService.createCollectionSession(
+                gameId, 
+                address, 
+                gameResult
+              )
+              
+              console.log(`✅ Collection created for ${address}: ${collection.totalFlip} FLIP`)
+              
+              // Notify the specific player about their collection
+              const playerSocket = this.userSockets.get(address.toLowerCase())
+              if (playerSocket) {
+                const targetSocket = this.io.sockets.sockets.get(playerSocket)
+                if (targetSocket) {
+                  targetSocket.emit('flip_collection_created', {
+                    success: true,
+                    collectionId: collection.collectionId,
+                    totalFlip: collection.totalFlip,
+                    gameResult: collection.gameResult,
+                    expiresAt: collection.expiresAt
+                  })
+                  console.log(`📤 Sent collection notification to ${address}`)
+                }
+              }
+            } catch (error) {
+              console.error(`❌ Error creating collection for ${address}:`, error)
+              // Send fallback notification to client
+              const playerSocket = this.userSockets.get(address.toLowerCase())
+              if (playerSocket) {
+                const targetSocket = this.io.sockets.sockets.get(playerSocket)
+                if (targetSocket) {
+                  targetSocket.emit('flip_collection_created', {
+                    success: false,
+                    error: 'Server collection session failed, using fallback',
+                    fallback: true
+                  })
+                }
+              }
+            }
+          }
+        } else {
+          console.log(`⚠️ No FLIP collection service or players data available`)
+          if (!this.flipCollectionService) {
+            console.log(`❌ FLIP collection service is null`)
+          }
+          if (!finalState) {
+            console.log(`❌ No finalState provided`)
+          }
+          if (!finalState?.players) {
+            console.log(`❌ No players in finalState`)
+          }
+        }
+      }))
+
+      // Legacy physics events for compatibility
+      socket.on('physics_fire_coin', safeHandler((data) => {
+        console.log(`🔥 physics_fire_coin (legacy) from ${socket.id}`, data)
+        const { gameId, address, angle, power } = data
+        this.physicsGameManager.fireCoin(gameId, address, angle, power, (room, event, payload) => {
+          this.io.to(room).emit(event, payload)
+        })
+      }))
+
+      socket.on('physics_start_game', safeHandler((data) => {
+        console.log(`🔥 physics_start_game (legacy) from ${socket.id}`)
+        const { gameId, address } = data
+        const game = this.physicsGameManager.getGame(gameId)
+        if (!game) {
+          socket.emit('physics_error', { message: 'Game not found' })
+          return
+        }
+        if (game.creator?.toLowerCase() !== address?.toLowerCase()) {
+          socket.emit('physics_error', { message: 'Only creator can start game' })
+          return
+        }
+        this.physicsGameManager.startGame(gameId, (room, event, payload) => {
+          console.log(`📡 Broadcasting to room ${room}:`, { event, payload: { phase: payload?.phase, currentRound: payload?.currentRound } })
+          this.io.to(room).emit(event, payload)
+        })
+      }))
+      
+      // Disconnection
+      socket.on('disconnect', safeHandler(() => this.handleDisconnect(socket)))
+    })
+  }
+
+  // ===== ROOM MANAGEMENT =====
+  handleJoinRoom(socket, data) {
+    const { roomId, address } = data
+    console.log(`🏠 ${address} joining room: ${roomId}`)
+    
+    socket.join(roomId)
+    this.socketData.set(socket.id, { address, roomId })
+    
+    // Handle Battle Royale room joins
+    if (roomId.startsWith('game_')) {
+      const gameId = roomId.substring(5)
+      
+      // Skip old handler for physics games - they use request_battle_royale_state instead
+      if (!gameId.startsWith('physics_')) {
+        if (!isBattleRoyaleAvailable(this)) {
+          socket.emit('error', { message: 'Battle Royale system not available' })
+          return
+        }
+        this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(
+          socket, 
+          { roomId, address }, 
+          this.battleRoyaleManager, 
+          this.io,
+          this.dbService
+        )
+      }
+    }
+    
+    console.log(`✅ ${address} joined room ${roomId}`)
+  }
+
+  // ===== CHAT SYSTEM =====
+  async handleChatMessage(socket, data) {
+    const { roomId, message, address } = data
+    console.log(`💬 Chat from ${address} in ${roomId}: ${message}`)
+    
+    // Save to database using existing chat_messages table
+    if (this.dbService) {
+      try {
+        // Use roomId as-is for chat_messages table
+        await this.dbService.saveChatMessage(roomId, address, message)
+        console.log(`✅ Chat message saved to database for room ${roomId}`)
+      } catch (error) {
+        console.error('❌ Error saving chat message:', error)
+      }
+    }
+    
+    // Broadcast to room
+    socket.to(roomId).emit('chat_message', {
+      address,
+      message,
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  // ===== DISCONNECTION =====
+  handleDisconnect(socket) {
+    const socketData = this.socketData.get(socket.id)
+    if (socketData) {
+      console.log(`❌ ${socketData.address} disconnected from ${socketData.roomId}`)
+      this.socketData.delete(socket.id)
+      
+      // Clean up user socket mapping
+      if (socketData.address) {
+        this.userSockets.delete(socketData.address.toLowerCase())
+        console.log(`🔗 Unmapped ${socketData.address} from socket ${socket.id}`)
+      }
+    }
+    
+    // Clean up from socket tracker
+    this.socketTracker.removeSocket(socket.id)
+    
+    console.log(`🧹 Socket ${socket.id} cleaned up from all trackers`)
+  }
+}
+
+// Export the initialization function that server.js expects
+function initializeSocketIO(server, dbService, blockchainService = null) {
+  const gameServer = new GameServer(null, dbService, blockchainService)
+  const io = gameServer.initialize(server, dbService)
+  return { io, gameServer }
+}
+
+module.exports = { initializeSocketIO }
