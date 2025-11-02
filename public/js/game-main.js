@@ -286,8 +286,9 @@ export async function initGame(params) {
     updatePlayerCardChoice,
     applyCoinSelection,
     handleGameEnd,
-    updateClientFromServerState: (state) => {
-      updateClientFromServerState(state, {
+    updateClientFromServerState: (state, overrideDeps) => {
+      // Use override dependencies if provided (from socket-manager), otherwise use local ones
+      const deps = overrideDeps || {
         gameOver,
         players,
         tubes,
@@ -311,7 +312,8 @@ export async function initGame(params) {
           gameOver = true;
           // TODO: Show game over screen UI
         }
-      });
+      };
+      updateClientFromServerState(state, deps);
     },
     createMobilePlayerCards: () => {
       // Mobile UI creation
