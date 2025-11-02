@@ -647,9 +647,8 @@ export async function initGame(params) {
   // Now that socket exists, update showCoinSelector to use it
   socketDeps.showCoinSelector = (tubeIndex) => {
     console.log(`🪙 showCoinSelector called for tube ${tubeIndex}`);
-    // Import path relative to game-main.js location (js/ folder)
-    // game-main.js is in js/, coin-selector.js is in js/ui/, so we use ./ui/coin-selector.js
-    import('./ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
+    // Use absolute path from root to ensure it resolves correctly on production server
+    import('/js/ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
       showSelector(tubeIndex, {
         tubes,
         players,
@@ -774,7 +773,7 @@ export async function initGame(params) {
             showCoinSelectorFunc(currentPlayerSlot);
           } else {
             // Fallback: import and call directly
-            import('./ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
+            import('/js/ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
               showSelector(currentPlayerSlot, {
                 tubes,
                 players,
@@ -809,6 +808,56 @@ export async function initGame(params) {
         e.preventDefault();
         const globalBtn = document.getElementById('global-change-coin-btn');
         if (globalBtn) globalBtn.click();
+      });
+    }
+    
+    // Also hook up the desktop HTML button (#change-coin-btn) if it exists
+    const desktopChangeCoinBtn = document.getElementById('change-coin-btn');
+    if (desktopChangeCoinBtn) {
+      desktopChangeCoinBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🪙 Desktop change coin button clicked');
+        
+        let currentPlayerSlot = playerSlot;
+        
+        if (currentPlayerSlot === undefined || currentPlayerSlot < 0) {
+          currentPlayerSlot = players.findIndex(p => p.address && walletParam && p.address.toLowerCase() === walletParam.toLowerCase());
+          console.log(`🔍 Fallback search found player slot: ${currentPlayerSlot}`);
+        }
+        
+        if (currentPlayerSlot !== undefined && currentPlayerSlot >= 0) {
+          console.log(`🪙 Opening coin selector for player slot ${currentPlayerSlot}`);
+          // Use the stored showCoinSelector function
+          if (showCoinSelectorFunc) {
+            showCoinSelectorFunc(currentPlayerSlot);
+          } else {
+            // Fallback: import and call directly
+            import('/js/ui/coin-selector.js').then(({ showCoinSelector: showSelector }) => {
+              showSelector(currentPlayerSlot, {
+                tubes,
+                players,
+                coinOptions,
+                coinMaterials,
+                walletParam,
+                gameIdParam,
+                playerSlot,
+                socket,
+                isServerSideMode,
+                webglRenderer,
+                applyCoinSelection
+              });
+            }).catch(err => {
+              console.error('❌ Failed to load coin selector:', err);
+            });
+          }
+        } else {
+          console.warn('⚠️ Player slot not found for coin selection', {
+            playerSlot,
+            walletParam,
+            players: players.map((p, i) => ({ slot: i, address: p.address, name: p.name }))
+          });
+        }
       });
     }
   }, 100);
