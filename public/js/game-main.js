@@ -650,6 +650,9 @@ export async function initGame(params) {
     }
   });
   
+  // Initialize socket with dependencies
+  const socket = initializeSocket(socketDeps);
+  
   // Update tube dependencies with socket
   tubeDependencies.socket = socket;
   
