@@ -567,7 +567,6 @@ export async function initGame(params) {
     updatePearlColors: PearlPhysics.updatePearlColors,
     showFloatingMessage,
     showResult,
-    updateRoundDisplay,
     showXPAwardNotification: () => console.log('⭐ XP awarded'),
     showGamePhaseIndicator: () => console.log('📊 Phase indicator'),
     showGameStartNotification: () => {
