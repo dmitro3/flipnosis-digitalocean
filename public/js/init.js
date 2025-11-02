@@ -151,7 +151,17 @@ async function initialize() {
               setTimeout(() => gameInstance.loadParticipants(), 500);
             }
           } else {
-            console.warn('⚠️ Join failed:', data?.error || res.statusText);
+            // Check if error is "already joined" - that's actually fine
+            const errorMsg = data?.error || res.statusText || '';
+            if (errorMsg.toLowerCase().includes('already joined')) {
+              console.log('✅ Player already in game - this is fine, reloading participants');
+              // Reload participants to ensure we have the latest state
+              if (gameInstance && typeof gameInstance.loadParticipants === 'function') {
+                setTimeout(() => gameInstance.loadParticipants(), 500);
+              }
+            } else {
+              console.warn('⚠️ Join failed:', errorMsg);
+            }
           }
         } catch (err) {
           console.error('❌ Join error:', err);

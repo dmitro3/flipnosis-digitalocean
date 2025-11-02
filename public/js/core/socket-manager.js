@@ -166,6 +166,8 @@ export function initializeSocket(dependencies) {
           });
         });
     
+    // Pass playerSlot as mutable reference
+    const playerSlotRef = { value: playerSlot };
     updateClientFromServerState(state, {
       gameOver,
       players,
@@ -173,7 +175,8 @@ export function initializeSocket(dependencies) {
       coins,
       scene,
       physicsWorld,
-      playerSlot,
+      playerSlot: playerSlotRef.value,
+      playerSlotRef, // Mutable reference for updates
       walletParam,
       gameIdParam,
       currentRound,
@@ -187,6 +190,12 @@ export function initializeSocket(dependencies) {
       TUBE_RADIUS,
       TUBE_HEIGHT
     });
+    // Update parent playerSlot if it was modified
+    if (playerSlotRef.value !== playerSlot) {
+      // Note: playerSlot is passed by value, so we can't update it here
+      // The update should happen in game-main.js's updateClientFromServerState wrapper
+      console.log(`🔄 Detected slot change: ${playerSlot} -> ${playerSlotRef.value}`);
+    }
     createMobilePlayerCards();
   });
 

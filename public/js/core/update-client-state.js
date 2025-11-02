@@ -24,6 +24,7 @@ export function updateClientFromServerState(state, dependencies) {
     scene,
     physicsWorld,
     playerSlot,
+    playerSlotRef, // Mutable reference for updating playerSlot
     walletParam,
     gameIdParam,
     currentRound,
@@ -106,12 +107,28 @@ export function updateClientFromServerState(state, dependencies) {
     const normalizedAddress = walletParam.toLowerCase();
     const player = state.players[normalizedAddress];
     if (player) {
-      playerSlot = player.slotNumber;
-      console.log(`🎮 Player slot: ${playerSlot}`);
+      // Get the detected slot number from server state
+      const detectedSlot = player.slotNumber;
+      console.log(`🎮 Server detected player slot: ${detectedSlot} (current local slot: ${playerSlot})`);
 
-      if (playerSlot >= 0 && playerSlot < 4) {
-        tubes[playerSlot].isCurrentPlayer = true;
-        players[playerSlot].isCurrentPlayer = true;
+      // Update playerSlot if we have a mutable reference, otherwise use detected slot for operations
+      let slotToUse = playerSlot;
+      if (detectedSlot >= 0 && detectedSlot < 4) {
+        if (playerSlotRef) {
+          // Update via mutable reference
+          playerSlotRef.value = detectedSlot;
+          slotToUse = detectedSlot;
+        } else {
+          // Use detected slot for this operation only
+          slotToUse = detectedSlot;
+        }
+      }
+      
+      if (slotToUse >= 0 && slotToUse < 4) {
+        tubes[slotToUse].isCurrentPlayer = true;
+        if (players[slotToUse]) {
+          players[slotToUse].isCurrentPlayer = true;
+        }
       }
 
       updatePlayerCardButtons();
@@ -283,10 +300,10 @@ export function updateClientFromServerState(state, dependencies) {
             const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
             const choiceBadge = tube.cardElement.querySelector('.choice-badge');
 
-            if (choiceButtons && choiceBadge) {
-              choiceBadge.style.display = 'none';
-              if (playerSlot === i) {
-                choiceButtons.style.display = 'flex';
+              if (choiceButtons && choiceBadge) {
+                choiceBadge.style.display = 'none';
+                if (playerSlot >= 0 && playerSlot === i) {
+                  choiceButtons.style.display = 'flex';
 
                 const choiceBtnElements = tube.cardElement.querySelectorAll('.choice-btn');
                 choiceBtnElements.forEach(btn => {

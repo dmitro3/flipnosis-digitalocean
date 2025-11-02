@@ -479,6 +479,8 @@ export async function initGame(params) {
     handleGameEnd,
     updateClientFromServerState: (state, overrideDeps) => {
       // Use override dependencies if provided (from socket-manager), otherwise use local ones
+      // Pass playerSlot as part of a mutable object so it can be updated
+      const playerSlotRef = { value: playerSlot };
       const deps = overrideDeps || {
         gameOver,
         players,
@@ -486,7 +488,8 @@ export async function initGame(params) {
         coins,
         scene,
         physicsWorld,
-        playerSlot,
+        playerSlot: playerSlotRef.value,
+        playerSlotRef, // Mutable reference
         walletParam,
         gameIdParam,
         currentRound,
@@ -500,7 +503,13 @@ export async function initGame(params) {
         updatePearlColors: PearlPhysics.updatePearlColors,
         showGameOverScreen
       };
-      updateClientFromServerState(state, deps);
+      const result = updateClientFromServerState(state, deps);
+      // Update playerSlot if it was modified
+      if (deps.playerSlotRef && deps.playerSlotRef.value !== playerSlot) {
+        playerSlot = deps.playerSlotRef.value;
+        console.log(`🔄 Updated playerSlot to: ${playerSlot}`);
+      }
+      return result;
     },
     createMobilePlayerCards: () => {
       const container = document.getElementById('mobile-player-cards');
