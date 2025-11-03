@@ -1096,13 +1096,7 @@ const Home = () => {
 
           {filteredItems.length === 0 ? (
             <GlassCard style={{ textAlign: 'center', padding: '3rem', border: `2px solid ${theme.colors.neonPink}` }}>
-              <NeonText style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Games Available</NeonText>
-              <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
-                Be the first to create a battle royale game!
-              </p>
-              <Button as={Link} to="/create" style={{ background: theme.colors.neonGreen }}>
-                Create Flip
-              </Button>
+              <NeonText style={{ fontSize: '2rem' }}>Coming Soon</NeonText>
             </GlassCard>
           ) : (
             <div style={{
