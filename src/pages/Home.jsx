@@ -1919,7 +1919,6 @@ const Home = () => {
                                 <ListViewCollection>{item.nft?.collection || 'Unknown Collection'}</ListViewCollection>
                                 <ListViewStats>
                                   <ListViewStat>
-                                    <span>Price</span>
                                     <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.1rem' }}>
                                       {(() => {
                                         if (item.gameType === 'battle-royale') {
@@ -1942,7 +1941,6 @@ const Home = () => {
                                     </div>
                                   </ListViewStat>
                                   <ListViewStat>
-                                    <span>Status</span>
                                     <div style={{ color: getStatusColor(item.status), fontWeight: 'bold' }}>
                                       {getStatusText(item.status)}
                                     </div>
