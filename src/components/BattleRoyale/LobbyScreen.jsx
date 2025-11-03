@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import styled from '@emotion/styled'
 import { ethers } from 'ethers'
 import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
@@ -166,15 +166,28 @@ const ActionButton = styled.button`
   }
   
   &.share-x {
-    background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 50%, #1da1f2 100%);
-    border-color: #1da1f2;
-    box-shadow: 0 0 20px rgba(29, 161, 242, 0.4);
+    background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
+    border-color: #000000;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+    color: white;
+    
+    &:hover {
+      background: linear-gradient(135deg, #1a1a1a 0%, #000000 50%, #1a1a1a 100%);
+      border-color: #333333;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
+    }
   }
   
   &.share-tg {
     background: linear-gradient(135deg, #0088cc 0%, #006699 50%, #0088cc 100%);
     border-color: #0088cc;
     box-shadow: 0 0 20px rgba(0, 136, 204, 0.4);
+    
+    &:hover {
+      background: linear-gradient(135deg, #0099dd 0%, #0088cc 50%, #0099dd 100%);
+      border-color: #00aaff;
+      box-shadow: 0 0 25px rgba(0, 136, 204, 0.6);
+    }
   }
   
   &.opensea {
@@ -480,6 +493,7 @@ const LobbyScreen = () => {
   const [showImageModal, setShowImageModal] = useState(false)
   const [escrowCheck, setEscrowCheck] = useState({ checking: false, inEscrow: null, error: null })
   const [claiming, setClaiming] = useState(false)
+  const [ethPriceUSD, setEthPriceUSD] = useState(0)
 
   // Escrow verification: check ownerOf(tokenId) equals contract address
   const verifyEscrow = useCallback(async () => {
@@ -506,6 +520,22 @@ const LobbyScreen = () => {
       setEscrowCheck({ checking: false, inEscrow: null, error: e?.message || 'Failed to verify' })
     }
   }, [gameState])
+
+  // Fetch ETH price for USD display (uses cached service, won't spam CoinGecko)
+  useEffect(() => {
+    const fetchPrice = async () => {
+      try {
+        const price = await contractService.getETHPriceUSD()
+        setEthPriceUSD(price)
+      } catch (error) {
+        console.warn('Failed to fetch ETH price for display:', error)
+      }
+    }
+    fetchPrice()
+    // Refresh price every 90 seconds to stay current
+    const interval = setInterval(fetchPrice, 90000)
+    return () => clearInterval(interval)
+  }, [])
 
   if (!gameState) return null
 
@@ -767,7 +797,7 @@ const LobbyScreen = () => {
     <Container>
       {/* LEFT: NFT INFO */}
       <NFTPanel>
-        <h2 style={{ color: '#00ffff', marginTop: 0, fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 10px rgba(0, 255, 255, 0.5)' }}>🎨 NFT Prize</h2>
+        <h2 style={{ color: '#00ffff', marginTop: 0, fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 10px rgba(0, 255, 255, 0.5)' }}>Game Details</h2>
         
         <NFTImageContainer onClick={() => setShowImageModal(true)}>
           <NFTImage src={gameState.nftImage} alt={gameState.nftName} />
@@ -796,11 +826,25 @@ const LobbyScreen = () => {
         </InfoRow>
         <InfoRow>
           <span>Entry Fee:</span>
-          <strong style={{ color: '#00ff88' }}>{formatEntryFee(gameState.entryFee)} ETH</strong>
+          <strong style={{ color: '#00ff88', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <span>{formatEntryFee(gameState.entryFee)} ETH</span>
+            {ethPriceUSD > 0 && (
+              <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', marginTop: '0.15rem' }}>
+                ≈ ${(parseFloat(gameState.entryFee || '0') * ethPriceUSD).toFixed(2)} USD
+              </span>
+            )}
+          </strong>
         </InfoRow>
         <InfoRow>
           <span>Service Fee:</span>
-          <strong style={{ color: '#ffa500' }}>{formatEntryFee(gameState.serviceFee)} ETH</strong>
+          <strong style={{ color: '#ffa500', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <span>{formatEntryFee(gameState.serviceFee)} ETH</span>
+            {ethPriceUSD > 0 && (
+              <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', marginTop: '0.15rem' }}>
+                ≈ ${(parseFloat(gameState.serviceFee || '0') * ethPriceUSD).toFixed(2)} USD
+              </span>
+            )}
+          </strong>
         </InfoRow>
         <InfoRow>
           <span>Creator:</span>
@@ -815,7 +859,7 @@ const LobbyScreen = () => {
           }}>
             {gameState.room_type === 'lab' ? '🧪 The Lab' : 
              gameState.room_type === 'cyber' ? '🤖 Cyber Bay' : 
-             gameState.room_type === 'mech' ? '🔧 Mech Room' : '🧙 Potion Room'}
+             gameState.room_type === 'mech' ? '🔧 Mech Room' : 'Potion Room'}
           </strong>
         </InfoRow>
         
