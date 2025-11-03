@@ -815,10 +815,10 @@ const Home = () => {
     switch (status) {
       case 'waiting': return '🟢'
       case 'joined': return '🟠'
-      case 'active': return '🟠'
+      case 'active': return '' // No icon for LIVE
       case 'pending': return '🟡'
       case 'completed': return '🔴'
-      default: return '❓'
+      default: return '' // No icon for default/LIVE
     }
   }
 
@@ -1243,17 +1243,17 @@ const Home = () => {
                           }}>{selectedFlip.nft.name}</GameTitle>
                           <div style={{
                             background: hexToRgba(getStatusColor(selectedFlip.status), 0.9),
-                            color: selectedFlip.status === 'active' ? '#000B1A' : '#fff',
-                            padding: '0.6rem 1.2rem',
+                            color: selectedFlip.status === 'active' ? '#000033' : '#fff',
+                            padding: '0.4rem 0.8rem',
                             borderRadius: '0.25rem',
-                            fontSize: '1.6rem',
+                            fontSize: '1.1rem',
                             fontWeight: 'bold',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.3rem',
                             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
                           }}>
-                            <span>{getStatusIcon(selectedFlip.status)}</span>
+                            {getStatusIcon(selectedFlip.status) && <span>{getStatusIcon(selectedFlip.status)}</span>}
                             <span>{getStatusText(selectedFlip.status)}</span>
                           </div>
                           <div style={{
@@ -1633,7 +1633,7 @@ const Home = () => {
                             top: '0.25rem',
                             left: '0.25rem',
                             background: hexToRgba(getStatusColor(item.status), 0.9),
-                            color: item.status === 'active' ? '#000B1A' : '#fff',
+                            color: item.status === 'active' ? '#000033' : '#fff',
                             padding: window.innerWidth <= 768 ? '0.2rem 0.4rem' : '0.3rem 0.6rem',
                             borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
                             fontSize: window.innerWidth <= 768 ? '0.8rem' : '1rem',
@@ -1644,7 +1644,7 @@ const Home = () => {
                             zIndex: 10,
                             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
                           }}>
-                            <span>{getStatusIcon(item.status)}</span>
+                            {getStatusIcon(item.status) && <span>{getStatusIcon(item.status)}</span>}
                             <span>{getStatusText(item.status)}</span>
                           </div>
                           {item.nft?.needsMetadataUpdate && (
@@ -1828,7 +1828,7 @@ const Home = () => {
                               top: '0.25rem',
                               left: '0.25rem',
                               background: hexToRgba(getStatusColor(item.status), 0.9),
-                              color: item.status === 'active' ? '#000B1A' : '#fff',
+                              color: item.status === 'active' ? '#000033' : '#fff',
                               padding: '0.2rem 0.4rem',
                               borderRadius: '0.15rem',
                               fontSize: '0.8rem',
@@ -1839,7 +1839,7 @@ const Home = () => {
                               zIndex: 10,
                               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
                             }}>
-                              <span>{getStatusIcon(item.status)}</span>
+                              {getStatusIcon(item.status) && <span>{getStatusIcon(item.status)}</span>}
                               <span>{getStatusText(item.status)}</span>
                             </div>
                             {item.nft?.needsMetadataUpdate && (
