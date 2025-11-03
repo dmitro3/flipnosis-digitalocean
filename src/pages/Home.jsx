@@ -406,11 +406,13 @@ const ListViewStats = styled.div`
   align-items: center;
   flex-wrap: wrap;
 
-  /* Desktop improvements - evenly distribute stats across full width */
+  /* Desktop improvements - evenly distribute stats using grid */
   @media (min-width: 769px) {
-    gap: 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
     width: 100%;
-    justify-content: space-around;
+    align-items: start;
   }
 
   @media (max-width: 768px) {
@@ -428,14 +430,13 @@ const ListViewStat = styled.div`
   font-size: 0.9rem;
   color: ${props => props.theme.colors.textSecondary};
 
-  /* Desktop improvements - larger text size and spacing, stack vertically, evenly spaced */
+  /* Desktop improvements - larger text size and spacing, stack vertically */
   @media (min-width: 769px) {
     font-size: 1rem;
     gap: 0.5rem;
     flex-direction: column;
     align-items: flex-start;
-    flex: 1;
-    min-width: 150px;
+    width: 100%;
   }
 
   @media (max-width: 768px) {
@@ -1266,7 +1267,7 @@ const Home = () => {
                             background: 'rgba(255, 255, 255, 0.1)',
                             padding: '0.3rem 0.6rem',
                             borderRadius: '0.25rem',
-                            fontSize: '1.6rem',
+                            fontSize: window.innerWidth <= 768 ? '0.8rem' : '1.6rem',
                             border: '1px solid rgba(255, 255, 255, 0.2)',
                             display: 'flex',
                             alignItems: 'center',
@@ -1759,7 +1760,7 @@ const Home = () => {
                               background: 'rgba(255, 255, 255, 0.1)',
                               padding: '0.2rem 0.4rem',
                               borderRadius: '0.2rem',
-                              fontSize: window.innerWidth <= 768 ? '1rem' : '1.2rem',
+                              fontSize: window.innerWidth <= 768 ? '0.6rem' : '1.2rem',
                               border: '1px solid rgba(255, 255, 255, 0.2)',
                               display: 'flex',
                               alignItems: 'center',
@@ -1896,19 +1897,19 @@ const Home = () => {
                           <ListViewContent>
                             <ListViewHeader>
                               <ListViewTitle>{item.nft?.name || 'Unknown NFT'}</ListViewTitle>
-                              <div style={{
-                                background: 'rgba(255, 255, 255, 0.1)',
-                                padding: '0.3rem 0.6rem',
-                                borderRadius: '0.25rem',
-                                fontSize: '1.6rem',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.3rem'
-                              }}>
-                                <span>{getChainIcon(item.nft?.chain || 'base')}</span>
-                                <span>{getChainName(item.nft?.chain || 'base')}</span>
-                              </div>
+                            <div style={{
+                              background: 'rgba(255, 255, 255, 0.1)',
+                              padding: '0.3rem 0.6rem',
+                              borderRadius: '0.25rem',
+                              fontSize: window.innerWidth <= 768 ? '0.8rem' : '1.6rem',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.3rem'
+                            }}>
+                              <span>{getChainIcon(item.nft?.chain || 'base')}</span>
+                              <span>{getChainName(item.nft?.chain || 'base')}</span>
+                            </div>
                             </ListViewHeader>
                             <ListViewCollection>{item.nft?.collection || 'Unknown Collection'}</ListViewCollection>
                             <ListViewStats>
