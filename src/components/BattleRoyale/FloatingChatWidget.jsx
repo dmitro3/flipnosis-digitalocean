@@ -13,13 +13,13 @@ const ChatBubble = styled.div`
 `
 
 const MinimizedButton = styled.button`
-  width: 120px;
-  height: 120px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   background: linear-gradient(135deg, #00BFFF, #0080FF);
   border: 3px solid #00BFFF;
   color: white;
-  font-size: 3rem;
+  font-size: 2rem;
   cursor: pointer;
   box-shadow: 0 4px 20px rgba(0, 191, 255, 0.4);
   transition: all 0.3s ease;
@@ -34,10 +34,10 @@ const MinimizedButton = styled.button`
     &::after {
       content: '';
       position: absolute;
-      top: 5px;
-      right: 5px;
-      width: 12px;
-      height: 12px;
+      top: 3px;
+      right: 3px;
+      width: 8px;
+      height: 8px;
       background: #ff1493;
       border-radius: 50%;
       border: 2px solid white;
