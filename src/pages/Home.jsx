@@ -169,11 +169,11 @@ const FilterButton = styled(Button)`
   white-space: nowrap;
   width: 100%;
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 1.7rem;
 
   @media (max-width: 768px) {
     padding: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 1.8rem;
   }
 `
 
@@ -1243,10 +1243,10 @@ const Home = () => {
                           }}>{selectedFlip.nft.name}</GameTitle>
                           <div style={{
                             background: hexToRgba(getStatusColor(selectedFlip.status), 0.9),
-                            color: '#fff',
-                            padding: '0.3rem 0.6rem',
+                            color: selectedFlip.status === 'active' ? '#000B1A' : '#fff',
+                            padding: '0.6rem 1.2rem',
                             borderRadius: '0.25rem',
-                            fontSize: '0.8rem',
+                            fontSize: '1.6rem',
                             fontWeight: 'bold',
                             display: 'flex',
                             alignItems: 'center',
@@ -1260,7 +1260,7 @@ const Home = () => {
                             background: 'rgba(255, 255, 255, 0.1)',
                             padding: '0.3rem 0.6rem',
                             borderRadius: '0.25rem',
-                            fontSize: '0.8rem',
+                            fontSize: '1.6rem',
                             border: '1px solid rgba(255, 255, 255, 0.2)',
                             display: 'flex',
                             alignItems: 'center',
@@ -1633,10 +1633,10 @@ const Home = () => {
                             top: '0.25rem',
                             left: '0.25rem',
                             background: hexToRgba(getStatusColor(item.status), 0.9),
-                            color: '#fff',
-                            padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
+                            color: item.status === 'active' ? '#000B1A' : '#fff',
+                            padding: window.innerWidth <= 768 ? '0.2rem 0.4rem' : '0.3rem 0.6rem',
                             borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
-                            fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
+                            fontSize: window.innerWidth <= 768 ? '0.8rem' : '1rem',
                             fontWeight: 'bold',
                             display: 'flex',
                             alignItems: 'center',
@@ -1753,7 +1753,7 @@ const Home = () => {
                               background: 'rgba(255, 255, 255, 0.1)',
                               padding: '0.2rem 0.4rem',
                               borderRadius: '0.2rem',
-                              fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
+                              fontSize: window.innerWidth <= 768 ? '1rem' : '1.2rem',
                               border: '1px solid rgba(255, 255, 255, 0.2)',
                               display: 'flex',
                               alignItems: 'center',
@@ -1828,10 +1828,10 @@ const Home = () => {
                               top: '0.25rem',
                               left: '0.25rem',
                               background: hexToRgba(getStatusColor(item.status), 0.9),
-                              color: '#fff',
-                              padding: '0.1rem 0.2rem',
+                              color: item.status === 'active' ? '#000B1A' : '#fff',
+                              padding: '0.2rem 0.4rem',
                               borderRadius: '0.15rem',
-                              fontSize: '0.4rem',
+                              fontSize: '0.8rem',
                               fontWeight: 'bold',
                               display: 'flex',
                               alignItems: 'center',
@@ -1894,7 +1894,7 @@ const Home = () => {
                                 background: 'rgba(255, 255, 255, 0.1)',
                                 padding: '0.3rem 0.6rem',
                                 borderRadius: '0.25rem',
-                                fontSize: '0.8rem',
+                                fontSize: '1.6rem',
                                 border: '1px solid rgba(255, 255, 255, 0.2)',
                                 display: 'flex',
                                 alignItems: 'center',

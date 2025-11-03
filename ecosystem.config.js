@@ -21,7 +21,7 @@ module.exports = {
 
       // Platform/config
       PLATFORM_FEE_RECEIVER: process.env.PLATFORM_FEE_RECEIVER || '0x3618cf0af757f3f2b9824202e7f4a79f41d66297',
-      DATABASE_PATH: './server/database.sqlite'
+      DATABASE_PATH: '/opt/flipnosis/app/server/database.sqlite'
     },
     error_file: './logs/err.log',
     out_file: './logs/out.log',
