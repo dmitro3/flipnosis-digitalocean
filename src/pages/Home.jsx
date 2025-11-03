@@ -1168,25 +1168,27 @@ const Home = () => {
                             e.target.src = '/placeholder-nft.svg'
                           }}
                         />
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '0.5rem',
-                          right: '0.5rem',
-                          background: selectedFlip.gameType === 'nft-vs-nft' ? 
-                            'linear-gradient(45deg, #00FF41, #39FF14)' : 
-                            selectedFlip.gameType === 'battle-royale' ?
-                            'linear-gradient(45deg, #00BFFF, #0080FF)' :
-                            'linear-gradient(45deg, #FF1493, #FF69B4)',
-                          color: selectedFlip.gameType === 'nft-vs-nft' ? '#000' : '#fff',
-                          padding: '0.25rem 0.5rem',
-                          borderRadius: '0.25rem',
-                          fontSize: '0.7rem',
-                          fontWeight: 'bold'
-                        }}>
-                          {selectedFlip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : 
-                           selectedFlip.gameType === 'battle-royale' ? '🏆 BATTLE ROYALE' : 
-                           '💰 CRYPTO'}
-                        </div>
+                        {window.innerWidth > 768 && (
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '0.5rem',
+                            right: '0.5rem',
+                            background: selectedFlip.gameType === 'nft-vs-nft' ? 
+                              'linear-gradient(45deg, #00FF41, #39FF14)' : 
+                              selectedFlip.gameType === 'battle-royale' ?
+                              'linear-gradient(45deg, #00BFFF, #0080FF)' :
+                              'linear-gradient(45deg, #FF1493, #FF69B4)',
+                            color: selectedFlip.gameType === 'nft-vs-nft' ? '#000' : '#fff',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.7rem',
+                            fontWeight: 'bold'
+                          }}>
+                            {selectedFlip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : 
+                             selectedFlip.gameType === 'battle-royale' ? '🏆 BATTLE ROYALE' : 
+                             '💰 CRYPTO'}
+                          </div>
+                        )}
                       </div>
 
                       {window.innerWidth <= 768 && (
@@ -1895,54 +1897,124 @@ const Home = () => {
                             </div>
                           </ListViewImage>
                           <ListViewContent>
-                            <ListViewHeader>
-                              <ListViewTitle>{item.nft?.name || 'Unknown NFT'}</ListViewTitle>
-                            <div style={{
-                              background: 'rgba(255, 255, 255, 0.1)',
-                              padding: '0.3rem 0.6rem',
-                              borderRadius: '0.25rem',
-                              fontSize: window.innerWidth <= 768 ? '0.8rem' : '1.6rem',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.3rem'
-                            }}>
-                              <span>{getChainIcon(item.nft?.chain || 'base')}</span>
-                              <span>{getChainName(item.nft?.chain || 'base')}</span>
-                            </div>
-                            </ListViewHeader>
-                            <ListViewCollection>{item.nft?.collection || 'Unknown Collection'}</ListViewCollection>
-                            <ListViewStats>
-                              <ListViewStat>
-                                <span>Price</span>
-                                <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.1rem' }}>
-                                  {(() => {
-                                    if (item.gameType === 'battle-royale') {
-                                      const fee = item.entry_fee || 0
-                                      const ethAmount = parseFloat(fee).toFixed(6)
-                                      return (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                                          <span>{ethAmount} ETH</span>
-                                          {ethPriceUSD > 0 && (
-                                            <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
-                                              ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
-                                            </span>
-                                          )}
-                                        </div>
-                                      )
-                                    } else {
-                                      return (item.priceUSD || 0).toFixed(2) + ' USD'
-                                    }
-                                  })()}
+                            {window.innerWidth <= 768 ? (
+                              // Mobile layout - keep existing structure
+                              <>
+                                <ListViewHeader>
+                                  <ListViewTitle>{item.nft?.name || 'Unknown NFT'}</ListViewTitle>
+                                  <div style={{
+                                    background: 'rgba(255, 255, 255, 0.1)',
+                                    padding: '0.3rem 0.6rem',
+                                    borderRadius: '0.25rem',
+                                    fontSize: '0.8rem',
+                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem'
+                                  }}>
+                                    <span>{getChainIcon(item.nft?.chain || 'base')}</span>
+                                    <span>{getChainName(item.nft?.chain || 'base')}</span>
+                                  </div>
+                                </ListViewHeader>
+                                <ListViewCollection>{item.nft?.collection || 'Unknown Collection'}</ListViewCollection>
+                                <ListViewStats>
+                                  <ListViewStat>
+                                    <span>Price</span>
+                                    <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                      {(() => {
+                                        if (item.gameType === 'battle-royale') {
+                                          const fee = item.entry_fee || 0
+                                          const ethAmount = parseFloat(fee).toFixed(6)
+                                          return (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                              <span>{ethAmount} ETH</span>
+                                              {ethPriceUSD > 0 && (
+                                                <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
+                                                  ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
+                                                </span>
+                                              )}
+                                            </div>
+                                          )
+                                        } else {
+                                          return (item.priceUSD || 0).toFixed(2) + ' USD'
+                                        }
+                                      })()}
+                                    </div>
+                                  </ListViewStat>
+                                  <ListViewStat>
+                                    <span>Status</span>
+                                    <div style={{ color: getStatusColor(item.status), fontWeight: 'bold' }}>
+                                      {getStatusText(item.status)}
+                                    </div>
+                                  </ListViewStat>
+                                </ListViewStats>
+                              </>
+                            ) : (
+                              // Desktop layout - horizontal: Name+Collection | Chain | Price
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                width: '100%',
+                                gap: '2rem'
+                              }}>
+                                {/* Name and Collection */}
+                                <div style={{ flex: '1 1 30%', minWidth: 0 }}>
+                                  <ListViewTitle style={{ marginBottom: '0.5rem' }}>{item.nft?.name || 'Unknown NFT'}</ListViewTitle>
+                                  <ListViewCollection>{item.nft?.collection || 'Unknown Collection'}</ListViewCollection>
                                 </div>
-                              </ListViewStat>
-                              <ListViewStat>
-                                <span>Status</span>
-                                <div style={{ color: getStatusColor(item.status), fontWeight: 'bold' }}>
-                                  {getStatusText(item.status)}
+                                
+                                {/* Chain Badge - Middle */}
+                                <div style={{
+                                  background: 'rgba(255, 255, 255, 0.1)',
+                                  padding: '0.3rem 0.6rem',
+                                  borderRadius: '0.25rem',
+                                  fontSize: '1.6rem',
+                                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  flex: '0 0 auto'
+                                }}>
+                                  <span>{getChainIcon(item.nft?.chain || 'base')}</span>
+                                  <span>{getChainName(item.nft?.chain || 'base')}</span>
                                 </div>
-                              </ListViewStat>
-                            </ListViewStats>
+                                
+                                {/* Price - Right */}
+                                <div style={{ 
+                                  flex: '0 0 auto',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'flex-end',
+                                  minWidth: '150px'
+                                }}>
+                                  <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                    {(() => {
+                                      if (item.gameType === 'battle-royale') {
+                                        const fee = item.entry_fee || 0
+                                        const ethAmount = parseFloat(fee).toFixed(6)
+                                        return (
+                                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                            <span>{ethAmount} ETH</span>
+                                            {ethPriceUSD > 0 && (
+                                              <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
+                                                ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
+                                              </span>
+                                            )}
+                                          </div>
+                                        )
+                                      } else {
+                                        return (
+                                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                            <span>{(item.priceUSD || 0).toFixed(2)} USD</span>
+                                          </div>
+                                        )
+                                      }
+                                    })()}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </ListViewContent>
                         </ListViewItem>
                       ))

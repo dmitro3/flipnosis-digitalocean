@@ -229,3 +229,4 @@ All are official Circle USDC contracts!
 **One contract, deployed 7 times with different addresses.** Your frontend already handles multichain via RainbowKit. Just deploy and update the addresses! 🚀
 
 
+
