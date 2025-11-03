@@ -406,9 +406,11 @@ const ListViewStats = styled.div`
   align-items: center;
   flex-wrap: wrap;
 
-  /* Desktop improvements - larger spacing between stats */
+  /* Desktop improvements - larger spacing between stats and spread them out */
   @media (min-width: 769px) {
-    gap: 1.5rem;
+    gap: 2rem;
+    justify-content: space-between;
+    width: 100%;
   }
 
   @media (max-width: 768px) {
@@ -426,10 +428,13 @@ const ListViewStat = styled.div`
   font-size: 0.9rem;
   color: ${props => props.theme.colors.textSecondary};
 
-  /* Desktop improvements - larger text size and spacing */
+  /* Desktop improvements - larger text size and spacing, stack vertically */
   @media (min-width: 769px) {
     font-size: 1rem;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 120px;
   }
 
   @media (max-width: 768px) {
@@ -1931,31 +1936,8 @@ const Home = () => {
                               </ListViewStat>
                               <ListViewStat>
                                 <span>Status</span>
-                                <div style={{ color: getStatusColor(item.status) }}>
+                                <div style={{ color: getStatusColor(item.status), fontWeight: 'bold' }}>
                                   {getStatusText(item.status)}
-                                </div>
-                              </ListViewStat>
-                              <ListViewStat>
-                                <span>Price</span>
-                                <div style={{ color: theme.colors.neonBlue, fontWeight: 'bold' }}>
-                                  {(() => {
-                                    if (item.gameType === 'battle-royale') {
-                                      const fee = item.entry_fee || 0
-                                      const ethAmount = parseFloat(fee).toFixed(6)
-                                      return (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                                          <span>{ethAmount} ETH</span>
-                                          {ethPriceUSD > 0 && (
-                                            <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary, marginTop: '0.1rem' }}>
-                                              ≈ ${(parseFloat(fee) * ethPriceUSD).toFixed(2)} USD
-                                            </span>
-                                          )}
-                                        </div>
-                                      )
-                                    } else {
-                                      return (item.priceUSD || 0).toFixed(2) + ' USD'
-                                    }
-                                  })()}
                                 </div>
                               </ListViewStat>
                             </ListViewStats>
