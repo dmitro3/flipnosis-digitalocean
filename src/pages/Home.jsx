@@ -406,11 +406,11 @@ const ListViewStats = styled.div`
   align-items: center;
   flex-wrap: wrap;
 
-  /* Desktop improvements - larger spacing between stats and spread them out */
+  /* Desktop improvements - evenly distribute stats across full width */
   @media (min-width: 769px) {
-    gap: 2rem;
-    justify-content: space-between;
+    gap: 3rem;
     width: 100%;
+    justify-content: space-around;
   }
 
   @media (max-width: 768px) {
@@ -428,13 +428,14 @@ const ListViewStat = styled.div`
   font-size: 0.9rem;
   color: ${props => props.theme.colors.textSecondary};
 
-  /* Desktop improvements - larger text size and spacing, stack vertically */
+  /* Desktop improvements - larger text size and spacing, stack vertically, evenly spaced */
   @media (min-width: 769px) {
     font-size: 1rem;
     gap: 0.5rem;
     flex-direction: column;
     align-items: flex-start;
-    min-width: 120px;
+    flex: 1;
+    min-width: 150px;
   }
 
   @media (max-width: 768px) {
