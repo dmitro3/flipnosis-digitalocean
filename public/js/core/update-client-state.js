@@ -136,6 +136,13 @@ export function updateClientFromServerState(state, dependencies) {
       }
 
       updatePlayerCardButtons();
+    } else {
+      // Player not in state.players yet - don't reset playerSlot, just log
+      if (Object.keys(state.players).length === 0) {
+        console.log('⚠️ Server state has no players yet - keeping current playerSlot:', playerSlot);
+      } else {
+        console.log('⚠️ Player not found in server state - keeping current playerSlot:', playerSlot);
+      }
     }
 
     Object.keys(state.players).forEach(address => {

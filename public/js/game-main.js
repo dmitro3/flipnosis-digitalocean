@@ -580,10 +580,16 @@ export async function initGame(params) {
       };
       // Call the imported updateClientFromServerState function
       const result = updateClientFromServerState(state, deps);
-      // Update playerSlot if it was modified
+      // Update playerSlot if it was modified AND the new value is valid (>= 0)
+      // Don't reset to -1 if we already have a valid slot
       if (deps.playerSlotRef && deps.playerSlotRef.value !== playerSlot) {
-        playerSlot = deps.playerSlotRef.value;
-        console.log(`🔄 Updated playerSlot to: ${playerSlot}`);
+        // Only update if new value is valid, or if current value is invalid (-1)
+        if (deps.playerSlotRef.value >= 0 || playerSlot < 0) {
+          playerSlot = deps.playerSlotRef.value;
+          console.log(`🔄 Updated playerSlot to: ${playerSlot}`);
+        } else {
+          console.log(`⚠️ Ignoring playerSlot update to ${deps.playerSlotRef.value} (keeping current valid slot: ${playerSlot})`);
+        }
       }
       // Update currentRound if it was modified
       if (deps.currentRoundRef && deps.currentRoundRef.value !== currentRound) {
