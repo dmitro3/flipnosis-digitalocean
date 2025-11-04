@@ -56,6 +56,15 @@
       display: none !important;
     }
     
+    /* Force hide any old change coin button */
+    #change-coin-box,
+    #global-change-coin-btn {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    
     @media (max-width: 768px) {
       #change-coin-box {
         display: none !important;
@@ -1078,6 +1087,42 @@
   <script type="module">
     // Additional configuration or debugging can go here if needed
     console.log('🎮 Game page loaded');
+    
+    // Safety net: Remove any old change coin button that might exist
+    function removeOldChangeCoinButton() {
+      // Remove change-coin-box if it exists
+      const oldBox = document.getElementById('change-coin-box');
+      if (oldBox) {
+        console.log('🧹 Removing old change-coin-box');
+        oldBox.remove();
+      }
+      
+      // Remove global-change-coin-btn if it exists (but not the correct one)
+      const oldGlobalBtn = document.getElementById('global-change-coin-btn');
+      if (oldGlobalBtn) {
+        console.log('🧹 Removing old global-change-coin-btn');
+        oldGlobalBtn.remove();
+      }
+      
+      // Hide any element with "CHANGE COIN" text that's positioned top-right
+      document.querySelectorAll('button, div').forEach(el => {
+        if (el.textContent && el.textContent.includes('CHANGE COIN')) {
+          const styles = window.getComputedStyle(el);
+          const right = parseInt(styles.right);
+          if (right > 100) { // Positioned on the right side
+            console.log('🧹 Removing old CHANGE COIN button:', el);
+            el.remove();
+          }
+        }
+      });
+    }
+    
+    // Run immediately and after DOM is ready
+    removeOldChangeCoinButton();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', removeOldChangeCoinButton);
+    }
+    setTimeout(removeOldChangeCoinButton, 1000); // Also check after 1 second
   </script>
 </body>
 </html>
