@@ -140,8 +140,78 @@ export async function initGame(params) {
   };
   
   const applyCoinSelection = (slot, coinOption, materialOption) => {
-    // This will be implemented by the coin manager
+    if (slot < 0 || slot >= tubes.length) {
+      console.warn(`⚠️ Invalid slot ${slot} for coin selection`);
+      return;
+    }
+    
+    const tube = tubes[slot];
+    const coin = coins[slot];
+    
+    if (!tube || !coin || !coinOption || !materialOption) {
+      console.warn(`⚠️ Missing dependencies for coin selection at slot ${slot}`);
+      return;
+    }
+    
     console.log(`🪙 Applying coin selection for slot ${slot}:`, coinOption?.name, materialOption?.name);
+    
+    // Store selections in tube
+    tube.selectedCoin = coinOption;
+    tube.selectedMaterial = materialOption;
+    
+    // Load and apply coin textures
+    const loader = new THREE.TextureLoader();
+    
+    loader.load(coinOption.headsImage, (headsTexture) => {
+      headsTexture.minFilter = THREE.LinearFilter;
+      headsTexture.magFilter = THREE.LinearFilter;
+      headsTexture.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
+      headsTexture.generateMipmaps = false;
+      
+      loader.load(coinOption.tailsImage, (tailsTexture) => {
+        tailsTexture.minFilter = THREE.LinearFilter;
+        tailsTexture.magFilter = THREE.LinearFilter;
+        tailsTexture.anisotropy = webglRenderer.capabilities.getMaxAnisotropy();
+        tailsTexture.generateMipmaps = false;
+        
+        // Update coin textures
+        if (coin.material && coin.material[1] && coin.material[1].uniforms) {
+          coin.material[1].uniforms.map.value = headsTexture;
+          coin.material[1].needsUpdate = true;
+        }
+        
+        if (coin.material && coin.material[2] && coin.material[2].uniforms) {
+          coin.material[2].uniforms.map.value = tailsTexture;
+          coin.material[2].needsUpdate = true;
+        }
+        
+        // Update coin edge color based on material
+        if (coin.material && coin.material[0]) {
+          const edgeColor = new THREE.Color(materialOption.edgeColor);
+          coin.material[0].color.copy(edgeColor);
+          coin.material[0].emissive.copy(edgeColor);
+          coin.material[0].emissiveIntensity = 0.3;
+          coin.material[0].needsUpdate = true;
+        }
+        
+        console.log(`✅ Applied ${coinOption.name} with ${materialOption.name} material to slot ${slot + 1}'s coin`);
+        
+        // Send to server if in server-side mode
+        if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === slot) {
+          socket.emit('physics_set_coin', {
+            gameId: gameIdParam,
+            address: walletParam,
+            coinId: coinOption.id,
+            materialId: materialOption.id
+          });
+          console.log(`📤 Sent coin selection to server: ${coinOption.id} / ${materialOption.id}`);
+        }
+      }, undefined, (error) => {
+        console.error(`❌ Failed to load tails texture for ${coinOption.name}:`, error);
+      });
+    }, undefined, (error) => {
+      console.error(`❌ Failed to load heads texture for ${coinOption.name}:`, error);
+    });
   };
   
   const handleGameEnd = (data) => {
@@ -737,170 +807,85 @@ export async function initGame(params) {
   
   console.log('✅ Game initialized successfully');
   
-  // Setup change coin button (like reference implementation)
+  // Setup change coin button - unified handler for both mobile and desktop
+  // Use the top-left coin button (#change-coin-btn) for both platforms
   setTimeout(() => {
-    const changeCoinBox = document.createElement('div');
-    changeCoinBox.id = 'change-coin-box';
-    changeCoinBox.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 240px;
-      width: 160px;
-      height: 50px;
-      padding: 0;
-      background: linear-gradient(135deg, #ffd700, #ffed4e);
-      border: 4px solid #ff8f00;
-      border-radius: 12px;
-      color: #fff;
-      z-index: 10001;
-      pointer-events: auto;
-    `;
-    
-    changeCoinBox.innerHTML = `
-      <button id="global-change-coin-btn" style="
-        width: 100%;
-        height: 100%;
-        padding: 0;
-        background: linear-gradient(135deg, #ffd700, #ffed4e);
-        border: 4px solid #ff8f00;
-        border-radius: 8px;
-        color: #6a1b9a;
-        font-family: 'Orbitron', sans-serif;
-        font-weight: 900;
-        font-size: 16px;
-        cursor: pointer;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        box-shadow: 0 0 15px rgba(255, 235, 59, 0.6);
-        transition: all 0.3s ease;
-      ">CHANGE COIN</button>
-    `;
-    document.body.appendChild(changeCoinBox);
-    
-    const globalChangeCoinBtn = document.getElementById('global-change-coin-btn');
-    if (globalChangeCoinBtn) {
-      globalChangeCoinBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        console.log('🪙 Global change coin button clicked');
-        
-        let currentPlayerSlot = playerSlot;
-        
-        if (currentPlayerSlot === undefined || currentPlayerSlot < 0) {
-          currentPlayerSlot = players.findIndex(p => p.address && walletParam && p.address.toLowerCase() === walletParam.toLowerCase());
-          console.log(`🔍 Fallback search found player slot: ${currentPlayerSlot}`);
-        }
-        
-        if (currentPlayerSlot !== undefined && currentPlayerSlot >= 0) {
-          console.log(`🪙 Opening coin selector for player slot ${currentPlayerSlot}`);
-          // Use the stored showCoinSelector function
-          if (showCoinSelectorFunc) {
-            showCoinSelectorFunc(currentPlayerSlot);
-          } else {
-            // Fallback: import and call directly
-            const tryCoinSelectorImport = async () => {
-              const paths = ['/js/ui/coin-selector.js', './js/ui/coin-selector.js', 'js/ui/coin-selector.js'];
-              for (const path of paths) {
-                try {
-                  const { showCoinSelector: showSelector } = await import(path);
-                  showSelector(currentPlayerSlot, {
-                    tubes,
-                    players,
-                    coinOptions,
-                    coinMaterials,
-                    walletParam,
-                    gameIdParam,
-                    playerSlot,
-                    socket,
-                    isServerSideMode,
-                    webglRenderer,
-                    applyCoinSelection
-                  });
-                  return;
-                } catch (err) {
-                  console.warn(`⚠️ Failed to load from ${path}, trying next...`, err);
-                }
-              }
-              console.error('❌ Failed to load coin selector from all paths');
-              alert('Failed to load coin selector. Please refresh the page.');
-            };
-            tryCoinSelectorImport();
-          }
+    // Helper function to open coin selector
+    const openCoinSelector = () => {
+      let currentPlayerSlot = playerSlot;
+      
+      if (currentPlayerSlot === undefined || currentPlayerSlot < 0) {
+        currentPlayerSlot = players.findIndex(p => p.address && walletParam && p.address.toLowerCase() === walletParam.toLowerCase());
+        console.log(`🔍 Fallback search found player slot: ${currentPlayerSlot}`);
+      }
+      
+      if (currentPlayerSlot !== undefined && currentPlayerSlot >= 0) {
+        console.log(`🪙 Opening coin selector for player slot ${currentPlayerSlot}`);
+        // Use the stored showCoinSelector function
+        if (showCoinSelectorFunc) {
+          showCoinSelectorFunc(currentPlayerSlot);
         } else {
-          console.warn('⚠️ Player slot not found for coin selection', {
-            playerSlot,
-            walletParam,
-            players: players.map((p, i) => ({ slot: i, address: p.address, name: p.name }))
-          });
+          // Fallback: import and call directly
+          const tryCoinSelectorImport = async () => {
+            const paths = ['/js/ui/coin-selector.js', './js/ui/coin-selector.js', 'js/ui/coin-selector.js'];
+            for (const path of paths) {
+              try {
+                const { showCoinSelector: showSelector } = await import(path);
+                showSelector(currentPlayerSlot, {
+                  tubes,
+                  players,
+                  coinOptions,
+                  coinMaterials,
+                  walletParam,
+                  gameIdParam,
+                  playerSlot,
+                  socket,
+                  isServerSideMode,
+                  webglRenderer,
+                  applyCoinSelection
+                });
+                return;
+              } catch (err) {
+                console.warn(`⚠️ Failed to load from ${path}, trying next...`, err);
+              }
+            }
+            console.error('❌ Failed to load coin selector from all paths');
+            alert('Failed to load coin selector. Please refresh the page.');
+          };
+          tryCoinSelectorImport();
         }
-      });
-    }
+      } else {
+        console.warn('⚠️ Player slot not found for coin selection', {
+          playerSlot,
+          walletParam,
+          players: players.map((p, i) => ({ slot: i, address: p.address, name: p.name }))
+        });
+      }
+    };
     
-    // Also hook up mobile button if it exists
-    const mobileChangeCoinBtn = document.getElementById('mobile-change-coin');
-    if (mobileChangeCoinBtn) {
-      mobileChangeCoinBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const globalBtn = document.getElementById('global-change-coin-btn');
-        if (globalBtn) globalBtn.click();
-      });
-    }
-    
-    // Also hook up the desktop HTML button (#change-coin-btn) if it exists
+    // Hook up the desktop HTML button (#change-coin-btn) - top left
     const desktopChangeCoinBtn = document.getElementById('change-coin-btn');
     if (desktopChangeCoinBtn) {
       desktopChangeCoinBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         console.log('🪙 Desktop change coin button clicked');
-        
-        let currentPlayerSlot = playerSlot;
-        
-        if (currentPlayerSlot === undefined || currentPlayerSlot < 0) {
-          currentPlayerSlot = players.findIndex(p => p.address && walletParam && p.address.toLowerCase() === walletParam.toLowerCase());
-          console.log(`🔍 Fallback search found player slot: ${currentPlayerSlot}`);
-        }
-        
-        if (currentPlayerSlot !== undefined && currentPlayerSlot >= 0) {
-          console.log(`🪙 Opening coin selector for player slot ${currentPlayerSlot}`);
-          // Use the stored showCoinSelector function
-          if (showCoinSelectorFunc) {
-            showCoinSelectorFunc(currentPlayerSlot);
-          } else {
-            // Fallback: import and call directly
-            const tryCoinSelectorImport = async () => {
-              const paths = ['/js/ui/coin-selector.js', './js/ui/coin-selector.js', 'js/ui/coin-selector.js'];
-              for (const path of paths) {
-                try {
-                  const { showCoinSelector: showSelector } = await import(path);
-                  showSelector(currentPlayerSlot, {
-                    tubes,
-                    players,
-                    coinOptions,
-                    coinMaterials,
-                    walletParam,
-                    gameIdParam,
-                    playerSlot,
-                    socket,
-                    isServerSideMode,
-                    webglRenderer,
-                    applyCoinSelection
-                  });
-                  return;
-                } catch (err) {
-                  console.warn(`⚠️ Failed to load from ${path}, trying next...`, err);
-                }
-              }
-              console.error('❌ Failed to load coin selector from all paths');
-              alert('Failed to load coin selector. Please refresh the page.');
-            };
-            tryCoinSelectorImport();
-          }
+        openCoinSelector();
+      });
+    }
+    
+    // Hook up mobile button - it should trigger the same top-left button
+    const mobileChangeCoinBtn = document.getElementById('mobile-change-coin');
+    if (mobileChangeCoinBtn) {
+      mobileChangeCoinBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🪙 Mobile change coin button clicked');
+        // Trigger the desktop button if it exists, otherwise open directly
+        if (desktopChangeCoinBtn) {
+          desktopChangeCoinBtn.click();
         } else {
-          console.warn('⚠️ Player slot not found for coin selection', {
-            playerSlot,
-            walletParam,
-            players: players.map((p, i) => ({ slot: i, address: p.address, name: p.name }))
-          });
+          openCoinSelector();
         }
       });
     }

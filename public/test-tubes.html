@@ -57,10 +57,6 @@
     }
     
     @media (max-width: 768px) {
-      #change-coin-btn {
-        display: none !important;
-      }
-      
       #change-coin-box {
         display: none !important;
       }
@@ -133,7 +129,6 @@
       
       .player-card,
       #xp-counter,
-      #change-coin-box,
       #leave-btn {
         display: none !important;
       }
@@ -189,7 +184,15 @@
         font-size: 14px !important;
       }
       
-      .floating-btn.change-coin-btn {
+      /* Hide the mobile-specific coin button - use desktop button instead */
+      .floating-btn.change-coin-btn,
+      #mobile-change-coin {
+        display: none !important;
+      }
+      
+      /* Make desktop coin button visible on mobile */
+      #change-coin-btn {
+        display: flex !important;
         position: fixed;
         top: 15px;
         left: 15px;
@@ -750,7 +753,6 @@
         display: none !important;
       }
       
-      .floating-btn.change-coin-btn,
       .floating-btn.chat-btn,
       .floating-btn.fullscreen-btn,
       .floating-earnings,
