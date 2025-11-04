@@ -603,7 +603,7 @@ const ToggleSwitch = styled.label`
 const CreateBattle = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
-  const { address, walletClient, publicClient, nfts, loading: nftsLoading, chainId, switchToBase, isConnected, isConnecting } = useWallet()
+  const { address, walletClient, publicClient, nfts, loading: nftsLoading, chainId, switchToBase, isConnected, isConnecting, chains } = useWallet()
   
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [totalEth, setTotalEth] = useState('0.10')
@@ -668,7 +668,8 @@ const CreateBattle = () => {
     console.log('🎨 Room type will be:', selectedRoom === 2 ? 'lab' : 'potion')
     
     if (chainId !== 8453) {
-      showError('Please switch to Base network to create Battle Royale games')
+      const requiredNetwork = chains[8453]?.name || 'Base'
+      showError(`Please switch to ${requiredNetwork} network to create a new flip`)
       return
     }
     
@@ -855,10 +856,10 @@ const CreateBattle = () => {
                 textAlign: 'center'
               }}>
                 <p style={{ color: 'orange', margin: '0 0 1rem 0' }}>
-                  ⚠️ Please switch to Base network to create Battle Royale games
+                  ⚠️ Please switch to {chains[8453]?.name || 'Base'} network to create a new flip
                 </p>
                 <Button onClick={switchToBase} style={{ background: 'orange' }}>
-                  Switch to Base Network
+                  Switch to {chains[8453]?.name || 'Base'} Network
                 </Button>
               </div>
             )}

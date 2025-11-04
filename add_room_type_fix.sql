@@ -36,3 +36,5 @@ UPDATE battle_royale_games SET room_type = 'potion' WHERE room_type IS NULL;
 
 
 
+
+
