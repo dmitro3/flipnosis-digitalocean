@@ -121,7 +121,7 @@ if ($ServerIP) {
         $mainResponse = Invoke-WebRequest -Uri "https://$ServerIP/" -UseBasicParsing -TimeoutSec 10
         Write-Ok "Main page check: $($mainResponse.StatusCode)"
     } catch {
-        Write-Warn "Main page check failed: $($_.Exception.Message)"
+        Write-Host "[WARN] Main page check failed: $($_.Exception.Message)" -ForegroundColor Yellow
     }
 }
 
