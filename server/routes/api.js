@@ -2501,15 +2501,23 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       // Create physics game in manager FIRST (to generate obstacles)
       let physicsGame = null
       if (gameServer && gameServer.physicsGameManager) {
-        console.log('🎮 Creating physics game in manager...')
-        physicsGame = gameServer.physicsGameManager.createPhysicsGame(gameId, gameData)
-        // Add obstacles to game_data for database storage
-        gameData.game_data = {
-          obstacles: physicsGame.obstacles
+        try {
+          console.log('🎮 Creating physics game in manager...')
+          physicsGame = gameServer.physicsGameManager.createPhysicsGame(gameId, gameData)
+          // Add obstacles to game_data for database storage
+          gameData.game_data = {
+            obstacles: physicsGame.obstacles
+          }
+          console.log(`✅ Physics game created with ${physicsGame.obstacles?.length || 0} obstacles`)
+        } catch (physicsError) {
+          console.error('❌ Error creating physics game:', physicsError)
+          console.error('❌ Physics error stack:', physicsError.stack)
+          // Don't fail the whole request - continue without physics game
+          gameData.game_data = { obstacles: [] }
         }
-        console.log(`✅ Physics game created with ${physicsGame.obstacles?.length || 0} obstacles`)
       } else {
         console.warn('⚠️ Physics game manager not available')
+        gameData.game_data = { obstacles: [] }
       }
 
       // Save to database WITH obstacles (frontend handles on-chain create/approval)
