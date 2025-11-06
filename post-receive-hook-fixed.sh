@@ -22,8 +22,22 @@ if command -v pm2 >/dev/null 2>&1; then
 fi
 sleep 2
 
+# Backup database before deployment
+echo "Backing up database..."
+DB_BACKUP="$APP_DIR/server/database.sqlite.backup.$(date +%Y%m%d_%H%M%S)"
+if [ -f "$APP_DIR/server/database.sqlite" ]; then
+    cp "$APP_DIR/server/database.sqlite" "$DB_BACKUP" || echo "Backup failed, continuing..."
+    DB_SIZE=$(stat -c%s "$APP_DIR/server/database.sqlite" 2>/dev/null || echo 0)
+    echo "Database backed up: $DB_SIZE bytes"
+fi
+
 echo "Force checking out code to $APP_DIR..."
 cd "$REPO_DIR"
+
+# Temporarily move database out of the way
+if [ -f "$APP_DIR/server/database.sqlite" ]; then
+    mv "$APP_DIR/server/database.sqlite" "$APP_DIR/server/database.sqlite.tmp" || true
+fi
 
 # Use git archive to ensure clean checkout
 git archive "$branch" | tar -x -C "$APP_DIR" || {
@@ -31,6 +45,17 @@ git archive "$branch" | tar -x -C "$APP_DIR" || {
     cd "$APP_DIR"
     GIT_DIR="$REPO_DIR" git --work-tree=. checkout -f "$branch" -- .
 }
+
+# Restore database
+if [ -f "$APP_DIR/server/database.sqlite.tmp" ]; then
+    if [ ! -f "$APP_DIR/server/database.sqlite" ] || [ "$(stat -c%s "$APP_DIR/server/database.sqlite" 2>/dev/null || echo 0)" -lt 1000000 ]; then
+        echo "Restoring production database..."
+        mv "$APP_DIR/server/database.sqlite.tmp" "$APP_DIR/server/database.sqlite"
+    else
+        echo "Database was not overwritten, keeping new version"
+        rm -f "$APP_DIR/server/database.sqlite.tmp"
+    fi
+fi
 
 cd "$APP_DIR"
 
