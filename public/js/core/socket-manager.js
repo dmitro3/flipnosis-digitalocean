@@ -113,6 +113,7 @@ export function initializeSocket(dependencies) {
 
   socket.on('connect', () => {
     console.log('✅ Connected to server');
+    console.log(`🔌 Socket ID: ${socket.id}, Connected: ${socket.connected}`);
     
     const savedState = loadGameState(gameIdParam, walletParam);
     
@@ -123,16 +124,21 @@ export function initializeSocket(dependencies) {
         address: walletParam,
         savedState: savedState
       });
+      console.log(`📤 Emitted physics_join_room for game ${gameIdParam}`);
       
       // Then join the actual game (this adds player to game state)
       // Wait a bit to ensure room join completes first
       setTimeout(() => {
-        socket.emit('physics_join', {
-          gameId: gameIdParam,
-          address: walletParam
-        });
-        console.log(`📤 Emitted physics_join for game ${gameIdParam}`);
-      }, 100);
+        if (socket.connected) {
+          socket.emit('physics_join', {
+            gameId: gameIdParam,
+            address: walletParam
+          });
+          console.log(`📤 Emitted physics_join for game ${gameIdParam}`);
+        } else {
+          console.warn(`⚠️ Socket not connected, cannot emit physics_join`);
+        }
+      }, 200);
     }
   });
 

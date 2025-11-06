@@ -197,8 +197,10 @@ export async function initGame(params) {
         console.log(`✅ Applied ${coinOption.name} with ${materialOption.name} material to slot ${slot + 1}'s coin`);
         
         // Send to server if in server-side mode
-        if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === slot) {
-          socket.emit('physics_update_coin', {
+        // CRITICAL FIX: Use tube's socket if available, check if connected
+        const activeSocket = tubes[slot]?.socket || socket;
+        if (isServerSideMode && activeSocket && activeSocket.connected && gameIdParam && walletParam && playerSlot === slot) {
+          activeSocket.emit('physics_update_coin', {
             gameId: gameIdParam,
             address: walletParam,
             coinData: {
@@ -212,6 +214,8 @@ export async function initGame(params) {
             }
           });
           console.log(`📤 Sent coin selection to server: ${coinOption.id} / ${materialOption.id}`);
+        } else {
+          console.warn(`⚠️ Cannot send coin update: socket=${!!activeSocket}, connected=${activeSocket?.connected}, gameId=${!!gameIdParam}, wallet=${!!walletParam}, slot=${slot}, playerSlot=${playerSlot}`);
         }
       }, undefined, (error) => {
         console.error(`❌ Failed to load tails texture for ${coinOption.name}:`, error);
@@ -728,10 +732,22 @@ export async function initGame(params) {
   const socket = initializeSocket(socketDeps);
   
   // CRITICAL FIX: Update socket reference in all tubes after socket is created
+  // Also add connection status check
   tubes.forEach(tube => {
     tube.socket = socket;
   });
   console.log(`✅ Updated socket reference in ${tubes.length} tubes`);
+  console.log(`🔌 Socket connected: ${socket.connected}, Socket ID: ${socket.id || 'pending'}`);
+  
+  // Wait for socket connection if not already connected
+  if (!socket.connected) {
+    socket.once('connect', () => {
+      console.log(`✅ Socket connected! Updating all tubes with socket reference`);
+      tubes.forEach(tube => {
+        tube.socket = socket;
+      });
+    });
+  }
   
   // Now that socket exists, update showCoinSelector to use it
   socketDeps.showCoinSelector = (tubeIndex) => {

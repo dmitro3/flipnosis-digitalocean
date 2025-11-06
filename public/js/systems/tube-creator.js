@@ -597,15 +597,17 @@ export function createTubes(dependencies) {
 
         updateCoinRotationsFromPlayerChoicesFunc(tubes, players, coins);
 
-        if (isServerSideMode && socket && gameIdParam && walletParam) {
-          // CRITICAL FIX: Use socket from tube if available
-          const activeSocket = tubes[i].socket || socket;
+        // CRITICAL FIX: Always use tube's socket, check if connected
+        const activeSocket = tubes[i].socket || socket;
+        if (isServerSideMode && activeSocket && activeSocket.connected && gameIdParam && walletParam) {
           activeSocket.emit('physics_set_choice', {
             gameId: gameIdParam,
             address: walletParam,
             choice: choice
           });
           console.log(`🎯 Sent choice to server: ${choice}`);
+        } else {
+          console.warn(`⚠️ Cannot send choice: socket=${!!activeSocket}, connected=${activeSocket?.connected}, gameId=${!!gameIdParam}, wallet=${!!walletParam}`);
         }
 
         updatePlayerCardButtons();
@@ -644,9 +646,9 @@ export function createTubes(dependencies) {
 
         playSound(powerChargeSound);
 
-        if (isServerSideMode && socket && gameIdParam && walletParam) {
-          // CRITICAL FIX: Use socket from tube if available
-          const activeSocket = tubes[i].socket || socket;
+        // CRITICAL FIX: Always use tube's socket, check if connected
+        const activeSocket = tubes[i].socket || socket;
+        if (isServerSideMode && activeSocket && activeSocket.connected && gameIdParam && walletParam) {
           activeSocket.emit('physics_power_charging_start', {
             gameId: gameIdParam,
             address: walletParam,
@@ -655,6 +657,8 @@ export function createTubes(dependencies) {
             isFilling: true
           });
           console.log(`📡 Broadcast: Player ${i + 1} started charging`);
+        } else {
+          console.warn(`⚠️ Cannot send charging start: socket=${!!activeSocket}, connected=${activeSocket?.connected}, gameId=${!!gameIdParam}, wallet=${!!walletParam}`);
         }
       });
 
@@ -667,9 +671,9 @@ export function createTubes(dependencies) {
 
         stopSound(powerChargeSound);
 
-        if (isServerSideMode && socket && gameIdParam && walletParam) {
-          // CRITICAL FIX: Use socket from tube if available
-          const activeSocket = tubes[i].socket || socket;
+        // CRITICAL FIX: Always use tube's socket, check if connected
+        const activeSocket = tubes[i].socket || socket;
+        if (isServerSideMode && activeSocket && activeSocket.connected && gameIdParam && walletParam) {
           activeSocket.emit('physics_power_charging_stop', {
             gameId: gameIdParam,
             address: walletParam,
@@ -680,9 +684,9 @@ export function createTubes(dependencies) {
         }
 
         if (finalPower >= 5) {
-          // CRITICAL FIX: Use socket from tube if available, otherwise check dependencies
+          // CRITICAL FIX: Always use tube's socket, check if connected
           const activeSocket = tubes[i].socket || socket;
-          if (isServerSideMode && activeSocket && gameIdParam && walletParam) {
+          if (isServerSideMode && activeSocket && activeSocket.connected && gameIdParam && walletParam) {
             const playerChoice = players[i].choice;
             const releaseData = calculateReleaseAccuracy(finalPower);
 
@@ -708,7 +712,7 @@ export function createTubes(dependencies) {
               const playerChoice = players[i].choice;
               flipCoinWithPower(i, finalPower, playerChoice);
             } else {
-              console.warn(`⚠️ Server-side mode but socket not available for tube ${i + 1}. Socket: ${activeSocket ? 'available' : 'null'}, gameId: ${gameIdParam}, wallet: ${walletParam ? 'yes' : 'no'}`);
+              console.warn(`⚠️ Cannot send flip: socket=${!!activeSocket}, connected=${activeSocket?.connected}, gameId=${!!gameIdParam}, wallet=${!!walletParam}`);
             }
           }
 
@@ -729,9 +733,9 @@ export function createTubes(dependencies) {
 
           stopSound(powerChargeSound);
 
-          if (isServerSideMode && socket && gameIdParam && walletParam) {
-            // CRITICAL FIX: Use socket from tube if available
-            const activeSocket = tubes[i].socket || socket;
+          // CRITICAL FIX: Always use tube's socket, check if connected
+          const activeSocket = tubes[i].socket || socket;
+          if (isServerSideMode && activeSocket && activeSocket.connected && gameIdParam && walletParam) {
             activeSocket.emit('physics_power_charging_stop', {
               gameId: gameIdParam,
               address: walletParam,
@@ -742,9 +746,9 @@ export function createTubes(dependencies) {
           }
 
           if (finalPower >= 5) {
-            // CRITICAL FIX: Use socket from tube if available, otherwise check dependencies
+            // CRITICAL FIX: Always use tube's socket, check if connected
             const activeSocket = tubes[i].socket || socket;
-            if (isServerSideMode && activeSocket && gameIdParam && walletParam) {
+            if (isServerSideMode && activeSocket && activeSocket.connected && gameIdParam && walletParam) {
               const playerChoice = players[i].choice;
               const releaseData = calculateReleaseAccuracy(finalPower);
 
@@ -763,10 +767,14 @@ export function createTubes(dependencies) {
 
               console.log(`🪙 Sent flip request to server (mouseleave): power=${finalPower}, choice=${playerChoice}`);
             } else {
-              // Client-side mode: handle locally
-              shatterGlassFunc(i, finalPower);
-              const playerChoice = players[i].choice;
-              flipCoinWithPower(i, finalPower, playerChoice);
+              // Only handle locally if NOT in server-side mode
+              if (!isServerSideMode) {
+                shatterGlassFunc(i, finalPower);
+                const playerChoice = players[i].choice;
+                flipCoinWithPower(i, finalPower, playerChoice);
+              } else {
+                console.warn(`⚠️ Cannot send flip (mouseleave): socket=${!!activeSocket}, connected=${activeSocket?.connected}, gameId=${!!gameIdParam}, wallet=${!!walletParam}`);
+              }
             }
 
             powerButton.disabled = true;
