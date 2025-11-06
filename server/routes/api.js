@@ -2647,32 +2647,54 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
   router.get('/battle-royale', async (req, res) => {
     try {
       const { status, limit } = req.query
+      const queryLimit = parseInt(limit) || 100  // Increased default limit to 100
+      
+      console.log(`🔍 [API] Getting Battle Royale games: status=${status || 'all'}, limit=${queryLimit}`)
       
       const games = await dbService.getBattleRoyaleGames(
         status || null, 
-        parseInt(limit) || 50
+        queryLimit
       )
 
-      // Add participant count to each game
-      const gamesWithParticipants = await Promise.all(
+      console.log(`✅ [API] Found ${games.length} Battle Royale games in database`)
+
+      // Add participant count to each game (with error handling)
+      const gamesWithParticipants = await Promise.allSettled(
         games.map(async (game) => {
-          const participants = await dbService.getBattleRoyaleParticipants(game.id)
-          return {
-            ...game,
-            current_players: participants.length,
-            participants: participants.map(p => ({
-              address: p.player_address,
-              slot_number: p.slot_number,
-              entry_paid: p.entry_paid,
-              status: p.status
-            }))
+          try {
+            const participants = await dbService.getBattleRoyaleParticipants(game.id)
+            return {
+              ...game,
+              current_players: participants.length,
+              participants: participants.map(p => ({
+                address: p.player_address,
+                slot_number: p.slot_number,
+                entry_paid: p.entry_paid,
+                status: p.status
+              }))
+            }
+          } catch (participantError) {
+            console.error(`❌ [API] Error getting participants for game ${game.id}:`, participantError)
+            // Return game without participants if there's an error
+            return {
+              ...game,
+              current_players: 0,
+              participants: []
+            }
           }
         })
       )
 
+      // Extract successful results
+      const successfulGames = gamesWithParticipants
+        .filter(result => result.status === 'fulfilled')
+        .map(result => result.value)
+
+      console.log(`✅ [API] Returning ${successfulGames.length} Battle Royale games`)
+
       res.json({
         success: true,
-        games: gamesWithParticipants
+        games: successfulGames
       })
 
     } catch (error) {
