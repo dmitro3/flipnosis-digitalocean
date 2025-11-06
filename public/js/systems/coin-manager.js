@@ -121,9 +121,13 @@ export function showCoinFlipResult(data, tubes, coins, players, smoothLandCoin, 
     const player = players[data.playerSlot];
     
     if (tube && coin && player) {
-      if (!tube.isFlipping && !tube.flipStartTime) {
-        console.log(`⚠️ Received result for coin ${data.playerSlot + 1} but it's not flipping - ignoring stale result`);
-        return;
+      // Allow result even if flip wasn't started locally (server-side mode)
+      // The server controls the flip, so we should accept the result
+      if (tube.animationState === 'idle' && !tube.flipStartTime && !tube.isFlipping) {
+        console.log(`⚠️ Received result for coin ${data.playerSlot + 1} but it's not flipping - setting up flip state`);
+        // Set up flip state so we can process the result
+        tube.animationState = 'flipping';
+        tube.flipStartTime = Date.now();
       }
       
       tube.animationState = 'landing';

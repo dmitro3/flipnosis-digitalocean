@@ -678,6 +678,8 @@ export function createTubes(dependencies) {
             const playerChoice = players[i].choice;
             const releaseData = calculateReleaseAccuracy(finalPower);
 
+            // Don't shatter glass locally - wait for server response
+            // The server will broadcast physics_coin_flip_start which will trigger animation
             socket.emit('physics_flip_coin', {
               gameId: gameIdParam,
               address: walletParam,
@@ -692,6 +694,7 @@ export function createTubes(dependencies) {
 
             console.log(`🪙 Sent flip request to server: power=${finalPower}, choice=${playerChoice}`);
           } else {
+            // Client-side mode: handle locally
             shatterGlassFunc(i, finalPower);
             const playerChoice = players[i].choice;
             flipCoinWithPower(i, finalPower, playerChoice);
@@ -729,6 +732,7 @@ export function createTubes(dependencies) {
               const playerChoice = players[i].choice;
               const releaseData = calculateReleaseAccuracy(finalPower);
 
+              // Don't shatter glass locally - wait for server response
               socket.emit('physics_flip_coin', {
                 gameId: gameIdParam,
                 address: walletParam,
@@ -743,6 +747,7 @@ export function createTubes(dependencies) {
 
               console.log(`🪙 Sent flip request to server (mouseleave): power=${finalPower}, choice=${playerChoice}`);
             } else {
+              // Client-side mode: handle locally
               shatterGlassFunc(i, finalPower);
               const playerChoice = players[i].choice;
               flipCoinWithPower(i, finalPower, playerChoice);
