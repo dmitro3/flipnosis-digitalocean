@@ -665,7 +665,8 @@ const CreateBattle = () => {
     
     // Debug room selection
     console.log('🎨 Selected room:', selectedRoom)
-    console.log('🎨 Room type will be:', selectedRoom === 2 ? 'lab' : 'potion')
+    const roomType = selectedRoom === 2 ? 'lab' : selectedRoom === 3 ? 'cyber' : selectedRoom === 4 ? 'mech' : 'potion'
+    console.log('🎨 Room type will be:', roomType)
     
     if (chainId !== 8453) {
       const requiredNetwork = chains[8453]?.name || 'Base'
