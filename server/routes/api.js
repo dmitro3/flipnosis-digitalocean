@@ -2504,11 +2504,11 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         try {
           console.log('🎮 Creating physics game in manager...')
           physicsGame = gameServer.physicsGameManager.createPhysicsGame(gameId, gameData)
-          // Add obstacles to game_data for database storage
+          // Physics game doesn't have obstacles property - use empty array
           gameData.game_data = {
-            obstacles: physicsGame.obstacles
+            obstacles: []
           }
-          console.log(`✅ Physics game created with ${physicsGame.obstacles?.length || 0} obstacles`)
+          console.log(`✅ Physics game created successfully`)
         } catch (physicsError) {
           console.error('❌ Error creating physics game:', physicsError)
           console.error('❌ Physics error stack:', physicsError.stack)
@@ -2572,7 +2572,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         console.log(`⚠️ Creator does NOT want to participate (${creator_participates})`)
       }
 
-      console.log(`✅ 3D Physics Battle Royale game created: ${gameId} with ${physicsGame?.obstacles?.length || 0} obstacles`)
+      console.log(`✅ 3D Physics Battle Royale game created: ${gameId}`)
       
       res.json({
         success: true,
