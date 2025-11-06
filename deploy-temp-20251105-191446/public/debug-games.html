@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Debug Tool</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #00ff00; }
+    h2 { color: #FFD700; margin-top: 2rem; }
+    .section {
+      background: #252525;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      border: 1px solid #333;
+    }
+    input {
+      background: #1a1a1a;
+      border: 1px solid #444;
+      color: #fff;
+      padding: 0.75rem;
+      border-radius: 4px;
+      width: 100%;
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+    }
+    button {
+      background: linear-gradient(135deg, #4A90E2, #357ABD);
+      border: none;
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+    }
+    button:hover { opacity: 0.8; }
+    button:disabled { 
+      background: #666; 
+      cursor: not-allowed; 
+      opacity: 0.5;
+    }
+    pre {
+      background: #1a1a1a;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+      border: 1px solid #444;
+      font-size: 12px;
+    }
+    .success { color: #00ff00; }
+    .error { color: #ff0000; }
+    .warning { color: #FFA500; }
+    .info { color: #00ffff; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Game Debug Tool</h1>
+  <p>Debug your Battle Royale games - check database and blockchain state</p>
+
+  <div class="section">
+    <h2>Check Recent Games</h2>
+    <button onclick="checkRecentGames()">📊 Load Recent Games</button>
+    <pre id="recent-games"></pre>
+  </div>
+
+  <div class="section">
+    <h2>Check Specific Game</h2>
+    <input 
+      type="text" 
+      id="gameId" 
+      placeholder="Enter gameId (e.g., physics_1761841924099_037b3f177a813354)"
+      value="physics_1761841924099_037b3f177a813354"
+    />
+    <br>
+    <button onclick="checkComprehensive()">🎯 FULL DIAGNOSTIC</button>
+    <button onclick="checkGame()">🔍 Check Database</button>
+    <button onclick="checkOnChain()">⛓️ Check On-Chain</button>
+    <pre id="game-result"></pre>
+  </div>
+
+  <div class="section">
+    <h2>Complete Game Manually</h2>
+    <input 
+      type="text" 
+      id="completeGameId" 
+      placeholder="Enter gameId"
+    />
+    <input 
+      type="text" 
+      id="winnerAddress" 
+      placeholder="Enter winner address (0x...)"
+    />
+    <br>
+    <button onclick="completeGameManual()">🏆 Complete On-Chain</button>
+    <pre id="complete-result"></pre>
+  </div>
+
+  <div class="section">
+    <h2>Database Info</h2>
+    <button onclick="checkDatabase()">🗄️ Check Database</button>
+    <pre id="db-info"></pre>
+  </div>
+
+  <script>
+    async function checkComprehensive() {
+      const gameId = document.getElementById('gameId').value;
+      const output = document.getElementById('game-result');
+      
+      if (!gameId) {
+        output.innerHTML = '<span class="error">Please enter a gameId</span>';
+        return;
+      }
+      
+      output.textContent = 'Running comprehensive diagnostic...';
+      
+      try {
+        const response = await fetch(`/api/debug/comprehensive/${gameId}`);
+        const data = await response.json();
+        
+        // Pretty print with highlights
+        let html = '<span class="info">═══ COMPREHENSIVE DIAGNOSTIC ═══</span>\n\n';
+        
+        // Server config
+        html += '<span class="warning">SERVER CONFIG:</span>\n';
+        html += `  RPC URL: ${data.server.rpcUrl}\n`;
+        html += `  Contract: ${data.server.contractAddress}\n`;
+        html += `  Has Owner Wallet: ${data.server.hasOwnerWallet}\n\n`;
+        
+        // Database
+        html += '<span class="warning">DATABASE:</span>\n';
+        html += `  Found: ${data.database.found ? '<span class="success">YES</span>' : '<span class="error">NO</span>'}\n`;
+        if (data.database.game) {
+          html += `  Winner: ${data.database.game.winner || 'Not set'}\n`;
+          html += `  Status: ${data.database.game.status}\n`;
+          html += `  NFT Deposited: ${data.database.game.nft_deposited}\n\n`;
+        }
+        
+        // Blockchain
+        html += '<span class="warning">BLOCKCHAIN:</span>\n';
+        html += `  Exists: ${data.blockchain.exists ? '<span class="success">YES</span>' : '<span class="error">NO</span>'}\n`;
+        if (data.blockchain.game) {
+          html += `  Creator: ${data.blockchain.game.creator}\n`;
+          html += `  Winner: ${data.blockchain.game.winner}\n`;
+          html += `  Completed: ${data.blockchain.game.completed}\n`;
+          html += `  NFT Claimed: ${data.blockchain.game.nftClaimed}\n`;
+          html += `  Token ID: ${data.blockchain.game.tokenId}\n\n`;
+        } else if (data.blockchain.error) {
+          html += `  <span class="error">Error: ${data.blockchain.error}</span>\n\n`;
+        }
+        
+        // Conversion
+        html += '<span class="warning">BYTES32 CONVERSION:</span>\n';
+        html += `  Original: ${data.conversion.original}\n`;
+        html += `  Bytes32: ${data.conversion.bytes32}\n\n`;
+        
+        html += '<span class="info">═══ FULL JSON ═══</span>\n';
+        html += JSON.stringify(data, null, 2);
+        
+        output.innerHTML = html;
+        console.log('🎯 Comprehensive diagnostic:', data);
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+        console.error('Error:', error);
+      }
+    }
+
+    async function checkRecentGames() {
+      const output = document.getElementById('recent-games');
+      output.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch('/api/debug/recent-games');
+        const data = await response.json();
+        
+        output.innerHTML = JSON.stringify(data, null, 2);
+        
+        console.log('📊 Recent games:', data);
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    }
+
+    async function checkGame() {
+      const gameId = document.getElementById('gameId').value;
+      const output = document.getElementById('game-result');
+      
+      if (!gameId) {
+        output.innerHTML = '<span class="error">Please enter a gameId</span>';
+        return;
+      }
+      
+      output.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch(`/api/debug/game/${gameId}`);
+        const data = await response.json();
+        
+        output.innerHTML = JSON.stringify(data, null, 2);
+        
+        console.log('🔍 Game debug:', data);
+        
+        // Also log to make it easy to see
+        if (data.debug) {
+          console.log('📝 Steps:', data.debug.steps);
+          console.log('📊 Database:', data.debug.database);
+          console.log('⛓️ On-chain:', data.debug.onChain);
+        }
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    }
+
+    async function checkOnChain() {
+      const gameId = document.getElementById('gameId').value;
+      const output = document.getElementById('game-result');
+      
+      if (!gameId) {
+        output.innerHTML = '<span class="error">Please enter a gameId</span>';
+        return;
+      }
+      
+      output.textContent = 'Checking on-chain...';
+      
+      try {
+        const response = await fetch(`/api/battle-royale/${gameId}/onchain-state`);
+        const data = await response.json();
+        
+        output.innerHTML = JSON.stringify(data, null, 2);
+        
+        console.log('⛓️ On-chain state:', data);
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    }
+
+    async function completeGameManual() {
+      const gameId = document.getElementById('completeGameId').value;
+      const winner = document.getElementById('winnerAddress').value;
+      const output = document.getElementById('complete-result');
+      
+      if (!gameId || !winner) {
+        output.innerHTML = '<span class="error">Please enter both gameId and winner address</span>';
+        return;
+      }
+      
+      output.textContent = 'Completing game on-chain...';
+      
+      try {
+        const response = await fetch(`/api/battle-royale/${gameId}/complete-manual`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ winner: winner })
+        });
+        
+        const data = await response.json();
+        
+        output.innerHTML = JSON.stringify(data, null, 2);
+        
+        console.log('🏆 Complete manual result:', data);
+        
+        // Log debug info
+        if (data.debug) {
+          console.log('🔍 Debug steps:', data.debug.step);
+          console.log('🔍 Full debug:', data.debug);
+        }
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    }
+
+    async function checkDatabase() {
+      const output = document.getElementById('db-info');
+      output.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch('/api/debug/db');
+        const data = await response.json();
+        
+        output.innerHTML = JSON.stringify(data, null, 2);
+        
+        console.log('🗄️ Database info:', data);
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    }
+
+    // Auto-load on page load
+    window.onload = () => {
+      checkRecentGames();
+      checkDatabase();
+    };
+  </script>
+</body>
+</html>
+

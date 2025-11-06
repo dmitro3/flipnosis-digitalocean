@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Glass Tube Game Test</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'Hyperwave';
+      src: url('/src/fonts/hyperwave-one.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: url('/images/background/game room2.png') no-repeat center center;
+      background-size: cover;
+      background-attachment: fixed;
+      background-position: center center;
+      min-height: 100vh;
+      width: 100%;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+      html {
+        background: #0a0f23;
+      }
+      
+    }
+
+    /* ===== RESPONSIVE MOBILE-FIRST DESIGN ===== */
+    
+    .mobile-ui {
+      display: none !important;
+    }
+    
+    /* Force hide any old change coin button */
+    #change-coin-box,
+    #global-change-coin-btn {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    
+    @media (max-width: 768px) {
+      #change-coin-box {
+        display: none !important;
+      }
+      
+      .mobile-ui {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 10000;
+        pointer-events: none;
+      }
+      
+      body {
+        overflow: hidden;
+        -webkit-overflow-scrolling: touch;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      
+      body::-webkit-scrollbar {
+        display: none;
+      }
+      
+      
+      
+      
+      @media (orientation: portrait) {
+        body.lab-room,
+        body.cyber-room,
+        body.mech-room,
+        body {
+          background: #0a0f23 !important;
+          background-image: none !important;
+          background-attachment: scroll !important;
+        }
+      }
+      
+      @media (orientation: landscape) {
+        body.lab-room {
+          background: url('/images/background/thelab.png') no-repeat center center !important;
+          background-size: 100% 100% !important;
+          background-attachment: scroll !important;
+        }
+        
+        body.cyber-room {
+          background: url('/images/background/cyber.png') no-repeat center center !important;
+          background-size: 100% 100% !important;
+          background-attachment: scroll !important;
+        }
+        
+        body.mech-room {
+          background: url('/images/background/mech.png') no-repeat center center !important;
+          background-size: 100% 100% !important;
+          background-attachment: scroll !important;
+        }
+        
+        body:not(.lab-room):not(.cyber-room):not(.mech-room) {
+          background: url('/images/background/game room2.png') no-repeat center center !important;
+          background-size: 100% 100% !important;
+          background-attachment: scroll !important;
+        }
+        
+        html {
+          background: transparent;
+        }
+      }
+      
+      .player-card,
+      #xp-counter,
+      #leave-btn {
+        display: none !important;
+      }
+      
+      .game-info {
+        position: fixed !important;
+        top: 10px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 10001 !important;
+        width: 160px !important;
+        text-align: center !important;
+        height: auto !important;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95)) !important;
+        border: 2px solid #9d00ff !important;
+        border-radius: 12px !important;
+        padding: 8px 12px !important;
+        font-family: 'Orbitron', sans-serif !important;
+        color: white !important;
+        box-shadow: 0 0 20px rgba(157, 0, 255, 0.6) !important;
+        pointer-events: auto !important;
+        text-align: center !important;
+        display: block !important;
+      }
+      
+      .game-info button {
+        display: none !important;
+      }
+      
+      .game-info .desktop-timer-layout {
+        display: none !important;
+      }
+      
+      .game-info .mobile-timer-round {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        color: #00ffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      .game-info .mobile-timer-round .round-text {
+        color: #00ffff !important;
+        font-size: 14px !important;
+      }
+      
+      .game-info .mobile-timer-round .timer-text {
+        color: #00ff00 !important;
+        font-size: 14px !important;
+      }
+      
+      /* Hide the mobile-specific coin button - use desktop button instead */
+      .floating-btn.change-coin-btn,
+      #mobile-change-coin {
+        display: none !important;
+      }
+      
+      /* Make desktop coin button visible on mobile */
+      #change-coin-btn {
+        display: flex !important;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 10001;
+      }
+      
+      .floating-btn.chat-btn {
+        position: fixed;
+        bottom: 100px;
+        right: 15px;
+        z-index: 10001;
+        width: 25px;
+        height: 25px;
+        font-size: 8px;
+      }
+      
+      .floating-earnings {
+        position: fixed;
+        top: 15px;
+        right: 70px;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+        color: #00ffff;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 6px 12px;
+        border-radius: 15px;
+        border: 2px solid #00ffff;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+        text-align: center;
+        min-width: 80px;
+        z-index: 10001;
+        pointer-events: auto;
+        backdrop-filter: blur(15px);
+        font-family: 'Orbitron', sans-serif;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+      }
+      
+      .floating-btn {
+        background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+        border: 3px solid #00ffff;
+        border-radius: 50%;
+        color: #00ffff;
+        font-size: 16px;
+        width: 50px;
+        height: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+        backdrop-filter: blur(10px);
+        font-family: 'Orbitron', sans-serif;
+      }
+      
+      .floating-btn:hover {
+        transform: scale(1.1);
+        border-color: #9d00ff;
+        box-shadow: 0 0 30px rgba(157, 0, 255, 0.5);
+        background: linear-gradient(135deg, rgba(157, 0, 255, 0.3), rgba(0, 255, 255, 0.3));
+      }
+      
+      .floating-btn.fullscreen-btn {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 10001;
+      }
+      
+      
+      .bottom-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+        border-top: 3px solid #00ffff;
+        padding: 12px 15px;
+        pointer-events: auto;
+        z-index: 10001;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
+      }
+      
+      .control-section {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      
+      .game-controls {
+        display: flex;
+        gap: 6px;
+        flex: 1;
+      }
+      
+      .power-section {
+        flex-shrink: 0;
+        width: 120px;
+      }
+      
+      .mobile-btn {
+        flex: 1;
+        padding: 8px 6px;
+        border: 3px solid;
+        border-radius: 12px;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: bold;
+        font-size: 9px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 32px;
+        backdrop-filter: blur(10px);
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+      }
+      
+      .mobile-btn.heads-btn {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 204, 106, 0.2));
+        border-color: #00ff88;
+        color: #00ff88;
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+      }
+      
+      .mobile-btn.heads-btn.selected {
+        background: linear-gradient(135deg, rgba(255, 20, 147, 0.4), rgba(255, 105, 180, 0.4));
+        border-color: #ff1493;
+        color: #ff1493;
+        box-shadow: 0 0 30px rgba(255, 20, 147, 0.6);
+        transform: scale(1.05);
+      }
+      
+      .mobile-btn.tails-btn {
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(157, 0, 255, 0.2));
+        border-color: #00ffff;
+        color: #00ffff;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      }
+      
+      .mobile-btn.tails-btn.selected {
+        background: linear-gradient(135deg, rgba(255, 20, 147, 0.4), rgba(255, 105, 180, 0.4));
+        border-color: #ff1493;
+        color: #ff1493;
+        box-shadow: 0 0 30px rgba(255, 20, 147, 0.6);
+        transform: scale(1.05);
+      }
+      
+      .mobile-btn.power-btn {
+        background: linear-gradient(135deg, rgba(255, 20, 147, 0.2), rgba(255, 105, 180, 0.2));
+        border-color: #ff1493;
+        color: #ff1493;
+        box-shadow: 0 0 20px rgba(255, 20, 147, 0.3);
+      }
+      
+      .mobile-btn.change-btn {
+        background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+        border-color: #9d00ff;
+        color: #9d00ff;
+        box-shadow: 0 0 20px rgba(157, 0, 255, 0.3);
+      }
+      
+      .mobile-btn.action-btn {
+        background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+        border-color: #9d00ff;
+        color: #9d00ff;
+        box-shadow: 0 0 20px rgba(157, 0, 255, 0.3);
+      }
+      
+      .mobile-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        border-color: #00ffff;
+      }
+      
+      .mobile-btn:active {
+        transform: scale(0.95);
+      }
+      
+       .player-cards {
+         position: fixed;
+         bottom: 80px;
+         left: 0;
+         right: 0;
+         height: 40px;
+         display: flex;
+         gap: 0;
+         pointer-events: auto;
+         z-index: 10001;
+         align-items: stretch;
+         justify-content: space-between;
+         padding: 0 5px;
+         border-bottom: 2px solid #00ffff;
+       }
+      
+       .player-box {
+         flex: 1;
+         height: 40px;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+        border: 1px solid #00ffff;
+        border-bottom: 1px solid #00ffff;
+        border-radius: 0;
+        padding: 2px 4px;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        font-size: 7px;
+        backdrop-filter: blur(15px);
+        transition: all 0.3s ease;
+        font-family: 'Orbitron', sans-serif;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        margin: 0;
+        min-width: 0;
+      }
+      
+      .player-box:hover {
+        border-color: #9d00ff;
+        box-shadow: 0 0 30px rgba(157, 0, 255, 0.5);
+        transform: translateY(-2px);
+      }
+      
+      
+      .player-card {
+        width: 80px;
+        height: 50px;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+        border: 2px solid #00ffff;
+        border-radius: 8px;
+        padding: 4px;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        font-size: 8px;
+        backdrop-filter: blur(15px);
+        transition: all 0.3s ease;
+        font-family: 'Orbitron', sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .player-card:hover {
+        border-color: #9d00ff;
+        box-shadow: 0 0 30px rgba(157, 0, 255, 0.5);
+        transform: translateY(-2px);
+      }
+      
+      .player-box .player-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        object-fit: cover;
+        border: 1px solid #00ffff;
+        margin-right: 4px;
+        display: block;
+        box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+        flex-shrink: 0;
+      }
+      
+      .player-box .player-info {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        flex: 1;
+        min-width: 0;
+        margin-left: 4px;
+      }
+      
+      .player-box .player-name {
+        font-size: 7px;
+        color: #00ffff;
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-shadow: 0 0 3px rgba(0, 255, 255, 0.5);
+        line-height: 1;
+        flex: 1;
+        text-align: left;
+      }
+      
+      .player-box .player-wins {
+        font-size: 14px;
+        color: #FFD700;
+        font-weight: bold;
+        font-family: 'Hyperwave', sans-serif;
+        text-shadow: 0 0 3px rgba(255, 215, 0, 0.5);
+        line-height: 1;
+        flex-shrink: 0;
+        margin-left: 4px;
+      }
+      
+      .wins-display {
+        font-family: 'Hyperwave', sans-serif;
+        font-weight: bold;
+        color: #FFD700;
+        font-size: 18px;
+        text-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
+      }
+      
+      .timer, .earnings {
+        color: #00ffff;
+        font-size: 10px;
+        font-weight: bold;
+        text-align: center;
+        font-family: 'Orbitron', sans-serif;
+        text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+      }
+      
+      .earnings {
+        color: #FFD700;
+        text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+      }
+      
+      .power-bar {
+        position: relative;
+        height: 24px;
+        background: linear-gradient(135deg, rgba(10, 15, 35, 0.8), rgba(16, 33, 62, 0.8));
+        border: 2px solid #00ffff;
+        border-radius: 12px;
+        overflow: hidden;
+        width: 100%;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+      }
+
+      .power-bar-container {
+        position: relative;
+        width: 100%;
+        height: 40px;
+        background: rgba(10, 15, 35, 0.8);
+        border: 2px solid #00ffff;
+        border-radius: 8px;
+        overflow: visible;
+        margin: 10px 0;
+      }
+
+      .zone-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .zone {
+        position: absolute;
+        height: 100%;
+        top: 0;
+        transition: opacity 0.3s;
+      }
+
+      .zone.safe {
+        background: transparent;
+      }
+
+      .zone.good {
+        background: linear-gradient(180deg, 
+          rgba(0, 255, 100, 0.4) 0%,
+          rgba(0, 255, 100, 0.2) 100%);
+        border-left: 1px solid rgba(0, 255, 100, 0.6);
+        border-right: 1px solid rgba(0, 255, 100, 0.6);
+      }
+
+      .zone.perfect {
+        background: radial-gradient(ellipse at center, 
+          rgba(255, 215, 0, 0.8) 0%,
+          rgba(255, 215, 0, 0.5) 50%,
+          rgba(255, 215, 0, 0.3) 100%);
+        box-shadow: 
+          0 0 15px rgba(255, 215, 0, 0.6),
+          inset 0 0 15px rgba(255, 215, 0, 0.4);
+        border-left: 2px solid rgba(255, 215, 0, 0.9);
+        border-right: 2px solid rgba(255, 215, 0, 0.9);
+        animation: sweetSpotPulse 0.8s ease-in-out infinite;
+        z-index: 2;
+      }
+
+      @keyframes sweetSpotPulse {
+        0%, 100% { 
+          opacity: 0.7;
+          box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+        50% { 
+          opacity: 1;
+          box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
+        }
+      }
+
+      .power-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: linear-gradient(90deg, 
+          #00ff00 0%, 
+          #00ffff 50%, 
+          #0088ff 100%);
+        transition: width 0.05s linear;
+        z-index: 3;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+      }
+
+      .power-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+        z-index: 4;
+        pointer-events: none;
+      }
+
+      .sweet-spot-feedback {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        z-index: 10000;
+        text-align: center;
+        font-family: 'Orbitron', sans-serif;
+        pointer-events: none;
+      }
+
+      .sweet-spot-feedback.show {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+
+      .sweet-spot-text {
+        font-size: 64px;
+        font-weight: 900;
+        color: #FFD700;
+        text-shadow: 
+          0 0 20px rgba(255, 215, 0, 1),
+          0 0 40px rgba(255, 215, 0, 0.6);
+        animation: textGlow 0.5s ease-in-out infinite;
+        letter-spacing: 4px;
+      }
+
+      .win-chance {
+        font-size: 28px;
+        color: #00ff00;
+        margin-top: 15px;
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+        font-weight: bold;
+      }
+
+      @keyframes textGlow {
+        0%, 100% { 
+          text-shadow: 
+            0 0 20px rgba(255, 215, 0, 1),
+            0 0 40px rgba(255, 215, 0, 0.6);
+        }
+        50% { 
+          text-shadow: 
+            0 0 30px rgba(255, 215, 0, 1),
+            0 0 60px rgba(255, 215, 0, 0.8),
+            0 0 80px rgba(255, 215, 0, 0.4);
+        }
+      }
+      
+      .power-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #00ff88, #00ff88);
+        border-radius: 10px;
+        transition: width 0.1s ease;
+        width: 0%;
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+      }
+      
+      .power-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #00ff88;
+        font-size: 9px;
+        font-weight: bold;
+        text-shadow: 0 0 5px rgba(0, 255, 136, 0.8);
+        font-family: 'Orbitron', sans-serif;
+      }
+      
+    }
+    
+    .portrait-warning {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 20px;
+    }
+
+    @media (max-width: 768px) and (orientation: portrait) {
+      .portrait-warning {
+        display: flex !important;
+      }
+    }
+
+    .portrait-warning-content {
+      background: linear-gradient(135deg, rgba(157, 0, 255, 0.3), rgba(0, 255, 255, 0.3));
+      border: 3px solid #00ffff;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 300px;
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    .portrait-warning-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+      animation: rotate-phone 2s ease-in-out infinite;
+    }
+
+    @keyframes rotate-phone {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(90deg); }
+    }
+
+    .portrait-warning h2 {
+      color: #00ffff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      margin-bottom: 15px;
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    }
+
+    .portrait-warning p {
+      color: white;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    
+    @media (min-width: 769px) {
+      .mobile-ui {
+        display: none !important;
+      }
+      
+      .floating-btn.chat-btn,
+      .floating-btn.fullscreen-btn,
+      .floating-earnings,
+      .bottom-panel,
+      .player-cards {
+        display: none !important;
+      }
+      
+      .game-info .desktop-timer-layout {
+        display: block !important;
+      }
+      
+      .game-info .mobile-timer-round {
+        display: none !important;
+      }
+      
+      .game-info button {
+        display: block !important;
+      }
+      
+      #change-coin-btn {
+        display: flex !important;
+      }
+      
+      .player-card {
+        display: block !important;
+      }
+    }
+
+
+    #container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: auto;
+    }
+    
+    #container canvas {
+      pointer-events: auto;
+    }
+
+    .player-card {
+      width: 320px;
+      background: rgba(10, 15, 35, 0.95);
+      border: 3px solid #00ffff;
+      border-radius: 16px;
+      padding: 15px 20px;
+      font-family: 'Orbitron', sans-serif;
+      color: white;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+      pointer-events: auto;
+      position: relative;
+    }
+
+    .card-header {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .player-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 2px solid #00ffff;
+      flex-shrink: 0;
+    }
+
+    .player-info {
+      flex: 1;
+      text-align: right;
+    }
+
+    .player-name {
+      font-size: 22px;
+      font-weight: bold;
+      color: #00ffff;
+      margin-bottom: 5px;
+    }
+
+    .player-address {
+      font-size: 16px;
+      color: #ffffff;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: bold;
+    }
+
+    .trophy-symbol {
+      font-size: 24px;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+      margin: 5px;
+    }
+
+    @keyframes puffWin {
+      0% { 
+        transform: scale(0.3); 
+        opacity: 0; 
+        box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+      }
+      50% { 
+        transform: scale(1.3); 
+        opacity: 1; 
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+      }
+      100% { 
+        transform: scale(1); 
+        opacity: 1; 
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+      }
+    }
+
+    .choice-badge {
+      padding: 12px;
+      margin: 15px 0;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .choice-badge.heads {
+      background: linear-gradient(135deg, #00ff00, #39ff14);
+      color: #000;
+      border: 2px solid #00ff00;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+    }
+
+    .choice-badge.tails {
+      background: linear-gradient(135deg, #00d4ff, #00a3ff);
+      color: #fff;
+      border: 2px solid #00d4ff;
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+    }
+
+    .choice-buttons {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .choice-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      pointer-events: auto;
+    }
+
+    .choice-btn.heads {
+      background: linear-gradient(135deg, #00ff00, #39ff14);
+      color: #000;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+    }
+
+    .choice-btn.tails {
+      background: linear-gradient(135deg, #00d4ff, #00a3ff);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+    }
+
+    .choice-btn:hover {
+      transform: translateY(-3px);
+      filter: brightness(1.2);
+    }
+    
+    .choice-btn.heads:hover {
+      box-shadow: 0 5px 20px rgba(0, 255, 0, 0.8);
+    }
+    
+    .choice-btn.tails:hover {
+      box-shadow: 0 5px 20px rgba(0, 212, 255, 0.8);
+    }
+
+    .action-btn {
+      width: 100%;
+      padding: 15px;
+      background: white;
+      border: 2px solid #ff1493;
+      border-radius: 8px;
+      color: #ff1493;
+      font-weight: 900;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 10px;
+      pointer-events: auto;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(255, 20, 147, 0.3);
+      background: #ffe6f2;
+    }
+
+    .action-btn:active {
+      transform: translateY(0);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    #info {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Portrait Orientation Warning -->
+  <div class="portrait-warning">
+    <div class="portrait-warning-content">
+      <div class="portrait-warning-icon">📱⚠️</div>
+      <h2>Please Rotate Your Device</h2>
+      <p>This game is designed for landscape mode.</p>
+      <p>Please rotate your device to continue playing!</p>
+    </div>
+  </div>
+  
+  <div id="container"></div>
+  
+  <!-- Desktop Game Info (Timer & Round) -->
+  <div class="game-info" id="game-info" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10001; background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95)); border: 2px solid #9d00ff; border-radius: 12px; padding: 12px 20px; font-family: 'Orbitron', sans-serif; color: white; box-shadow: 0 0 20px rgba(157, 0, 255, 0.6); text-align: center; min-width: 200px;">
+    <div class="desktop-timer-layout" style="display: block;">
+      <div class="round-display" style="font-size: 16px; color: #00ffff; margin-bottom: 8px;">ROUND <span id="round-number">1</span></div>
+      <div class="timer-display" style="font-size: 24px; color: #00ff00; font-weight: bold;"><span id="timer-value">60</span>s</div>
+    </div>
+    <div class="mobile-timer-round" style="display: none;">
+      <span class="round-text">R<span id="mobile-round-number">1</span></span>
+      <span class="timer-text"><span id="mobile-timer-value">60</span>s</span>
+    </div>
+  </div>
+  
+  <!-- Change Coin Button (Desktop) -->
+  <button id="change-coin-btn" class="floating-btn" style="position: fixed; top: 20px; left: 20px; z-index: 10001; background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2)); border: 3px solid #00ffff; border-radius: 50%; color: #00ffff; font-size: 24px; width: 60px; height: 60px; cursor: pointer; box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; transition: all 0.3s ease;">🪙</button>
+  
+  <!-- Responsive Mobile Layout -->
+  <div id="mobile-ui" class="mobile-ui">
+    <!-- Player Cards -->
+    <div class="player-cards" id="mobile-player-cards">
+      <!-- Player cards will be dynamically created here -->
+    </div>
+    
+    <!-- Floating UI Elements -->
+    <!-- Top-left Change Coin -->
+    <button class="floating-btn change-coin-btn" id="mobile-change-coin">🪙</button>
+    
+    <!-- Top-right Earnings -->
+    <div class="floating-earnings" id="mobile-earnings">1,250 FLIP</div>
+    
+    <!-- Top-right Fullscreen -->
+    <button class="floating-btn fullscreen-btn" id="mobile-fullscreen">⛶</button>
+    
+    <!-- Bottom-right Chat -->
+    <button class="floating-btn chat-btn" id="mobile-chat">💬</button>
+    
+    <!-- Bottom Control Panel -->
+    <div class="bottom-panel">
+      <!-- Game Controls and Power Bar -->
+      <div class="control-section">
+        <div class="game-controls">
+          <button class="mobile-btn heads-btn" id="mobile-heads">HEADS</button>
+          <button class="mobile-btn tails-btn" id="mobile-tails">TAILS</button>
+          <button class="mobile-btn power-btn" id="mobile-power">POWER</button>
+        </div>
+        <div class="power-section">
+          <div class="power-bar-container">
+            <!-- Sweet Spot Zone Overlays -->
+            <div class="zone-overlay">
+              <div class="zone safe" style="left: 0%; width: 42%;"></div>
+              <div class="zone good" style="left: 42%; width: 6%;"></div>
+              <div class="zone perfect" style="left: 48%; width: 4%;"></div>
+              <div class="zone good" style="left: 52%; width: 6%;"></div>
+              <div class="zone safe" style="left: 58%; width: 42%;"></div>
+            </div>
+            
+            <!-- Actual Power Fill -->
+            <div class="power-fill" id="mobile-power-fill"></div>
+            
+            <!-- Power Text -->
+            <div class="power-text" id="mobile-power-text">POWER: <span class="power-value">0</span>%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="info">
+    🎮 Glass Tube Game Test<br>
+    Loading Three.js...
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js",
+        "socket.io-client": "https://cdn.socket.io/4.8.1/socket.io.esm.min.js"
+      }
+    }
+  </script>
+  
+  <!-- Socket.io is now imported as ES module in socket-manager.js -->
+  <!-- Game initialization script -->
+  <script type="module" src="./js/init.js?v=10"></script>
+  
+  <script type="module">
+    // Additional configuration or debugging can go here if needed
+    console.log('🎮 Game page loaded');
+    
+    // Safety net: Remove any old change coin button that might exist
+    function removeOldChangeCoinButton() {
+      // Remove change-coin-box if it exists
+      const oldBox = document.getElementById('change-coin-box');
+      if (oldBox) {
+        console.log('🧹 Removing old change-coin-box');
+        oldBox.remove();
+      }
+      
+      // Remove global-change-coin-btn if it exists (but not the correct one)
+      const oldGlobalBtn = document.getElementById('global-change-coin-btn');
+      if (oldGlobalBtn) {
+        console.log('🧹 Removing old global-change-coin-btn');
+        oldGlobalBtn.remove();
+      }
+      
+      // Hide any element with "CHANGE COIN" text that's positioned top-right
+      document.querySelectorAll('button, div').forEach(el => {
+        if (el.textContent && el.textContent.includes('CHANGE COIN')) {
+          const styles = window.getComputedStyle(el);
+          const right = parseInt(styles.right);
+          if (right > 100) { // Positioned on the right side
+            console.log('🧹 Removing old CHANGE COIN button:', el);
+            el.remove();
+          }
+        }
+      });
+    }
+    
+    // Run immediately and after DOM is ready
+    removeOldChangeCoinButton();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', removeOldChangeCoinButton);
+    }
+    setTimeout(removeOldChangeCoinButton, 1000); // Also check after 1 second
+  </script>
+</body>
+</html>
