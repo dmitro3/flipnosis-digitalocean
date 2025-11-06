@@ -500,10 +500,11 @@ class PhysicsSocketHandlers {
     const { gameId, address, playerSlot } = data
     console.log(`⚡ ${address} started charging power in slot ${playerSlot}`)
     
-    // Broadcast to all OTHER players in the room
-    socket.to(`game_${gameId}`).emit('physics_power_charging_start', {
+    // Broadcast to ALL players in the room (including sender for consistency)
+    io.to(`game_${gameId}`).emit('physics_power_charging_start', {
       playerSlot: playerSlot,
-      address: address
+      address: address,
+      gameId: gameId
     })
   }
 
@@ -512,11 +513,12 @@ class PhysicsSocketHandlers {
     const { gameId, address, playerSlot, finalPower } = data
     console.log(`⚡ ${address} stopped charging power at ${finalPower}% in slot ${playerSlot}`)
     
-    // Broadcast to all OTHER players in the room
-    socket.to(`game_${gameId}`).emit('physics_power_charging_stop', {
+    // Broadcast to ALL players in the room (including sender for consistency)
+    io.to(`game_${gameId}`).emit('physics_power_charging_stop', {
       playerSlot: playerSlot,
       address: address,
-      finalPower: finalPower
+      finalPower: finalPower,
+      gameId: gameId
     })
   }
 }

@@ -198,11 +198,18 @@ export async function initGame(params) {
         
         // Send to server if in server-side mode
         if (isServerSideMode && socket && gameIdParam && walletParam && playerSlot === slot) {
-          socket.emit('physics_set_coin', {
+          socket.emit('physics_update_coin', {
             gameId: gameIdParam,
             address: walletParam,
-            coinId: coinOption.id,
-            materialId: materialOption.id
+            coinData: {
+              coinId: coinOption.id,
+              materialId: materialOption.id,
+              id: coinOption.id,
+              name: coinOption.name,
+              headsImage: coinOption.headsImage,
+              tailsImage: coinOption.tailsImage,
+              material: materialOption
+            }
           });
           console.log(`📤 Sent coin selection to server: ${coinOption.id} / ${materialOption.id}`);
         }

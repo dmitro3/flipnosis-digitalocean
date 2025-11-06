@@ -575,6 +575,17 @@ initialize(server, dbService) {
         )
       }))
 
+      // Handle power charging updates (for visual feedback during charging)
+      socket.on('physics_power_charging', safeHandler((data) => {
+        console.log(`🔥 physics_power_charging from ${socket.id}`, data)
+        return this.physicsHandlers.handlePhysicsChargePower(
+          socket, 
+          data, 
+          this.physicsGameManager, 
+          this.io
+        )
+      }))
+
       socket.on('physics_update_coin_angle', safeHandler((data) => {
         console.log(`🔥 physics_update_coin_angle from ${socket.id}`, data)
         return this.physicsHandlers.handlePhysicsUpdateCoinAngle(
