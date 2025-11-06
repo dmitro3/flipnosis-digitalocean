@@ -64,7 +64,7 @@ export function initializeSocket(dependencies) {
   const showGameOverScreenLocal = (showGameOverScreenFromDeps && typeof showGameOverScreenFromDeps === 'function')
     ? showGameOverScreenFromDeps 
     : ((winnerIndex, winnerName) => {
-        console.warn('⚠️ showGameOverScreen was not provided or is not a function', {
+        console.warn('WARN: showGameOverScreen was not provided or is not a function', {
           winnerIndex,
           winnerName,
           wasProvided: showGameOverScreenFromDeps !== undefined,
@@ -73,13 +73,13 @@ export function initializeSocket(dependencies) {
       });
 
   if (!showGameOverScreenFromDeps || typeof showGameOverScreenFromDeps !== 'function') {
-    console.warn('⚠️ showGameOverScreen missing or invalid from dependencies!', {
+    console.warn('WARN: showGameOverScreen missing or invalid from dependencies!', {
       wasProvided: showGameOverScreenFromDeps !== undefined,
       type: typeof showGameOverScreenFromDeps,
       availableKeys: Object.keys(dependencies).filter(k => k.includes('Game') || k.includes('game'))
     });
   } else {
-    console.log('✅ showGameOverScreen found in dependencies, type:', typeof showGameOverScreenFromDeps);
+    console.log('OK: showGameOverScreen found in dependencies, type:', typeof showGameOverScreenFromDeps);
   }
 
   // io is now imported as ES module
@@ -94,12 +94,12 @@ export function initializeSocket(dependencies) {
   if (isViteDev) {
     // Vite dev server (port 5173) - connect directly to backend (port 3000)
     socketUrl = `http://localhost:3000`;
-    console.log('🔌 Development mode: Connecting to http://localhost:3000');
+    console.log('SOCKET: Development mode: Connecting to http://localhost:3000');
   } else {
     // Production or same-origin: use current origin (undefined = same origin)
     // This works because backend serves the frontend on the same server
     socketUrl = undefined;
-    console.log('🔌 Production mode: Connecting to same origin');
+    console.log('SOCKET: Production mode: Connecting to same origin');
   }
   
   const socket = io(socketUrl, {
@@ -112,8 +112,8 @@ export function initializeSocket(dependencies) {
   });
 
   socket.on('connect', () => {
-    console.log('✅ Connected to server');
-    console.log(`🔌 Socket ID: ${socket.id}, Connected: ${socket.connected}`);
+    console.log('OK: Connected to server');
+    console.log(`SOCKET: Socket ID: ${socket.id}, Connected: ${socket.connected}`);
     
     const savedState = loadGameState(gameIdParam, walletParam);
     
@@ -131,16 +131,16 @@ export function initializeSocket(dependencies) {
       // So we should NOT call physics_join if the player is already in the game
       // We'll let the server state update tell us if we need to join
       // The physics_join_room is sufficient for socket communication
-      console.log(`ℹ️ Skipping physics_join - player should already be in game via API endpoint`);
+      console.log(`INFO: Skipping physics_join - player should already be in game via API endpoint`);
     }
   });
 
   socket.on('disconnect', () => {
-    console.log('❌ Disconnected from server');
+    console.log('ERROR: Disconnected from server');
   });
 
   socket.on('reconnect', () => {
-    console.log('🔄 Reconnecting to server...');
+    console.log('RECONNECT: Reconnecting to server...');
     
     const savedState = loadGameState(gameIdParam, walletParam);
     
@@ -156,7 +156,7 @@ export function initializeSocket(dependencies) {
   });
 
   socket.on('game_state_restored', (data) => {
-    console.log('✅ Game state restored:', data);
+    console.log('OK: Game state restored:', data);
     
     if (data.playerChoices) {
       Object.keys(data.playerChoices).forEach(slot => {
@@ -190,7 +190,7 @@ export function initializeSocket(dependencies) {
   socket.on('physics_state_update', (state) => {
     // Wrap everything in try-catch to prevent any errors from blocking state updates
     try {
-      console.log('📊 Received physics state update:', {
+      console.log('STATE: Received physics state update:', {
         phase: state?.phase,
         currentRound: state?.currentRound,
         roundTimer: state?.roundTimer,
@@ -198,7 +198,7 @@ export function initializeSocket(dependencies) {
       });
       
       if (!state) {
-        console.warn('⚠️ Received null/undefined state update');
+        console.warn('WARN: Received null/undefined state update');
         return;
       }
       
@@ -242,10 +242,10 @@ export function initializeSocket(dependencies) {
         if (playerSlotRef.value !== playerSlot) {
           // Note: playerSlot is passed by value, so we can't update it here
           // The update should happen in game-main.js's updateClientFromServerState wrapper
-          console.log(`🔄 Detected slot change: ${playerSlot} -> ${playerSlotRef.value}`);
+          console.log(`SLOT: Detected slot change: ${playerSlot} -> ${playerSlotRef.value}`);
         }
       } catch (updateError) {
-        console.error('❌ Error in updateClientFromServerState:', updateError);
+        console.error('ERROR: Error in updateClientFromServerState:', updateError);
         console.error('Update error details:', {
           message: updateError.message,
           stack: updateError.stack,
@@ -256,10 +256,10 @@ export function initializeSocket(dependencies) {
       try {
         createMobilePlayerCards();
       } catch (cardsError) {
-        console.error('❌ Error creating mobile player cards:', cardsError);
+        console.error('ERROR: Error creating mobile player cards:', cardsError);
       }
     } catch (error) {
-      console.error('❌ Error in physics_state_update handler:', error);
+      console.error('ERROR: Error in physics_state_update handler:', error);
       console.error('Error details:', {
         message: error.message,
         stack: error.stack,
@@ -271,22 +271,22 @@ export function initializeSocket(dependencies) {
   });
 
   socket.on('physics_coin_flip_start', (data) => {
-    console.log('🪙 Coin flip started:', data);
+    console.log('FLIP: Coin flip started:', data);
     startClientCoinFlipAnimation(data);
   });
 
   socket.on('physics_coin_result', (data) => {
-    console.log('🎲 Coin flip result:', data);
+    console.log('RESULT: Coin flip result:', data);
     showCoinFlipResult(data);
   });
 
   socket.on('physics_power_charging', (data) => {
-    console.log('⚡ Power charging:', data);
+    console.log('POWER: Power charging:', data);
     updatePowerChargingVisual(data);
   });
 
   socket.on('physics_power_charging_start', (data) => {
-    console.log('⚡ Received charging start:', data);
+    console.log('POWER_START: Received charging start:', data);
     if (data.playerSlot >= 0 && data.playerSlot < 4) {
       const tube = tubes[data.playerSlot];
       if (tube) {
@@ -306,37 +306,37 @@ export function initializeSocket(dependencies) {
   });
 
   socket.on('physics_power_charging_stop', (data) => {
-    console.log('⚡ Received charging stop:', data);
+    console.log('POWER_STOP: Received charging stop:', data);
     if (data.playerSlot >= 0 && data.playerSlot < 4) {
       const tube = tubes[data.playerSlot];
       if (tube) {
         tube.isFilling = false;
         tube.power = data.finalPower || tube.power;
-        console.log(`🛑 Stopped pearl animation for tube ${data.playerSlot + 1} at ${tube.power}%`);
+        console.log(`STOP: Stopped pearl animation for tube ${data.playerSlot + 1} at ${tube.power}%`);
       }
     }
   });
 
   socket.on('physics_coin_angle_update', (data) => {
-    console.log('🎯 Coin angle update:', data);
+    console.log('ANGLE: Coin angle update:', data);
     updateCoinAngleVisual(data);
   });
 
   socket.on('flip_tokens_awarded', (data) => {
-    console.log('💰 FLIP tokens awarded:', data);
+    console.log('TOKENS: FLIP tokens awarded:', data);
     if (data.success) {
       showFloatingMessage(`+${data.amount} FLIP earned!`, '#FFD700', 3000);
     } else {
-      console.error('❌ Failed to award FLIP tokens:', data.error);
+      console.error('ERROR: Failed to award FLIP tokens:', data.error);
     }
   });
 
   socket.on('flip_tokens_awarded_final', (data) => {
-    console.log('🎁 FLIP tokens awarded:', data);
+    console.log('TOKENS_FINAL: FLIP tokens awarded:', data);
     if (data.success) {
       showFloatingMessage(`+${data.totalFlip} FLIP tokens added to your profile!`, '#00ff00', 4000);
     } else {
-      console.error('❌ FLIP token award failed:', data.error);
+      console.error('ERROR: FLIP token award failed:', data.error);
       showFloatingMessage(`Failed to award FLIP tokens: ${data.error}`, '#ff0000', 3000);
     }
   });
@@ -349,11 +349,11 @@ export function initializeSocket(dependencies) {
   });
 
   socket.on('nft_prize_claimed', (data) => {
-    console.log('🏆 NFT prize claimed:', data);
+    console.log('NFT: NFT prize claimed:', data);
     if (data.success) {
       const nftBtn = document.getElementById('claim-nft-btn');
       if (nftBtn) {
-        nftBtn.textContent = '✅ NFT Claimed!';
+        nftBtn.textContent = 'OK: NFT Claimed!';
         nftBtn.style.background = 'linear-gradient(135deg, #888, #666)';
         nftBtn.disabled = true;
       }
@@ -362,7 +362,7 @@ export function initializeSocket(dependencies) {
   });
 
   socket.on('physics_error', (error) => {
-    console.error('❌ Physics error:', error);
+    console.error('ERROR: Physics error:', error);
     
     const playerIndex = players.findIndex(p => p.address === walletParam);
     if (playerIndex !== -1 && tubes[playerIndex]) {
@@ -376,28 +376,28 @@ export function initializeSocket(dependencies) {
         powerChargeSound.currentTime = 0;
       }
       
-      console.log(`🔄 Reset tube ${playerIndex + 1} state after error`);
+      console.log(`RESET: Reset tube ${playerIndex + 1} state after error`);
     }
     
     alert(`Game Error: ${error.message}`);
   });
 
   socket.on('player_choice_update', (data) => {
-    console.log('🎯 Player choice update:', data);
+    console.log('CHOICE: Player choice update:', data);
     updatePlayerChoice(data);
   });
 
   socket.on('coin_update', (data) => {
-    console.log('🪙 Coin update received:', data);
+    console.log('COIN: Coin update received:', data);
     updateCoinFromServer(data);
   });
 
   socket.on('player_flip_action', (data) => {
-    console.log('🎮 Player flip action:', data);
+    console.log('ACTION: Player flip action:', data);
   });
 
   socket.on('glass_shatter', (data) => {
-    console.log('💥 Glass shatter:', data);
+    console.log('SHATTER: Glass shatter:', data);
     if (data.playerSlot >= 0 && data.playerSlot < 4) {
       shatterGlass(data.playerSlot, data.power);
     }
@@ -405,13 +405,13 @@ export function initializeSocket(dependencies) {
 
   // Additional socket events for coin unlock/profile
   socket.on('player_profile_data', (profileData) => {
-    console.log('📊 Received profile data:', profileData);
+    console.log('PROFILE: Received profile data:', profileData);
     // This will be handled by the coin selector UI
     return profileData;
   });
 
   socket.on('coin_unlocked', (result) => {
-    console.log('🪙 Coin unlocked:', result);
+    console.log('UNLOCK: Coin unlocked:', result);
     // This will be handled by the coin selector UI
     return result;
   });
@@ -426,7 +426,7 @@ export function emitSocketEvent(socket, event, data) {
   if (socket && socket.connected) {
     socket.emit(event, data);
   } else {
-    console.warn(`⚠️ Cannot emit ${event}: socket not connected`);
+    console.warn(`WARN: Cannot emit ${event}: socket not connected`);
   }
 }
 
