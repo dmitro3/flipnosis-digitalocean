@@ -11,7 +11,7 @@ import { NUM_TUBES, TUBE_RADIUS, TUBE_HEIGHT, SPACING, TUBE_Y_POSITION, START_X 
 import { coinOptions, coinMaterials } from '../core/game-state.js';
 import { playSound, stopSound, powerChargeSound } from '../utils/audio.js';
 import { updatePearlColors } from './pearl-physics.js';
-import { calculateReleaseAccuracy } from './power-system.js';
+import { calculateReleaseAccuracy, showSweetSpotFeedback } from './power-system.js';
 import { shatterGlass } from './glass-shatter.js';
 import { updateCoinRotationsFromPlayerChoices } from './coin-manager.js';
 import { isMobile } from '../utils/helpers.js';

@@ -152,7 +152,8 @@ export function showCoinFlipResult(data, tubes, coins, players, smoothLandCoin, 
 }
 
 /**
- * Smooth landing animation for coins
+ * Smooth landing animation for coins - ENHANCED from reference
+ * Natural deceleration to the correct face (heads/tails)
  */
 export function smoothLandCoin(coin, targetRotation, accuracy, tube, playerSlot) {
   const startRotation = coin.rotation.x;
@@ -162,20 +163,30 @@ export function smoothLandCoin(coin, targetRotation, accuracy, tube, playerSlot)
   tube.animationState = 'landing';
   tube.landingId = `landing_${playerSlot}_${Date.now()}`;
   
-  const landingDuration = 1200;
+  const landingDuration = 1200; // 1.2 seconds for smooth landing
   const startTime = Date.now();
   
-  let lastRotation = startRotation;
-  const initialSpeed = 0.15;
-  let currentSpeed = initialSpeed;
-  
-  console.log(`🎯 Landing coin ${playerSlot + 1} naturally: starting from ${startRotation.toFixed(2)}`);
+  console.log(`🎯 Landing coin ${playerSlot + 1}:`, {
+    from: `${startRotation.toFixed(2)} rad`,
+    target: `${targetRotation} rad (${targetRotation === Math.PI/2 ? 'HEADS' : 'TAILS'})`,
+    accuracy: accuracy
+  });
   
   const savedLandingId = tube.landingId;
   
+  // Calculate how many full rotations to add before landing
+  const currentCycles = Math.floor(startRotation / (Math.PI * 2));
+  const finalRotation = (currentCycles * Math.PI * 2) + targetRotation;
+  
+  // If we're very close, add one more rotation for visual effect
+  const rotationDiff = Math.abs(finalRotation - startRotation);
+  const targetFinal = rotationDiff < Math.PI ? finalRotation + (Math.PI * 2) : finalRotation;
+  
+  console.log(`🎯 Will rotate from ${startRotation.toFixed(2)} to ${targetFinal.toFixed(2)} (${((targetFinal - startRotation) / Math.PI).toFixed(1)}π)`);
+  
   const animateLanding = () => {
     if (tube.landingId !== savedLandingId || tube.animationState !== 'landing') {
-      console.log(`🛑 Landing animation stopped for coin ${playerSlot + 1} - interrupted`);
+      console.log(`🛑 Landing animation interrupted for coin ${playerSlot + 1}`);
       tube.animationState = 'idle';
       return;
     }
@@ -183,20 +194,24 @@ export function smoothLandCoin(coin, targetRotation, accuracy, tube, playerSlot)
     const elapsed = Date.now() - startTime;
     const progress = Math.min(elapsed / landingDuration, 1);
     
-    currentSpeed = initialSpeed * Math.pow(0.92, progress * 15);
+    // Smooth easing curve for natural deceleration
+    const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+    
+    // Interpolate rotation smoothly to target
+    coin.rotation.x = startRotation + (targetFinal - startRotation) * easeOutQuart;
+    
+    // Stabilize Y and Z rotation as we land
+    coin.rotation.y = startY + (Math.PI / 2 - startY) * easeOutQuart;
+    coin.rotation.z = startZ * (1 - easeOutQuart);
+    
+    // Update quaternion
+    coin.quaternion.setFromEuler(coin.rotation);
     
     if (progress < 1) {
-      coin.rotation.x += currentSpeed;
-      
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      coin.rotation.y = startY + (Math.PI / 2 - startY) * easeOutQuart;
-      coin.rotation.z = startZ * (1 - easeOutQuart);
-      
-      coin.quaternion.setFromEuler(coin.rotation);
-      
       requestAnimationFrame(animateLanding);
     } else {
-      const finalCycles = Math.floor(coin.rotation.x / (Math.PI * 2));
+      // Final position - perfectly on target, facing camera
+      const finalCycles = Math.floor(targetFinal / (Math.PI * 2));
       coin.rotation.x = finalCycles * (Math.PI * 2) + targetRotation;
       coin.rotation.y = Math.PI / 2;
       coin.rotation.z = 0;
@@ -204,7 +219,13 @@ export function smoothLandCoin(coin, targetRotation, accuracy, tube, playerSlot)
       
       tube.animationState = 'idle';
       tube.landingId = null;
-      console.log(`✅ Coin ${playerSlot + 1} landed on target rotation ${coin.rotation.x.toFixed(2)} facing camera (server-side)`);
+      tube.flipId = null;
+      tube.isFlipping = false;
+      
+      console.log(`✅ Coin ${playerSlot + 1} LANDED perfectly:`, {
+        finalRotation: `${coin.rotation.x.toFixed(2)} rad`,
+        result: targetRotation === Math.PI/2 ? 'HEADS' : 'TAILS'
+      });
     }
   };
   
@@ -249,85 +270,101 @@ export function updateCoinAngleVisual(data, tubes, coins) {
 }
 
 /**
- * Animate coin flip
+ * Animate coin flip - ENHANCED from reference implementation
+ * This is the complete working flip animation with proper physics
  */
 export function animateCoinFlip(playerSlot, power, duration, tubes, coins, coinMaterials) {
   const tube = tubes[playerSlot];
   const coin = coins[playerSlot];
   
-  if (!tube || !coin) return;
+  if (!tube || !coin) {
+    console.warn(`⚠️ animateCoinFlip: missing tube or coin for slot ${playerSlot}`);
+    return;
+  }
   
   if (tube.animationState !== 'flipping') {
-    console.log(`⚠️ animateCoinFlip called but state is ${tube.animationState}`);
-    return;
+    console.log(`⚠️ animateCoinFlip called but state is ${tube.animationState}, forcing flip state`);
+    tube.animationState = 'flipping';
   }
   
   const powerPercent = power / 100;
-  const material = tube.selectedMaterial || coinMaterials[2];
-  const speedMult = material.speedMultiplier;
-  const durationMult = material.durationMultiplier;
+  const material = tube.selectedMaterial || coinMaterials[2]; // Default to glass/index 2
+  const speedMult = material.speedMultiplier || 1.0;
+  const durationMult = material.durationMultiplier || 1.0;
   
-  const flipDuration = duration || (2000 + (powerPercent * 6000)) * durationMult;
+  // Calculate flip parameters based on power and material
+  const baseDuration = 2000 + (powerPercent * 6000);
+  const flipDuration = duration || (baseDuration * durationMult);
   const basePowerSpeed = Math.max(0.08, 0.05 + (powerPercent * 0.25));
   const flipSpeed = basePowerSpeed * speedMult;
   
-  const wobbleAmount = 0.02 + (powerPercent * 0.05);
-  const tumbleAmount = 0.01 + (powerPercent * 0.03);
-  
-  console.log(`🎲 Starting visual coin flip for slot ${playerSlot}: duration=${flipDuration}ms, speed=${flipSpeed}`);
+  console.log(`🎲 Starting ENHANCED coin flip for slot ${playerSlot}:`, {
+    power: `${power}%`,
+    material: material.name,
+    duration: `${flipDuration.toFixed(0)}ms`,
+    speed: flipSpeed.toFixed(3),
+    speedMult: speedMult,
+    durationMult: durationMult
+  });
   
   const startTime = Date.now();
-  const flipId = tube.flipId;
+  const startRotation = coin.rotation.x;
+  const flipId = tube.flipId || `flip_${playerSlot}_${startTime}`;
+  tube.flipId = flipId;
   
-  if (!flipId) {
-    console.error(`❌ ERROR: No flipId in tube state for slot ${playerSlot}!`);
-    return;
-  }
+  // Calculate total rotations - many spins for visual effect
+  const rotationsPerSecond = flipSpeed * 60;
+  const totalRotations = (rotationsPerSecond * (flipDuration / 1000)) / (Math.PI * 2);
+  const minFullRotations = Math.floor(totalRotations) - 1;
   
-  let wobblePhase = 0;
-  let tumblePhase = 0;
+  console.log(`🎲 Coin will do ${minFullRotations} full rotations over ${flipDuration.toFixed(0)}ms`);
   
-  const animateFlip = () => {
-    if (tube.flipId !== flipId || tube.animationState !== 'flipping') {
-      console.log(`🛑 Animation stopped for slot ${playerSlot}`);
+  const animate = () => {
+    // Check if animation should continue
+    if (tube.flipId !== flipId || (tube.animationState !== 'flipping' && tube.animationState !== 'landing')) {
+      console.log(`🛑 Flip animation stopped for slot ${playerSlot} (state: ${tube.animationState})`);
       return;
     }
     
     const elapsed = Date.now() - startTime;
     const progress = Math.min(elapsed / flipDuration, 1);
     
-    const easeOut = 1 - Math.pow(1 - progress, 3);
+    // Enhanced easing curve for smooth deceleration
+    const easeOutQuart = 1 - Math.pow(1 - progress, 4);
     
-    coin.updateMatrix();
+    // Calculate current rotation - accelerate then decelerate
+    const rotationProgress = easeOutQuart;
+    const targetRotation = startRotation + (minFullRotations * Math.PI * 2 * rotationProgress);
+    coin.rotation.x = targetRotation;
     
-    if (progress < 0.7) {
-      const currentSpeed = flipSpeed * (1 - (progress / 0.7) * 0.3);
-      coin.rotation.x += currentSpeed;
-      coin.quaternion.setFromEuler(coin.rotation);
+    // Add realistic wobble during flip (dampens as it slows)
+    if (progress < 0.9) {
+      const wobbleIntensity = (1 - progress) * 0.1;
+      coin.rotation.y = (Math.PI / 2) + Math.sin(progress * Math.PI * 8) * wobbleIntensity;
+      coin.rotation.z = Math.sin(progress * Math.PI * 6) * (wobbleIntensity * 0.5);
     } else {
-      const decelProgress = (progress - 0.7) / 0.3;
-      const currentSpeed = flipSpeed * 0.7 * (1 - decelProgress);
-      coin.rotation.x += currentSpeed;
-      coin.quaternion.setFromEuler(coin.rotation);
+      // Stabilize at the end
+      const stabilizeProgress = (progress - 0.9) / 0.1;
+      const wobbleIntensity = (1 - stabilizeProgress) * 0.1;
+      coin.rotation.y = (Math.PI / 2) + (Math.sin(progress * Math.PI * 8) * wobbleIntensity);
+      coin.rotation.z = Math.sin(progress * Math.PI * 6) * (wobbleIntensity * 0.5);
     }
     
-    wobblePhase += 0.15 * (1 - progress * 0.5);
-    const wobbleIntensity = wobbleAmount * (1 - easeOut);
-    coin.rotation.y = (Math.PI / 2) + Math.sin(wobblePhase) * wobbleIntensity;
-    
-    tumblePhase += 0.1 * (1 - progress * 0.5);
-    const tumbleIntensity = tumbleAmount * (1 - easeOut);
-    coin.rotation.z = Math.sin(tumblePhase * 0.7) * tumbleIntensity;
-    
+    // Update quaternion from euler angles
     coin.quaternion.setFromEuler(coin.rotation);
     
     if (progress < 1) {
-      requestAnimationFrame(animateFlip);
+      requestAnimationFrame(animate);
     } else {
-      console.log(`🎲 Visual flip animation complete for slot ${playerSlot}, awaiting result...`);
+      // Animation complete - normalize rotation and stabilize
+      coin.rotation.y = Math.PI / 2;
+      coin.rotation.z = 0;
+      coin.quaternion.setFromEuler(coin.rotation);
+      console.log(`✅ Flip animation complete for slot ${playerSlot}, awaiting server result...`);
+      // Don't change animation state here - wait for server result
     }
   };
   
-  animateFlip();
+  animate();
 }
 

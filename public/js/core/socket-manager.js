@@ -90,16 +90,21 @@ export function initializeSocket(dependencies) {
   // Production: Use same origin (backend serves frontend)
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const isViteDev = isLocalhost && window.location.port === '5173';
+  const isHetzner = window.location.hostname.includes('159.') || window.location.hostname === 'flipnosis.fun' || window.location.hostname === 'www.flipnosis.fun';
   
   if (isViteDev) {
     // Vite dev server (port 5173) - connect directly to backend (port 3000)
     socketUrl = `http://localhost:3000`;
-    console.log('SOCKET: Development mode: Connecting to http://localhost:3000');
+    console.log('🔌 SOCKET: Development mode - Connecting to http://localhost:3000');
+  } else if (isHetzner) {
+    // Hetzner production server - use current origin
+    socketUrl = undefined; // Same origin
+    console.log('🔌 SOCKET: Production mode (Hetzner) - Connecting to same origin:', window.location.origin);
   } else {
     // Production or same-origin: use current origin (undefined = same origin)
     // This works because backend serves the frontend on the same server
     socketUrl = undefined;
-    console.log('SOCKET: Production mode: Connecting to same origin');
+    console.log('🔌 SOCKET: Production mode - Connecting to same origin:', window.location.origin);
   }
   
   const socket = io(socketUrl, {
@@ -108,7 +113,8 @@ export function initializeSocket(dependencies) {
     reconnectionAttempts: 10,
     reconnectionDelay: 2000,
     forceNew: false,
-    autoConnect: true
+    autoConnect: true,
+    path: '/socket.io' // Explicitly set the socket.io path
   });
 
   socket.on('connect', () => {
