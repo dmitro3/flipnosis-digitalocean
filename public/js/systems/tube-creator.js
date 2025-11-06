@@ -598,7 +598,9 @@ export function createTubes(dependencies) {
         updateCoinRotationsFromPlayerChoicesFunc(tubes, players, coins);
 
         if (isServerSideMode && socket && gameIdParam && walletParam) {
-          socket.emit('physics_set_choice', {
+          // CRITICAL FIX: Use socket from tube if available
+          const activeSocket = tubes[i].socket || socket;
+          activeSocket.emit('physics_set_choice', {
             gameId: gameIdParam,
             address: walletParam,
             choice: choice
@@ -643,7 +645,9 @@ export function createTubes(dependencies) {
         playSound(powerChargeSound);
 
         if (isServerSideMode && socket && gameIdParam && walletParam) {
-          socket.emit('physics_power_charging_start', {
+          // CRITICAL FIX: Use socket from tube if available
+          const activeSocket = tubes[i].socket || socket;
+          activeSocket.emit('physics_power_charging_start', {
             gameId: gameIdParam,
             address: walletParam,
             playerSlot: i,
@@ -664,7 +668,9 @@ export function createTubes(dependencies) {
         stopSound(powerChargeSound);
 
         if (isServerSideMode && socket && gameIdParam && walletParam) {
-          socket.emit('physics_power_charging_stop', {
+          // CRITICAL FIX: Use socket from tube if available
+          const activeSocket = tubes[i].socket || socket;
+          activeSocket.emit('physics_power_charging_stop', {
             gameId: gameIdParam,
             address: walletParam,
             playerSlot: i,
@@ -674,13 +680,15 @@ export function createTubes(dependencies) {
         }
 
         if (finalPower >= 5) {
-          if (isServerSideMode && socket && gameIdParam && walletParam) {
+          // CRITICAL FIX: Use socket from tube if available, otherwise check dependencies
+          const activeSocket = tubes[i].socket || socket;
+          if (isServerSideMode && activeSocket && gameIdParam && walletParam) {
             const playerChoice = players[i].choice;
             const releaseData = calculateReleaseAccuracy(finalPower);
 
             // Don't shatter glass locally - wait for server response
             // The server will broadcast physics_coin_flip_start which will trigger animation
-            socket.emit('physics_flip_coin', {
+            activeSocket.emit('physics_flip_coin', {
               gameId: gameIdParam,
               address: walletParam,
               power: finalPower,
@@ -694,10 +702,14 @@ export function createTubes(dependencies) {
 
             console.log(`🪙 Sent flip request to server: power=${finalPower}, choice=${playerChoice}`);
           } else {
-            // Client-side mode: handle locally
-            shatterGlassFunc(i, finalPower);
-            const playerChoice = players[i].choice;
-            flipCoinWithPower(i, finalPower, playerChoice);
+            // Only handle locally if NOT in server-side mode
+            if (!isServerSideMode) {
+              shatterGlassFunc(i, finalPower);
+              const playerChoice = players[i].choice;
+              flipCoinWithPower(i, finalPower, playerChoice);
+            } else {
+              console.warn(`⚠️ Server-side mode but socket not available for tube ${i + 1}. Socket: ${activeSocket ? 'available' : 'null'}, gameId: ${gameIdParam}, wallet: ${walletParam ? 'yes' : 'no'}`);
+            }
           }
 
           powerButton.disabled = true;
@@ -718,7 +730,9 @@ export function createTubes(dependencies) {
           stopSound(powerChargeSound);
 
           if (isServerSideMode && socket && gameIdParam && walletParam) {
-            socket.emit('physics_power_charging_stop', {
+            // CRITICAL FIX: Use socket from tube if available
+            const activeSocket = tubes[i].socket || socket;
+            activeSocket.emit('physics_power_charging_stop', {
               gameId: gameIdParam,
               address: walletParam,
               playerSlot: i,
@@ -728,12 +742,14 @@ export function createTubes(dependencies) {
           }
 
           if (finalPower >= 5) {
-            if (isServerSideMode && socket && gameIdParam && walletParam) {
+            // CRITICAL FIX: Use socket from tube if available, otherwise check dependencies
+            const activeSocket = tubes[i].socket || socket;
+            if (isServerSideMode && activeSocket && gameIdParam && walletParam) {
               const playerChoice = players[i].choice;
               const releaseData = calculateReleaseAccuracy(finalPower);
 
               // Don't shatter glass locally - wait for server response
-              socket.emit('physics_flip_coin', {
+              activeSocket.emit('physics_flip_coin', {
                 gameId: gameIdParam,
                 address: walletParam,
                 power: finalPower,
@@ -840,7 +856,8 @@ export function createTubes(dependencies) {
       foamIntensity: 0,
       hasUsedPower: false,
       selectedCoin: defaultCoin,
-      selectedMaterial: defaultMaterial
+      selectedMaterial: defaultMaterial,
+      socket: socket || null // Store socket reference for later use
     });
   }
 

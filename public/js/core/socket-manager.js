@@ -117,11 +117,22 @@ export function initializeSocket(dependencies) {
     const savedState = loadGameState(gameIdParam, walletParam);
     
     if (gameIdParam && walletParam) {
+      // First join the room
       socket.emit('physics_join_room', {
         roomId: `game_${gameIdParam}`,
         address: walletParam,
         savedState: savedState
       });
+      
+      // Then join the actual game (this adds player to game state)
+      // Wait a bit to ensure room join completes first
+      setTimeout(() => {
+        socket.emit('physics_join', {
+          gameId: gameIdParam,
+          address: walletParam
+        });
+        console.log(`📤 Emitted physics_join for game ${gameIdParam}`);
+      }, 100);
     }
   });
 

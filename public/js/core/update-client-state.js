@@ -150,11 +150,14 @@ export function updateClientFromServerState(state, dependencies) {
       if (serverPlayer && serverPlayer.slotNumber >= 0 && serverPlayer.slotNumber < 4) {
         const localPlayer = players[serverPlayer.slotNumber];
         if (localPlayer && !localPlayer.isEmpty) {
-          // Only update choice if server has a different value AND it's not null/undefined
-          // This prevents resetting a choice that was just set locally but hasn't been processed by server yet
-          if (serverPlayer.choice !== undefined && serverPlayer.choice !== null && serverPlayer.choice !== localPlayer.choice) {
-            console.log(`🔄 Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice || 'null'} (was: ${localPlayer.choice || 'null'})`);
-            localPlayer.choice = serverPlayer.choice;
+          // CRITICAL FIX: Don't overwrite a valid local choice with null/undefined from server
+          // Only sync if server has a valid choice that's different from local
+          // This prevents the server from resetting choices that were just set locally
+          if (serverPlayer.choice !== undefined && serverPlayer.choice !== null) {
+            // Server has a valid choice - sync it
+            if (serverPlayer.choice !== localPlayer.choice) {
+              console.log(`🔄 Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice} (was: ${localPlayer.choice || 'null'})`);
+              localPlayer.choice = serverPlayer.choice;
 
             const tube = tubes[serverPlayer.slotNumber];
             if (tube && tube.cardElement) {

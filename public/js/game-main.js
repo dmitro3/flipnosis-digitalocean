@@ -727,6 +727,12 @@ export async function initGame(params) {
   // Initialize socket with dependencies
   const socket = initializeSocket(socketDeps);
   
+  // CRITICAL FIX: Update socket reference in all tubes after socket is created
+  tubes.forEach(tube => {
+    tube.socket = socket;
+  });
+  console.log(`✅ Updated socket reference in ${tubes.length} tubes`);
+  
   // Now that socket exists, update showCoinSelector to use it
   socketDeps.showCoinSelector = (tubeIndex) => {
     console.log(`🪙 showCoinSelector called for tube ${tubeIndex}`);
