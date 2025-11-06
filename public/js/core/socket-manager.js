@@ -126,19 +126,12 @@ export function initializeSocket(dependencies) {
       });
       console.log(`📤 Emitted physics_join_room for game ${gameIdParam}`);
       
-      // Then join the actual game (this adds player to game state)
-      // Wait a bit to ensure room join completes first
-      setTimeout(() => {
-        if (socket.connected) {
-          socket.emit('physics_join', {
-            gameId: gameIdParam,
-            address: walletParam
-          });
-          console.log(`📤 Emitted physics_join for game ${gameIdParam}`);
-        } else {
-          console.warn(`⚠️ Socket not connected, cannot emit physics_join`);
-        }
-      }, 200);
+      // CRITICAL FIX: Only emit physics_join if player hasn't already joined via API
+      // The API endpoint (/api/battle-royale/:gameId/join) already adds the player
+      // So we should NOT call physics_join if the player is already in the game
+      // We'll let the server state update tell us if we need to join
+      // The physics_join_room is sufficient for socket communication
+      console.log(`ℹ️ Skipping physics_join - player should already be in game via API endpoint`);
     }
   });
 

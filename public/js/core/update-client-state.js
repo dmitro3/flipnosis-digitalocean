@@ -139,9 +139,9 @@ export function updateClientFromServerState(state, dependencies) {
     } else {
       // Player not in state.players yet - don't reset playerSlot, just log
       if (Object.keys(state.players).length === 0) {
-        console.log('⚠️ Server state has no players yet - keeping current playerSlot:', playerSlot);
+        console.log('WARN: Server state has no players yet - keeping current playerSlot:', playerSlot);
       } else {
-        console.log('⚠️ Player not found in server state - keeping current playerSlot:', playerSlot);
+        console.log('WARN: Player not found in server state - keeping current playerSlot:', playerSlot);
       }
     }
 
@@ -157,12 +157,12 @@ export function updateClientFromServerState(state, dependencies) {
           if (serverPlayer.choice !== undefined && serverPlayer.choice !== null) {
             // Server has a valid choice - sync it if different
             if (serverPlayer.choice !== localPlayer.choice) {
-              console.log(`🔄 Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice} (was: ${localPlayer.choice || 'null'})`);
+              console.log(`SYNC: Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice} (was: ${localPlayer.choice || 'null'})`);
               localPlayer.choice = serverPlayer.choice;
             }
           } else if (localPlayer.choice && serverPlayer.choice === null) {
             // Server sent null but local has a choice - keep local choice (it might not have synced yet)
-            console.log(`⚠️ Server sent null choice for player ${serverPlayer.slotNumber + 1}, keeping local choice: ${localPlayer.choice}`);
+            console.log(`WARN: Server sent null choice for player ${serverPlayer.slotNumber + 1}, keeping local choice: ${localPlayer.choice}`);
           }
 
           // Update UI for choice changes
@@ -220,7 +220,7 @@ export function updateClientFromServerState(state, dependencies) {
     // The caller should handle saving if needed
 
     if (newRound > oldRound) {
-      console.log(`🔄 Round ${newRound} started - FULL RESET`);
+      console.log(`ROUND: Round ${newRound} started - FULL RESET`);
       tubes.forEach((tube, i) => {
         tube.hasUsedPower = false;
         tube.power = 0;
