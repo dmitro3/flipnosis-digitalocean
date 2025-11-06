@@ -142,7 +142,13 @@ async function initialize() {
       // Join game
       if (walletParam) {
         try {
-          const res = await fetch(`/api/battle-royale/${encodeURIComponent(gameIdParam)}/join`, {
+          // Use physics endpoint for physics games, regular endpoint for others
+          const isPhysicsGame = gameIdParam && gameIdParam.startsWith('physics_');
+          const endpoint = isPhysicsGame 
+            ? `/api/physics-battle-royale/${encodeURIComponent(gameIdParam)}/join`
+            : `/api/battle-royale/${encodeURIComponent(gameIdParam)}/join`;
+          
+          const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
