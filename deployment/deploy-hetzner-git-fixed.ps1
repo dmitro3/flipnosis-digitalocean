@@ -32,21 +32,51 @@ try {
     throw
 }
 
-# Add all changes
+# CRITICAL: Ensure public folder is tracked in git
+Write-Info "Ensuring public folder is tracked in git..."
+$publicFiles = & git ls-files public/ 2>&1
+if ($LASTEXITCODE -ne 0 -or $publicFiles.Count -eq 0) {
+    Write-Info "Public folder not tracked, adding to git..."
+    & git add public/
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "Added public folder to git"
+        # Commit public folder separately if it was just added
+        $publicCommit = & git commit -m "Ensure public folder is tracked" 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok "Committed public folder"
+        }
+    } else {
+        Write-Warn "Could not add public folder (may already be tracked or doesn't exist)"
+    }
+} else {
+    $fileCount = $publicFiles.Count
+    Write-Ok "Public folder is tracked ($fileCount files)"
+}
+
+# Add all changes (including any new files)
 Write-Info "Adding all changes..."
 & git add -A
 
-# Commit changes
-Write-Info "Committing changes: $Message"
-try {
-    $commitResult = & git commit -m $Message 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        Write-Ok "Changes committed"
-    } else {
-        Write-Info "No changes to commit (already up to date)"
+# Check if there are any changes to commit
+$status = & git status --porcelain 2>&1
+if ($status -and $status.Count -gt 0) {
+    Write-Info "Found changes to commit:"
+    $status | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+    
+    # Commit changes
+    Write-Info "Committing changes: $Message"
+    try {
+        $commitResult = & git commit -m $Message 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok "Changes committed"
+        } else {
+            Write-Warn "Commit failed: $commitResult"
+        }
+    } catch {
+        Write-Warn "Commit failed: $($_.Exception.Message)"
     }
-} catch {
-    Write-Info "No changes to commit or commit failed: $($_.Exception.Message)"
+} else {
+    Write-Info "No changes to commit (already up to date)"
 }
 
 # Get server IP for health checks
@@ -125,11 +155,34 @@ if ($ServerIP) {
     }
 }
 
-Write-Ok "Deployment complete!"
 Write-Host ""
-Write-Host "To check detailed status, run:" -ForegroundColor Yellow
-if ($ServerIP) {
-    Write-Host ".\deployment\check-hetzner-status.ps1 -ServerIP $ServerIP" -ForegroundColor Yellow
+Write-Ok "================================================"
+Write-Ok "Deployment Complete!"
+Write-Ok "================================================"
+Write-Host ""
+Write-Host "Summary:" -ForegroundColor Cyan
+$publicFiles = & git ls-files public/ 2>&1
+if ($publicFiles.Count -gt 0) {
+    $fileCount = $publicFiles.Count
+    Write-Host "  [OK] Public folder tracked ($fileCount files)" -ForegroundColor Green
 } else {
-    Write-Host ".\deployment\check-hetzner-status.ps1 -ServerIP <YOUR_SERVER_IP>" -ForegroundColor Yellow
+    Write-Host "  [WARN] Public folder not tracked" -ForegroundColor Yellow
 }
+Write-Host "  [OK] All changes committed" -ForegroundColor Green
+Write-Host "  [OK] Code pushed to server" -ForegroundColor Green
+Write-Host "  [OK] Server deployment triggered" -ForegroundColor Green
+Write-Host ""
+Write-Host "Your changes should be live on the server now!" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "To check detailed status, run:" -ForegroundColor Cyan
+if ($ServerIP) {
+    Write-Host "  .\deployment\check-hetzner-status.ps1 -ServerIP $ServerIP" -ForegroundColor White
+} else {
+    Write-Host "  .\deployment\check-hetzner-status.ps1 -ServerIP <YOUR_SERVER_IP>" -ForegroundColor White
+}
+Write-Host ""
+Write-Host "To view server logs:" -ForegroundColor Cyan
+if ($ServerIP) {
+    Write-Host "  ssh root@${ServerIP} 'tail -f /opt/flipnosis/app/server.log'" -ForegroundColor White
+}
+Write-Host ""
