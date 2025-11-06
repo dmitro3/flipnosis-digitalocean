@@ -3,14 +3,14 @@
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "🔄 Syncing public/ to dist/..." -ForegroundColor Cyan
+Write-Host "Syncing public/ to dist/..." -ForegroundColor Cyan
 
 # Copy all JS files
-Write-Host "📁 Copying JavaScript files..." -ForegroundColor Yellow
+Write-Host "Copying JavaScript files..." -ForegroundColor Yellow
 Copy-Item -Path "public\js\*" -Destination "dist\js\" -Recurse -Force
 
 # Copy HTML files  
-Write-Host "📄 Copying HTML files..." -ForegroundColor Yellow
+Write-Host "Copying HTML files..." -ForegroundColor Yellow
 Copy-Item -Path "public\*.html" -Destination "dist\" -Force
 
 # Copy other assets if needed
@@ -18,6 +18,6 @@ Copy-Item -Path "public\*.html" -Destination "dist\" -Force
 # Copy-Item -Path "public\images\*" -Destination "dist\images\" -Recurse -Force
 # Copy-Item -Path "public\coins\*" -Destination "dist\coins\" -Recurse -Force
 
-Write-Host "✅ Sync complete! All files updated in dist/" -ForegroundColor Green
-Write-Host "🌐 Hard refresh your browser (Ctrl + Shift + R) to see changes" -ForegroundColor Cyan
+Write-Host "Sync complete! All files updated in dist/" -ForegroundColor Green
+Write-Host "Hard refresh your browser (Ctrl + Shift + R) to see changes" -ForegroundColor Cyan
 
