@@ -165,26 +165,26 @@ export function updateClientFromServerState(state, dependencies) {
             console.log(`⚠️ Server sent null choice for player ${serverPlayer.slotNumber + 1}, keeping local choice: ${localPlayer.choice}`);
           }
 
-            const tube = tubes[serverPlayer.slotNumber];
-            if (tube && tube.cardElement) {
-              const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
-              const choiceBadge = tube.cardElement.querySelector('.choice-badge');
+          // Update UI for choice changes
+          const tube = tubes[serverPlayer.slotNumber];
+          if (tube && tube.cardElement) {
+            const choiceButtons = tube.cardElement.querySelector('.choice-buttons');
+            const choiceBadge = tube.cardElement.querySelector('.choice-badge');
 
-              if (choiceButtons && choiceBadge) {
-                if (serverPlayer.choice) {
-                  choiceButtons.style.display = 'none';
-                  choiceBadge.style.display = 'inline-block';
-                  choiceBadge.textContent = serverPlayer.choice.toUpperCase();
-                  choiceBadge.className = `choice-badge ${serverPlayer.choice}`;
+            if (choiceButtons && choiceBadge) {
+              if (serverPlayer.choice) {
+                choiceButtons.style.display = 'none';
+                choiceBadge.style.display = 'inline-block';
+                choiceBadge.textContent = serverPlayer.choice.toUpperCase();
+                choiceBadge.className = `choice-badge ${serverPlayer.choice}`;
+              } else {
+                choiceBadge.style.display = 'none';
+                // Use slot from ref if available, otherwise use passed value
+                const currentSlot = playerSlotRef ? playerSlotRef.value : playerSlot;
+                if (currentSlot === serverPlayer.slotNumber) {
+                  choiceButtons.style.display = 'flex';
                 } else {
-                  choiceBadge.style.display = 'none';
-                  // Use slot from ref if available, otherwise use passed value
-                  const currentSlot = playerSlotRef ? playerSlotRef.value : playerSlot;
-                  if (currentSlot === serverPlayer.slotNumber) {
-                    choiceButtons.style.display = 'flex';
-                  } else {
-                    choiceButtons.style.display = 'none';
-                  }
+                  choiceButtons.style.display = 'none';
                 }
               }
             }
