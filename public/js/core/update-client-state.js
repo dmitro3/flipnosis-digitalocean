@@ -12,7 +12,7 @@ import { updateCoinRotationsFromPlayerChoices, updateCoinStatesFromServer } from
 export function updateClientFromServerState(state, dependencies) {
   // Ensure dependencies exists
   if (!dependencies) {
-    console.error('❌ updateClientFromServerState called without dependencies');
+    console.error('ERROR: updateClientFromServerState called without dependencies');
     return;
   }
   
@@ -42,7 +42,7 @@ export function updateClientFromServerState(state, dependencies) {
   const safeShowGameOverScreenFunc = (showGameOverScreen && typeof showGameOverScreen === 'function')
     ? showGameOverScreen
     : ((winnerIndex, winnerName) => {
-        console.warn('⚠️ showGameOverScreen not available, cannot show game over screen', {
+        console.warn('WARN: showGameOverScreen not available, cannot show game over screen', {
           winnerIndex,
           winnerName,
           wasPassed: showGameOverScreen !== undefined,
@@ -51,7 +51,7 @@ export function updateClientFromServerState(state, dependencies) {
       });
 
   if (gameOver && state && state.phase !== 'game_over') {
-    console.log('🛑 Ignoring state update after game over:', state.phase);
+    console.log('STOP: Ignoring state update after game over:', state.phase);
     return;
   }
   if (!state) return;
@@ -61,10 +61,10 @@ export function updateClientFromServerState(state, dependencies) {
     if (existingIndicator) {
       existingIndicator.remove();
     }
-    console.log(`🎮 Game is now round_active - Round ${state.currentRound}`);
+    console.log(`GAME: Game is now round_active - Round ${state.currentRound}`);
     updatePlayerCardButtons();
   } else if (state.phase === 'game_over') {
-    console.log(`🏁 GAME OVER DETECTED!`, {
+    console.log(`GAME_OVER: GAME OVER DETECTED!`, {
       phase: state.phase,
       winner: state.winner,
       gameOver: gameOver,
@@ -73,33 +73,33 @@ export function updateClientFromServerState(state, dependencies) {
 
     if (state.winner) {
       const winnerIndex = players.findIndex(p => p.address && p.address.toLowerCase() === state.winner.toLowerCase());
-      console.log(`🏆 Winner search:`, {
+      console.log(`WINNER: Winner search:`, {
         winnerAddress: state.winner,
         winnerIndex: winnerIndex,
         players: players.map(p => ({ name: p.name, address: p.address }))
       });
 
       if (winnerIndex >= 0) {
-        console.log(`🏆 Server declared winner: ${players[winnerIndex].name}`);
+        console.log(`WINNER: Server declared winner: ${players[winnerIndex].name}`);
         try {
           safeShowGameOverScreenFunc(winnerIndex, players[winnerIndex].name);
         } catch (error) {
-          console.error('❌ Error calling showGameOverScreen:', error);
+          console.error('ERROR: Error calling showGameOverScreen:', error);
         }
       } else {
-        console.log(`🏆 Server declared winner but couldn't find player: ${state.winner}`);
+        console.log(`WINNER: Server declared winner but couldn't find player: ${state.winner}`);
         try {
           safeShowGameOverScreenFunc(-1, state.winner);
         } catch (error) {
-          console.error('❌ Error calling showGameOverScreen:', error);
+          console.error('ERROR: Error calling showGameOverScreen:', error);
         }
       }
     } else {
-      console.log(`🏆 Server declared game over with no winner`);
+      console.log(`WINNER: Server declared game over with no winner`);
       try {
         safeShowGameOverScreenFunc(-1, null);
       } catch (error) {
-        console.error('❌ Error calling showGameOverScreen:', error);
+        console.error('ERROR: Error calling showGameOverScreen:', error);
       }
     }
   }
@@ -110,7 +110,7 @@ export function updateClientFromServerState(state, dependencies) {
     if (player) {
       // Get the detected slot number from server state
       const detectedSlot = player.slotNumber;
-      console.log(`🎮 Server detected player slot: ${detectedSlot} (current local slot: ${playerSlot})`);
+      console.log(`SLOT: Server detected player slot: ${detectedSlot} (current local slot: ${playerSlot})`);
 
       // Update playerSlot if we have a mutable reference, otherwise use detected slot for operations
       // Get current slot value from ref if available, otherwise use passed value
@@ -368,7 +368,7 @@ export function updateClientFromServerState(state, dependencies) {
         mobilePowerValue.textContent = '0';
       }
 
-      console.log(`✅ Round ${newRound} reset complete - players can charge and choose again`);
+      console.log(`RESET: Round ${newRound} reset complete - players can charge and choose again`);
       updatePlayerCardButtons();
     }
   }
