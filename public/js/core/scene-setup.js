@@ -32,11 +32,24 @@ export async function initializeScene(roomParam) {
   camera.layers.enable(1); // Bloom layer - pearls and plasma
   console.log('📷 Camera positioned for shorter tubes with dual-layer support');
   
-  // WebGL Renderer
-  const webglRenderer = new THREE.WebGLRenderer({ 
-    antialias: true, 
-    alpha: true
-  });
+  // WebGL Renderer with Chrome compatibility
+  let webglRenderer;
+  try {
+    webglRenderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: false,
+      failIfMajorPerformanceCaveat: false
+    });
+  } catch (error) {
+    console.error('ERROR: Failed to create WebGL renderer, trying fallback:', error);
+    // Fallback with minimal options
+    webglRenderer = new THREE.WebGLRenderer({ 
+      alpha: true
+    });
+  }
+  
   webglRenderer.setSize(width, height);
   webglRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   webglRenderer.setClearColor(0x000000, 0);
@@ -44,8 +57,24 @@ export async function initializeScene(roomParam) {
   webglRenderer.toneMapping = THREE.ACESFilmicToneMapping;
   webglRenderer.toneMappingExposure = 1.0;
   webglRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  
+  // Ensure canvas is visible and properly styled
+  const canvas = webglRenderer.domElement;
+  canvas.style.display = 'block';
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  canvas.style.position = 'absolute';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.style.zIndex = '1';
+  
   console.log('🎨 WebGL Renderer initialized with transparency');
-  document.getElementById('container').appendChild(webglRenderer.domElement);
+  const container = document.getElementById('container');
+  if (container) {
+    container.appendChild(canvas);
+  } else {
+    console.error('ERROR: Container element not found for WebGL renderer');
+  }
   
   // Bloom composer for selective pearl rendering
   const bloomRenderTarget = new THREE.WebGLRenderTarget(width, height, {

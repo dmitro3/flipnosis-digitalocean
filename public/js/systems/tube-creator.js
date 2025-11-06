@@ -179,6 +179,9 @@ export function createTubes(dependencies) {
     const tube = new THREE.Mesh(tubeGeometry, glassMaterial);
     tube.position.set(x, TUBE_Y_POSITION, 0);
     tube.rotation.y = Math.PI;
+    tube.visible = true;
+    tube.frustumCulled = false;
+    tube.layers.set(0); // Ensure it's on the correct layer
     scene.add(tube);
 
     // Backing
@@ -198,6 +201,9 @@ export function createTubes(dependencies) {
     });
     const backing = new THREE.Mesh(backingGeometry, backingMaterial);
     backing.position.set(x, TUBE_Y_POSITION, -10);
+    backing.visible = true;
+    backing.frustumCulled = false;
+    backing.layers.set(0);
     scene.add(backing);
 
     // Cap material
@@ -235,10 +241,16 @@ export function createTubes(dependencies) {
 
     const topCap = new THREE.Mesh(capGeometry, topCapMaterial);
     topCap.position.set(x, TUBE_Y_POSITION + (tubeStyle.tubeHeight / 2) + 7.5, 0);
+    topCap.visible = true;
+    topCap.frustumCulled = false;
+    topCap.layers.set(0);
     scene.add(topCap);
 
     const bottomCap = new THREE.Mesh(capGeometry, capMaterial.clone());
     bottomCap.position.set(x, TUBE_Y_POSITION - (tubeStyle.tubeHeight / 2) - 7.5, 0);
+    bottomCap.visible = true;
+    bottomCap.frustumCulled = false;
+    bottomCap.layers.set(0);
     scene.add(bottomCap);
 
     // Rims
@@ -252,10 +264,16 @@ export function createTubes(dependencies) {
     const topRim = new THREE.Mesh(rimGeometry, rimMaterial);
     topRim.position.set(x, TUBE_Y_POSITION + tubeStyle.tubeHeight / 2, 0);
     topRim.rotation.x = Math.PI / 2;
+    topRim.visible = true;
+    topRim.frustumCulled = false;
+    topRim.layers.set(0);
     scene.add(topRim);
 
     const bottomRim = topRim.clone();
     bottomRim.position.y = TUBE_Y_POSITION - tubeStyle.tubeHeight / 2;
+    bottomRim.visible = true;
+    bottomRim.frustumCulled = false;
+    bottomRim.layers.set(0);
     scene.add(bottomRim);
 
     // Physics body
@@ -360,6 +378,8 @@ export function createTubes(dependencies) {
     liquid.position.set(x, liquidY, 0);
     liquid.scale.y = 1.0;
     liquid.visible = true;
+    liquid.frustumCulled = false;
+    liquid.layers.set(0);
     scene.add(liquid);
 
     const liquidLight = new THREE.PointLight(0x1a1a2e, 0.3, 400);

@@ -214,6 +214,7 @@ export function initializeSocket(dependencies) {
       
       // Wrap updateClientFromServerState in try-catch since it can throw async errors
       try {
+        const previousSlot = playerSlotRef.value;
         updateClientFromServerState(state, {
           gameOver,
           players,
@@ -238,11 +239,11 @@ export function initializeSocket(dependencies) {
           TUBE_HEIGHT
         });
         
-        // Update parent playerSlot if it was modified
-        if (playerSlotRef.value !== playerSlot) {
+        // Only log slot change if it actually changed and is a valid transition
+        if (playerSlotRef.value !== previousSlot && playerSlotRef.value >= 0) {
           // Note: playerSlot is passed by value, so we can't update it here
           // The update should happen in game-main.js's updateClientFromServerState wrapper
-          console.log(`SLOT: Detected slot change: ${playerSlot} -> ${playerSlotRef.value}`);
+          console.log(`🔄 Detected slot change: ${previousSlot} -> ${playerSlotRef.value}`);
         }
       } catch (updateError) {
         console.error('ERROR: Error in updateClientFromServerState:', updateError);
@@ -253,10 +254,15 @@ export function initializeSocket(dependencies) {
         });
       }
       
-      try {
-        createMobilePlayerCards();
-      } catch (cardsError) {
-        console.error('ERROR: Error creating mobile player cards:', cardsError);
+      // Only recreate mobile player cards if players data actually changed
+      // Debounce to avoid recreating on every state update
+      if (!socket._lastPlayerState || JSON.stringify(state.players) !== socket._lastPlayerState) {
+        try {
+          createMobilePlayerCards();
+          socket._lastPlayerState = JSON.stringify(state.players);
+        } catch (cardsError) {
+          console.error('ERROR: Error creating mobile player cards:', cardsError);
+        }
       }
     } catch (error) {
       console.error('ERROR: Error in physics_state_update handler:', error);
