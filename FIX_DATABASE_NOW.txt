@@ -1,0 +1,47 @@
+===========================================
+COPY AND PASTE THIS INTO YOUR HETZNER SERVER
+===========================================
+
+1. SSH into your server:
+   ssh root@159.69.204.247
+
+2. Then copy and paste this ENTIRE block:
+
+cd /root/flipnosis
+
+# Backup database first
+cp database.sqlite database.sqlite.backup.$(date +%Y%m%d_%H%M%S)
+
+# Fix the database schema
+sqlite3 database.sqlite << 'EOF'
+ALTER TABLE battle_royale_games ADD COLUMN room_type TEXT DEFAULT 'potion';
+ALTER TABLE battle_royale_games ADD COLUMN creator_participates BOOLEAN DEFAULT 0;
+ALTER TABLE battle_royale_games ADD COLUMN game_data TEXT;
+UPDATE battle_royale_games SET room_type = 'potion' WHERE room_type IS NULL;
+UPDATE battle_royale_games SET creator_participates = 0 WHERE creator_participates IS NULL;
+.quit
+EOF
+
+# Verify the fix
+echo "Checking if columns were added..."
+sqlite3 database.sqlite "PRAGMA table_info(battle_royale_games);" | grep -E "(room_type|creator_participates|game_data)"
+
+# Restart the server
+pm2 restart flipnosis-server
+
+# Check logs
+pm2 logs --lines 30 --nostream
+
+echo "✅ Database fixed! Try creating a battle royale now."
+
+===========================================
+
+WHAT THIS DOES:
+- Backs up your database
+- Adds the 3 missing columns (room_type, creator_participates, game_data)
+- Verifies they were added
+- Restarts the server
+- Shows you the logs
+
+This will fix the 500 error you're getting when creating battles!
+

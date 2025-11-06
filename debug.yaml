@@ -1,17 +1,16 @@
-PLayer 1
-📜 Init script loaded, document.readyState: interactive
-init.js?v=9:217 ✅ DOM already loaded, initializing immediately...
-init.js?v=9:13 🚀 Starting game initialization...
-init.js?v=9:14 📍 Current location: https://flipnosis.fun/test-tubes.html?gameId=physics_1762107101884_6a916e5fcab5c133&room=potion
-init.js?v=9:32 ✅ DOM elements found: info, container
-init.js?v=9:42 📋 URL Parameters: {gameId: 'physics_1762107101884_6a916e5fcab5c133', role: 'player', wallet: 'none', room: 'potion', hasToken: false}
-init.js?v=9:53 🔍 Wallet from localStorage: 0x6BA0...
-init.js?v=9:102 📦 Calling initGame()...
+init.js?v=10:211 📜 Init script loaded, document.readyState: interactive
+init.js?v=10:235 ✅ DOM already loaded, initializing immediately...
+init.js?v=10:13 🚀 Starting game initialization...
+init.js?v=10:14 📍 Current location: https://flipnosis.fun/test-tubes.html?gameId=physics_1762357173111_8724a9aa64a3530e&room=potion
+init.js?v=10:32 ✅ DOM elements found: info, container
+init.js?v=10:42 📋 URL Parameters: {gameId: 'physics_1762357173111_8724a9aa64a3530e', role: 'player', wallet: 'none', room: 'potion', hasToken: false}
+init.js?v=10:53 🔍 Wallet from localStorage: 0x3618...
+init.js?v=10:102 📦 Calling initGame()...
 game-main.js:28 🎮 Initializing game...
 scene-setup.js:33 📷 Camera positioned for shorter tubes with dual-layer support
 scene-setup.js:47 🎨 WebGL Renderer initialized with transparency
 scene-setup.js:77 ✨ Selective bloom composer created for layer 1 (pearls)!
-test-tubes.html?gameId=physics_1762107101884_6a916e5fcab5c133&room=potion:1078 🎮 Game page loaded
+test-tubes.html?gameId=physics_1762357173111_8724a9aa64a3530e&room=potion:1089 🎮 Game page loaded
 scene-setup.js:130 🖼️ Background image loaded! Size: 1791x1018
 scene-setup.js:166 ⚛️ Physics world created with gravity
 scene-setup.js:230 🎨 Brass metallic textures initialized (with fallbacks)
@@ -29,414 +28,562 @@ tube-creator.js:915 ✅ Pre-compiled 7 materials
 tube-creator.js:941 🎮 Game started - coin textures already applied during tube creation
 socket-manager.js:82 ✅ showGameOverScreen found in dependencies, type: function
 socket-manager.js:102 🔌 Production mode: Connecting to same origin
-game-main.js:706 ✅ Game initialized successfully
-init.js?v=9:113 ✅ Game initialized successfully! {scene: Scene, camera: PerspectiveCamera, webglRenderer: WebGLRenderer, cssRenderer: CSS3DRenderer, bloomComposer: EffectComposer, …}
-init.js?v=9:123 🔗 Loading participants and joining game...
-init.js?v=9:128 👥 Calling loadParticipants...
-game-main.js:815 📡 Fetching participants for game: physics_1762107101884_6a916e5fcab5c133
+game-main.js:808 ✅ Game initialized successfully
+init.js?v=10:113 ✅ Game initialized successfully! {scene: Scene, camera: PerspectiveCamera, webglRenderer: WebGLRenderer, cssRenderer: CSS3DRenderer, bloomComposer: EffectComposer, …}
+init.js?v=10:123 🔗 Loading participants and joining game...
+init.js?v=10:128 👥 Calling loadParticipants...
+game-main.js:902 📡 Fetching participants for game: physics_1762357173111_8724a9aa64a3530e
 tube-creator.js:938 ✅ ALL ASSETS PRELOADED - Game ready!
-4tube-creator.js:793 ✅ Applied default Classic textures to Empty's coin
-game-main.js:824 👥 Raw participants data: (2) [{…}, {…}]
-game-main.js:852 👤 Slot 1: {raw: {…}, processed: {…}}
-game-main.js:860 🎮 Current player slot set to: 0
-game-main.js:852 👤 Slot 2: {raw: {…}, processed: {…}}
-game-main.js:830 📭 Slot 3: Empty
-game-main.js:830 📭 Slot 4: Empty
-game-main.js:870 ✅ Participants mapped: (4) [{…}, {…}, {…}, {…}]
-game-main.js:892 ✅ Removed overlay from player slot 1
-game-main.js:892 ✅ Removed overlay from player slot 2
+tube-creator.js:793 ✅ Applied default Classic textures to Empty's coin
+tube-creator.js:793 ✅ Applied default Classic textures to Empty's coin
+tube-creator.js:793 ✅ Applied default Classic textures to Empty's coin
+tube-creator.js:793 ✅ Applied default Classic textures to Empty's coin
+game-main.js:911 👥 Raw participants data: (2) [{…}, {…}]
+game-main.js:939 👤 Slot 1: {raw: {…}, processed: {…}}
+game-main.js:947 🎮 Current player slot set to: 0
+game-main.js:939 👤 Slot 2: {raw: {…}, processed: {…}}
+game-main.js:917 📭 Slot 3: Empty
+game-main.js:917 📭 Slot 4: Empty
+game-main.js:957 ✅ Participants mapped: (4) [{…}, {…}, {…}, {…}]
+game-main.js:982 ✅ Removed overlay from player slot 1
+game-main.js:982 ✅ Removed overlay from player slot 2
 game-main.js:127 🔄 Updated player card buttons
-init.js?v=9:130 ✅ Participants loaded successfully
+init.js?v=10:130 ✅ Participants loaded successfully
 socket-manager.js:115 ✅ Connected to server
 game-state.js:131 📂 No saved game state found
-test-tubes.html?gameId=physics_1762107101884_6a916e5fcab5c133&room=potion:1082  GET https://flipnosis.fun/images/default-avatar.png 404 (Not Found)Understand this error
-init.js?v=9:145  POST https://flipnosis.fun/api/battle-royale/physics_1762107101884_6a916e5fcab5c133/join 400 (Bad Request)
-initialize @ init.js?v=9:145
+init.js?v=10:145  POST https://flipnosis.fun/api/battle-royale/physics_1762357173111_8724a9aa64a3530e/join 400 (Bad Request)
+initialize @ init.js?v=10:145
 await in initialize
-(anonymous) @ init.js?v=9:218Understand this error
+safeInitialize @ init.js?v=10:236
+(anonymous) @ init.js?v=10:251
+init.js?v=10:168 ✅ Player already in game - this is fine, reloading participants
+init.js?v=10:172 🔄 Reloading participants immediately...
+game-main.js:902 📡 Fetching participants for game: physics_1762357173111_8724a9aa64a3530e
 socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 58, players: 2}
-update-client-state.js:63 🎮 Game is now round_active - Round 1
+update-client-state.js:64 🎮 Game is now round_active - Round 1
 game-main.js:127 🔄 Updated player card buttons
-update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
 game-main.js:127 🔄 Updated player card buttons
-game-main.js:209 ⏱️ Timer: 58
-socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
-    at updateClientFromServerState (update-client-state.js:189:18)
-    at updateClientFromServerState (game-main.js:510:22)
-    at Et.<anonymous> (socket-manager.js:206:9)
-    at k.emit (index.js:136:20)
-    at Et.emitEvent (socket.js:538:20)
-    at Et.onevent (socket.js:525:18)
-    at Et.onpacket (socket.js:495:22)
-    at k.emit (index.js:136:20)
-    at manager.js:209:18
-(anonymous) @ socket-manager.js:236
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
-(anonymous) @ socket-manager.js:237
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
-game-main.js:552 📱 Mobile player boxes created: 4 boxes
-init.js?v=9:168 ✅ Player already in game - this is fine, reloading participants
-init.js?v=9:172 🔄 Reloading participants immediately...
-game-main.js:815 📡 Fetching participants for game: physics_1762107101884_6a916e5fcab5c133
-game-main.js:824 👥 Raw participants data: (2) [{…}, {…}]
-game-main.js:852 👤 Slot 1: {raw: {…}, processed: {…}}
-game-main.js:860 🎮 Current player slot set to: 0
-game-main.js:852 👤 Slot 2: {raw: {…}, processed: {…}}
-game-main.js:830 📭 Slot 3: Empty
-game-main.js:830 📭 Slot 4: Empty
-game-main.js:870 ✅ Participants mapped: (4) [{…}, {…}, {…}, {…}]
+game-main.js:279 ⏱️ Timer: 58
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+game-main.js:911 👥 Raw participants data: (2) [{…}, {…}]
+game-main.js:939 👤 Slot 1: {raw: {…}, processed: {…}}
+game-main.js:947 🎮 Current player slot set to: 0
+game-main.js:939 👤 Slot 2: {raw: {…}, processed: {…}}
+game-main.js:917 📭 Slot 3: Empty
+game-main.js:917 📭 Slot 4: Empty
+game-main.js:957 ✅ Participants mapped: (4) [{…}, {…}, {…}, {…}]
 game-main.js:127 🔄 Updated player card buttons
-default-avatar.png:1  GET https://flipnosis.fun/images/default-avatar.png 404 (Not Found)Understand this error
-favicon.ico:1  GET https://flipnosis.fun/favicon.ico 404 (Not Found)Understand this error
 socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 57, players: 2}
-update-client-state.js:63 🎮 Game is now round_active - Round 1
+update-client-state.js:64 🎮 Game is now round_active - Round 1
 game-main.js:127 🔄 Updated player card buttons
-update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
 game-main.js:127 🔄 Updated player card buttons
-game-main.js:209 ⏱️ Timer: 57
-socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
-    at updateClientFromServerState (update-client-state.js:189:18)
-    at updateClientFromServerState (game-main.js:510:22)
-    at Et.<anonymous> (socket-manager.js:206:9)
-    at k.emit (index.js:136:20)
-    at Et.emitEvent (socket.js:538:20)
-    at Et.onevent (socket.js:525:18)
-    at Et.onpacket (socket.js:495:22)
-    at k.emit (index.js:136:20)
-    at manager.js:209:18
-(anonymous) @ socket-manager.js:236
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
-(anonymous) @ socket-manager.js:237
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
-game-main.js:552 📱 Mobile player boxes created: 4 boxes
-game-main.js:954 🔄 Auto-loading participants after initialization (fallback)...
-game-main.js:815 📡 Fetching participants for game: physics_1762107101884_6a916e5fcab5c133
-game-main.js:824 👥 Raw participants data: (2) [{…}, {…}]
-game-main.js:852 👤 Slot 1: {raw: {…}, processed: {…}}
-game-main.js:860 🎮 Current player slot set to: 0
-game-main.js:852 👤 Slot 2: {raw: {…}, processed: {…}}
-game-main.js:830 📭 Slot 3: Empty
-game-main.js:830 📭 Slot 4: Empty
-game-main.js:870 ✅ Participants mapped: (4) [{…}, {…}, {…}, {…}]
-game-main.js:127 🔄 Updated player card buttons
-default-avatar.png:1  GET https://flipnosis.fun/images/default-avatar.png 404 (Not Found)Understand this error
+game-main.js:279 ⏱️ Timer: 57
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
 socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 56, players: 2}
-update-client-state.js:63 🎮 Game is now round_active - Round 1
+update-client-state.js:64 🎮 Game is now round_active - Round 1
 game-main.js:127 🔄 Updated player card buttons
-update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
 game-main.js:127 🔄 Updated player card buttons
-game-main.js:209 ⏱️ Timer: 56
-socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
-    at updateClientFromServerState (update-client-state.js:189:18)
-    at updateClientFromServerState (game-main.js:510:22)
-    at Et.<anonymous> (socket-manager.js:206:9)
-    at k.emit (index.js:136:20)
-    at Et.emitEvent (socket.js:538:20)
-    at Et.onevent (socket.js:525:18)
-    at Et.onpacket (socket.js:495:22)
-    at k.emit (index.js:136:20)
-    at manager.js:209:18
-(anonymous) @ socket-manager.js:236
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
-(anonymous) @ socket-manager.js:237
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
-game-main.js:552 📱 Mobile player boxes created: 4 boxes
+game-main.js:279 ⏱️ Timer: 56
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+game-main.js:1044 🔄 Auto-loading participants after initialization (fallback)...
+game-main.js:902 📡 Fetching participants for game: physics_1762357173111_8724a9aa64a3530e
+game-main.js:911 👥 Raw participants data: (2) [{…}, {…}]
+game-main.js:939 👤 Slot 1: {raw: {…}, processed: {…}}
+game-main.js:947 🎮 Current player slot set to: 0
+game-main.js:939 👤 Slot 2: {raw: {…}, processed: {…}}
+game-main.js:917 📭 Slot 3: Empty
+game-main.js:917 📭 Slot 4: Empty
+game-main.js:957 ✅ Participants mapped: (4) [{…}, {…}, {…}, {…}]
+game-main.js:127 🔄 Updated player card buttons
 socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 55, players: 2}
-update-client-state.js:63 🎮 Game is now round_active - Round 1
+update-client-state.js:64 🎮 Game is now round_active - Round 1
 game-main.js:127 🔄 Updated player card buttons
-update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
 game-main.js:127 🔄 Updated player card buttons
-game-main.js:209 ⏱️ Timer: 55
-socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
-    at updateClientFromServerState (update-client-state.js:189:18)
-    at updateClientFromServerState (game-main.js:510:22)
-    at Et.<anonymous> (socket-manager.js:206:9)
-    at k.emit (index.js:136:20)
-    at Et.emitEvent (socket.js:538:20)
-    at Et.onevent (socket.js:525:18)
-    at Et.onpacket (socket.js:495:22)
-    at k.emit (index.js:136:20)
-    at manager.js:209:18
-(anonymous) @ socket-manager.js:236
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
-(anonymous) @ socket-manager.js:237
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
-game-main.js:552 📱 Mobile player boxes created: 4 boxes
+game-main.js:279 ⏱️ Timer: 55
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
 socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 54, players: 2}
-update-client-state.js:63 🎮 Game is now round_active - Round 1
+update-client-state.js:64 🎮 Game is now round_active - Round 1
 game-main.js:127 🔄 Updated player card buttons
-update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
 game-main.js:127 🔄 Updated player card buttons
-game-main.js:209 ⏱️ Timer: 54
-socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
-    at updateClientFromServerState (update-client-state.js:189:18)
-    at updateClientFromServerState (game-main.js:510:22)
-    at Et.<anonymous> (socket-manager.js:206:9)
-    at k.emit (index.js:136:20)
-    at Et.emitEvent (socket.js:538:20)
-    at Et.onevent (socket.js:525:18)
-    at Et.onpacket (socket.js:495:22)
-    at k.emit (index.js:136:20)
-    at manager.js:209:18
-(anonymous) @ socket-manager.js:236
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
-(anonymous) @ socket-manager.js:237
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
-game-main.js:552 📱 Mobile player boxes created: 4 boxes
-game-main.js:752 🪙 Global change coin button clicked
-game-main.js:762 🪙 Opening coin selector for player slot 0
-game-main.js:642 🪙 showCoinSelector called for tube 0
-coin-selector.js:1 Failed to load module script: Expected a JavaScript-or-Wasm module script but the server responded with a MIME type of "text/html". Strict MIME type checking is enforced for module scripts per HTML spec.Understand this error
-game-main.js:658 ❌ Failed to load coin selector: TypeError: Failed to fetch dynamically imported module: https://flipnosis.fun/ui/coin-selector.js
-(anonymous) @ game-main.js:658
-Promise.catch
-socketDeps.showCoinSelector @ game-main.js:657
-(anonymous) @ game-main.js:765Understand this error
+game-main.js:279 ⏱️ Timer: 54
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
 socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 53, players: 2}
-update-client-state.js:63 🎮 Game is now round_active - Round 1
+update-client-state.js:64 🎮 Game is now round_active - Round 1
 game-main.js:127 🔄 Updated player card buttons
-update-client-state.js:112 🎮 Server detected player slot: 0 (current local slot: -1)
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
 game-main.js:127 🔄 Updated player card buttons
-game-main.js:209 ⏱️ Timer: 53
-socket-manager.js:236 ❌ Error in updateClientFromServerState: TypeError: Assignment to constant variable.
-    at updateClientFromServerState (update-client-state.js:189:18)
-    at updateClientFromServerState (game-main.js:510:22)
-    at Et.<anonymous> (socket-manager.js:206:9)
-    at k.emit (index.js:136:20)
-    at Et.emitEvent (socket.js:538:20)
-    at Et.onevent (socket.js:525:18)
-    at Et.onpacket (socket.js:495:22)
-    at k.emit (index.js:136:20)
-    at manager.js:209:18
-(anonymous) @ socket-manager.js:236
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-socket-manager.js:237 Update error details: {message: 'Assignment to constant variable.', stack: 'TypeError: Assignment to constant variable.\n    at…/cdn.socket.io/4.8.1/socket.io.esm.min.js:6:37761', statePhase: 'round_active'}
-(anonymous) @ socket-manager.js:237
-k.emit @ index.js:136
-emitEvent @ socket.js:538
-onevent @ socket.js:525
-onpacket @ socket.js:495
-k.emit @ index.js:136
-(anonymous) @ manager.js:209
-Promise.then
-(anonymous) @ globals.js:4
-ondecoded @ manager.js:208
-k.emit @ index.js:136
-add @ index.js:142
-ondata @ manager.js:195
-k.emit @ index.js:136
-q @ socket.js:259
-k.emit @ index.js:136
-onPacket @ transport.js:99
-onData @ transport.js:91
-ws.onmessage @ websocket.js:48Understand this error
-game-main.js:524 📱 Creating mobile player cards... {tubes: 4, players: 4}
-game-main.js:552 📱 Mobile player boxes created: 4 boxes
-
-Player 2
-
-SES Removing unpermitted intrinsics lockdown-install.js:1:203117
-  Removing intrinsics.%MapPrototype%.getOrInsert lockdown-install.js:1:202962
-  Removing intrinsics.%MapPrototype%.getOrInsertComputed lockdown-install.js:1:202962
-  Removing intrinsics.%WeakMapPrototype%.getOrInsert lockdown-install.js:1:202962
-  Removing intrinsics.%WeakMapPrototype%.getOrInsertComputed lockdown-install.js:1:202962
-  Removing intrinsics.%DatePrototype%.toTemporalInstant lockdown-install.js:1:202962
-SES_UNCAUGHT_EXCEPTION: SyntaxError: unexpected token: ')' lockdown-install.js:1:145467
-🎮 Game page loaded test-tubes.html:1078:13
+game-main.js:279 ⏱️ Timer: 53
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+favicon.ico:1  GET https://flipnosis.fun/favicon.ico 404 (Not Found)
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 52, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 52
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 51, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 51
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 50, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 50
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 49, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 49
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 48, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 48
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 47, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 47
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 46, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 46
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 45, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 45
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+game-main.js:872 🪙 Desktop change coin button clicked
+game-main.js:823 🪙 Opening coin selector for player slot 0
+game-main.js:719 🪙 showCoinSelector called for tube 0
+game-main.js:737 🔄 Trying to load coin selector from: /js/ui/coin-selector.js
+game-main.js:740 ✅ Successfully loaded coin selector from: /js/ui/coin-selector.js
+coin-selector.js:70 📋 Fetching profile for wallet: 0x3618Cf0af757f3F2b9824202e7F4a79f41D66297
+coin-selector.js:75 📊 Received profile data: {address: '0x3618cf0af757f3f2b9824202e7f4a79f41d66297', name: 'KODA', avatar: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD…qi4SckjD6AXY0JQFewogdUJIQF/8A1fSKfg8QhF6B8L4H/9k=', headsImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABuoA…xRtZqetL3FhERERER8dv5BrPkE0hLIHqGAAAAAElFTkSuQmCC', tailsImage: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD…XKxVZjyMGWYmLLzGUNwZrPDdNnW9u1vyJmxjG5W7A/cf/2Q==', …}
+coin-selector.js:84 💰 Updated FLIP balance: 300
+coin-selector.js:85 🪙 Updated unlocked coins: (3) ['plain', 'skull', 'manga']
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 44, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 44
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 43, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 43
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 42, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 42
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+game-main.js:156 🪙 Applying coin selection for slot 0: Heroine Graphite
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 41, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 41
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+game-main.js:197 ✅ Applied Heroine with Graphite material to slot 1's coin
+game-main.js:207 📤 Sent coin selection to server: manga / graphite
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 40, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 40
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+tube-creator.js:585 🎯 Local choice set for player 1: heads
+game-main.js:127 🔄 Updated player card buttons
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 39, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:147 🔄 Syncing player 1 choice: null (was: heads)
+game-main.js:279 ⏱️ Timer: 39
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 38, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 38
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 37, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 37
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+tube-creator.js:585 🎯 Local choice set for player 1: heads
+game-main.js:127 🔄 Updated player card buttons
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 36, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:147 🔄 Syncing player 1 choice: null (was: heads)
+game-main.js:279 ⏱️ Timer: 36
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+tube-creator.js:624 🖱️ Power button mousedown for player 1
+game-main.js:131 ⚠️ Choice required for player 1
+tube-creator.js:628 ❌ Player 1 must choose heads or tails first!
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 35, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 35
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+tube-creator.js:660 ⚡ Power released at 0%
+tube-creator.js:585 🎯 Local choice set for player 1: heads
+game-main.js:127 🔄 Updated player card buttons
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 34, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:147 🔄 Syncing player 1 choice: null (was: heads)
+game-main.js:279 ⏱️ Timer: 34
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+tube-creator.js:624 🖱️ Power button mousedown for player 1
+game-main.js:131 ⚠️ Choice required for player 1
+tube-creator.js:628 ❌ Player 1 must choose heads or tails first!
+tube-creator.js:660 ⚡ Power released at 0%
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 33, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 33
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+tube-creator.js:585 🎯 Local choice set for player 1: tails
+game-main.js:127 🔄 Updated player card buttons
+tube-creator.js:624 🖱️ Power button mousedown for player 1
+tube-creator.js:637 ⚡ Charging power for tube 1
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 32, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:147 🔄 Syncing player 1 choice: null (was: tails)
+game-main.js:279 ⏱️ Timer: 32
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+favicon.ico:1  GET https://flipnosis.fun/favicon.ico 404 (Not Found)
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 31, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 31
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+tube-creator.js:713 ⚡ Power released at 38%
+glass-shatter.js:18 💥 Shattering glass for tube 1 at 38% power
+glass-shatter.js:126 💥 Glass shattered! 42 shards + 80 liquid particles at 38% power
+game-main.js:349 🪙 Flipping coin for slot 0 with power 37.80000000000005
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 30, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 30
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 29, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 29
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 28, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 28
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 27, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 27
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 26, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 26
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 25, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 25
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 24, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 24
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 23, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 23
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 22, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 22
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 21, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 21
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 20, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 20
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 19, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 19
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 18, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 18
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 17, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 17
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 16, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 16
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 15, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 15
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 14, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 14
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 13, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 13
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
+socket-manager.js:183 📊 Received physics state update: {phase: 'round_active', currentRound: 1, roundTimer: 12, players: 2}
+update-client-state.js:64 🎮 Game is now round_active - Round 1
+game-main.js:127 🔄 Updated player card buttons
+update-client-state.js:113 🎮 Server detected player slot: 0 (current local slot: -1)
+game-main.js:127 🔄 Updated player card buttons
+game-main.js:279 ⏱️ Timer: 12
+game-main.js:265 📊 Round 1
+socket-manager.js:235 🔄 Detected slot change: -1 -> 0
+game-main.js:601 📱 Creating mobile player cards... {tubes: 4, players: 4}
+game-main.js:629 📱 Mobile player boxes created: 4 boxes
