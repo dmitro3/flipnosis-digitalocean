@@ -278,6 +278,8 @@ export function updateCoinAngleVisual(data, tubes, coins) {
  * Uses progressive rotation increment (not calculated total)
  */
 export function animateCoinFlip(playerSlot, power, duration, tubes, coins, coinMaterials) {
+  console.log('🎬 v777PINK animateCoinFlip called:', { playerSlot, power, duration });
+  
   const tube = tubes[playerSlot];
   const coin = coins[playerSlot];
   
@@ -293,8 +295,8 @@ export function animateCoinFlip(playerSlot, power, duration, tubes, coins, coinM
   
   const powerPercent = power / 100;
   const material = tube.selectedMaterial || coinMaterials[2];
-  const speedMult = material.speedMultiplier || 1.0;
-  const durationMult = material.durationMultiplier || 1.0;
+  const speedMult = material?.speedMultiplier || 1.0;
+  const durationMult = material?.durationMultiplier || 1.0;
   
   const flipDuration = duration || (2000 + (powerPercent * 6000)) * durationMult;
   const basePowerSpeed = Math.max(0.08, 0.05 + (powerPercent * 0.25));
