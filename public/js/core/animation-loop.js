@@ -95,8 +95,14 @@ export function startAnimationLoop(dependencies) {
       
       const isAnimating = tube.animationState !== 'idle';
       
+      // Skip ALL coin updates during landing - let smoothLandCoin have full control
+      if (tube.animationState === 'landing') {
+        return; // Exit early - landing animation controls everything
+      }
+      
       if (isAnimating) {
         if (tube.animationState === 'flipping' && !tube.isFilling) {
+          // During flip, maintain centered position
           const tubeX = tube.tube.position.x;
           coin.position.x = tubeX;
           coin.position.y = TUBE_Y_POSITION;

@@ -315,8 +315,9 @@ class PhysicsGameManager {
       return false
     }
     
-    // ✅ FIX: Check if already fired (prevent double-flips in same round)
-    // Note: isFlipping is only for tracking animation state, not for blocking
+    // ✅ Check if THIS PLAYER already fired in this round
+    // NOTE: This check is PER-PLAYER, so multiple DIFFERENT players can flip simultaneously!
+    // Only prevents the SAME player from flipping twice in one round
     if (player.hasFired) {
       console.warn(`❌ Player ${address} already flipped in this round for game ${gameId}`, {
         hasFired: player.hasFired,

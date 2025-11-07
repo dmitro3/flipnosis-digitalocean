@@ -56,7 +56,9 @@ export function shatterGlass(tubeIndex, powerLevel, tubes, scene, physicsWorld) 
       roughness: 0.1,
       emissive: 0xc0c0c0,
       emissiveIntensity: 0.4,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.6
     });
     
     const shard = new THREE.Mesh(geometry, material);

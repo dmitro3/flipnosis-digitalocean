@@ -915,6 +915,7 @@ export function createTubes(dependencies) {
   document.body.appendChild(loadingIndicator);
 
   const preloadMaterials = [];
+  // Pearl materials (all color variants)
   const pearlColors = [0x00ff00, 0x00ddff, 0xff0088, 0xffff00];
   pearlColors.forEach(color => {
     const material = new THREE.MeshPhysicalMaterial({
@@ -932,6 +933,7 @@ export function createTubes(dependencies) {
     preloadMaterials.push(material);
   });
 
+  // Glass shard material (CRITICAL - this is what causes the pause!)
   const glassShardMaterial = new THREE.MeshStandardMaterial({
     color: 0xe0e0e0,
     metalness: 0.95,
@@ -942,42 +944,69 @@ export function createTubes(dependencies) {
   });
   preloadMaterials.push(glassShardMaterial);
 
+  // Result box materials
   const resultMaterials = [
     new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.8 }),
     new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.8 })
   ];
   preloadMaterials.push(...resultMaterials);
 
-  const dummyGeometry = new THREE.BoxGeometry(1, 1, 1);
+  // Create multiple dummy geometries to fully compile shaders
+  const dummyBox = new THREE.BoxGeometry(1, 1, 1);
+  const dummyTriangle = new THREE.BufferGeometry();
+  const triangleVertices = new Float32Array([0, 0, 0, 10, 0, 0, 5, 10, 0]);
+  dummyTriangle.setAttribute('position', new THREE.BufferAttribute(triangleVertices, 3));
+  dummyTriangle.computeVertexNormals();
+  
   const dummyMeshes = [];
 
+  // Create meshes with each material using both box and triangle geometry
   preloadMaterials.forEach((material, i) => {
-    const mesh = new THREE.Mesh(dummyGeometry, material);
-    mesh.position.set(-10000 - i * 10, -10000, -10000);
-    scene.add(mesh);
-    dummyMeshes.push(mesh);
+    // Box mesh
+    const boxMesh = new THREE.Mesh(dummyBox, material);
+    boxMesh.position.set(-10000 - i * 20, -10000, -10000);
+    scene.add(boxMesh);
+    dummyMeshes.push(boxMesh);
+    
+    // Triangle mesh (especially important for glass shards)
+    const triMesh = new THREE.Mesh(dummyTriangle, material);
+    triMesh.position.set(-10000 - i * 20, -10000, -10010);
+    scene.add(triMesh);
+    dummyMeshes.push(triMesh);
   });
 
-  for (let i = 0; i < 3; i++) {
+  // Force multiple renders to compile all shader variants
+  console.log('⚡ Compiling shaders...');
+  for (let i = 0; i < 5; i++) {
     webglRenderer.render(scene, camera);
   }
 
-  console.log(`✅ Pre-compiled ${preloadMaterials.length} materials`);
+  console.log(`✅ Pre-compiled ${preloadMaterials.length} materials (${dummyMeshes.length} test meshes)`);
 
+  // Warm up pearl animations
   tubes.forEach((tube, i) => {
     tube.power = 1;
     tube.foamIntensity = 0.01;
     updatePearlColors(tube, 0.01, i);
   });
 
+  // Force render with pearls visible
   webglRenderer.render(scene, camera);
 
+  // Clean up after short delay
   setTimeout(() => {
+    // Remove all dummy meshes
     dummyMeshes.forEach(mesh => {
       scene.remove(mesh);
+      mesh.geometry.dispose();
+      if (mesh.material.dispose) mesh.material.dispose();
     });
-    dummyGeometry.dispose();
+    
+    // Dispose geometries
+    dummyBox.dispose();
+    dummyTriangle.dispose();
 
+    // Reset tube states
     tubes.forEach((tube, i) => {
       tube.power = 0;
       tube.foamIntensity = 0;
@@ -985,8 +1014,8 @@ export function createTubes(dependencies) {
     });
 
     loadingIndicator.remove();
-    console.log('✅ ALL ASSETS PRELOADED - Game ready!');
-  }, 100);
+    console.log('✅ ALL ASSETS PRELOADED - Game ready! No shader compilation lag expected.');
+  }, 150);
 
   console.log('🎮 Game started - coin textures already applied during tube creation');
 
