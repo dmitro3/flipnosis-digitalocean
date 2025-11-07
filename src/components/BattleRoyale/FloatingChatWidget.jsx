@@ -373,8 +373,8 @@ const FloatingChatWidget = () => {
     <ChatBubble isOpen={isOpen}>
       {isOpen ? (
         <ChatWindow>
-          <ChatHeader>
-            <ChatTitle>💬 Battle Chat</ChatTitle>
+        <ChatHeader>
+          <ChatTitle>💬 Flip Chat</ChatTitle>
             <CloseButton onClick={() => setIsOpen(false)}>×</CloseButton>
           </ChatHeader>
           
