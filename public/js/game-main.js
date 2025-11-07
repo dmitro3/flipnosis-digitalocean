@@ -16,7 +16,7 @@ import { initializeGameState, coinOptions, coinMaterials, saveGameState, loadGam
 import { startAnimationLoop } from './core/animation-loop.js';
 import { updateClientFromServerState } from './core/update-client-state.js';
 import { isMobile, updateMobileBackground } from './utils/helpers.js';
-import { playSound, stopSound, powerChargeSound } from './utils/audio.js';
+import { playSound, stopSound, powerChargeSound, toggleMute, isMuted } from './utils/audio.js';
 import { triggerHaptic } from './utils/haptics.js';
 import { TUBE_RADIUS, TUBE_HEIGHT } from './config.js';
 
@@ -906,6 +906,25 @@ export async function initGame(params) {
         e.stopPropagation();
         console.log('🪙 Desktop change coin button clicked');
         openCoinSelector();
+      });
+    }
+
+    const muteToggleBtn = document.getElementById('mute-toggle-btn');
+    if (muteToggleBtn) {
+      const setMuteVisualState = (muted) => {
+        muteToggleBtn.textContent = muted ? '🔇' : '🔊';
+        muteToggleBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+        muteToggleBtn.setAttribute('title', muted ? 'Unmute sound' : 'Mute sound');
+        muteToggleBtn.classList.toggle('muted', muted);
+      };
+
+      setMuteVisualState(isMuted);
+
+      muteToggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const muted = toggleMute();
+        setMuteVisualState(muted);
       });
     }
     

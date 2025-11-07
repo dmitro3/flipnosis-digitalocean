@@ -207,6 +207,10 @@
         left: 15px;
         z-index: 10001;
       }
+
+      #mute-toggle-btn {
+        display: none !important;
+      }
       
       .floating-btn.chat-btn {
         position: fixed;
@@ -256,6 +260,23 @@
         pointer-events: auto;
         backdrop-filter: blur(10px);
         font-family: 'Orbitron', sans-serif;
+      }
+
+      .floating-btn.mute-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10001;
+        font-size: 22px;
+        width: 60px;
+        height: 60px;
+      }
+
+      .floating-btn.mute-btn.muted {
+        border-color: #ff3366;
+        color: #ff3366;
+        box-shadow: 0 0 25px rgba(255, 51, 102, 0.5);
+        background: linear-gradient(135deg, rgba(255, 51, 102, 0.25), rgba(255, 51, 102, 0.1));
       }
       
       .floating-btn:hover {
@@ -338,17 +359,17 @@
       }
       
       .mobile-btn.tails-btn {
-        background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(157, 0, 255, 0.2));
-        border-color: #00ffff;
-        color: #00ffff;
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
-      }
-      
-      .mobile-btn.tails-btn.selected {
-        background: linear-gradient(135deg, rgba(255, 20, 147, 0.4), rgba(255, 105, 180, 0.4));
+        background: linear-gradient(135deg, rgba(255, 62, 207, 0.25), rgba(255, 20, 147, 0.25));
         border-color: #ff1493;
         color: #ff1493;
-        box-shadow: 0 0 30px rgba(255, 20, 147, 0.6);
+        box-shadow: 0 0 20px rgba(255, 20, 147, 0.35);
+      }
+
+      .mobile-btn.tails-btn.selected {
+        background: linear-gradient(135deg, rgba(255, 62, 207, 0.45), rgba(255, 20, 147, 0.45));
+        border-color: #ff1493;
+        color: #ff1493;
+        box-shadow: 0 0 35px rgba(255, 20, 147, 0.7);
         transform: scale(1.05);
       }
       
@@ -785,6 +806,10 @@
       #change-coin-btn {
         display: flex !important;
       }
+
+      #mute-toggle-btn {
+        display: flex !important;
+      }
       
       .player-card {
         display: block !important;
@@ -930,9 +955,9 @@
     }
 
     .choice-btn.tails {
-      background: linear-gradient(135deg, #00d4ff, #00a3ff);
+      background: linear-gradient(135deg, #ff3ecf, #ff1493);
       color: #fff;
-      box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+      box-shadow: 0 0 18px rgba(255, 20, 147, 0.6);
     }
 
     .choice-btn:hover {
@@ -945,7 +970,7 @@
     }
     
     .choice-btn.tails:hover {
-      box-shadow: 0 5px 20px rgba(0, 212, 255, 0.8);
+      box-shadow: 0 8px 24px rgba(255, 20, 147, 0.85);
     }
 
     .action-btn {
@@ -1013,6 +1038,9 @@
   
   <!-- Change Coin Button (Desktop) -->
   <button id="change-coin-btn" class="floating-btn" style="position: fixed; top: 20px; left: 20px; z-index: 10001; background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2)); border: 3px solid #00ffff; border-radius: 50%; color: #00ffff; font-size: 24px; width: 60px; height: 60px; cursor: pointer; box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; transition: all 0.3s ease;">🪙</button>
+
+  <!-- Desktop Mute Button -->
+  <button id="mute-toggle-btn" class="floating-btn mute-btn" aria-pressed="false" title="Mute sound">🔊</button>
   
   <!-- Responsive Mobile Layout -->
   <div id="mobile-ui" class="mobile-ui">
