@@ -126,7 +126,7 @@ export function startClientCoinFlipAnimation(
         }
       }
       
-      animateCoinFlip(data.playerSlot, data.power, data.duration);
+      animateCoinFlip(data.playerSlot, data.power, data.duration, tubes, coins, coinMaterials);
       showFlipReward(data.playerSlot, data.flipReward);
     }
   }

@@ -161,8 +161,10 @@ export function updateClientFromServerState(state, dependencies) {
               localPlayer.choice = serverPlayer.choice;
             }
           } else if (localPlayer.choice && serverPlayer.choice === null) {
-            // Server sent null but local has a choice - keep local choice (it might not have synced yet)
-            console.log(`WARN: Server sent null choice for player ${serverPlayer.slotNumber + 1}, keeping local choice: ${localPlayer.choice}`);
+            // Server sent null - this happens on new rounds when choices are reset
+            // CLEAR the local choice so player can choose again
+            console.log(`CLEAR: Server sent null choice for player ${serverPlayer.slotNumber + 1} - clearing local choice (was: ${localPlayer.choice})`);
+            localPlayer.choice = null;
           }
 
           // Update UI for choice changes
@@ -221,6 +223,15 @@ export function updateClientFromServerState(state, dependencies) {
 
     if (newRound > oldRound) {
       console.log(`ROUND: Round ${newRound} started - FULL RESET`);
+      
+      // Clear all player choices for new round
+      players.forEach((player, i) => {
+        if (player && !player.isEmpty) {
+          player.choice = null;
+          console.log(`🔄 Cleared choice for player ${i + 1}`);
+        }
+      });
+      
       tubes.forEach((tube, i) => {
         tube.hasUsedPower = false;
         tube.power = 0;
