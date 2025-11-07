@@ -98,6 +98,29 @@ async function initialize() {
   info.style.display = 'block';
   info.style.color = '#00ffff';
   
+  // Setup mute button
+  const muteButton = document.getElementById('mute-toggle-btn');
+  if (muteButton) {
+    console.log('🔊 Setting up mute button');
+    muteButton.addEventListener('click', () => {
+      const isMuted = toggleMute();
+      const muteIcon = document.getElementById('mute-icon');
+      const muteText = document.getElementById('mute-text');
+      
+      if (isMuted) {
+        if (muteIcon) muteIcon.textContent = '🔇';
+        if (muteText) muteText.textContent = 'Unmute';
+        muteButton.classList.add('muted');
+        muteButton.setAttribute('aria-pressed', 'true');
+      } else {
+        if (muteIcon) muteIcon.textContent = '🔊';
+        if (muteText) muteText.textContent = 'Mute';
+        muteButton.classList.remove('muted');
+        muteButton.setAttribute('aria-pressed', 'false');
+      }
+    });
+  }
+  
   try {
     console.log('📦 Calling initGame()...');
     

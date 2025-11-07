@@ -208,8 +208,11 @@
         z-index: 10001;
       }
 
-      #mute-toggle-btn {
-        display: none !important;
+      /* Mute button visible on desktop only */
+      @media (max-width: 768px) {
+        #mute-toggle-btn {
+          display: none !important;
+        }
       }
       
       .floating-btn.chat-btn {
@@ -264,12 +267,16 @@
 
       .floating-btn.mute-btn {
         position: fixed;
-        top: 20px;
-        right: 20px;
+        top: 110px; /* Below the round/timer box */
+        left: 50%;
+        transform: translateX(-50%); /* Center align like game-info box */
         z-index: 10001;
-        font-size: 22px;
-        width: 60px;
-        height: 60px;
+        font-size: 18px;
+        width: 120px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex !important;
+        gap: 8px;
       }
 
       .floating-btn.mute-btn.muted {
@@ -1040,7 +1047,10 @@
   <button id="change-coin-btn" class="floating-btn" style="position: fixed; top: 20px; left: 20px; z-index: 10001; background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2)); border: 3px solid #00ffff; border-radius: 50%; color: #00ffff; font-size: 24px; width: 60px; height: 60px; cursor: pointer; box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; transition: all 0.3s ease;">🪙</button>
 
   <!-- Desktop Mute Button -->
-  <button id="mute-toggle-btn" class="floating-btn mute-btn" aria-pressed="false" title="Mute sound">🔊</button>
+  <button id="mute-toggle-btn" class="floating-btn mute-btn" aria-pressed="false" title="Mute/Unmute sound">
+    <span id="mute-icon">🔊</span>
+    <span id="mute-text">Mute</span>
+  </button>
   
   <!-- Responsive Mobile Layout -->
   <div id="mobile-ui" class="mobile-ui">
