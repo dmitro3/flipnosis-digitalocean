@@ -75,7 +75,15 @@ export function updateCoinStatesFromServer(coinStates, tubes, coins) {
 /**
  * Start client coin flip animation
  */
-export function startClientCoinFlipAnimation(data, tubes, coins, coinMaterials, animateCoinFlip, showFlipReward) {
+export function startClientCoinFlipAnimation(
+  data,
+  tubes,
+  coins,
+  coinMaterials,
+  animateCoinFlip,
+  showFlipReward,
+  shatterGlassFunc
+) {
   console.log('🎁 Received flip reward data:', data.flipReward);
   
   if (data.playerSlot >= 0 && data.playerSlot < 4) {
@@ -93,7 +101,9 @@ export function startClientCoinFlipAnimation(data, tubes, coins, coinMaterials, 
       tube.animationState = 'flipping';
       tube.animationStartTime = Date.now();
       tube.animationEndTime = Date.now() + (data.duration || 8000);
+      tube.flipStartTime = tube.animationStartTime;
       tube.flipId = flipId;
+      tube.isFlipping = true;
       
       tube.lastStableRotation = {
         x: coin.rotation.x,
@@ -104,6 +114,17 @@ export function startClientCoinFlipAnimation(data, tubes, coins, coinMaterials, 
       coin.rotation.order = 'XYZ';
       
       console.log(`🎬 Starting flip animation for coin ${data.playerSlot + 1} with ID: ${flipId}`);
+
+      // Ensure the glass shatter effect triggers immediately on the client
+      if (typeof shatterGlassFunc === 'function' && !tube.isShattered) {
+        const shatterPower = typeof data.power === 'number' ? data.power : (tube.power || 100);
+        try {
+          shatterGlassFunc(data.playerSlot, shatterPower);
+          console.log(`💥 Triggered immediate client-side shatter for coin ${data.playerSlot + 1}`);
+        } catch (error) {
+          console.error('ERROR: Failed to trigger client-side shatter:', error);
+        }
+      }
       
       animateCoinFlip(data.playerSlot, data.power, data.duration);
       showFlipReward(data.playerSlot, data.flipReward);
@@ -159,6 +180,12 @@ export function smoothLandCoin(coin, targetRotation, accuracy, tube, playerSlot)
   const startRotation = coin.rotation.x;
   const startY = coin.rotation.y;
   const startZ = coin.rotation.z;
+  const TWO_PI = Math.PI * 2;
+  const normalize = (angle) => {
+    let a = angle % TWO_PI;
+    if (a < 0) a += TWO_PI;
+    return a;
+  };
   
   tube.animationState = 'landing';
   tube.landingId = `landing_${playerSlot}_${Date.now()}`;
@@ -174,13 +201,16 @@ export function smoothLandCoin(coin, targetRotation, accuracy, tube, playerSlot)
   
   const savedLandingId = tube.landingId;
   
-  // Calculate how many full rotations to add before landing
-  const currentCycles = Math.floor(startRotation / (Math.PI * 2));
-  const finalRotation = (currentCycles * Math.PI * 2) + targetRotation;
-  
-  // If we're very close, add one more rotation for visual effect
-  const rotationDiff = Math.abs(finalRotation - startRotation);
-  const targetFinal = rotationDiff < Math.PI ? finalRotation + (Math.PI * 2) : finalRotation;
+  // Calculate the forward path to the target face with at least one extra full spin
+  const currentNormalized = normalize(startRotation);
+  const targetNormalized = normalize(targetRotation);
+  let deltaToTarget = targetNormalized - currentNormalized;
+  if (deltaToTarget <= 0) {
+    deltaToTarget += TWO_PI;
+  }
+  const extraTurns = accuracy === 'perfect' ? 2 : (accuracy === 'good' ? 1 : 1);
+  const totalSpin = deltaToTarget + (extraTurns * TWO_PI);
+  const targetFinal = startRotation + totalSpin;
   
   console.log(`🎯 Will rotate from ${startRotation.toFixed(2)} to ${targetFinal.toFixed(2)} (${((targetFinal - startRotation) / Math.PI).toFixed(1)}π)`);
   
@@ -211,8 +241,9 @@ export function smoothLandCoin(coin, targetRotation, accuracy, tube, playerSlot)
       requestAnimationFrame(animateLanding);
     } else {
       // Final position - perfectly on target, facing camera
-      const finalCycles = Math.floor(targetFinal / (Math.PI * 2));
-      coin.rotation.x = finalCycles * (Math.PI * 2) + targetRotation;
+      const normalizedFinal = normalize(targetRotation);
+      const baseCycles = Math.floor(targetFinal / TWO_PI);
+      coin.rotation.x = baseCycles * TWO_PI + normalizedFinal;
       coin.rotation.y = Math.PI / 2;
       coin.rotation.z = 0;
       coin.quaternion.setFromEuler(coin.rotation);
@@ -221,6 +252,11 @@ export function smoothLandCoin(coin, targetRotation, accuracy, tube, playerSlot)
       tube.landingId = null;
       tube.flipId = null;
       tube.isFlipping = false;
+      tube.lastStableRotation = {
+        x: coin.rotation.x,
+        y: coin.rotation.y,
+        z: coin.rotation.z
+      };
       
       console.log(`✅ Coin ${playerSlot + 1} LANDED perfectly:`, {
         finalRotation: `${coin.rotation.x.toFixed(2)} rad`,
@@ -311,13 +347,15 @@ export function animateCoinFlip(playerSlot, power, duration, tubes, coins, coinM
   const startRotation = coin.rotation.x;
   const flipId = tube.flipId || `flip_${playerSlot}_${startTime}`;
   tube.flipId = flipId;
+  tube.isFlipping = true;
   
-  // Calculate total rotations - many spins for visual effect
-  const rotationsPerSecond = flipSpeed * 60;
-  const totalRotations = (rotationsPerSecond * (flipDuration / 1000)) / (Math.PI * 2);
-  const minFullRotations = Math.floor(totalRotations) - 1;
+  // Calculate total rotations - ensure a minimum for visual impact
+  const rotationsPerSecond = Math.max(2, flipSpeed * 60);
+  const estimatedCycles = Math.ceil((rotationsPerSecond * (flipDuration / 1000)) / (Math.PI * 2));
+  const totalCycleCount = Math.max(4, estimatedCycles);
+  const totalRotationAmount = totalCycleCount * Math.PI * 2;
   
-  console.log(`🎲 Coin will do ${minFullRotations} full rotations over ${flipDuration.toFixed(0)}ms`);
+  console.log(`🎲 Coin will do ~${totalCycleCount} full rotations over ${flipDuration.toFixed(0)}ms`);
   
   const animate = () => {
     // Check if animation should continue
@@ -334,8 +372,8 @@ export function animateCoinFlip(playerSlot, power, duration, tubes, coins, coinM
     
     // Calculate current rotation - accelerate then decelerate
     const rotationProgress = easeOutQuart;
-    const targetRotation = startRotation + (minFullRotations * Math.PI * 2 * rotationProgress);
-    coin.rotation.x = targetRotation;
+    const spinRotation = startRotation + (totalRotationAmount * rotationProgress);
+    coin.rotation.x = spinRotation;
     
     // Add realistic wobble during flip (dampens as it slows)
     if (progress < 0.9) {
@@ -360,6 +398,11 @@ export function animateCoinFlip(playerSlot, power, duration, tubes, coins, coinM
       coin.rotation.y = Math.PI / 2;
       coin.rotation.z = 0;
       coin.quaternion.setFromEuler(coin.rotation);
+      tube.lastStableRotation = {
+        x: coin.rotation.x,
+        y: coin.rotation.y,
+        z: coin.rotation.z
+      };
       console.log(`✅ Flip animation complete for slot ${playerSlot}, awaiting server result...`);
       // Don't change animation state here - wait for server result
     }

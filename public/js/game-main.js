@@ -319,7 +319,8 @@ export async function initGame(params) {
       coins,
       coinMaterials,
       CoinManager.animateCoinFlip,
-      showFlipReward
+      showFlipReward,
+      shatterGlassFunc
     );
   };
   
