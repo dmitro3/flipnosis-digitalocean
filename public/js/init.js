@@ -98,11 +98,21 @@ async function initialize() {
   info.style.display = 'block';
   info.style.color = '#00ffff';
   
-  // Setup mute button
-  const muteButton = document.getElementById('mute-toggle-btn');
+  // Setup mute button - try both old and new IDs
+  const muteButton = document.getElementById('permanent-mute-button-v777') || document.getElementById('mute-toggle-btn');
   if (muteButton) {
-    console.log('🔊 Setting up mute button');
+    console.log('🔊 v777PINK Setting up mute button, element found:', muteButton.id);
+    console.log('🔊 Button styles:', {
+      position: muteButton.style.position,
+      bottom: muteButton.style.bottom,
+      right: muteButton.style.right,
+      display: muteButton.style.display,
+      visibility: muteButton.style.visibility,
+      zIndex: muteButton.style.zIndex
+    });
+    
     muteButton.addEventListener('click', () => {
+      console.log('🔊 MUTE BUTTON CLICKED!');
       const isMuted = toggleMute();
       const muteIcon = document.getElementById('mute-icon');
       const muteText = document.getElementById('mute-text');
@@ -112,13 +122,17 @@ async function initialize() {
         if (muteText) muteText.textContent = 'Unmute';
         muteButton.classList.add('muted');
         muteButton.setAttribute('aria-pressed', 'true');
+        console.log('🔇 Sound MUTED');
       } else {
         if (muteIcon) muteIcon.textContent = '🔊';
         if (muteText) muteText.textContent = 'Mute';
         muteButton.classList.remove('muted');
         muteButton.setAttribute('aria-pressed', 'false');
+        console.log('🔊 Sound UNMUTED');
       }
     });
+  } else {
+    console.error('❌ MUTE BUTTON NOT FOUND! Neither permanent-mute-button-v777 nor mute-toggle-btn exists!');
   }
   
   try {

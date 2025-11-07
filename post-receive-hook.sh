@@ -46,6 +46,13 @@ if command -v npm >/dev/null 2>&1; then
         echo "Building application..."
         npm run build || echo "Build had warnings but continuing..."
         echo "Build completed"
+        
+        # ✅ Copy test-tubes.html and JS modules to dist/ so nginx can serve them
+        echo "Copying test-tubes game files to dist/..."
+        cp -f public/test-tubes.html dist/ 2>/dev/null || echo "test-tubes.html copy skipped"
+        cp -rf public/js dist/ 2>/dev/null || echo "js/ folder copy skipped"
+        cp -rf public/Sound dist/ 2>/dev/null || echo "Sound/ folder copy skipped"
+        echo "✅ Test tubes files copied to dist/"
     fi
 else
     echo "npm not found"
