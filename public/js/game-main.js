@@ -5,20 +5,20 @@
 
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { initializeScene } from './core/scene-setup.js';
-import { initializeSocket } from './core/socket-manager.js';
-import { createTubes } from './systems/tube-creator.js';
-import * as CoinManager from './systems/coin-manager.js';
-import * as PearlPhysics from './systems/pearl-physics.js';
-import * as GlassShatter from './systems/glass-shatter.js';
-import * as PowerSystem from './systems/power-system.js';
-import { initializeGameState, coinOptions, coinMaterials, saveGameState, loadGameState } from './core/game-state.js';
-import { startAnimationLoop } from './core/animation-loop.js';
-import { updateClientFromServerState } from './core/update-client-state.js';
-import { isMobile, updateMobileBackground } from './utils/helpers.js';
-import { playSound, stopSound, powerChargeSound, toggleMute, isMuted } from './utils/audio.js';
-import { triggerHaptic } from './utils/haptics.js';
-import { TUBE_RADIUS, TUBE_HEIGHT } from './config.js';
+import { initializeScene } from './core/scene-setup.js?v=777PINK';
+import { initializeSocket } from './core/socket-manager.js?v=777PINK';
+import { createTubes } from './systems/tube-creator.js?v=777PINK';
+import * as CoinManager from './systems/coin-manager.js?v=777PINK';
+import * as PearlPhysics from './systems/pearl-physics.js?v=777PINK';
+import * as GlassShatter from './systems/glass-shatter.js?v=777PINK';
+import * as PowerSystem from './systems/power-system.js?v=777PINK';
+import { initializeGameState, coinOptions, coinMaterials, saveGameState, loadGameState } from './core/game-state.js?v=777PINK';
+import { startAnimationLoop } from './core/animation-loop.js?v=777PINK';
+import { updateClientFromServerState } from './core/update-client-state.js?v=777PINK';
+import { isMobile, updateMobileBackground } from './utils/helpers.js?v=777PINK';
+import { playSound, stopSound, powerChargeSound, toggleMute, isMuted } from './utils/audio.js?v=777PINK';
+import { triggerHaptic } from './utils/haptics.js?v=777PINK';
+import { TUBE_RADIUS, TUBE_HEIGHT } from './config.js?v=777PINK';
 
 /**
  * Initialize the game

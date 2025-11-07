@@ -3,10 +3,10 @@
  * Entry point for the glass tube game
  */
 
-import { initGame } from './game-main.js';
-import { isMobile, updateMobileBackground } from './utils/helpers.js';
-import { toggleMute } from './utils/audio.js';
-import { TUBE_HEIGHT } from './config.js';
+import { initGame } from './game-main.js?v=777PINK';
+import { isMobile, updateMobileBackground } from './utils/helpers.js?v=777PINK';
+import { toggleMute } from './utils/audio.js?v=777PINK';
+import { TUBE_HEIGHT } from './config.js?v=777PINK';
 
 // Main initialization function
 async function initialize() {

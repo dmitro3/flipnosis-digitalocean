@@ -4,7 +4,7 @@
  */
 
 import * as THREE from 'three';
-import { TUBE_Y_POSITION } from '../config.js';
+import { TUBE_Y_POSITION } from '../config.js?v=777PINK';
 
 /**
  * Update coin rotations based on player choices
