@@ -110,6 +110,10 @@ export async function initializeScene(roomParam) {
   cssRenderer.setSize(width, height);
   cssRenderer.domElement.style.position = 'absolute';
   cssRenderer.domElement.style.top = '0';
+  cssRenderer.domElement.style.left = '0';
+  cssRenderer.domElement.style.width = '100%';
+  cssRenderer.domElement.style.height = '100%';
+  cssRenderer.domElement.style.zIndex = '2';
   cssRenderer.domElement.style.pointerEvents = 'auto';
   document.getElementById('container').appendChild(cssRenderer.domElement);
   
