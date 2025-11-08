@@ -1868,18 +1868,52 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     try {
       await fsPromises.mkdir(backupDir, { recursive: true })
 
-      if (typeof db.backup === 'function') {
+      let backupCreated = false
+      const sanitizedPath = backupPath.replace(/'/g, "''")
+
+      // Primary method: VACUUM INTO (guarantees consistent snapshot even with WAL)
+      try {
         await new Promise((resolve, reject) => {
-          db.backup(backupPath, (err) => {
+          db.serialize(() => {
+            db.exec(`VACUUM INTO '${sanitizedPath}'`, (err) => {
+              if (err) {
+                return reject(err)
+              }
+              resolve()
+            })
+          })
+        })
+        backupCreated = true
+      } catch (vacuumError) {
+        console.warn('⚠️ VACUUM INTO backup failed, falling back to sqlite backup API:', vacuumError.message)
+      }
+
+      // Fallback: sqlite3 native backup API (requires explicit step to run)
+      if (!backupCreated && typeof db.backup === 'function') {
+        await new Promise((resolve, reject) => {
+          const backup = db.backup(backupPath, (err) => {
             if (err) {
               reject(err)
             } else {
               resolve()
             }
           })
+          if (backup && typeof backup.step === 'function') {
+            backup.step(-1)
+          }
         })
-      } else {
+        backupCreated = true
+      }
+
+      // Final fallback: direct copy (least reliable if WAL active, but better than nothing)
+      if (!backupCreated) {
         await fsPromises.copyFile(dbService.databasePath, backupPath)
+        backupCreated = true
+      }
+
+      const stats = await fsPromises.stat(backupPath)
+      if (!stats || stats.size === 0) {
+        throw new Error('Backup file is empty after creation attempt')
       }
 
       res.download(backupPath, backupFileName, (err) => {
