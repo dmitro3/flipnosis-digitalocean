@@ -32,13 +32,30 @@ export function shatterGlass(tubeIndex, powerLevel, tubes, scene, physicsWorld) 
   
   physicsWorld.removeBody(tube.glassBody);
   
-  const shardCount = Math.floor(20 + (powerPercent * 60));
+  // ✅ PERFORMANCE FIX: Reduce shard count to prevent stutter
+  // Old: 20-80 shards | New: 12-30 shards (60% reduction)
+  const shardCount = Math.floor(12 + (powerPercent * 18));
   const tubeY = TUBE_Y_POSITION;
   
   // Initialize shards array if needed
   if (!tube.glassShards) {
     tube.glassShards = [];
   }
+  
+  // ✅ PERFORMANCE FIX: Create shared material to reuse (saves memory & rendering)
+  const sharedMaterial = new THREE.MeshStandardMaterial({
+    color: 0xe0e0e0,
+    metalness: 0.95,
+    roughness: 0.1,
+    emissive: 0xc0c0c0,
+    emissiveIntensity: 0.4,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.6
+  });
+  
+  // ✅ PERFORMANCE FIX: Batch shard creation
+  const shardsToAdd = [];
   
   for (let s = 0; s < shardCount; s++) {
     const size = Math.random() * 12 + 5;
@@ -50,18 +67,8 @@ export function shatterGlass(tubeIndex, powerLevel, tubes, scene, physicsWorld) 
     ]);
     geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     
-    const material = new THREE.MeshStandardMaterial({
-      color: 0xe0e0e0,
-      metalness: 0.95,
-      roughness: 0.1,
-      emissive: 0xc0c0c0,
-      emissiveIntensity: 0.4,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.6
-    });
-    
-    const shard = new THREE.Mesh(geometry, material);
+    // ✅ REUSE shared material instead of creating new one each time
+    const shard = new THREE.Mesh(geometry, sharedMaterial);
     
     const angle = (s / shardCount) * Math.PI * 2;
     const heightPos = (Math.random() - 0.5) * TUBE_HEIGHT;
@@ -90,9 +97,7 @@ export function shatterGlass(tubeIndex, powerLevel, tubes, scene, physicsWorld) 
       z: (Math.random() - 0.5) * 0.3
     };
     
-    scene.add(shard);
-    
-    tube.glassShards.push({
+    shardsToAdd.push({
       mesh: shard,
       velocity,
       rotVelocity,
@@ -100,28 +105,37 @@ export function shatterGlass(tubeIndex, powerLevel, tubes, scene, physicsWorld) 
     });
   }
   
+  // ✅ PERFORMANCE FIX: Add all shards to scene in one batch
+  shardsToAdd.forEach(shard => {
+    scene.add(shard.mesh);
+    tube.glassShards.push(shard);
+  });
+  
   // Explode liquid particles (pearls)
+  // ✅ PERFORMANCE FIX: Use requestAnimationFrame to avoid blocking
   if (tube.liquidParticles) {
-    tube.liquidParticles.forEach((particleBody, idx) => {
-      const dx = particleBody.position.x - tube.tube.position.x;
-      const dz = particleBody.position.z - tube.tube.position.z;
-      const distance = Math.sqrt(dx * dx + dz * dz) || 1;
-      
-      const baseForce = 2000 + (powerPercent * 16000);
-      const explosionForce = baseForce + Math.random() * (baseForce * 0.3);
-      
-      particleBody.velocity.set(
-        (dx / distance) * explosionForce,
-        Math.random() * 800 - 400,
-        (dz / distance) * explosionForce
-      );
-      
-      const spinForce = 15 * powerPercent;
-      particleBody.angularVelocity.set(
-        Math.random() * spinForce * 2 - spinForce,
-        Math.random() * spinForce * 2 - spinForce,
-        Math.random() * spinForce * 2 - spinForce
-      );
+    requestAnimationFrame(() => {
+      tube.liquidParticles.forEach((particleBody, idx) => {
+        const dx = particleBody.position.x - tube.tube.position.x;
+        const dz = particleBody.position.z - tube.tube.position.z;
+        const distance = Math.sqrt(dx * dx + dz * dz) || 1;
+        
+        const baseForce = 2000 + (powerPercent * 16000);
+        const explosionForce = baseForce + Math.random() * (baseForce * 0.3);
+        
+        particleBody.velocity.set(
+          (dx / distance) * explosionForce,
+          Math.random() * 800 - 400,
+          (dz / distance) * explosionForce
+        );
+        
+        const spinForce = 15 * powerPercent;
+        particleBody.angularVelocity.set(
+          Math.random() * spinForce * 2 - spinForce,
+          Math.random() * spinForce * 2 - spinForce,
+          Math.random() * spinForce * 2 - spinForce
+        );
+      });
     });
   }
   

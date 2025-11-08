@@ -234,6 +234,10 @@ export function updateClientFromServerState(state, dependencies) {
     if (newRound > oldRound) {
       console.log(`ROUND: Round ${newRound} started - FULL RESET (was round ${oldRound})`);
       
+      // ✅ FIX: Get the CORRECT player slot BEFORE resetting everything
+      const currentPlayerSlot = playerSlotRef ? playerSlotRef.value : playerSlot;
+      console.log(`🎯 ROUND RESET: Current player slot is ${currentPlayerSlot}`);
+      
       // Clear all player choices for new round
       players.forEach((player, i) => {
         if (player && !player.isEmpty) {
@@ -356,19 +360,24 @@ export function updateClientFromServerState(state, dependencies) {
 
             if (choiceButtons && choiceBadge) {
               choiceBadge.style.display = 'none';
-              // Use slot from ref if available, otherwise use passed value
-              const currentSlot = playerSlotRef ? playerSlotRef.value : playerSlot;
-              if (currentSlot >= 0 && currentSlot === i) {
+              
+              // ✅ FIX: ALWAYS show choice buttons for current player's slot
+              // This is the critical fix for Round 2 bug
+              if (currentPlayerSlot >= 0 && currentPlayerSlot === i) {
                 choiceButtons.style.display = 'flex';
+                console.log(`✅ ENABLED choice buttons for player slot ${i} (current player)`);
 
                 const choiceBtnElements = tube.cardElement.querySelectorAll('.choice-btn');
                 choiceBtnElements.forEach(btn => {
                   btn.style.opacity = '1';
                   btn.style.transform = 'scale(1)';
                   btn.style.boxShadow = '';
+                  btn.disabled = false; // ✅ Ensure not disabled
+                  btn.style.pointerEvents = 'auto'; // ✅ Ensure clickable
                 });
               } else {
                 choiceButtons.style.display = 'none';
+                console.log(`⏸️ HIDDEN choice buttons for player slot ${i} (not current player)`);
               }
             }
           }
