@@ -1820,6 +1820,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
 
   // Admin: Fee settings storage (simple JSON file)
   const fs = require('fs')
+  const fsPromises = fs.promises
   const path = require('path')
   const feeSettingsPath = path.join(process.cwd(), 'server', 'fee-settings.json')
 
@@ -1855,6 +1856,45 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       res.json({ success: true, settings: updated })
     } catch (e) {
       res.status(500).json({ error: 'Failed to update fee settings', details: e.message })
+    }
+  })
+
+  router.get('/admin/database/backup', async (req, res) => {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const backupDir = path.join(process.cwd(), 'server', 'backups')
+    const backupFileName = `flipnosis-db-backup-${timestamp}.sqlite`
+    const backupPath = path.join(backupDir, backupFileName)
+
+    try {
+      await fsPromises.mkdir(backupDir, { recursive: true })
+
+      if (typeof db.backup === 'function') {
+        await new Promise((resolve, reject) => {
+          db.backup(backupPath, (err) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          })
+        })
+      } else {
+        await fsPromises.copyFile(dbService.databasePath, backupPath)
+      }
+
+      res.download(backupPath, backupFileName, (err) => {
+        fsPromises.unlink(backupPath).catch(() => {})
+
+        if (err) {
+          console.error('❌ Failed to send database backup:', err)
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'Failed to download database backup' })
+          }
+        }
+      })
+    } catch (error) {
+      console.error('❌ Error generating database backup:', error)
+      res.status(500).json({ error: 'Failed to generate database backup', details: error.message })
     }
   })
 

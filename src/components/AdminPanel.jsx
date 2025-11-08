@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, Activity, DollarSign, Users, Shield, Settings, Search, ChevronDown, ChevronUp, Wallet, TrendingUp, AlertCircle, CheckCircle, XCircle, RefreshCw, Send, Eye, User, Coins, Image, BarChart3, Gamepad2, Crown, Zap, Download, Package } from 'lucide-react'
+import { Calendar, Activity, DollarSign, Users, Shield, Settings, Search, ChevronDown, ChevronUp, Wallet, TrendingUp, AlertCircle, CheckCircle, XCircle, RefreshCw, Send, Eye, User, Coins, Image, BarChart3, Gamepad2, Crown, Zap, Download, Package, Database } from 'lucide-react'
 import styled from '@emotion/styled'
 import { useWalletConnection } from '../utils/useWalletConnection'
 import { useWallet } from '../contexts/WalletContext'
@@ -566,6 +566,7 @@ export default function AdminPanel() {
   const [contractNFTs, setContractNFTs] = useState([])
   const [isLoadingNFTs, setIsLoadingNFTs] = useState(false)
   const [selectedNFTsForWithdrawal, setSelectedNFTsForWithdrawal] = useState([])
+  const [isDownloadingBackup, setIsDownloadingBackup] = useState(false)
   
   // Master Field / Spent FLIP state
   const [masterFieldData, setMasterFieldData] = useState({
@@ -1548,6 +1549,45 @@ export default function AdminPanel() {
     }
   }
 
+  const downloadDatabaseBackup = async () => {
+    try {
+      setIsDownloadingBackup(true)
+      addNotification('info', 'Generating database backup...')
+
+      const response = await fetch(`${API_URL}/api/admin/database/backup`)
+      if (!response.ok) {
+        throw new Error(`Server returned status ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      const disposition = response.headers.get('content-disposition')
+      let filename = `flipnosis-db-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.sqlite`
+
+      if (disposition && disposition.includes('filename=')) {
+        const match = disposition.match(/filename="?([^"]+)"?/)
+        if (match && match[1]) {
+          filename = match[1]
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      addNotification('success', 'Database backup downloaded successfully.')
+    } catch (error) {
+      console.error('Error downloading database backup:', error)
+      addNotification('error', 'Failed to download database backup: ' + error.message)
+    } finally {
+      setIsDownloadingBackup(false)
+    }
+  }
+
   // Add notification
   const addNotification = (type, message) => {
     const id = Date.now()
@@ -1703,6 +1743,13 @@ export default function AdminPanel() {
             >
               <Coins size={20} />
               Spent FLIP
+            </Tab>
+            <Tab 
+              active={activeTab === 'database'} 
+              onClick={() => setActiveTab('database')}
+            >
+              <Database size={20} />
+              Database
             </Tab>
             <Tab 
               active={activeTab === 'emergency'} 
@@ -2316,6 +2363,49 @@ export default function AdminPanel() {
                     <li>FLIP is permanently removed from user balances when spent</li>
                     <li>Provides transparency for the coin unlock economy</li>
                     <li>Updates in real-time as users unlock new coins</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'database' && (
+              <div>
+                <h3 style={{ color: '#00FF41', marginBottom: '1rem' }}>🗄️ Database Backup</h3>
+                <p style={{ color: '#ccc', maxWidth: '720px', lineHeight: 1.6 }}>
+                  Download a fresh snapshot of the production SQLite database. This includes every table and field currently on the server
+                  so you can keep local backups or share the schema with tooling like your LLMs for validation.
+                </p>
+
+                <Button
+                  onClick={downloadDatabaseBackup}
+                  disabled={isDownloadingBackup}
+                  style={{
+                    background: isDownloadingBackup ? '#666' : 'linear-gradient(135deg, #00FF41 0%, #39FF14 100%)',
+                    color: isDownloadingBackup ? '#fff' : '#000',
+                    marginTop: '1.5rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <Download size={18} />
+                  {isDownloadingBackup ? 'Preparing Backup...' : 'Download Latest Backup'}
+                </Button>
+
+                <div
+                  style={{
+                    marginTop: '2rem',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '12px',
+                    padding: '1.5rem',
+                    lineHeight: 1.6,
+                    color: '#aaa'
+                  }}
+                >
+                  <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
+                    <li>The backup is generated directly from the live database using SQLite&apos;s native backup command.</li>
+                    <li>A timestamped `.sqlite` file will download to your machine once the backup is ready.</li>
+                    <li>Feel free to import the file into your local SQLite browser or feed it to analysis tools for schema checks.</li>
                   </ul>
                 </div>
               </div>
