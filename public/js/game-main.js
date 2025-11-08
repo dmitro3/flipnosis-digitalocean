@@ -5,20 +5,20 @@
 
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { initializeScene } from './core/scene-setup.js?v=NOCACHE1731087600';
-import { initializeSocket } from './core/socket-manager.js?v=NOCACHE1731087600';
-import { createTubes } from './systems/tube-creator.js?v=NOCACHE1731087600';
-import * as CoinManager from './systems/coin-manager.js?v=NOCACHE1731087600';
-import * as PearlPhysics from './systems/pearl-physics.js?v=NOCACHE1731087600';
-import * as GlassShatter from './systems/glass-shatter.js?v=NOCACHE1731087600';
-import * as PowerSystem from './systems/power-system.js?v=NOCACHE1731087600';
-import { initializeGameState, coinOptions, coinMaterials, saveGameState, loadGameState } from './core/game-state.js?v=NOCACHE1731087600';
-import { startAnimationLoop } from './core/animation-loop.js?v=NOCACHE1731087600';
-import { updateClientFromServerState } from './core/update-client-state.js?v=NOCACHE1731087600';
-import { isMobile, updateMobileBackground } from './utils/helpers.js?v=NOCACHE1731087600';
-import { playSound, stopSound, powerChargeSound, toggleMute, isMuted } from './utils/audio.js?v=NOCACHE1731087600';
-import { triggerHaptic } from './utils/haptics.js?v=NOCACHE1731087600';
-import { TUBE_RADIUS, TUBE_HEIGHT } from './config.js?v=NOCACHE1731087600';
+import { initializeScene } from './core/scene-setup.js';
+import { initializeSocket } from './core/socket-manager.js';
+import { createTubes } from './systems/tube-creator.js';
+import * as CoinManager from './systems/coin-manager.js';
+import * as PearlPhysics from './systems/pearl-physics.js';
+import * as GlassShatter from './systems/glass-shatter.js';
+import * as PowerSystem from './systems/power-system.js';
+import { initializeGameState, coinOptions, coinMaterials, saveGameState, loadGameState } from './core/game-state.js';
+import { startAnimationLoop } from './core/animation-loop.js';
+import { updateClientFromServerState } from './core/update-client-state.js';
+import { isMobile, updateMobileBackground } from './utils/helpers.js';
+import { playSound, stopSound, powerChargeSound, toggleMute, isMuted } from './utils/audio.js';
+import { triggerHaptic } from './utils/haptics.js';
+import { TUBE_RADIUS, TUBE_HEIGHT } from './config.js';
 
 /**
  * Initialize the game
