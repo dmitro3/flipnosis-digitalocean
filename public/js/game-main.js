@@ -259,12 +259,83 @@ export async function initGame(params) {
   
   const showResult = (slot, won, result) => {
     console.log(`🎯 Result for slot ${slot}: ${result}, won: ${won}`);
-    // This will be implemented by UI manager
+    
+    const tube = tubes[slot];
+    if (!tube || !tube.cardElement) return;
+    
+    // Create result overlay
+    const resultOverlay = document.createElement('div');
+    resultOverlay.className = won ? 'result-overlay win' : 'result-overlay lose';
+    resultOverlay.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: ${won ? 'rgba(0, 255, 0, 0.15)' : 'rgba(255, 0, 0, 0.15)'};
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
+    `;
+    
+    const resultText = document.createElement('div');
+    resultText.textContent = won ? '🎉 YOU WON!' : '💔 YOU LOST';
+    resultText.style.cssText = `
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      color: ${won ? '#00ff00' : '#ff0000'};
+      text-shadow: 0 0 20px ${won ? '#00ff00' : '#ff0000'};
+      animation: pulse 0.5s ease infinite;
+    `;
+    
+    resultOverlay.appendChild(resultText);
+    tube.cardElement.appendChild(resultOverlay);
+    
+    // Remove after 2 seconds
+    setTimeout(() => {
+      resultOverlay.style.opacity = '0';
+      setTimeout(() => resultOverlay.remove(), 300);
+    }, 2000);
   };
   
   const showFlipReward = (slot, reward) => {
     console.log(`💰 Flip reward for slot ${slot}: ${reward}`);
-    // This will be implemented by UI manager
+    
+    if (!reward || !reward.amount) return;
+    
+    const tube = tubes[slot];
+    if (!tube || !tube.cardElement) return;
+    
+    // Create reward notification
+    const rewardNotif = document.createElement('div');
+    rewardNotif.className = 'flip-reward-notif';
+    rewardNotif.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, ${reward.color || '#FFD700'}, ${reward.color || '#FFA500'});
+      color: #000;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      font-weight: 900;
+      box-shadow: 0 0 30px ${reward.color || '#FFD700'};
+      z-index: 2000;
+      animation: bounceIn 0.5s ease, floatUp 1.5s ease 0.5s forwards;
+      pointer-events: none;
+    `;
+    rewardNotif.textContent = `+${reward.amount} FLIP!`;
+    
+    tube.cardElement.appendChild(rewardNotif);
+    
+    // Remove after animation
+    setTimeout(() => rewardNotif.remove(), 2000);
   };
   
   const showFloatingMessage = (message, color, duration) => {

@@ -32,9 +32,8 @@ export function shatterGlass(tubeIndex, powerLevel, tubes, scene, physicsWorld) 
   
   physicsWorld.removeBody(tube.glassBody);
   
-  // ✅ PERFORMANCE FIX: Reduce shard count to prevent stutter
-  // Old: 20-80 shards | New: 12-30 shards (60% reduction)
-  const shardCount = Math.floor(12 + (powerPercent * 18));
+  // Shard count based on power (back to original for better effect)
+  const shardCount = Math.floor(20 + (powerPercent * 60));
   const tubeY = TUBE_Y_POSITION;
   
   // Initialize shards array if needed

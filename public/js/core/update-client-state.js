@@ -213,13 +213,13 @@ export function updateClientFromServerState(state, dependencies) {
     // CRITICAL FIX: Only process round change if it's actually different
     // This prevents infinite reset loops when server broadcasts state updates every second
     if (state.currentRound === oldRound) {
-      // Same round, just update the display and skip the reset logic
+      // Same round, just update the display and skip ALL reset logic below
       if (currentRoundRef) {
         currentRoundRef.value = state.currentRound;
       }
       updateRoundDisplay();
-      // ✅ DON'T RETURN - Continue to update player choices from server
-      // The reset logic only runs if newRound > oldRound (line 234 below)
+      // ✅ MUST return here to prevent infinite reset loop
+      return; // Exit early - round hasn't changed, no need to reset
     }
     
     // Update via mutable reference if available
