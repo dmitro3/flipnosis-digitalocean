@@ -110,23 +110,22 @@ export function updateClientFromServerState(state, dependencies) {
     if (player) {
       // Get the detected slot number from server state
       const detectedSlot = player.slotNumber;
-      console.log(`SLOT: Server detected player slot: ${detectedSlot} (current local slot: ${playerSlot})`);
-
-      // Update playerSlot if we have a mutable reference, otherwise use detected slot for operations
+      
       // Get current slot value from ref if available, otherwise use passed value
       const currentSlotValue = playerSlotRef ? playerSlotRef.value : playerSlot;
-      let slotToUse = currentSlotValue;
       
-      if (detectedSlot >= 0 && detectedSlot < 4) {
+      // ✅ FIX: Only log and update if slot actually changed to reduce spam
+      if (detectedSlot !== currentSlotValue && detectedSlot >= 0 && detectedSlot < 4) {
+        console.log(`SLOT: Server detected player slot: ${detectedSlot} (was: ${currentSlotValue})`);
+        
         if (playerSlotRef) {
           // Update via mutable reference
           playerSlotRef.value = detectedSlot;
-          slotToUse = detectedSlot;
-        } else {
-          // Use detected slot for this operation only
-          slotToUse = detectedSlot;
         }
       }
+      
+      // Always use the detected slot for operations (server is authoritative)
+      let slotToUse = detectedSlot >= 0 && detectedSlot < 4 ? detectedSlot : currentSlotValue;
       
       if (slotToUse >= 0 && slotToUse < 4) {
         tubes[slotToUse].isCurrentPlayer = true;
@@ -211,6 +210,17 @@ export function updateClientFromServerState(state, dependencies) {
     const currentRoundValue = currentRoundRef ? currentRoundRef.value : (typeof currentRound !== 'undefined' ? currentRound : 1);
     const oldRound = currentRoundValue;
     
+    // CRITICAL FIX: Only process round change if it's actually different
+    // This prevents infinite reset loops when server broadcasts state updates every second
+    if (state.currentRound === oldRound) {
+      // Same round, just update the display and skip the reset logic
+      if (currentRoundRef) {
+        currentRoundRef.value = state.currentRound;
+      }
+      updateRoundDisplay();
+      return; // ✅ EXIT EARLY - no reset needed for same round
+    }
+    
     // Update via mutable reference if available
     if (currentRoundRef) {
       currentRoundRef.value = state.currentRound;
@@ -222,7 +232,7 @@ export function updateClientFromServerState(state, dependencies) {
     // The caller should handle saving if needed
 
     if (newRound > oldRound) {
-      console.log(`ROUND: Round ${newRound} started - FULL RESET`);
+      console.log(`ROUND: Round ${newRound} started - FULL RESET (was round ${oldRound})`);
       
       // Clear all player choices for new round
       players.forEach((player, i) => {

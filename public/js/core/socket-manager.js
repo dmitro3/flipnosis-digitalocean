@@ -409,10 +409,10 @@ export function initializeSocket(dependencies) {
   });
 
   socket.on('glass_shatter', (data) => {
-    console.log('SHATTER: Glass shatter:', data);
-    if (data.playerSlot >= 0 && data.playerSlot < 4) {
-      shatterGlass(data.playerSlot, data.power);
-    }
+    console.log('SHATTER: Glass shatter event received (deprecated - shatter happens in flip start):', data);
+    // ✅ FIX: Don't shatter here - it's handled in physics_coin_flip_start
+    // This prevents double-shattering and race conditions
+    // Keeping the listener for backward compatibility but not executing
   });
 
   // Additional socket events for coin unlock/profile

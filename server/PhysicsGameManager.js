@@ -299,7 +299,7 @@ class PhysicsGameManager {
         phase: game?.phase,
         currentRound: game?.currentRound
       })
-      return false
+      return { success: false, reason: 'game_not_active' }
     }
 
     const normalizedAddress = address.toLowerCase()
@@ -307,37 +307,40 @@ class PhysicsGameManager {
     
     if (!player) {
       console.warn(`❌ Player ${address} not found in game ${gameId}`)
-      return false
+      return { success: false, reason: 'player_not_found' }
     }
     
     if (!player.isActive) {
       console.warn(`❌ Player ${address} is not active in game ${gameId}`)
-      return false
+      return { success: false, reason: 'player_not_active' }
     }
     
     // ✅ Check if THIS PLAYER already fired in this round
     // NOTE: This check is PER-PLAYER, so multiple DIFFERENT players can flip simultaneously!
     // Only prevents the SAME player from flipping twice in one round
+    // This is CORRECT behavior - each player can flip once per round, independent of other players
     if (player.hasFired) {
-      console.warn(`❌ Player ${address} already flipped in this round for game ${gameId}`, {
+      console.warn(`❌ Player ${address} already flipped in round ${game.currentRound} for game ${gameId}`, {
         hasFired: player.hasFired,
         isFlipping: player.isFlipping,
-        slotNumber: player.slotNumber
+        slotNumber: player.slotNumber,
+        currentRound: game.currentRound
       })
-      return false
+      return { success: false, reason: 'already_flipped_this_round' }
     }
 
     if (!player.choice) {
       console.warn(`❌ Player ${address} has no choice set in game ${gameId}`)
-      return false
+      return { success: false, reason: 'no_choice' }
     }
 
     if (choice && choice !== player.choice) {
       console.warn(`❌ Player ${address} choice mismatch: ${choice} vs ${player.choice}`)
-      return false
+      return { success: false, reason: 'choice_mismatch' }
     }
 
     // ✅ FIX: Set BOTH flags immediately to prevent race conditions
+    // These flags are PER-PLAYER so multiple players can flip at the same time
     player.hasFired = true
     player.isFlipping = true
 
@@ -353,26 +356,24 @@ class PhysicsGameManager {
 
     if (!simulationResult) {
       console.warn(`❌ Physics simulation failed for player ${address}`)
-      return false
+      // Reset flags on failure
+      player.hasFired = false
+      player.isFlipping = false
+      return { success: false, reason: 'simulation_failed' }
     }
 
-    console.log(`🎲 Server-side coin flip initiated for ${address}: power=${power}, choice=${player.choice}`)
+    console.log(`🎲 Server-side coin flip initiated for ${address}: power=${power}, choice=${player.choice}, round=${game.currentRound}`)
 
-    // Broadcast the flip start AND glass shatter to all clients
+    // Broadcast the flip start to all clients
+    // ✅ FIX: Removed separate glass_shatter event to prevent double-shattering
+    // Glass shatter now happens as part of physics_coin_flip_start event
     if (broadcast) {
       const room = `game_${gameId}`
-      
-      // Broadcast glass shatter effect
-      broadcast(room, 'glass_shatter', {
-        gameId: gameId,
-        playerSlot: player.slotNumber,
-        power: power
-      })
       
       // Generate random FLIP reward amount (server-side for consistency)
       const flipReward = this.generateFlipReward()
       
-      // Broadcast flip start
+      // Broadcast flip start (includes power for glass shatter)
       broadcast(room, 'physics_coin_flip_start', {
         gameId: gameId,
         playerAddress: address,
@@ -390,7 +391,7 @@ class PhysicsGameManager {
       this.processCoinFlipResult(gameId, address, broadcast)
     }, simulationResult.duration + 100) // Small buffer
 
-    return true
+    return { success: true }
   }
 
   // Process coin flip result after physics simulation
@@ -472,7 +473,9 @@ class PhysicsGameManager {
   // Fire coin (legacy method - now redirects to server-side)
   fireCoin(gameId, address, angle, power, broadcast) {
     console.log(`🔄 Redirecting fireCoin to server-side simulation`)
-    return this.serverFlipCoin(gameId, address, null, power, angle, broadcast)
+    const result = this.serverFlipCoin(gameId, address, null, power, angle, 'normal', broadcast)
+    // Return boolean for backward compatibility
+    return result.success || false
   }
 
   // Start round timer

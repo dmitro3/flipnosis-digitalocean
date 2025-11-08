@@ -115,15 +115,21 @@ export function startClientCoinFlipAnimation(
       
       console.log(`🎬 Starting flip animation for coin ${data.playerSlot + 1} with ID: ${flipId}`);
 
-      // Ensure the glass shatter effect triggers immediately on the client
+      // ✅ FIX: Shatter glass IMMEDIATELY and SYNCHRONOUSLY before any other animations
+      // Check and set isShattered flag ATOMICALLY to prevent race conditions
       if (typeof shatterGlassFunc === 'function' && !tube.isShattered) {
+        tube.isShattered = true; // Set flag IMMEDIATELY before calling shatter
         const shatterPower = typeof data.power === 'number' ? data.power : (tube.power || 100);
         try {
+          // Call shatter synchronously - it should execute immediately
           shatterGlassFunc(data.playerSlot, shatterPower);
-          console.log(`💥 Triggered immediate client-side shatter for coin ${data.playerSlot + 1}`);
+          console.log(`💥 Triggered immediate client-side shatter for coin ${data.playerSlot + 1} at ${shatterPower}% power`);
         } catch (error) {
           console.error('ERROR: Failed to trigger client-side shatter:', error);
+          tube.isShattered = false; // Reset flag on error
         }
+      } else if (tube.isShattered) {
+        console.log(`⚠️ Glass already shattered for coin ${data.playerSlot + 1}, skipping`);
       }
       
       animateCoinFlip(data.playerSlot, data.power, data.duration, tubes, coins, coinMaterials);

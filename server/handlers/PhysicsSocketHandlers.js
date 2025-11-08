@@ -241,13 +241,28 @@ class PhysicsSocketHandlers {
       console.warn(`❌ Game ${gameId} not found in manager`)
     }
     
-    const success = gameManager.serverFlipCoin(gameId, address, null, power, angle, accuracy, (room, event, payload) => {
+    const result = gameManager.serverFlipCoin(gameId, address, null, power, angle, accuracy, (room, event, payload) => {
       io.to(room).emit(event, payload)
     })
     
-    if (!success) {
-      console.warn(`❌ serverFlipCoin failed for ${address} in game ${gameId}`)
-      socket.emit('physics_error', { message: 'Cannot flip coin now' })
+    // ✅ FIX: Improved error handling with specific messages
+    if (!result.success) {
+      const errorMessages = {
+        'game_not_active': 'Game is not in active round',
+        'player_not_found': 'Player not found in game',
+        'player_not_active': 'Player is not active',
+        'already_flipped_this_round': 'You already flipped this round. Wait for next round.',
+        'no_choice': 'You must choose heads or tails first',
+        'choice_mismatch': 'Choice mismatch error',
+        'simulation_failed': 'Physics simulation failed'
+      }
+      
+      const message = errorMessages[result.reason] || 'Cannot flip coin now'
+      console.warn(`❌ serverFlipCoin failed for ${address} in game ${gameId}: ${result.reason}`)
+      socket.emit('physics_error', { 
+        message: message,
+        reason: result.reason
+      })
     } else {
       console.log(`✅ serverFlipCoin succeeded for ${address} in game ${gameId}`)
     }

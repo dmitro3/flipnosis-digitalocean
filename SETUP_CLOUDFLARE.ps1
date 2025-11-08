@@ -61,3 +61,5 @@ Write-Host "`nYou MUST restart PowerShell for variables to take effect!" -Foregr
 Write-Host "After restarting, run: .\DEPLOY.ps1 'test message'`n" -ForegroundColor Cyan
 
 
+
+
