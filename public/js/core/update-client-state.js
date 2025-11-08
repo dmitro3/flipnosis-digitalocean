@@ -218,7 +218,8 @@ export function updateClientFromServerState(state, dependencies) {
         currentRoundRef.value = state.currentRound;
       }
       updateRoundDisplay();
-      return; // ✅ EXIT EARLY - no reset needed for same round
+      // ✅ DON'T RETURN - Continue to update player choices from server
+      // The reset logic only runs if newRound > oldRound (line 234 below)
     }
     
     // Update via mutable reference if available
