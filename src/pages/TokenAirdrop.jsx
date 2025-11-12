@@ -295,17 +295,7 @@ const TokenAirdrop = () => {
               </TokenIcon>
               <TokenName>Skins</TokenName>
               <TokenDescription>
-                Unlock in game coin skins and compounds with <strong>FLIP</strong> tokens.
-              </TokenDescription>
-            </TokenCard>
-            
-            <TokenCard>
-              <TokenIcon>
-                <img src="/images/marketplace.png" alt="Marketplace" style={{ width: '64px', height: '64px', objectFit: 'contain', borderRadius: '12px' }} />
-              </TokenIcon>
-              <TokenName>Marketplace</TokenName>
-              <TokenDescription>
-                Spend <strong>FLIP</strong> tokens on collectable community created skins for your coins. Coin v coin game mode coming soon.
+                Unlock in game skins using <strong>FLIP</strong> tokens.
               </TokenDescription>
             </TokenCard>
             
@@ -315,7 +305,17 @@ const TokenAirdrop = () => {
               </TokenIcon>
               <TokenName>Coin Factory</TokenName>
               <TokenDescription>
-                Mint coin collections and skins with different compounds using <strong>FLIP</strong>. Then sell them in our marketplace.
+                Purchase and tear open coin packs containing rare and collectable coins from renowned NFT artists.
+              </TokenDescription>
+            </TokenCard>
+
+            <TokenCard>
+              <TokenIcon>
+                <img src="/images/marketplace.png" alt="Marketplace" style={{ width: '64px', height: '64px', objectFit: 'contain', borderRadius: '12px' }} />
+              </TokenIcon>
+              <TokenName>Marketplace</TokenName>
+              <TokenDescription>
+                Spend <strong>FLIP</strong> tokens on rare and collectable skins.
               </TokenDescription>
             </TokenCard>
           </TokenInfo>
