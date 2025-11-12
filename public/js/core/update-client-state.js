@@ -61,7 +61,8 @@ export function updateClientFromServerState(state, dependencies) {
     if (existingIndicator) {
       existingIndicator.remove();
     }
-    console.log(`GAME: Game is now round_active - Round ${state.currentRound}`);
+    // Reduced logging - only log round active when debugging
+    // console.log(`GAME: Game is now round_active - Round ${state.currentRound}`);
     updatePlayerCardButtons();
   } else if (state.phase === 'game_over') {
     console.log(`GAME_OVER: GAME OVER DETECTED!`, {
@@ -116,8 +117,9 @@ export function updateClientFromServerState(state, dependencies) {
       
       // ✅ FIX: Only log and update if slot actually changed to reduce spam
       if (detectedSlot !== currentSlotValue && detectedSlot >= 0 && detectedSlot < 4) {
-        console.log(`SLOT: Server detected player slot: ${detectedSlot} (was: ${currentSlotValue})`);
-        
+        // Reduced logging - only log slot detection when debugging
+        // console.log(`SLOT: Server detected player slot: ${detectedSlot} (was: ${currentSlotValue})`);
+
         if (playerSlotRef) {
           // Update via mutable reference
           playerSlotRef.value = detectedSlot;
@@ -233,17 +235,18 @@ export function updateClientFromServerState(state, dependencies) {
     // The caller should handle saving if needed
 
     if (newRound > oldRound) {
-      console.log(`ROUND: Round ${newRound} started - FULL RESET (was round ${oldRound})`);
-      
+      // Reduced logging - only log round resets when debugging
+      // console.log(`ROUND: Round ${newRound} started - FULL RESET (was round ${oldRound})`);
+
       // ✅ FIX: Get the CORRECT player slot BEFORE resetting everything
       const currentPlayerSlot = playerSlotRef ? playerSlotRef.value : playerSlot;
-      console.log(`🎯 ROUND RESET: Current player slot is ${currentPlayerSlot}`);
-      
+      // console.log(`🎯 ROUND RESET: Current player slot is ${currentPlayerSlot}`);
+
       // Clear all player choices for new round
       players.forEach((player, i) => {
         if (player && !player.isEmpty) {
           player.choice = null;
-          console.log(`🔄 Cleared choice for player ${i + 1}`);
+          // console.log(`🔄 Cleared choice for player ${i + 1}`);
         }
       });
       
@@ -366,7 +369,8 @@ export function updateClientFromServerState(state, dependencies) {
               // This is the critical fix for Round 2 bug
               if (currentPlayerSlot >= 0 && currentPlayerSlot === i) {
                 choiceButtons.style.display = 'flex';
-                console.log(`✅ ENABLED choice buttons for player slot ${i} (current player)`);
+                // Reduced logging
+                // console.log(`✅ ENABLED choice buttons for player slot ${i} (current player)`);
 
                 const choiceBtnElements = tube.cardElement.querySelectorAll('.choice-btn');
                 choiceBtnElements.forEach(btn => {
@@ -378,7 +382,8 @@ export function updateClientFromServerState(state, dependencies) {
                 });
               } else {
                 choiceButtons.style.display = 'none';
-                console.log(`⏸️ HIDDEN choice buttons for player slot ${i} (not current player)`);
+                // Reduced logging
+                // console.log(`⏸️ HIDDEN choice buttons for player slot ${i} (not current player)`);
               }
             }
           }
@@ -399,7 +404,8 @@ export function updateClientFromServerState(state, dependencies) {
         mobilePowerValue.textContent = '0';
       }
 
-      console.log(`RESET: Round ${newRound} reset complete - players can charge and choose again`);
+      // Reduced logging
+      // console.log(`RESET: Round ${newRound} reset complete - players can charge and choose again`);
       updatePlayerCardButtons();
     }
   }

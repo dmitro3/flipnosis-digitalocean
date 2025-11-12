@@ -196,12 +196,13 @@ export function initializeSocket(dependencies) {
   socket.on('physics_state_update', (state) => {
     // Wrap everything in try-catch to prevent any errors from blocking state updates
     try {
-      console.log('STATE: Received physics state update:', {
-        phase: state?.phase,
-        currentRound: state?.currentRound,
-        roundTimer: state?.roundTimer,
-        players: state?.players ? Object.keys(state.players).length : 0
-      });
+      // Reduced logging - only log state updates when debugging
+      // console.log('STATE: Received physics state update:', {
+      //   phase: state?.phase,
+      //   currentRound: state?.currentRound,
+      //   roundTimer: state?.roundTimer,
+      //   players: state?.players ? Object.keys(state.players).length : 0
+      // });
       
       if (!state) {
         console.warn('WARN: Received null/undefined state update');
@@ -249,7 +250,8 @@ export function initializeSocket(dependencies) {
         if (playerSlotRef.value !== previousSlot && playerSlotRef.value >= 0) {
           // Note: playerSlot is passed by value, so we can't update it here
           // The update should happen in game-main.js's updateClientFromServerState wrapper
-          console.log(`🔄 Detected slot change: ${previousSlot} -> ${playerSlotRef.value}`);
+          // Reduced logging - only log slot changes when debugging
+          // console.log(`🔄 Detected slot change: ${previousSlot} -> ${playerSlotRef.value}`);
         }
       } catch (updateError) {
         console.error('ERROR: Error in updateClientFromServerState:', updateError);
@@ -400,12 +402,14 @@ export function initializeSocket(dependencies) {
   });
 
   socket.on('coin_update', (data) => {
-    console.log('COIN: Coin update received:', data);
+    // Reduced logging - only log coin updates when debugging
+    // console.log('COIN: Coin update received:', data);
     updateCoinFromServer(data);
   });
 
   socket.on('player_flip_action', (data) => {
-    console.log('ACTION: Player flip action:', data);
+    // Reduced logging - only log flip actions when debugging
+    // console.log('ACTION: Player flip action:', data);
   });
 
   socket.on('glass_shatter', (data) => {

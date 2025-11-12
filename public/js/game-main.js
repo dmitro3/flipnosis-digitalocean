@@ -124,7 +124,8 @@ export async function initGame(params) {
         }
       }
     });
-    console.log('🔄 Updated player card buttons');
+    // Reduced logging
+    // console.log('🔄 Updated player card buttons');
   };
   
   const showChoiceRequiredMessage = (slot) => {
@@ -152,8 +153,9 @@ export async function initGame(params) {
       console.warn(`⚠️ Missing dependencies for coin selection at slot ${slot}`);
       return;
     }
-    
-    console.log(`🪙 Applying coin selection for slot ${slot}:`, coinOption?.name, materialOption?.name);
+
+    // Reduced logging
+    // console.log(`🪙 Applying coin selection for slot ${slot}:`, coinOption?.name, materialOption?.name);
     
     // Store selections in tube
     tube.selectedCoin = coinOption;
@@ -344,7 +346,8 @@ export async function initGame(params) {
   };
   
   const updateRoundDisplay = () => {
-    console.log(`📊 Round ${currentRound}`);
+    // Reduced logging
+    // console.log(`📊 Round ${currentRound}`);
     // Update desktop round display
     const roundNumberEl = document.getElementById('round-number');
     if (roundNumberEl) {
@@ -356,9 +359,10 @@ export async function initGame(params) {
       mobileRoundNumberEl.textContent = currentRound;
     }
   };
-  
+
   const updateTimerDisplay = (time) => {
-    console.log(`⏱️ Timer: ${time}`);
+    // Reduced logging
+    // console.log(`⏱️ Timer: ${time}`);
     // Update desktop timer display
     const timerValueEl = document.getElementById('timer-value');
     if (timerValueEl) {

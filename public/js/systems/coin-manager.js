@@ -116,9 +116,8 @@ export function startClientCoinFlipAnimation(
       console.log(`🎬 Starting flip animation for coin ${data.playerSlot + 1} with ID: ${flipId}`);
 
       // ✅ FIX: Shatter glass IMMEDIATELY and SYNCHRONOUSLY before any other animations
-      // Check and set isShattered flag ATOMICALLY to prevent race conditions
+      // shatterGlass function will handle setting the isShattered flag internally
       if (typeof shatterGlassFunc === 'function' && !tube.isShattered) {
-        tube.isShattered = true; // Set flag IMMEDIATELY before calling shatter
         const shatterPower = typeof data.power === 'number' ? data.power : (tube.power || 100);
         try {
           // Call shatter synchronously - it should execute immediately
@@ -126,7 +125,6 @@ export function startClientCoinFlipAnimation(
           console.log(`💥 Triggered immediate client-side shatter for coin ${data.playerSlot + 1} at ${shatterPower}% power`);
         } catch (error) {
           console.error('ERROR: Failed to trigger client-side shatter:', error);
-          tube.isShattered = false; // Reset flag on error
         }
       } else if (tube.isShattered) {
         console.log(`⚠️ Glass already shattered for coin ${data.playerSlot + 1}, skipping`);
@@ -250,10 +248,11 @@ export function updateCoinFromServer(data, tubes, coins, players, coinOptions, c
     const tube = tubes[data.playerSlot];
     const coin = coins[data.playerSlot];
     const player = players[data.playerSlot];
-    
+
     if (tube && coin && player && data.coinData) {
-      console.log(`🪙 Updating coin for player ${data.playerSlot + 1}: ${data.coinData.name}`);
-      
+      // Reduced logging
+      // console.log(`🪙 Updating coin for player ${data.playerSlot + 1}: ${data.coinData.name}`);
+
       const selectedCoin = coinOptions.find(c => c.id === data.coinData.coinId) || coinOptions[0];
       const selectedMaterial = coinMaterials.find(m => m.id === data.coinData.materialId) || coinMaterials[0];
       
