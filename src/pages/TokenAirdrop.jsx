@@ -305,7 +305,7 @@ const TokenAirdrop = () => {
               </TokenIcon>
               <TokenName>Coin Factory</TokenName>
               <TokenDescription>
-                Purchase and tear open coin packs containing rare and collectable coins from renowned NFT artists.
+                Purchase coin packs containing rare and collectable coins from renowned NFT artists.
               </TokenDescription>
             </TokenCard>
 
@@ -315,7 +315,7 @@ const TokenAirdrop = () => {
               </TokenIcon>
               <TokenName>Marketplace</TokenName>
               <TokenDescription>
-                Spend <strong>FLIP</strong> tokens on rare and collectable skins.
+                Buy and sell coins using FLIP tokens.
               </TokenDescription>
             </TokenCard>
           </TokenInfo>
