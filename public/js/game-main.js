@@ -694,14 +694,15 @@ export async function initGame(params) {
         return;
       }
 
-      console.log('📱 Creating mobile player cards...', { tubes: tubes.length, players: players.length });
+      // Reduced logging - only log when debugging
+      // console.log('📱 Creating mobile player cards...', { tubes: tubes.length, players: players.length });
       container.innerHTML = '';
-      
+
       for (let i = 0; i < 4; i++) {
         const player = players[i];
         const box = document.createElement('div');
         box.className = 'player-box';
-        
+
         if (player && !player.isEmpty) {
           box.innerHTML = `
             <img src="${player.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg=='}" class="player-avatar" alt="${player.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg==';" />
@@ -718,11 +719,12 @@ export async function initGame(params) {
             </div>
           `;
         }
-        
+
         container.appendChild(box);
       }
-      
-      console.log(`📱 Mobile player boxes created: ${container.children.length} boxes`);
+
+      // Reduced logging
+      // console.log(`📱 Mobile player boxes created: ${container.children.length} boxes`);
     },
     startClientCoinFlipAnimation,
     showCoinFlipResult,

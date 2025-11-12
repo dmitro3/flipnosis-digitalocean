@@ -154,7 +154,6 @@ export function updateClientFromServerState(state, dependencies) {
           // CRITICAL FIX: Don't overwrite a valid local choice with null/undefined from server
           // Only sync if server has a valid choice that's different from local
           // This prevents the server from resetting choices that were just set locally
-          // IMPORTANT: If local has a choice but server sends null, keep the local choice
           if (serverPlayer.choice !== undefined && serverPlayer.choice !== null) {
             // Server has a valid choice - sync it if different
             if (serverPlayer.choice !== localPlayer.choice) {
@@ -162,13 +161,10 @@ export function updateClientFromServerState(state, dependencies) {
               // console.log(`SYNC: Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice} (was: ${localPlayer.choice || 'null'})`);
               localPlayer.choice = serverPlayer.choice;
             }
-          } else if (localPlayer.choice && serverPlayer.choice === null) {
-            // Server sent null - this happens on new rounds when choices are reset
-            // CLEAR the local choice so player can choose again
-            // Reduced logging
-            // console.log(`CLEAR: Server sent null choice for player ${serverPlayer.slotNumber + 1} - clearing local choice (was: ${localPlayer.choice})`);
-            localPlayer.choice = null;
           }
+          // ✅ FIX: DON'T clear local choice if server sends null during normal gameplay
+          // Choices should ONLY be cleared during round resets (handled later in this function)
+          // Removing the else-if block that was clearing choices on every state update
 
           // Update UI for choice changes
           const tube = tubes[serverPlayer.slotNumber];
@@ -177,11 +173,13 @@ export function updateClientFromServerState(state, dependencies) {
             const choiceBadge = tube.cardElement.querySelector('.choice-badge');
 
             if (choiceButtons && choiceBadge) {
-              if (serverPlayer.choice) {
+              // ✅ FIX: Use LOCAL player choice for UI, not server choice
+              // This ensures UI shows the choice immediately when set locally
+              if (localPlayer.choice) {
                 choiceButtons.style.display = 'none';
                 choiceBadge.style.display = 'inline-block';
-                choiceBadge.textContent = serverPlayer.choice.toUpperCase();
-                choiceBadge.className = `choice-badge ${serverPlayer.choice}`;
+                choiceBadge.textContent = localPlayer.choice.toUpperCase();
+                choiceBadge.className = `choice-badge ${localPlayer.choice}`;
               } else {
                 choiceBadge.style.display = 'none';
                 // Use slot from ref if available, otherwise use passed value
