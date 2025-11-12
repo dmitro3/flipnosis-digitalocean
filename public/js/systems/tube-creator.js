@@ -646,6 +646,8 @@ export function createTubes(dependencies) {
       powerButton.addEventListener('mousedown', (e) => {
         e.stopPropagation();
         console.log(`🖱️ Power button mousedown for player ${i + 1}`);
+        console.log(`🔧 DEBUG: Current choice for player ${i + 1}: ${players[i].choice}`);
+        console.log(`🔧 DEBUG: Player object:`, players[i]);
 
         if (!players[i].choice) {
           showChoiceRequiredMessage(i);

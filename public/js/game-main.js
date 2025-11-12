@@ -412,7 +412,9 @@ export async function initGame(params) {
   
   const updatePlayerChoice = (data) => {
     if (data.playerSlot >= 0 && data.playerSlot < 4) {
+      console.log(`🔧 DEBUG: Setting choice for slot ${data.playerSlot}: ${data.choice}`);
       players[data.playerSlot].choice = data.choice;
+      console.log(`🔧 DEBUG: Choice is now: ${players[data.playerSlot].choice}`);
       updatePlayerCardChoice(data.playerSlot, data.choice);
       CoinManager.updateCoinRotationsFromPlayerChoices(tubes, players, coins);
     }

@@ -235,18 +235,17 @@ export function updateClientFromServerState(state, dependencies) {
     // The caller should handle saving if needed
 
     if (newRound > oldRound) {
-      // Reduced logging - only log round resets when debugging
-      // console.log(`ROUND: Round ${newRound} started - FULL RESET (was round ${oldRound})`);
+      console.log(`🔧 DEBUG: ROUND RESET - Round ${newRound} started (was round ${oldRound})`);
 
       // ✅ FIX: Get the CORRECT player slot BEFORE resetting everything
       const currentPlayerSlot = playerSlotRef ? playerSlotRef.value : playerSlot;
-      // console.log(`🎯 ROUND RESET: Current player slot is ${currentPlayerSlot}`);
+      console.log(`🔧 DEBUG: Current player slot is ${currentPlayerSlot}`);
 
       // Clear all player choices for new round
       players.forEach((player, i) => {
         if (player && !player.isEmpty) {
+          console.log(`🔧 DEBUG: Clearing choice for player ${i + 1} (was: ${player.choice})`);
           player.choice = null;
-          // console.log(`🔄 Cleared choice for player ${i + 1}`);
         }
       });
       
