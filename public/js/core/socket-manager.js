@@ -177,9 +177,21 @@ export function initializeSocket(dependencies) {
     if (data.coinSelections) {
       data.coinSelections.forEach((selection, index) => {
         if (selection && tubes[index]) {
-          tubes[index].selectedCoin = coinOptions.find(c => c.id === selection.coinId) || coinOptions[0];
-          tubes[index].selectedMaterial = coinMaterials.find(m => m.id === selection.materialId) || coinMaterials[0];
-          applyCoinSelection(index, tubes[index].selectedCoin, tubes[index].selectedMaterial);
+          const newCoin = coinOptions.find(c => c.id === selection.coinId) || coinOptions[0];
+          const newMaterial = coinMaterials.find(m => m.id === selection.materialId) || coinMaterials[0];
+
+          // Only apply if coin selection has changed to avoid repeated texture loading
+          const currentCoin = tubes[index].selectedCoin;
+          const currentMaterial = tubes[index].selectedMaterial;
+          const hasChanged = !currentCoin || !currentMaterial ||
+                            currentCoin.id !== newCoin.id ||
+                            currentMaterial.id !== newMaterial.id;
+
+          if (hasChanged) {
+            tubes[index].selectedCoin = newCoin;
+            tubes[index].selectedMaterial = newMaterial;
+            applyCoinSelection(index, newCoin, newMaterial);
+          }
         }
       });
     }

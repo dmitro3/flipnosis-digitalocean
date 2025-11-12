@@ -196,8 +196,9 @@ export async function initGame(params) {
           coin.material[0].needsUpdate = true;
         }
         
-        console.log(`✅ Applied ${coinOption.name} with ${materialOption.name} material to slot ${slot + 1}'s coin`);
-        
+        // Reduced logging - only log once per actual coin change
+        // console.log(`✅ Applied ${coinOption.name} with ${materialOption.name} material to slot ${slot + 1}'s coin`);
+
         // Send to server if in server-side mode
         // CRITICAL FIX: Use tube's socket if available, check if connected
         const activeSocket = tubes[slot]?.socket || socket;
@@ -215,9 +216,11 @@ export async function initGame(params) {
               material: materialOption
             }
           });
-          console.log(`📤 Sent coin selection to server: ${coinOption.id} / ${materialOption.id}`);
-        } else {
-          console.warn(`⚠️ Cannot send coin update: socket=${!!activeSocket}, connected=${activeSocket?.connected}, gameId=${!!gameIdParam}, wallet=${!!walletParam}, slot=${slot}, playerSlot=${playerSlot}`);
+          // Reduced logging
+          // console.log(`📤 Sent coin selection to server: ${coinOption.id} / ${materialOption.id}`);
+        } else if (playerSlot !== slot) {
+          // Only warn if it's a different slot (expected behavior for other players)
+          // console.warn(`⚠️ Cannot send coin update: slot=${slot}, playerSlot=${playerSlot}`);
         }
       }, undefined, (error) => {
         console.error(`❌ Failed to load tails texture for ${coinOption.name}:`, error);

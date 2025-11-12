@@ -158,13 +158,15 @@ export function updateClientFromServerState(state, dependencies) {
           if (serverPlayer.choice !== undefined && serverPlayer.choice !== null) {
             // Server has a valid choice - sync it if different
             if (serverPlayer.choice !== localPlayer.choice) {
-              console.log(`SYNC: Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice} (was: ${localPlayer.choice || 'null'})`);
+              // Reduced logging - only log choice changes when debugging
+              // console.log(`SYNC: Syncing player ${serverPlayer.slotNumber + 1} choice: ${serverPlayer.choice} (was: ${localPlayer.choice || 'null'})`);
               localPlayer.choice = serverPlayer.choice;
             }
           } else if (localPlayer.choice && serverPlayer.choice === null) {
             // Server sent null - this happens on new rounds when choices are reset
             // CLEAR the local choice so player can choose again
-            console.log(`CLEAR: Server sent null choice for player ${serverPlayer.slotNumber + 1} - clearing local choice (was: ${localPlayer.choice})`);
+            // Reduced logging
+            // console.log(`CLEAR: Server sent null choice for player ${serverPlayer.slotNumber + 1} - clearing local choice (was: ${localPlayer.choice})`);
             localPlayer.choice = null;
           }
 
