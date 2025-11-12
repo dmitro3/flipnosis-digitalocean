@@ -82,6 +82,11 @@ export function initializeSocket(dependencies) {
     console.log('OK: showGameOverScreen found in dependencies, type:', typeof showGameOverScreenFromDeps);
   }
 
+  // ✅ FIX: Create refs ONCE here so they persist across all state updates
+  // DO NOT recreate these inside event handlers or values will be lost
+  const playerSlotRef = { value: playerSlot };
+  const currentRoundRef = { value: currentRound };
+
   // io is now imported as ES module
   // Determine socket URL based on environment
   let socketUrl = undefined; // Default to current origin (same origin = same protocol/host/port)
@@ -226,11 +231,10 @@ export function initializeSocket(dependencies) {
       // Ensure showGameOverScreen is available - use the local constant which is always defined
       // showGameOverScreenLocal is always a function (even if it's a no-op fallback)
       const safeShowGameOverScreen = showGameOverScreenLocal;
-      
-      // Pass playerSlot and currentRound as mutable references
-      const playerSlotRef = { value: playerSlot };
-      const currentRoundRef = { value: currentRound };
-      
+
+      // ✅ FIX: DO NOT recreate refs here - they are created once at the top of initializeSocket
+      // The refs must persist between state updates so updated values aren't lost
+
       // Wrap updateClientFromServerState in try-catch since it can throw async errors
       try {
         const previousSlot = playerSlotRef.value;
