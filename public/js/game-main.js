@@ -59,7 +59,8 @@ export async function initGame(params) {
   let roundStartWins = [];
   let isServerSideMode = true;
   let isCharging = false;
-  
+  let socketRef = null; // Will be set after socket initialization
+
   // 3. Initialize players array
   const players = gameState.players;
   
@@ -780,9 +781,28 @@ export async function initGame(params) {
         ">Return Home</button>
       `;
     }
-    
+
     gameOverDiv.appendChild(contentDiv);
     document.body.appendChild(gameOverDiv);
+
+    // Award FLIP tokens to the player's profile
+    if (socketRef && socketRef.connected && totalFlipEarned > 0 && playerAddress) {
+      console.log(`💰 Awarding ${totalFlipEarned} FLIP to player ${playerAddress}`);
+      socketRef.emit('award_flip_tokens_final', {
+        gameId: gameIdParam,
+        address: playerAddress,
+        totalFlip: totalFlipEarned,
+        gameResult: didCurrentPlayerWin ? 'won' : 'lost'
+      });
+    } else {
+      if (!socketRef || !socketRef.connected) {
+        console.warn('⚠️ Cannot award FLIP tokens: socket not connected');
+      } else if (totalFlipEarned <= 0) {
+        console.log('ℹ️ No FLIP tokens to award (totalFlipEarned = 0)');
+      } else if (!playerAddress) {
+        console.warn('⚠️ Cannot award FLIP tokens: no player address');
+      }
+    }
   };
 
   // 5. Create tubes (this also creates coins)
@@ -1038,7 +1058,8 @@ export async function initGame(params) {
   
   // Initialize socket with dependencies
   const socket = initializeSocket(socketDeps);
-  
+  socketRef = socket; // Store socket reference for use in showGameOverScreen
+
   // CRITICAL FIX: Update socket reference in all tubes after socket is created
   // Also add connection status check
   tubes.forEach(tube => {
