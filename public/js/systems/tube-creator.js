@@ -652,10 +652,7 @@ export function createTubes(dependencies) {
           return;
         }
 
-        if (tubes[i].hasUsedPower) {
-          console.log(`❌ Player ${i + 1} already used power this round`);
-          return;
-        }
+        // Removed hasUsedPower check - allow players to flip multiple times simultaneously
 
         console.log(`⚡ Charging power for tube ${i + 1}`);
         isCharging = true;
@@ -735,13 +732,7 @@ export function createTubes(dependencies) {
             }
           }
 
-          powerButton.disabled = true;
-          powerButton.style.opacity = '0.5';
-          powerButton.style.cursor = 'not-allowed';
-          powerButton.style.background = '#cccccc';
-          powerButton.style.color = '#666666';
-          powerButton.style.borderColor = '#999999';
-          tubes[i].hasUsedPower = true;
+          // Power button stays enabled - allow multiple flips
         }
       });
 
@@ -796,13 +787,7 @@ export function createTubes(dependencies) {
               }
             }
 
-            powerButton.disabled = true;
-            powerButton.style.opacity = '0.5';
-            powerButton.style.cursor = 'not-allowed';
-            powerButton.style.background = '#cccccc';
-            powerButton.style.color = '#666666';
-            powerButton.style.borderColor = '#999999';
-            tubes[i].hasUsedPower = true;
+            // Power button stays enabled - allow multiple flips
           }
         }
         isCharging = false;
