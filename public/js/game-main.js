@@ -308,13 +308,22 @@ export async function initGame(params) {
   };
   
   const showFlipReward = (slot, reward) => {
-    console.log(`💰 Flip reward for slot ${slot}: ${reward}`);
-    
+    console.log(`💰 Flip reward for slot ${slot}:`, reward);
+
     if (!reward || !reward.amount) return;
-    
+
     const tube = tubes[slot];
-    if (!tube || !tube.cardElement) return;
-    
+    const player = players[slot];
+    if (!tube || !tube.cardElement || !player) return;
+
+    // Accumulate total FLIP earned
+    if (!player.totalFlipEarned) player.totalFlipEarned = 0;
+    player.totalFlipEarned += reward.amount;
+    console.log(`💰 Player ${slot + 1} total FLIP: ${player.totalFlipEarned}`);
+
+    // Update FLIP counter display on player card
+    updateFlipCounter(slot);
+
     // Create reward notification
     const rewardNotif = document.createElement('div');
     rewardNotif.className = 'flip-reward-notif';
@@ -336,11 +345,42 @@ export async function initGame(params) {
       pointer-events: none;
     `;
     rewardNotif.textContent = `+${reward.amount} FLIP!`;
-    
+
     tube.cardElement.appendChild(rewardNotif);
-    
+
     // Remove after animation
     setTimeout(() => rewardNotif.remove(), 2000);
+  };
+
+  const updateFlipCounter = (slot) => {
+    const tube = tubes[slot];
+    const player = players[slot];
+    if (!tube || !tube.cardElement || !player) return;
+
+    // Find or create the FLIP counter element
+    let flipCounter = tube.cardElement.querySelector('.flip-counter');
+    if (!flipCounter) {
+      flipCounter = document.createElement('div');
+      flipCounter.className = 'flip-counter';
+      flipCounter.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.2));
+        border: 2px solid #FFD700;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 14px;
+        font-weight: bold;
+        color: #FFD700;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        z-index: 100;
+      `;
+      tube.cardElement.appendChild(flipCounter);
+    }
+
+    flipCounter.textContent = `💰 ${player.totalFlipEarned || 0} FLIP`;
   };
   
   const showFloatingMessage = (message, color, duration) => {
@@ -500,6 +540,11 @@ export async function initGame(params) {
       width: 90%;
     `;
     
+    // Get current player's total FLIP earned
+    const currentPlayer = players[playerSlot];
+    const totalFlipEarned = currentPlayer?.totalFlipEarned || 0;
+    const playerAddress = currentPlayer?.address || walletParam;
+
     // Show different content based on win/lose
     if (didCurrentPlayerWin && winnerIndex >= 0) {
       contentDiv.innerHTML = `
@@ -507,14 +552,27 @@ export async function initGame(params) {
         <div style="font-size: 48px; font-weight: bold; color: #FFD700; margin-bottom: 20px;">
           VICTORY!
         </div>
-        <div style="font-size: 24px; color: #ffffff; margin-bottom: 30px;">
+        <div style="font-size: 24px; color: #ffffff; margin-bottom: 15px;">
           ${winnerName || 'You'} won the game!
         </div>
-        <button onclick="location.reload()" style="
+        <div style="
+          font-size: 32px;
+          font-weight: bold;
+          color: #FFD700;
+          margin: 20px 0;
+          padding: 15px 25px;
+          background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.2));
+          border: 2px solid #FFD700;
+          border-radius: 12px;
+          box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        ">
+          💰 ${totalFlipEarned} FLIP Earned
+        </div>
+        <button onclick="window.location.href='/profile?address=${playerAddress}'" style="
           background: linear-gradient(135deg, #00ff00, #39ff14);
           border: none;
           border-radius: 15px;
-          padding: 15px 30px;
+          padding: 15px 40px;
           font-family: 'Orbitron', sans-serif;
           font-size: 18px;
           font-weight: bold;
@@ -523,7 +581,23 @@ export async function initGame(params) {
           text-transform: uppercase;
           letter-spacing: 2px;
           transition: all 0.3s ease;
-        ">Play Again</button>
+          margin: 10px;
+        ">Claim Rewards</button>
+        <button onclick="window.location.href='/'" style="
+          background: linear-gradient(135deg, #4444ff, #2222cc);
+          border: none;
+          border-radius: 15px;
+          padding: 15px 40px;
+          font-family: 'Orbitron', sans-serif;
+          font-size: 18px;
+          font-weight: bold;
+          color: #fff;
+          cursor: pointer;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          transition: all 0.3s ease;
+          margin: 10px;
+        ">Home</button>
       `;
     } else if (winnerIndex >= 0) {
       contentDiv.innerHTML = `
@@ -531,14 +605,30 @@ export async function initGame(params) {
         <div style="font-size: 48px; font-weight: bold; color: #ff0000; margin-bottom: 20px;">
           DEFEAT
         </div>
-        <div style="font-size: 24px; color: #ffffff; margin-bottom: 30px;">
+        <div style="font-size: 24px; color: #ffffff; margin-bottom: 15px;">
           ${winnerName || 'Unknown'} won the game
         </div>
-        <button onclick="location.reload()" style="
+        <div style="
+          font-size: 28px;
+          font-weight: bold;
+          color: #FFD700;
+          margin: 20px 0;
+          padding: 12px 20px;
+          background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.15));
+          border: 2px solid #FFD700;
+          border-radius: 12px;
+          box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        ">
+          💰 ${totalFlipEarned} FLIP Earned
+        </div>
+        <div style="font-size: 16px; color: #aaaaaa; margin-bottom: 25px;">
+          Better luck next time!
+        </div>
+        <button onclick="window.location.href='/'" style="
           background: linear-gradient(135deg, #ff4444, #cc0000);
           border: none;
           border-radius: 15px;
-          padding: 15px 30px;
+          padding: 15px 40px;
           font-family: 'Orbitron', sans-serif;
           font-size: 18px;
           font-weight: bold;
@@ -547,7 +637,7 @@ export async function initGame(params) {
           text-transform: uppercase;
           letter-spacing: 2px;
           transition: all 0.3s ease;
-        ">Play Again</button>
+        ">Return Home</button>
       `;
     } else {
       contentDiv.innerHTML = `
@@ -555,14 +645,26 @@ export async function initGame(params) {
         <div style="font-size: 48px; font-weight: bold; color: #ffaa00; margin-bottom: 20px;">
           GAME OVER
         </div>
-        <div style="font-size: 24px; color: #ffffff; margin-bottom: 30px;">
+        <div style="font-size: 24px; color: #ffffff; margin-bottom: 15px;">
           The game has ended
         </div>
-        <button onclick="location.reload()" style="
+        <div style="
+          font-size: 28px;
+          font-weight: bold;
+          color: #FFD700;
+          margin: 20px 0;
+          padding: 12px 20px;
+          background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.15));
+          border: 2px solid #FFD700;
+          border-radius: 12px;
+        ">
+          💰 ${totalFlipEarned} FLIP Earned
+        </div>
+        <button onclick="window.location.href='/'" style="
           background: linear-gradient(135deg, #9d00ff, #c44aff);
           border: none;
           border-radius: 15px;
-          padding: 15px 30px;
+          padding: 15px 40px;
           font-family: 'Orbitron', sans-serif;
           font-size: 18px;
           font-weight: bold;
@@ -571,7 +673,7 @@ export async function initGame(params) {
           text-transform: uppercase;
           letter-spacing: 2px;
           transition: all 0.3s ease;
-        ">Play Again</button>
+        ">Return Home</button>
       `;
     }
     
