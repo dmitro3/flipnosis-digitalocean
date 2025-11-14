@@ -126,9 +126,10 @@ class ServerPhysicsEngine {
 
   // Simulate coin flip with deterministic physics
   simulateCoinFlip(gameId, playerIndex, choice, power, angle = 0, accuracy = 'normal') {
+    const perfStart = Date.now();
     const gameBodies = this.bodies.get(gameId)
     const gameState = this.gameStates.get(gameId)
-    
+
     if (!gameBodies || !gameState) {
       console.warn(`❌ Game ${gameId} physics not initialized`)
       return null
@@ -141,7 +142,7 @@ class ServerPhysicsEngine {
 
     const coin = gameBodies.coins[playerIndex]
     const coinState = gameState.coinStates[playerIndex]
-    
+
     if (coinState.isFlipping) {
       console.warn(`❌ Coin ${playerIndex} already flipping`)
       return null
@@ -150,23 +151,26 @@ class ServerPhysicsEngine {
     // Get material properties (default to glass)
     const material = this.materials.get('glass')
     const powerPercent = power / 100
-    
+
     // Calculate physics parameters
     const baseDuration = 2000 + (powerPercent * 6000)
     const flipDuration = baseDuration * material.durationMultiplier
     const basePowerSpeed = Math.max(0.08, 0.05 + (powerPercent * 0.25))
     const flipSpeed = basePowerSpeed * material.speedMultiplier
-    
+
     // Apply initial forces to coin
+    const beforeImpulse = Date.now();
     const forceMagnitude = power * 0.5 // Scale force with power
     const forceX = Math.cos(angle) * forceMagnitude
     const forceY = Math.sin(angle) * forceMagnitude + power * 2 // Upward force
-    
+
     coin.applyImpulse(new CANNON.Vec3(forceX, forceY, 0))
-    
+
     // Apply angular velocity for spinning
     const spinForce = flipSpeed * 100 // Convert to angular velocity
     coin.angularVelocity.set(spinForce, 0, 0)
+    const afterImpulse = Date.now();
+    console.log(`⏱️ applyImpulse + angularVelocity took ${afterImpulse - beforeImpulse}ms`);
     
     // Update coin state
     coinState.isFlipping = true
@@ -198,7 +202,10 @@ class ServerPhysicsEngine {
     
     // Start simulation
     setTimeout(simulate, 16)
-    
+
+    const totalSimTime = Date.now() - perfStart;
+    console.log(`⏱️ Total simulateCoinFlip took ${totalSimTime}ms`);
+
     return {
       success: true,
       duration: flipDuration,

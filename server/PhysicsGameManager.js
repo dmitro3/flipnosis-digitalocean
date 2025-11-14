@@ -292,6 +292,7 @@ class PhysicsGameManager {
 
   // Server-side coin flip with physics simulation
   serverFlipCoin(gameId, address, choice, power, angle = 0, accuracy = 'normal', broadcast) {
+    const perfStart = Date.now();
     const game = this.games.get(gameId)
     if (!game || game.phase !== 'round_active') {
       console.warn(`❌ Game ${gameId} not in active round`, {
@@ -345,14 +346,17 @@ class PhysicsGameManager {
     player.isFlipping = true
 
     // Run server-side physics simulation
+    const beforeSim = Date.now();
     const simulationResult = this.physicsEngine.simulateCoinFlip(
-      gameId, 
-      player.slotNumber, 
-      player.choice, 
-      power, 
+      gameId,
+      player.slotNumber,
+      player.choice,
+      power,
       angle,
       accuracy
     )
+    const afterSim = Date.now();
+    console.log(`⏱️ simulateCoinFlip took ${afterSim - beforeSim}ms`);
 
     if (!simulationResult) {
       console.warn(`❌ Physics simulation failed for player ${address}`)
@@ -367,12 +371,13 @@ class PhysicsGameManager {
     // Broadcast the flip start to all clients
     // ✅ FIX: Removed separate glass_shatter event to prevent double-shattering
     // Glass shatter now happens as part of physics_coin_flip_start event
+    const beforeBroadcast = Date.now();
     if (broadcast) {
       const room = `game_${gameId}`
-      
+
       // Generate random FLIP reward amount (server-side for consistency)
       const flipReward = this.generateFlipReward()
-      
+
       // Broadcast flip start (includes power for glass shatter)
       broadcast(room, 'physics_coin_flip_start', {
         gameId: gameId,
@@ -385,6 +390,11 @@ class PhysicsGameManager {
         flipReward: flipReward
       })
     }
+    const afterBroadcast = Date.now();
+    console.log(`⏱️ broadcast took ${afterBroadcast - beforeBroadcast}ms`);
+
+    const totalServerFlip = Date.now() - perfStart;
+    console.log(`⏱️ Total serverFlipCoin took ${totalServerFlip}ms`);
 
     // Schedule result processing after simulation completes
     setTimeout(() => {

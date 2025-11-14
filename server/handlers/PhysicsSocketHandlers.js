@@ -205,6 +205,7 @@ class PhysicsSocketHandlers {
 
   // Player flips coin with server-side physics
   async handlePhysicsFlipCoin(socket, data, gameManager, io) {
+    const perfStart = Date.now();
     const { gameId, address, power, accuracy = 'normal', angle = 0 } = data
     console.log(`🪙 ${address} flipping coin with power ${power} and accuracy ${accuracy} in physics game`, {
       gameId,
@@ -214,17 +215,22 @@ class PhysicsSocketHandlers {
       angle,
       socketId: socket.id
     })
-    
+
     // Validate power range
     if (power < 0 || power > 100) {
       console.warn(`❌ Invalid power level: ${power}`)
       socket.emit('physics_error', { message: 'Invalid power level' })
       return
     }
-    
+
     // Check game state before attempting flip
+    const beforeGameCheck = Date.now();
     const game = gameManager.getGame(gameId)
+    const afterGameCheck = Date.now();
+    console.log(`⏱️ getGame took ${afterGameCheck - beforeGameCheck}ms`);
+
     if (game) {
+      const beforeLog = Date.now();
       console.log(`🎮 Game state before flip:`, {
         phase: game.phase,
         currentRound: game.currentRound,
@@ -237,13 +243,18 @@ class PhysicsSocketHandlers {
           choice: p.choice
         }))
       })
+      const afterLog = Date.now();
+      console.log(`⏱️ Game state logging took ${afterLog - beforeLog}ms`);
     } else {
       console.warn(`❌ Game ${gameId} not found in manager`)
     }
-    
+
+    const beforeFlip = Date.now();
     const result = gameManager.serverFlipCoin(gameId, address, null, power, angle, accuracy, (room, event, payload) => {
       io.to(room).emit(event, payload)
     })
+    const afterFlip = Date.now();
+    console.log(`⏱️ serverFlipCoin took ${afterFlip - beforeFlip}ms`);
     
     // ✅ FIX: Improved error handling with specific messages
     if (!result.success) {
@@ -266,6 +277,9 @@ class PhysicsSocketHandlers {
     } else {
       console.log(`✅ serverFlipCoin succeeded for ${address} in game ${gameId}`)
     }
+
+    const totalTime = Date.now() - perfStart;
+    console.log(`⏱️ Total handlePhysicsFlipCoin took ${totalTime}ms`);
   }
 
   // Update coin selection
