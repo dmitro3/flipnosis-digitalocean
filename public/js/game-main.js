@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import { CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { initializeScene } from './core/scene-setup.js';
 import { initializeSocket } from './core/socket-manager.js';
 import { createTubes } from './systems/tube-creator.js';
@@ -362,73 +363,128 @@ export async function initGame(params) {
 
     const tube = tubes[slot];
     const player = players[slot];
-    if (!tube || !tube.cardElement || !player) return;
+    if (!tube || !tube.tube || !player) return;
 
     // Accumulate total FLIP earned
     if (!player.totalFlipEarned) player.totalFlipEarned = 0;
     player.totalFlipEarned += reward.amount;
     console.log(`💰 Player ${slot + 1} total FLIP: ${player.totalFlipEarned}`);
 
-    // Update FLIP counter display on player card
+    // Update FLIP counter display in top-right corner
     updateFlipCounter(slot);
 
-    // Create reward notification
-    const rewardNotif = document.createElement('div');
-    rewardNotif.className = 'flip-reward-notif';
-    rewardNotif.style.cssText = `
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: linear-gradient(135deg, ${reward.color || '#FFD700'}, ${reward.color || '#FFA500'});
-      color: #000;
-      padding: 12px 24px;
+    // Create floating reward box styled like the original design (3D floating above tube)
+    const rewardBox = document.createElement('div');
+    rewardBox.style.cssText = `
+      width: 200px;
+      padding: 12px 18px;
+      background: linear-gradient(135deg, rgba(10, 10, 20, 0.95), rgba(5, 5, 15, 0.98)), linear-gradient(135deg, ${reward.color}44, ${reward.color}22);
+      border: 3px solid ${reward.color};
       border-radius: 12px;
+      text-align: center;
       font-family: 'Orbitron', sans-serif;
-      font-size: 20px;
-      font-weight: 900;
-      box-shadow: 0 0 30px ${reward.color || '#FFD700'};
-      z-index: 2000;
-      animation: bounceIn 0.5s ease, floatUp 1.5s ease 0.5s forwards;
+      box-shadow: 0 0 40px ${reward.color}99;
       pointer-events: none;
+      transform: scaleY(-1);
+      backdrop-filter: blur(10px);
     `;
-    rewardNotif.textContent = `+${reward.amount} FLIP!`;
 
-    tube.cardElement.appendChild(rewardNotif);
+    rewardBox.innerHTML = `
+      <div style="
+        font-size: 28px;
+        font-weight: bold;
+        color: ${reward.color};
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 3px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      ">
+        +${reward.amount} FLIP
+      </div>
+      <div style="
+        font-size: 13px;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.9;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      ">
+        Token Reward
+      </div>
+    `;
 
-    // Remove after animation
-    setTimeout(() => rewardNotif.remove(), 2000);
+    const cssObject = new CSS3DObject(rewardBox);
+    // Position ABOVE the tube (matching result box orientation pattern)
+    const tubeTopY = 200 + (TUBE_HEIGHT / 2);
+    cssObject.position.set(tube.tube.position.x, tubeTopY + 100, 0);
+    cssObject.scale.set(0.5, 0.5, 0.5);
+    scene.add(cssObject);
+
+    tube.rewardBox = cssObject;
+
+    // Animate appearance and float up
+    rewardBox.style.opacity = '0';
+    rewardBox.style.transform = 'scaleY(-1) scale(0.5) translateY(30px)';
+    rewardBox.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+    // Pop in with bounce
+    setTimeout(() => {
+      rewardBox.style.opacity = '1';
+      rewardBox.style.transform = 'scaleY(-1) scale(1) translateY(0px)';
+    }, 50);
+
+    // Float up and fade out after 1.5s (stay for 2 seconds total)
+    setTimeout(() => {
+      rewardBox.style.transition = 'all 0.5s ease-in';
+      rewardBox.style.opacity = '0';
+      rewardBox.style.transform = 'scaleY(-1) scale(1.1) translateY(-40px)';
+    }, 1500);
+
+    // Remove from scene after animation completes
+    setTimeout(() => {
+      scene.remove(cssObject);
+    }, 2100);
   };
 
   const updateFlipCounter = (slot) => {
-    const tube = tubes[slot];
     const player = players[slot];
-    if (!tube || !tube.cardElement || !player) return;
+    if (!player) return;
 
-    // Find or create the FLIP counter element
-    let flipCounter = tube.cardElement.querySelector('.flip-counter');
+    // Only show counter for current player
+    if (slot !== playerSlot) return;
+
+    // Find or create the FLIP counter element in top-right corner of page
+    let flipCounter = document.getElementById('total-flip-counter');
     if (!flipCounter) {
       flipCounter = document.createElement('div');
-      flipCounter.className = 'flip-counter';
+      flipCounter.id = 'total-flip-counter';
       flipCounter.style.cssText = `
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.2));
-        border: 2px solid #FFD700;
-        border-radius: 8px;
-        padding: 6px 12px;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 165, 0, 0.25));
+        border: 3px solid #FFD700;
+        border-radius: 12px;
+        padding: 12px 20px;
         font-family: 'Orbitron', sans-serif;
-        font-size: 14px;
+        font-size: 18px;
         font-weight: bold;
         color: #FFD700;
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-        z-index: 100;
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        z-index: 9999;
+        backdrop-filter: blur(10px);
+        text-align: center;
+        min-width: 150px;
       `;
-      tube.cardElement.appendChild(flipCounter);
+      document.body.appendChild(flipCounter);
     }
 
-    flipCounter.textContent = `💰 ${player.totalFlipEarned || 0} FLIP`;
+    flipCounter.innerHTML = `
+      <div style="font-size: 14px; opacity: 0.8; margin-bottom: 4px;">TOTAL FLIP</div>
+      <div style="font-size: 24px;">💰 ${player.totalFlipEarned || 0}</div>
+    `;
   };
   
   const showFloatingMessage = (message, color, duration) => {
