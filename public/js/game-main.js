@@ -238,27 +238,75 @@ export async function initGame(params) {
   const updateWinsDisplay = (slot) => {
     const tube = tubes[slot];
     const player = players[slot];
-    if (tube?.cardElement && player) {
-      const winsDisplay = tube.cardElement.querySelector('.wins-display');
-      if (player.wins > 0) {
-        if (!winsDisplay) {
-          const playerInfo = tube.cardElement.querySelector('.player-info');
-          if (playerInfo) {
-            const winElement = document.createElement('div');
-            winElement.className = 'wins-display';
-            winElement.style.cssText = 'margin-top: 8px; justify-content: center; align-items: center;';
-            winElement.textContent = 'WIN';
-            playerInfo.appendChild(winElement);
+    if (!tube?.cardElement || !player) return;
+
+    // Find or create the wins container
+    let winsContainer = tube.cardElement.querySelector('.wins-container');
+    if (!winsContainer) {
+      const playerInfo = tube.cardElement.querySelector('.player-info');
+      if (!playerInfo) return;
+
+      winsContainer = document.createElement('div');
+      winsContainer.className = 'wins-container';
+      winsContainer.style.cssText = `
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+      `;
+      playerInfo.appendChild(winsContainer);
+    }
+
+    // Clear existing badges
+    winsContainer.innerHTML = '';
+
+    // Create a badge for each win (max 3 for battle royale)
+    const winCount = Math.min(player.wins, 3);
+    for (let i = 0; i < winCount; i++) {
+      const winBadge = document.createElement('div');
+      winBadge.className = 'win-badge';
+      winBadge.style.cssText = `
+        background: linear-gradient(135deg, #ffff00, #ffdd00);
+        border: 2px solid #ffaa00;
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 14px;
+        font-weight: 900;
+        color: #000000;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 0 15px rgba(255, 255, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3);
+        animation: winBadgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        animation-delay: ${i * 0.1}s;
+        animation-fill-mode: backwards;
+      `;
+      winBadge.textContent = 'WIN';
+      winsContainer.appendChild(winBadge);
+    }
+
+    // Add the animation keyframes to the document if not already added
+    if (!document.getElementById('win-badge-animation')) {
+      const style = document.createElement('style');
+      style.id = 'win-badge-animation';
+      style.textContent = `
+        @keyframes winBadgePop {
+          0% {
+            transform: scale(0);
+            opacity: 0;
           }
-        } else {
-          winsDisplay.textContent = 'WIN';
-          winsDisplay.style.display = 'block';
+          50% {
+            transform: scale(1.2);
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
         }
-      } else {
-        if (winsDisplay) {
-          winsDisplay.style.display = 'none';
-        }
-      }
+      `;
+      document.head.appendChild(style);
     }
   };
   
@@ -806,11 +854,32 @@ export async function initGame(params) {
         box.className = 'player-box';
 
         if (player && !player.isEmpty) {
+          // Create win badges HTML
+          let winBadgesHTML = '';
+          const winCount = Math.min(player.wins || 0, 3);
+          for (let w = 0; w < winCount; w++) {
+            winBadgesHTML += `<div style="
+              background: linear-gradient(135deg, #ffff00, #ffdd00);
+              border: 2px solid #ffaa00;
+              border-radius: 4px;
+              padding: 3px 8px;
+              font-family: 'Orbitron', sans-serif;
+              font-size: 10px;
+              font-weight: 900;
+              color: #000000;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              box-shadow: 0 0 10px rgba(255, 255, 0, 0.6);
+            ">WIN</div>`;
+          }
+
           box.innerHTML = `
             <img src="${player.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg=='}" class="player-avatar" alt="${player.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg==';" />
             <div class="player-info">
               <div class="player-name">${player.name}</div>
-              <div class="player-wins">🏆 ${player.wins}</div>
+              <div style="display: flex; gap: 4px; margin-top: 5px; justify-content: center; flex-wrap: wrap;">
+                ${winBadgesHTML}
+              </div>
             </div>
           `;
         } else {
