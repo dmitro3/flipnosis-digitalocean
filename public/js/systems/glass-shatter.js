@@ -11,6 +11,7 @@ import { TUBE_RADIUS, TUBE_HEIGHT, TUBE_Y_POSITION } from '../config.js';
  * Remove glass tube and trigger particle explosion
  */
 export function shatterGlass(tubeIndex, powerLevel, tubes, scene, physicsWorld) {
+  const perfStart = performance.now();
   const tube = tubes[tubeIndex];
   if (!tube || tube.isShattered) return;
 
@@ -33,6 +34,7 @@ export function shatterGlass(tubeIndex, powerLevel, tubes, scene, physicsWorld) 
   physicsWorld.removeBody(tube.glassBody);
 
   // Explode liquid particles (pearls) - INSTANT, no delay
+  const beforeParticles = performance.now();
   if (tube.liquidParticles) {
     tube.liquidParticles.forEach((particleBody, idx) => {
       const dx = particleBody.position.x - tube.tube.position.x;
@@ -56,8 +58,10 @@ export function shatterGlass(tubeIndex, powerLevel, tubes, scene, physicsWorld) 
       );
     });
   }
+  const afterParticles = performance.now();
 
-  console.log(`✨ Tube removed! ${tube.liquidParticles.length} pearls exploded at ${powerLevel.toFixed(0)}% power`);
+  const totalTime = performance.now() - perfStart;
+  console.log(`✨ Tube removed! ${tube.liquidParticles.length} pearls exploded at ${powerLevel.toFixed(0)}% power (particles: ${(afterParticles - beforeParticles).toFixed(2)}ms, total: ${totalTime.toFixed(2)}ms)`);
 }
 
 /**

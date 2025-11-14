@@ -84,8 +84,9 @@ export function startClientCoinFlipAnimation(
   showFlipReward,
   shatterGlassFunc
 ) {
+  const perfStartTotal = performance.now();
   console.log('🎁 Received flip reward data:', data.flipReward);
-  
+
   if (data.playerSlot >= 0 && data.playerSlot < 4) {
     const tube = tubes[data.playerSlot];
     const coin = coins[data.playerSlot];
@@ -117,21 +118,29 @@ export function startClientCoinFlipAnimation(
 
       // ✅ FIX: Shatter glass IMMEDIATELY and SYNCHRONOUSLY before any other animations
       // shatterGlass function will handle setting the isShattered flag internally
+      const beforeShatter = performance.now();
       if (typeof shatterGlassFunc === 'function' && !tube.isShattered) {
         const shatterPower = typeof data.power === 'number' ? data.power : (tube.power || 100);
         try {
           // Call shatter synchronously - it should execute immediately
           shatterGlassFunc(data.playerSlot, shatterPower);
-          console.log(`💥 Triggered immediate client-side shatter for coin ${data.playerSlot + 1} at ${shatterPower}% power`);
+          const afterShatter = performance.now();
+          console.log(`💥 Triggered immediate client-side shatter for coin ${data.playerSlot + 1} at ${shatterPower}% power (took ${(afterShatter - beforeShatter).toFixed(2)}ms)`);
         } catch (error) {
           console.error('ERROR: Failed to trigger client-side shatter:', error);
         }
       } else if (tube.isShattered) {
         console.log(`⚠️ Glass already shattered for coin ${data.playerSlot + 1}, skipping`);
       }
-      
+
+      const beforeAnimate = performance.now();
       animateCoinFlip(data.playerSlot, data.power, data.duration, tubes, coins, coinMaterials);
+      const afterAnimate = performance.now();
+      console.log(`⏱️ animateCoinFlip() call took ${(afterAnimate - beforeAnimate).toFixed(2)}ms`);
+
       showFlipReward(data.playerSlot, data.flipReward);
+      const totalTime = performance.now() - perfStartTotal;
+      console.log(`⏱️ Total startClientCoinFlipAnimation took ${totalTime.toFixed(2)}ms`);
     }
   }
 }
@@ -283,8 +292,9 @@ export function updateCoinAngleVisual(data, tubes, coins) {
  * Uses progressive rotation increment (not calculated total)
  */
 export function animateCoinFlip(playerSlot, power, duration, tubes, coins, coinMaterials) {
+  const perfStart = performance.now();
   console.log('🎬 v777PINK animateCoinFlip called:', { playerSlot, power, duration });
-  
+
   const tube = tubes[playerSlot];
   const coin = coins[playerSlot];
   
@@ -309,17 +319,24 @@ export function animateCoinFlip(playerSlot, power, duration, tubes, coins, coinM
   
   const wobbleAmount = 0.02 + (powerPercent * 0.05); // More power = more wobble
   const tumbleAmount = 0.01 + (powerPercent * 0.03);
-  
-  console.log(`🎬 Starting visual coin flip for slot ${playerSlot}: duration=${flipDuration}ms, speed=${flipSpeed}`);
-  
+
+  const setupTime = performance.now() - perfStart;
+  console.log(`🎬 Starting visual coin flip for slot ${playerSlot}: duration=${flipDuration}ms, speed=${flipSpeed}, setup took ${setupTime.toFixed(2)}ms`);
+
   const startTime = Date.now();
   const flipId = Date.now(); // Unique ID for this flip
   tube.currentFlipId = flipId;
-  
+
   let wobblePhase = 0;
   let tumblePhase = 0;
-  
+  let frameCount = 0;
+
   const animateFlip = () => {
+    frameCount++;
+    if (frameCount === 1) {
+      const firstFrameTime = performance.now() - perfStart;
+      console.log(`⏱️ First animation frame executing after ${firstFrameTime.toFixed(2)}ms`);
+    }
     // Stop animation if this flip was superseded or interrupted
     if (tube.currentFlipId !== flipId || !tube.isFlipping) {
       console.log(`🛑 Animation stopped for slot ${playerSlot} - flip interrupted or superseded`);
