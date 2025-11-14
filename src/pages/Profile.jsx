@@ -1522,7 +1522,7 @@ const Profile = () => {
                                     }
                                   }}
                                 >
-                                  📝 1. Complete On-Chain
+                                  Verify Ownership
                                 </ActionButton>
 
                                 {/* Step 2: Claim NFT with user's wallet */}
@@ -1628,39 +1628,8 @@ const Profile = () => {
                                     }
                                   }}
                                 >
-                                  🏆 2. Claim NFT
+                                  Claim NFT
                                 </ActionButton>
-
-                                {/* Debug button to check game state */}
-                                <button
-                                  onClick={async () => {
-                                    console.log('🔍 [DEBUG] Checking game state for:', game.gameId);
-                                    try {
-                                      const dbResp = await fetch(`/api/debug/game/${game.gameId}`);
-                                      const dbData = await dbResp.json();
-                                      console.log('🔍 [DEBUG] Database:', dbData);
-                                      
-                                      const onChainResp = await fetch(`/api/battle-royale/${game.gameId}/onchain-state`);
-                                      const onChainData = await onChainResp.json();
-                                      console.log('🔍 [DEBUG] On-chain:', onChainData);
-                                      
-                                      alert(`Check console for detailed game state for ${game.gameId}`);
-                                    } catch (err) {
-                                      console.error('🔍 [DEBUG] Error:', err);
-                                    }
-                                  }}
-                                  style={{
-                                    background: 'transparent',
-                                    border: '1px solid #666',
-                                    color: '#666',
-                                    padding: '0.5rem',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    fontSize: '0.75rem'
-                                  }}
-                                >
-                                  🔍 Debug
-                                </button>
                               </GameActions>
                             </div>
                           </GameHeader>
@@ -1850,7 +1819,7 @@ const Profile = () => {
                                           }
                                         }}
                                       >
-                                        📝 1. Complete On-Chain
+                                        Verify Ownership
                                       </ActionButton>
 
                                       {/* Step 2: Withdraw creator funds */}
@@ -1936,7 +1905,7 @@ const Profile = () => {
                                           }
                                         }}
                                       >
-                                        💰 2. Withdraw Funds
+                                        Withdraw Funds
                                       </ActionButton>
                                     </GameActions>
                                   </div>
