@@ -32,151 +32,138 @@ export function shatterGlass(tubeIndex, powerLevel, tubes, scene, physicsWorld) 
   
   physicsWorld.removeBody(tube.glassBody);
   
-  // Shard count based on power (back to original for better effect)
-  const shardCount = Math.floor(20 + (powerPercent * 60));
-  const tubeY = TUBE_Y_POSITION;
+  // Pop + Fade animation instead of glass shards
+  // Make tube visible again for animation
+  tube.tube.visible = true;
+  tube.backing.visible = true;
+  tube.topRim.visible = true;
+  tube.bottomRim.visible = true;
+
+  // Set up materials to be transparent for animation
+  tube.tube.material.transparent = true;
+  tube.backing.material.transparent = true;
+  tube.topRim.material.transparent = true;
+  tube.bottomRim.material.transparent = true;
+
+  // Store original emissive values
+  const originalEmissive = {
+    tube: tube.tube.material.emissive ? tube.tube.material.emissive.clone() : new THREE.Color(0x000000),
+    backing: tube.backing.material.emissive ? tube.backing.material.emissive.clone() : new THREE.Color(0x000000),
+    topRim: tube.topRim.material.emissive ? tube.topRim.material.emissive.clone() : new THREE.Color(0x000000),
+    bottomRim: tube.bottomRim.material.emissive ? tube.bottomRim.material.emissive.clone() : new THREE.Color(0x000000)
+  };
+
+  // Initialize pop animation state
+  tube.popAnimation = {
+    time: 0,
+    duration: 0.2, // 200ms total animation
+    originalScale: { x: tube.tube.scale.x, y: tube.tube.scale.y, z: tube.tube.scale.z },
+    originalEmissive: originalEmissive
+  };
   
-  // Initialize shards array if needed
-  if (!tube.glassShards) {
-    tube.glassShards = [];
-  }
-  
-  // ✅ PERFORMANCE FIX: Create shared material to reuse (saves memory & rendering)
-  const sharedMaterial = new THREE.MeshStandardMaterial({
-    color: 0xe0e0e0,
-    metalness: 0.95,
-    roughness: 0.1,
-    emissive: 0xc0c0c0,
-    emissiveIntensity: 0.4,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.6
-  });
-  
-  // ✅ PERFORMANCE FIX: Batch shard creation
-  const shardsToAdd = [];
-  
-  for (let s = 0; s < shardCount; s++) {
-    const size = Math.random() * 12 + 5;
-    const geometry = new THREE.BufferGeometry();
-    const vertices = new Float32Array([
-      0, 0, 0,
-      size, 0, 0,
-      size * 0.5, size, 0
-    ]);
-    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-    
-    // ✅ REUSE shared material instead of creating new one each time
-    const shard = new THREE.Mesh(geometry, sharedMaterial);
-    
-    const angle = (s / shardCount) * Math.PI * 2;
-    const heightPos = (Math.random() - 0.5) * TUBE_HEIGHT;
-    shard.position.set(
-      tube.tube.position.x + Math.cos(angle) * TUBE_RADIUS,
-      tubeY + heightPos,
-      Math.sin(angle) * TUBE_RADIUS
-    );
-    
-    shard.rotation.set(
-      Math.random() * Math.PI * 2,
-      Math.random() * Math.PI * 2,
-      Math.random() * Math.PI * 2
-    );
-    
-    const baseSpeed = 2 + (powerPercent * 12);
-    const velocity = {
-      x: Math.cos(angle) * (Math.random() * baseSpeed + baseSpeed * 0.5),
-      y: Math.random() * 3 - 1.5,
-      z: Math.sin(angle) * (Math.random() * baseSpeed + baseSpeed * 0.5)
-    };
-    
-    const rotVelocity = {
-      x: (Math.random() - 0.5) * 0.3,
-      y: (Math.random() - 0.5) * 0.3,
-      z: (Math.random() - 0.5) * 0.3
-    };
-    
-    shardsToAdd.push({
-      mesh: shard,
-      velocity,
-      rotVelocity,
-      lifetime: 0
-    });
-  }
-  
-  // ✅ PERFORMANCE FIX: Add all shards to scene in one batch
-  shardsToAdd.forEach(shard => {
-    scene.add(shard.mesh);
-    tube.glassShards.push(shard);
-  });
-  
-  // Explode liquid particles (pearls)
-  // ✅ PERFORMANCE FIX: Use requestAnimationFrame to avoid blocking
+  // Explode liquid particles (pearls) - INSTANT, no delay
   if (tube.liquidParticles) {
-    requestAnimationFrame(() => {
-      tube.liquidParticles.forEach((particleBody, idx) => {
-        const dx = particleBody.position.x - tube.tube.position.x;
-        const dz = particleBody.position.z - tube.tube.position.z;
-        const distance = Math.sqrt(dx * dx + dz * dz) || 1;
-        
-        const baseForce = 2000 + (powerPercent * 16000);
-        const explosionForce = baseForce + Math.random() * (baseForce * 0.3);
-        
-        particleBody.velocity.set(
-          (dx / distance) * explosionForce,
-          Math.random() * 800 - 400,
-          (dz / distance) * explosionForce
-        );
-        
-        const spinForce = 15 * powerPercent;
-        particleBody.angularVelocity.set(
-          Math.random() * spinForce * 2 - spinForce,
-          Math.random() * spinForce * 2 - spinForce,
-          Math.random() * spinForce * 2 - spinForce
-        );
-      });
+    tube.liquidParticles.forEach((particleBody, idx) => {
+      const dx = particleBody.position.x - tube.tube.position.x;
+      const dz = particleBody.position.z - tube.tube.position.z;
+      const distance = Math.sqrt(dx * dx + dz * dz) || 1;
+
+      const baseForce = 2000 + (powerPercent * 16000);
+      const explosionForce = baseForce + Math.random() * (baseForce * 0.3);
+
+      particleBody.velocity.set(
+        (dx / distance) * explosionForce,
+        Math.random() * 800 - 400,
+        (dz / distance) * explosionForce
+      );
+
+      const spinForce = 15 * powerPercent;
+      particleBody.angularVelocity.set(
+        Math.random() * spinForce * 2 - spinForce,
+        Math.random() * spinForce * 2 - spinForce,
+        Math.random() * spinForce * 2 - spinForce
+      );
     });
   }
-  
-  console.log(`💥 Glass shattered! ${shardCount} shards + ${tube.liquidParticles.length} liquid particles at ${powerLevel.toFixed(0)}% power`);
+
+  console.log(`💥 Glass popped! ${tube.liquidParticles.length} liquid particles at ${powerLevel.toFixed(0)}% power`);
 }
 
 /**
- * Update glass shard animations in the render loop
+ * Update pop/fade animations in the render loop
  */
 export function updateGlassShards(tubes, deltaTime) {
   tubes.forEach(tube => {
-    if (tube.glassShards && tube.glassShards.length > 0) {
-      tube.glassShards = tube.glassShards.filter(shard => {
-        shard.lifetime += deltaTime;
-        
-        // Update position
-        shard.mesh.position.x += shard.velocity.x * deltaTime;
-        shard.mesh.position.y += shard.velocity.y * deltaTime;
-        shard.mesh.position.z += shard.velocity.z * deltaTime;
-        
-        // Update rotation
-        shard.mesh.rotation.x += shard.rotVelocity.x * deltaTime;
-        shard.mesh.rotation.y += shard.rotVelocity.y * deltaTime;
-        shard.mesh.rotation.z += shard.rotVelocity.z * deltaTime;
-        
-        // Apply gravity
-        shard.velocity.y -= 0.3 * deltaTime * 60; // Gravity (normalized for 60fps)
-        
-        // Fade out
-        shard.mesh.material.opacity = Math.max(0, 0.6 - (shard.lifetime / 2) * 0.6);
-        
-        // Remove after 2 seconds
-        if (shard.lifetime > 2) {
-          shard.mesh.visible = false;
-          // Clean up
-          shard.mesh.geometry.dispose();
-          shard.mesh.material.dispose();
-          return false; // Filter out
-        }
-        
-        return true; // Keep shard
-      });
+    // Animate pop + fade effect
+    if (tube.popAnimation) {
+      tube.popAnimation.time += deltaTime;
+      const progress = Math.min(tube.popAnimation.time / tube.popAnimation.duration, 1);
+
+      // Easing function for smooth animation (easeOutCubic)
+      const ease = 1 - Math.pow(1 - progress, 3);
+
+      // Scale animation: 1.0 → 1.15 → 0
+      // First 30% of animation: scale up to 1.15
+      // Remaining 70%: scale down to 0
+      let scale;
+      if (progress < 0.3) {
+        const scaleProgress = progress / 0.3;
+        scale = 1.0 + (scaleProgress * 0.15);
+      } else {
+        const scaleProgress = (progress - 0.3) / 0.7;
+        scale = 1.15 * (1 - scaleProgress);
+      }
+
+      tube.tube.scale.set(scale, scale, scale);
+      tube.backing.scale.set(scale, scale, scale);
+      tube.topRim.scale.set(scale, scale, scale);
+      tube.bottomRim.scale.set(scale, scale, scale);
+
+      // Opacity fade: 1.0 → 0
+      const opacity = 1 - ease;
+      tube.tube.material.opacity = opacity;
+      tube.backing.material.opacity = opacity;
+      tube.topRim.material.opacity = opacity;
+      tube.bottomRim.material.opacity = opacity;
+
+      // Flash effect: bright white flash at start, then fade
+      const flashIntensity = Math.max(0, 1 - (progress * 3)); // Fast fade (33% of animation)
+      const flashColor = new THREE.Color(1, 1, 1); // White flash
+
+      if (tube.tube.material.emissive) {
+        tube.tube.material.emissive.lerp(flashColor, flashIntensity);
+        tube.tube.material.emissiveIntensity = flashIntensity * 2;
+      }
+      if (tube.backing.material.emissive) {
+        tube.backing.material.emissive.lerp(flashColor, flashIntensity);
+        tube.backing.material.emissiveIntensity = flashIntensity * 2;
+      }
+      if (tube.topRim.material.emissive) {
+        tube.topRim.material.emissive.lerp(flashColor, flashIntensity);
+        tube.topRim.material.emissiveIntensity = flashIntensity * 2;
+      }
+      if (tube.bottomRim.material.emissive) {
+        tube.bottomRim.material.emissive.lerp(flashColor, flashIntensity);
+        tube.bottomRim.material.emissiveIntensity = flashIntensity * 2;
+      }
+
+      // Animation complete - hide everything
+      if (progress >= 1) {
+        tube.tube.visible = false;
+        tube.backing.visible = false;
+        tube.topRim.visible = false;
+        tube.bottomRim.visible = false;
+
+        // Reset scale
+        tube.tube.scale.set(
+          tube.popAnimation.originalScale.x,
+          tube.popAnimation.originalScale.y,
+          tube.popAnimation.originalScale.z
+        );
+
+        // Clean up animation state
+        delete tube.popAnimation;
+      }
     }
   });
 }
