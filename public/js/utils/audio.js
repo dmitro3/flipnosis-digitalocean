@@ -5,8 +5,8 @@
 
 let isMuted = false;
 
-const glassBreakSound = new Audio('/Sound/glassclipped.mp3');
-glassBreakSound.volume = 0.7;
+const glassBreakSound = new Audio('/Sound/coin-flip-88793.mp3');
+glassBreakSound.volume = 0.8;
 
 const powerChargeSound = new Audio('/Sound/powerclipped.mp3');
 powerChargeSound.volume = 0.6;
