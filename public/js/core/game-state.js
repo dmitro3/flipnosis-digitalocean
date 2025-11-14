@@ -82,10 +82,10 @@ export const coinMaterials = [
 export function initializeGameState() {
   return {
     players: [
-      { id: 1, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true },
-      { id: 2, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true },
-      { id: 3, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true },
-      { id: 4, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true }
+      { id: 1, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true, totalFlipEarned: 0 },
+      { id: 2, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true, totalFlipEarned: 0 },
+      { id: 3, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true, totalFlipEarned: 0 },
+      { id: 4, name: 'Empty', wins: 0, address: '', choice: null, avatar: '', isEmpty: true, totalFlipEarned: 0 }
     ],
     currentRound: 1,
     gameOver: false,

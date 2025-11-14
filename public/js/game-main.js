@@ -5,7 +5,6 @@
 
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { initializeScene } from './core/scene-setup.js';
 import { initializeSocket } from './core/socket-manager.js';
 import { createTubes } from './systems/tube-creator.js';
@@ -239,27 +238,75 @@ export async function initGame(params) {
   const updateWinsDisplay = (slot) => {
     const tube = tubes[slot];
     const player = players[slot];
-    if (tube?.cardElement && player) {
-      const winsDisplay = tube.cardElement.querySelector('.wins-display');
-      if (player.wins > 0) {
-        if (!winsDisplay) {
-          const playerInfo = tube.cardElement.querySelector('.player-info');
-          if (playerInfo) {
-            const winElement = document.createElement('div');
-            winElement.className = 'wins-display';
-            winElement.style.cssText = 'margin-top: 8px; justify-content: center; align-items: center;';
-            winElement.textContent = 'WIN';
-            playerInfo.appendChild(winElement);
+    if (!tube?.cardElement || !player) return;
+
+    // Find or create the wins container
+    let winsContainer = tube.cardElement.querySelector('.wins-container');
+    if (!winsContainer) {
+      const playerInfo = tube.cardElement.querySelector('.player-info');
+      if (!playerInfo) return;
+
+      winsContainer = document.createElement('div');
+      winsContainer.className = 'wins-container';
+      winsContainer.style.cssText = `
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+      `;
+      playerInfo.appendChild(winsContainer);
+    }
+
+    // Clear existing badges
+    winsContainer.innerHTML = '';
+
+    // Create a badge for each win (max 3 for battle royale)
+    const winCount = Math.min(player.wins, 3);
+    for (let i = 0; i < winCount; i++) {
+      const winBadge = document.createElement('div');
+      winBadge.className = 'win-badge';
+      winBadge.style.cssText = `
+        background: linear-gradient(135deg, #ffff00, #ffdd00);
+        border: 2px solid #ffaa00;
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 14px;
+        font-weight: 900;
+        color: #000000;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 0 15px rgba(255, 255, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3);
+        animation: winBadgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        animation-delay: ${i * 0.1}s;
+        animation-fill-mode: backwards;
+      `;
+      winBadge.textContent = 'WIN';
+      winsContainer.appendChild(winBadge);
+    }
+
+    // Add the animation keyframes to the document if not already added
+    if (!document.getElementById('win-badge-animation')) {
+      const style = document.createElement('style');
+      style.id = 'win-badge-animation';
+      style.textContent = `
+        @keyframes winBadgePop {
+          0% {
+            transform: scale(0);
+            opacity: 0;
           }
-        } else {
-          winsDisplay.textContent = 'WIN';
-          winsDisplay.style.display = 'block';
+          50% {
+            transform: scale(1.2);
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
         }
-      } else {
-        if (winsDisplay) {
-          winsDisplay.style.display = 'none';
-        }
-      }
+      `;
+      document.head.appendChild(style);
     }
   };
   
@@ -314,81 +361,74 @@ export async function initGame(params) {
     if (!reward || !reward.amount) return;
 
     const tube = tubes[slot];
-    if (!tube || !tube.tube) return;
+    const player = players[slot];
+    if (!tube || !tube.cardElement || !player) return;
 
-    // Create floating reward box styled like the original design
-    const rewardBox = document.createElement('div');
-    rewardBox.style.cssText = `
-      width: 200px;
-      padding: 12px 18px;
-      background: linear-gradient(135deg, rgba(10, 10, 20, 0.95), rgba(5, 5, 15, 0.98)), linear-gradient(135deg, ${reward.color}44, ${reward.color}22);
-      border: 3px solid ${reward.color};
+    // Accumulate total FLIP earned
+    if (!player.totalFlipEarned) player.totalFlipEarned = 0;
+    player.totalFlipEarned += reward.amount;
+    console.log(`💰 Player ${slot + 1} total FLIP: ${player.totalFlipEarned}`);
+
+    // Update FLIP counter display on player card
+    updateFlipCounter(slot);
+
+    // Create reward notification
+    const rewardNotif = document.createElement('div');
+    rewardNotif.className = 'flip-reward-notif';
+    rewardNotif.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, ${reward.color || '#FFD700'}, ${reward.color || '#FFA500'});
+      color: #000;
+      padding: 12px 24px;
       border-radius: 12px;
-      text-align: center;
       font-family: 'Orbitron', sans-serif;
-      box-shadow: 0 0 40px ${reward.color}99;
+      font-size: 20px;
+      font-weight: 900;
+      box-shadow: 0 0 30px ${reward.color || '#FFD700'};
+      z-index: 2000;
+      animation: bounceIn 0.5s ease, floatUp 1.5s ease 0.5s forwards;
       pointer-events: none;
-      transform: scaleY(-1);
-      backdrop-filter: blur(10px);
     `;
+    rewardNotif.textContent = `+${reward.amount} FLIP!`;
 
-    rewardBox.innerHTML = `
-      <div style="
-        font-size: 28px;
+    tube.cardElement.appendChild(rewardNotif);
+
+    // Remove after animation
+    setTimeout(() => rewardNotif.remove(), 2000);
+  };
+
+  const updateFlipCounter = (slot) => {
+    const tube = tubes[slot];
+    const player = players[slot];
+    if (!tube || !tube.cardElement || !player) return;
+
+    // Find or create the FLIP counter element
+    let flipCounter = tube.cardElement.querySelector('.flip-counter');
+    if (!flipCounter) {
+      flipCounter = document.createElement('div');
+      flipCounter.className = 'flip-counter';
+      flipCounter.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.2));
+        border: 2px solid #FFD700;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 14px;
         font-weight: bold;
-        color: ${reward.color};
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 3px;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      ">
-        +${reward.amount} FLIP
-      </div>
-      <div style="
-        font-size: 13px;
-        color: #ffffff;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        opacity: 0.9;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      ">
-        Token Reward
-      </div>
-    `;
+        color: #FFD700;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        z-index: 100;
+      `;
+      tube.cardElement.appendChild(flipCounter);
+    }
 
-    const cssObject = new CSS3DObject(rewardBox);
-    // Position ABOVE the tube (matching result box orientation pattern)
-    const tubeTopY = 200 + (TUBE_HEIGHT / 2);
-    cssObject.position.set(tube.tube.position.x, tubeTopY + 100, 0);
-    cssObject.scale.set(0.5, 0.5, 0.5);
-    scene.add(cssObject);
-
-    tube.rewardBox = cssObject;
-
-    // Animate appearance and float up
-    rewardBox.style.opacity = '0';
-    rewardBox.style.transform = 'scaleY(-1) scale(0.5) translateY(30px)';
-    rewardBox.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
-
-    // Pop in with bounce
-    setTimeout(() => {
-      rewardBox.style.opacity = '1';
-      rewardBox.style.transform = 'scaleY(-1) scale(1) translateY(0px)';
-    }, 50);
-
-    // Float up and fade out after 1.5s (stay for 2 seconds total)
-    setTimeout(() => {
-      rewardBox.style.transition = 'all 0.5s ease-in';
-      rewardBox.style.opacity = '0';
-      rewardBox.style.transform = 'scaleY(-1) scale(1.1) translateY(-40px)';
-    }, 1500);
-
-    // Remove from scene after animation completes
-    setTimeout(() => {
-      scene.remove(cssObject);
-    }, 2100);
+    flipCounter.textContent = `💰 ${player.totalFlipEarned || 0} FLIP`;
   };
   
   const showFloatingMessage = (message, color, duration) => {
@@ -548,6 +588,11 @@ export async function initGame(params) {
       width: 90%;
     `;
     
+    // Get current player's total FLIP earned
+    const currentPlayer = players[playerSlot];
+    const totalFlipEarned = currentPlayer?.totalFlipEarned || 0;
+    const playerAddress = currentPlayer?.address || walletParam;
+
     // Show different content based on win/lose
     if (didCurrentPlayerWin && winnerIndex >= 0) {
       contentDiv.innerHTML = `
@@ -555,14 +600,27 @@ export async function initGame(params) {
         <div style="font-size: 48px; font-weight: bold; color: #FFD700; margin-bottom: 20px;">
           VICTORY!
         </div>
-        <div style="font-size: 24px; color: #ffffff; margin-bottom: 30px;">
+        <div style="font-size: 24px; color: #ffffff; margin-bottom: 15px;">
           ${winnerName || 'You'} won the game!
         </div>
-        <button onclick="location.reload()" style="
+        <div style="
+          font-size: 32px;
+          font-weight: bold;
+          color: #FFD700;
+          margin: 20px 0;
+          padding: 15px 25px;
+          background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.2));
+          border: 2px solid #FFD700;
+          border-radius: 12px;
+          box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        ">
+          💰 ${totalFlipEarned} FLIP Earned
+        </div>
+        <button onclick="window.location.href='/profile?address=${playerAddress}'" style="
           background: linear-gradient(135deg, #00ff00, #39ff14);
           border: none;
           border-radius: 15px;
-          padding: 15px 30px;
+          padding: 15px 40px;
           font-family: 'Orbitron', sans-serif;
           font-size: 18px;
           font-weight: bold;
@@ -571,7 +629,23 @@ export async function initGame(params) {
           text-transform: uppercase;
           letter-spacing: 2px;
           transition: all 0.3s ease;
-        ">Play Again</button>
+          margin: 10px;
+        ">Claim Rewards</button>
+        <button onclick="window.location.href='/'" style="
+          background: linear-gradient(135deg, #4444ff, #2222cc);
+          border: none;
+          border-radius: 15px;
+          padding: 15px 40px;
+          font-family: 'Orbitron', sans-serif;
+          font-size: 18px;
+          font-weight: bold;
+          color: #fff;
+          cursor: pointer;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          transition: all 0.3s ease;
+          margin: 10px;
+        ">Home</button>
       `;
     } else if (winnerIndex >= 0) {
       contentDiv.innerHTML = `
@@ -579,14 +653,30 @@ export async function initGame(params) {
         <div style="font-size: 48px; font-weight: bold; color: #ff0000; margin-bottom: 20px;">
           DEFEAT
         </div>
-        <div style="font-size: 24px; color: #ffffff; margin-bottom: 30px;">
+        <div style="font-size: 24px; color: #ffffff; margin-bottom: 15px;">
           ${winnerName || 'Unknown'} won the game
         </div>
-        <button onclick="location.reload()" style="
+        <div style="
+          font-size: 28px;
+          font-weight: bold;
+          color: #FFD700;
+          margin: 20px 0;
+          padding: 12px 20px;
+          background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.15));
+          border: 2px solid #FFD700;
+          border-radius: 12px;
+          box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        ">
+          💰 ${totalFlipEarned} FLIP Earned
+        </div>
+        <div style="font-size: 16px; color: #aaaaaa; margin-bottom: 25px;">
+          Better luck next time!
+        </div>
+        <button onclick="window.location.href='/'" style="
           background: linear-gradient(135deg, #ff4444, #cc0000);
           border: none;
           border-radius: 15px;
-          padding: 15px 30px;
+          padding: 15px 40px;
           font-family: 'Orbitron', sans-serif;
           font-size: 18px;
           font-weight: bold;
@@ -595,7 +685,7 @@ export async function initGame(params) {
           text-transform: uppercase;
           letter-spacing: 2px;
           transition: all 0.3s ease;
-        ">Play Again</button>
+        ">Return Home</button>
       `;
     } else {
       contentDiv.innerHTML = `
@@ -603,14 +693,26 @@ export async function initGame(params) {
         <div style="font-size: 48px; font-weight: bold; color: #ffaa00; margin-bottom: 20px;">
           GAME OVER
         </div>
-        <div style="font-size: 24px; color: #ffffff; margin-bottom: 30px;">
+        <div style="font-size: 24px; color: #ffffff; margin-bottom: 15px;">
           The game has ended
         </div>
-        <button onclick="location.reload()" style="
+        <div style="
+          font-size: 28px;
+          font-weight: bold;
+          color: #FFD700;
+          margin: 20px 0;
+          padding: 12px 20px;
+          background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.15));
+          border: 2px solid #FFD700;
+          border-radius: 12px;
+        ">
+          💰 ${totalFlipEarned} FLIP Earned
+        </div>
+        <button onclick="window.location.href='/'" style="
           background: linear-gradient(135deg, #9d00ff, #c44aff);
           border: none;
           border-radius: 15px;
-          padding: 15px 30px;
+          padding: 15px 40px;
           font-family: 'Orbitron', sans-serif;
           font-size: 18px;
           font-weight: bold;
@@ -619,7 +721,7 @@ export async function initGame(params) {
           text-transform: uppercase;
           letter-spacing: 2px;
           transition: all 0.3s ease;
-        ">Play Again</button>
+        ">Return Home</button>
       `;
     }
     
@@ -752,11 +854,32 @@ export async function initGame(params) {
         box.className = 'player-box';
 
         if (player && !player.isEmpty) {
+          // Create win badges HTML
+          let winBadgesHTML = '';
+          const winCount = Math.min(player.wins || 0, 3);
+          for (let w = 0; w < winCount; w++) {
+            winBadgesHTML += `<div style="
+              background: linear-gradient(135deg, #ffff00, #ffdd00);
+              border: 2px solid #ffaa00;
+              border-radius: 4px;
+              padding: 3px 8px;
+              font-family: 'Orbitron', sans-serif;
+              font-size: 10px;
+              font-weight: 900;
+              color: #000000;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              box-shadow: 0 0 10px rgba(255, 255, 0, 0.6);
+            ">WIN</div>`;
+          }
+
           box.innerHTML = `
             <img src="${player.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg=='}" class="player-avatar" alt="${player.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMzMzMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Vc2VyPC90ZXh0Pjwvc3ZnPg==';" />
             <div class="player-info">
               <div class="player-name">${player.name}</div>
-              <div class="player-wins">🏆 ${player.wins}</div>
+              <div style="display: flex; gap: 4px; margin-top: 5px; justify-content: center; flex-wrap: wrap;">
+                ${winBadgesHTML}
+              </div>
             </div>
           `;
         } else {
