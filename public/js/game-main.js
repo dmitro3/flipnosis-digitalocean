@@ -5,7 +5,6 @@
 
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { initializeScene } from './core/scene-setup.js';
 import { initializeSocket } from './core/socket-manager.js';
 import { createTubes } from './systems/tube-creator.js';
@@ -309,86 +308,39 @@ export async function initGame(params) {
   };
   
   const showFlipReward = (slot, reward) => {
-    console.log(`💰 Flip reward for slot ${slot}:`, reward);
-
+    console.log(`💰 Flip reward for slot ${slot}: ${reward}`);
+    
     if (!reward || !reward.amount) return;
-
+    
     const tube = tubes[slot];
-    if (!tube || !tube.tube) return;
-
-    // Create floating reward box styled like the original design
-    const rewardBox = document.createElement('div');
-    rewardBox.style.cssText = `
-      width: 200px;
-      padding: 12px 18px;
-      background: linear-gradient(135deg, rgba(10, 10, 20, 0.95), rgba(5, 5, 15, 0.98)), linear-gradient(135deg, ${reward.color}44, ${reward.color}22);
-      border: 3px solid ${reward.color};
+    if (!tube || !tube.cardElement) return;
+    
+    // Create reward notification
+    const rewardNotif = document.createElement('div');
+    rewardNotif.className = 'flip-reward-notif';
+    rewardNotif.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, ${reward.color || '#FFD700'}, ${reward.color || '#FFA500'});
+      color: #000;
+      padding: 12px 24px;
       border-radius: 12px;
-      text-align: center;
       font-family: 'Orbitron', sans-serif;
-      box-shadow: 0 0 40px ${reward.color}99;
+      font-size: 20px;
+      font-weight: 900;
+      box-shadow: 0 0 30px ${reward.color || '#FFD700'};
+      z-index: 2000;
+      animation: bounceIn 0.5s ease, floatUp 1.5s ease 0.5s forwards;
       pointer-events: none;
-      transform: scaleY(-1);
-      backdrop-filter: blur(10px);
     `;
-
-    rewardBox.innerHTML = `
-      <div style="
-        font-size: 28px;
-        font-weight: bold;
-        color: ${reward.color};
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 3px;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      ">
-        +${reward.amount} FLIP
-      </div>
-      <div style="
-        font-size: 13px;
-        color: #ffffff;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        opacity: 0.9;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      ">
-        Token Reward
-      </div>
-    `;
-
-    const cssObject = new CSS3DObject(rewardBox);
-    // Position ABOVE the tube (matching result box orientation pattern)
-    const tubeTopY = 200 + (TUBE_HEIGHT / 2);
-    cssObject.position.set(tube.tube.position.x, tubeTopY + 100, 0);
-    cssObject.scale.set(0.5, 0.5, 0.5);
-    scene.add(cssObject);
-
-    tube.rewardBox = cssObject;
-
-    // Animate appearance and float up
-    rewardBox.style.opacity = '0';
-    rewardBox.style.transform = 'scaleY(-1) scale(0.5) translateY(30px)';
-    rewardBox.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
-
-    // Pop in with bounce
-    setTimeout(() => {
-      rewardBox.style.opacity = '1';
-      rewardBox.style.transform = 'scaleY(-1) scale(1) translateY(0px)';
-    }, 50);
-
-    // Float up and fade out after 1.5s (stay for 2 seconds total)
-    setTimeout(() => {
-      rewardBox.style.transition = 'all 0.5s ease-in';
-      rewardBox.style.opacity = '0';
-      rewardBox.style.transform = 'scaleY(-1) scale(1.1) translateY(-40px)';
-    }, 1500);
-
-    // Remove from scene after animation completes
-    setTimeout(() => {
-      scene.remove(cssObject);
-    }, 2100);
+    rewardNotif.textContent = `+${reward.amount} FLIP!`;
+    
+    tube.cardElement.appendChild(rewardNotif);
+    
+    // Remove after animation
+    setTimeout(() => rewardNotif.remove(), 2000);
   };
   
   const showFloatingMessage = (message, color, duration) => {
