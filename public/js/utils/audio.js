@@ -5,12 +5,14 @@
 
 let isMuted = false;
 
-const glassBreakSound = new Audio('/Sound/coin-flip-88793.mp3');
+const glassBreakSound = new Audio('/Sound/flipsound.mp3');
 glassBreakSound.volume = 0.8;
+glassBreakSound.preload = 'auto'; // Preload immediately
 
 const powerChargeSound = new Audio('/Sound/powerclipped.mp3');
 powerChargeSound.volume = 0.6;
 powerChargeSound.loop = true;
+powerChargeSound.preload = 'auto'; // Preload immediately
 
 export function playSound(audio) {
   if (!isMuted && audio) {
