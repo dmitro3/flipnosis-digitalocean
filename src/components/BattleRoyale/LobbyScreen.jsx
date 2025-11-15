@@ -541,6 +541,24 @@ const LobbyScreen = () => {
     return () => clearInterval(interval)
   }, [])
 
+  // Auto-start game when lobby is full
+  useEffect(() => {
+    const maxPlayers = gameState?.maxPlayers || 6
+    const currentPlayers = gameState?.currentPlayers || 0
+    const status = gameState?.status
+    const gameId = gameState?.gameId
+
+    // Only auto-start if lobby is full and game is in waiting status
+    if (currentPlayers === maxPlayers && status === 'waiting' && gameId) {
+      console.log('🚀 Lobby full! Auto-starting game...')
+
+      // Small delay to allow UI to update
+      setTimeout(() => {
+        window.location.href = `/grid-game.html?gameId=${gameId}`
+      }, 1500)
+    }
+  }, [gameState?.currentPlayers, gameState?.maxPlayers, gameState?.status, gameState?.gameId])
+
   if (!gameState) return null
 
   const isCreator = gameState.creator?.toLowerCase() === address?.toLowerCase()
