@@ -299,25 +299,31 @@ function handlePlayerEliminated(data) {
 function handleStateUpdate(data) {
   console.log('📊 State update:', data);
 
-  const { players, roundState, gameStatus } = data;
+  const { players, roundTarget, currentRound, phase, roundTimer } = data;
 
-  // Update players
-  if (players) {
-    players.forEach((playerData, index) => {
-      if (playerData) {
-        updatePlayer(index, playerData);
+  // Update players (players is an object, not array)
+  if (players && typeof players === 'object') {
+    Object.values(players).forEach((playerData) => {
+      if (playerData && playerData.slotNumber !== undefined) {
+        updatePlayer(playerData.slotNumber, playerData);
       }
     });
   }
 
-  // Update round state
-  if (roundState) {
-    // Update round-specific state
+  // Update game state from server data
+  const state = getGameState();
+  if (roundTarget) {
+    state.roundTarget = roundTarget;
   }
-
-  // Update game status
-  if (gameStatus) {
-    setGameStatus(gameStatus);
+  if (currentRound !== undefined) {
+    state.currentRound = currentRound;
+  }
+  if (phase) {
+    state.gamePhase = phase;
+    state.roundActive = phase === 'round_active';
+  }
+  if (roundTimer !== undefined) {
+    state.roundTimeRemaining = roundTimer;
   }
 }
 
