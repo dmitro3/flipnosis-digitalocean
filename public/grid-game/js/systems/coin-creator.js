@@ -18,40 +18,83 @@ const playerLabels = [];
 export function createCoin(slotNumber, position, customTextures = null) {
   const scene = getScene();
 
-  // Create coin geometry
+  // Coin geometry - matching original implementation
+  const coinRadius = 65;
+  const coinThickness = 16;
   const geometry = new THREE.CylinderGeometry(
-    COIN_CONFIG.RADIUS,
-    COIN_CONFIG.RADIUS,
-    COIN_CONFIG.THICKNESS,
-    COIN_CONFIG.SEGMENTS
+    coinRadius,
+    coinRadius,
+    coinThickness,
+    64
   );
 
-  // Create materials
-  const materials = [];
+  // Load textures
+  const textureLoader = new THREE.TextureLoader();
+  const headsTexture = textureLoader.load(customTextures?.heads || '/coins/plainh.png');
+  const tailsTexture = textureLoader.load(customTextures?.tails || '/coins/plaint.png');
 
-  // Edge material (gold)
-  const edgeMaterial = new THREE.MeshStandardMaterial({
-    color: COIN_CONFIG.EDGE_COLOR,
-    metalness: 0.8,
-    roughness: 0.2,
-  });
+  // Configure textures
+  headsTexture.minFilter = THREE.LinearFilter;
+  headsTexture.magFilter = THREE.LinearFilter;
+  headsTexture.anisotropy = 16;
+  headsTexture.generateMipmaps = false;
 
-  // Heads material
-  const headsMaterial = createCoinFaceMaterial(
-    customTextures?.heads || null,
-    'HEADS'
-  );
+  tailsTexture.minFilter = THREE.LinearFilter;
+  tailsTexture.magFilter = THREE.LinearFilter;
+  tailsTexture.anisotropy = 16;
+  tailsTexture.generateMipmaps = false;
 
-  // Tails material
-  const tailsMaterial = createCoinFaceMaterial(
-    customTextures?.tails || null,
-    'TAILS'
-  );
+  // Raw texture shader - displays textures without lighting/processing
+  const rawTextureShader = {
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D map;
+      varying vec2 vUv;
+      void main() {
+        gl_FragColor = texture2D(map, vUv);
+      }
+    `
+  };
 
-  // Material order for CylinderGeometry: [side, top, bottom]
-  materials[0] = edgeMaterial;  // Side
-  materials[1] = headsMaterial; // Top (heads)
-  materials[2] = tailsMaterial; // Bottom (tails)
+  // Create materials array: [edge, top/heads, bottom/tails]
+  const materials = [
+    // Edge material - glowing gold
+    new THREE.MeshStandardMaterial({
+      color: 0xFFD700,
+      emissive: 0xFFD700,
+      emissiveIntensity: 0.3,
+      metalness: 0.8,
+      roughness: 0.2,
+      side: THREE.DoubleSide,
+      transparent: false
+    }),
+    // Top/Heads - RAW texture pixels (no lighting)
+    new THREE.ShaderMaterial({
+      uniforms: { map: { value: headsTexture } },
+      vertexShader: rawTextureShader.vertexShader,
+      fragmentShader: rawTextureShader.fragmentShader,
+      side: THREE.DoubleSide,
+      depthWrite: true,
+      depthTest: true,
+      transparent: false
+    }),
+    // Bottom/Tails - RAW texture pixels (no lighting)
+    new THREE.ShaderMaterial({
+      uniforms: { map: { value: tailsTexture } },
+      vertexShader: rawTextureShader.vertexShader,
+      fragmentShader: rawTextureShader.fragmentShader,
+      side: THREE.DoubleSide,
+      depthWrite: true,
+      depthTest: true,
+      transparent: false
+    })
+  ];
 
   // Create mesh
   const coin = new THREE.Mesh(geometry, materials);
@@ -59,8 +102,22 @@ export function createCoin(slotNumber, position, customTextures = null) {
   // Position the coin
   coin.position.set(position.x, position.y, position.z);
 
-  // Rotate to show heads by default
-  coin.rotation.x = Math.PI / 2;
+  // Rotation - standing on edge, facing camera
+  coin.rotation.x = Math.PI / 2; // Standing on edge (90 degrees)
+  coin.rotation.y = Math.PI / 2; // Rotated 90 degrees left for proper facing
+  coin.rotation.z = 0; // No tilt
+
+  // Critical rendering properties
+  coin.visible = true;
+  coin.frustumCulled = false; // Never cull from view
+  coin.renderOrder = 1; // Render after background
+  coin.layers.set(0); // Main rendering layer
+  coin.matrixAutoUpdate = true; // Ensure matrix updates
+
+  // Force material updates
+  coin.material.forEach(mat => {
+    if (mat.needsUpdate !== undefined) mat.needsUpdate = true;
+  });
 
   // Add metadata
   coin.userData = {
