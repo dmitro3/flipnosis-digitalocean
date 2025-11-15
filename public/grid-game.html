@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Coin Flip - Flipnosis</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Three.js -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.152.0/examples/jsm/"
+      }
+    }
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #0a0f23 0%, #1a1f3a 100%);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+        }
+
+        /* Three.js Canvas Container */
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Right Sidebar */
+        #sidebar {
+            width: 320px;
+            background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
+            border-left: 3px solid #00ffff;
+            box-shadow: -5px 0 30px rgba(0, 255, 255, 0.3);
+            padding: 1.5rem;
+            overflow-y: auto;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        #sidebar.hidden {
+            transform: translateX(100%);
+        }
+
+        /* Sidebar Toggle Button */
+        #sidebar-toggle {
+            position: absolute;
+            left: -50px;
+            top: 20px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ff1493, #ff69b4);
+            border: 2px solid #ff1493;
+            border-radius: 8px 0 0 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+        }
+
+        #sidebar-toggle:hover {
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            box-shadow: 0 0 30px rgba(255, 20, 147, 0.8);
+        }
+
+        .sidebar-section {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(0, 255, 255, 0.05);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 12px;
+        }
+
+        .sidebar-title {
+            color: #00ffff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            text-align: center;
+        }
+
+        /* Round Info */
+        #round-info {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #ff1493;
+            font-weight: bold;
+        }
+
+        /* Target Display */
+        #target-display {
+            text-align: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(255, 20, 147, 0.2), rgba(255, 105, 180, 0.2));
+            border: 3px solid #ff1493;
+            border-radius: 12px;
+            margin: 1rem 0;
+        }
+
+        #target-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 0.5rem;
+        }
+
+        #target-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ff1493;
+            text-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
+        }
+
+        /* Countdown Timer */
+        #countdown {
+            text-align: center;
+            font-size: 2rem;
+            color: #00ff88;
+            font-weight: bold;
+            text-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
+        }
+
+        /* Power Meter */
+        #power-meter-container {
+            margin: 1rem 0;
+        }
+
+        #power-bar-bg {
+            width: 100%;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #power-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ffff, #00ff88);
+            transition: width 0.1s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+        }
+
+        #power-sweet-spot {
+            position: absolute;
+            left: 70%;
+            top: 0;
+            width: 10%;
+            height: 100%;
+            background: rgba(255, 215, 0, 0.3);
+            border-left: 2px solid gold;
+            border-right: 2px solid gold;
+        }
+
+        /* Stats */
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stat-value {
+            color: #00ffff;
+            font-weight: bold;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            background: linear-gradient(135deg, #00ffff, #00cc99);
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #00cc99, #00ffff);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0f23 0%, #1a1f3a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        #loading-screen.hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 255, 255, 0.2);
+            border-top: 4px solid #00ffff;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #00ffff;
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 100%;
+                max-width: 280px;
+                position: absolute;
+                right: 0;
+                top: 0;
+                height: 100%;
+                z-index: 100;
+            }
+
+            #sidebar-toggle {
+                display: flex;
+            }
+        }
+
+        @media (min-width: 769px) {
+            #sidebar-toggle {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Grid Game...</div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container">
+        <!-- Three.js Canvas Container -->
+        <div id="canvas-container"></div>
+
+        <!-- Right Sidebar -->
+        <div id="sidebar">
+            <button id="sidebar-toggle">◀</button>
+
+            <!-- Round Info -->
+            <div class="sidebar-section">
+                <div id="round-info">Round <span id="current-round">1</span></div>
+            </div>
+
+            <!-- Target Display -->
+            <div id="target-display">
+                <div id="target-label">MATCH THIS:</div>
+                <div id="target-value">HEADS</div>
+            </div>
+
+            <!-- Countdown Timer -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Time Remaining</div>
+                <div id="countdown">30s</div>
+            </div>
+
+            <!-- Power Meter -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Power</div>
+                <div id="power-meter-container">
+                    <div id="power-bar-bg">
+                        <div id="power-sweet-spot"></div>
+                        <div id="power-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Your Stats -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Your Stats</div>
+                <div class="stat-row">
+                    <span class="stat-label">Lives:</span>
+                    <span class="stat-value" id="player-lives">3</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Wins:</span>
+                    <span class="stat-value" id="player-wins">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Flips:</span>
+                    <span class="stat-value" id="total-flips">0</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="sidebar-section">
+                <button class="btn" id="flip-button">FLIP COIN</button>
+                <button class="btn" id="mute-button">🔊 Sound On</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- Game Script -->
+    <script type="module" src="/grid-game/js/main.js"></script>
+</body>
+</html>
