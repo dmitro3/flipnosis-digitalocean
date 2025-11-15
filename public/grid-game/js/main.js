@@ -15,9 +15,11 @@ import {
 import { calculateGridLayout } from './systems/grid-manager.js';
 import { createCompleteCoinSetup } from './systems/coin-creator.js';
 import { updateFlipAnimations } from './systems/coin-animator.js';
+import { initializeSocket, sendFlipRequest } from './core/socket-manager.js';
 
 // Global state
 let gameInitialized = false;
+let playerAddress = null;
 
 /**
  * Initialize the game
@@ -34,6 +36,10 @@ async function initGame() {
 
     console.log(`🎮 Game ID: ${gameId}`);
 
+    // Get player address from wallet or URL
+    playerAddress = await getPlayerAddress();
+    console.log(`👤 Player Address: ${playerAddress}`);
+
     // Initialize scene
     const { scene, camera, renderer } = initializeScene();
     console.log('✅ Scene initialized');
@@ -41,7 +47,7 @@ async function initGame() {
     // Initialize game state (we'll get real data from server later)
     const mockGameData = {
       gameId: gameId,
-      playerAddress: '0x0000000000000000000000000000000000000000', // Will be set by socket
+      playerAddress: playerAddress,
       maxPlayers: 6,
       gameMode: '6player',
     };
@@ -65,11 +71,12 @@ async function initGame() {
     startAnimationLoop();
     console.log('✅ Animation loop started');
 
+    // Initialize socket connection
+    initializeSocket(gameId, playerAddress);
+    console.log('✅ Socket initialized');
+
     // Hide loading screen
     hideLoadingScreen();
-
-    // TODO: Initialize socket connection
-    // TODO: Handle player joins
 
     gameInitialized = true;
     console.log('🎉 Grid game initialized successfully!');
@@ -128,6 +135,39 @@ function getGameIdFromUrl() {
   }
 
   return gameId;
+}
+
+/**
+ * Get player address from wallet or URL
+ */
+async function getPlayerAddress() {
+  // Check URL params first (for testing)
+  const params = new URLSearchParams(window.location.search);
+  const addressParam = params.get('address');
+  if (addressParam) {
+    return addressParam;
+  }
+
+  // Try to get from MetaMask/wallet
+  if (typeof window.ethereum !== 'undefined') {
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts && accounts.length > 0) {
+        return accounts[0];
+      }
+
+      // Request account access
+      const requestedAccounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (requestedAccounts && requestedAccounts.length > 0) {
+        return requestedAccounts[0];
+      }
+    } catch (error) {
+      console.error('Error getting wallet address:', error);
+    }
+  }
+
+  // Fallback to mock address
+  return '0x0000000000000000000000000000000000000001';
 }
 
 /**
@@ -210,26 +250,25 @@ function updateGameUI() {
 function handleFlipButtonClick() {
   console.log('🎲 Flip button clicked');
 
-  const state = getGameState();
+  // Send flip request to server
+  const success = sendFlipRequest();
 
-  if (!state.roundActive) {
-    console.warn('⚠️ No active round');
-    return;
+  if (success) {
+    console.log('✅ Flip request sent');
+
+    // Disable button temporarily
+    const flipButton = document.getElementById('flip-button');
+    if (flipButton) {
+      flipButton.disabled = true;
+      flipButton.textContent = 'FLIPPING...';
+
+      // Re-enable after 2 seconds
+      setTimeout(() => {
+        flipButton.disabled = false;
+        flipButton.textContent = 'FLIP COIN';
+      }, 2000);
+    }
   }
-
-  if (state.playerSlot === null) {
-    console.warn('⚠️ Player slot not set');
-    return;
-  }
-
-  const player = state.players[state.playerSlot];
-  if (player.hasFlipped) {
-    console.warn('⚠️ Player already flipped this round');
-    return;
-  }
-
-  // TODO: Send flip request to server
-  console.log('🎲 Sending flip request...');
 }
 
 /**
