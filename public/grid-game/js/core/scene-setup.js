@@ -11,12 +11,12 @@ let scene, camera, renderer;
 /**
  * Initialize the Three.js scene
  */
-export function initializeScene() {
+export async function initializeScene() {
   console.log('🎬 Initializing scene...');
 
   // Create scene
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(COLORS.BACKGROUND);
+  scene.background = null; // Will be replaced by background plane
   scene.fog = new THREE.Fog(COLORS.BACKGROUND, 1000, 3000);
 
   // Create camera
@@ -51,6 +51,9 @@ export function initializeScene() {
 
   container.appendChild(renderer.domElement);
 
+  // Load background based on room type
+  await loadRoomBackground();
+
   // Add lighting
   setupLighting();
 
@@ -60,6 +63,69 @@ export function initializeScene() {
   console.log('✅ Scene initialized');
 
   return { scene, camera, renderer };
+}
+
+/**
+ * Load background plane based on room type from URL
+ */
+async function loadRoomBackground() {
+  const params = new URLSearchParams(window.location.search);
+  const roomType = params.get('room') || 'potion';
+
+  const bgPaths = {
+    'lab': '/images/background/thelab.png',
+    'cyber': '/images/background/cyber.png',
+    'mech': '/images/background/mech.png',
+    'potion': '/images/background/game room2.png'
+  };
+
+  const bgPath = bgPaths[roomType] || bgPaths['potion'];
+
+  console.log(`🖼️ Loading background for room: ${roomType}`);
+
+  return new Promise((resolve) => {
+    const textureLoader = new THREE.TextureLoader();
+
+    textureLoader.load(
+      bgPath,
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+
+        // Calculate plane size to cover camera view
+        const distanceFromCamera = CAMERA_CONFIG.POSITION_Z - (-500);
+        const vFOV = CAMERA_CONFIG.FOV * Math.PI / 180;
+        const planeHeight = 2 * Math.tan(vFOV / 2) * distanceFromCamera;
+        const planeWidth = planeHeight * camera.aspect;
+
+        // Create background plane
+        const bgGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+        const bgMaterial = new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.FrontSide,
+          depthWrite: false,
+          depthTest: false,
+          toneMapped: false,
+          fog: false,
+        });
+
+        const bgPlane = new THREE.Mesh(bgGeometry, bgMaterial);
+        bgPlane.position.set(0, CAMERA_CONFIG.LOOK_AT_Y, -500);
+        bgPlane.renderOrder = -1;
+        scene.add(bgPlane);
+
+        console.log(`✅ Background loaded: ${roomType}`);
+        resolve();
+      },
+      undefined,
+      (error) => {
+        console.error('❌ Failed to load background:', error);
+        // Continue even if background fails
+        resolve();
+      }
+    );
+  });
 }
 
 /**

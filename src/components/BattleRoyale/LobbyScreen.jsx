@@ -482,7 +482,8 @@ const LobbyScreen = () => {
       if (gameState?.gameId) {
         setTimeout(() => {
           // Route to grid game for new multi-player modes
-          window.location.href = `/grid-game.html?gameId=${gameState.gameId}`
+          const roomType = gameState.room_type || 'potion'
+          window.location.href = `/grid-game.html?gameId=${gameState.gameId}&room=${roomType}`
         }, 50)
       }
     } catch (e) {
@@ -554,7 +555,8 @@ const LobbyScreen = () => {
 
       // Small delay to allow UI to update
       setTimeout(() => {
-        window.location.href = `/grid-game.html?gameId=${gameId}`
+        const roomType = gameState.room_type || 'potion'
+        window.location.href = `/grid-game.html?gameId=${gameId}&room=${roomType}`
       }, 1500)
     }
   }, [gameState?.currentPlayers, gameState?.maxPlayers, gameState?.status, gameState?.gameId])

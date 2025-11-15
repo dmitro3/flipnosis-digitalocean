@@ -44,7 +44,7 @@ async function initGame() {
 
     // Initialize scene
     updateLoadingText('Initializing 3D scene...');
-    const { scene, camera, renderer } = initializeScene();
+    const { scene, camera, renderer } = await initializeScene();
     console.log('✅ Scene initialized');
 
     // Initialize game state (we'll get real data from server later)
