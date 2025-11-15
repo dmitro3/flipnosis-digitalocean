@@ -93,8 +93,10 @@ async function loadRoomBackground() {
         texture.minFilter = THREE.LinearFilter;
         texture.magFilter = THREE.LinearFilter;
 
-        // Calculate plane size to cover camera view
-        const distanceFromCamera = CAMERA_CONFIG.POSITION_Z - (-500);
+        // Calculate plane size to cover entire viewport
+        // Position background directly behind the grid at z=-800
+        const backgroundZ = -800;
+        const distanceFromCamera = CAMERA_CONFIG.POSITION_Z - backgroundZ;
         const vFOV = CAMERA_CONFIG.FOV * Math.PI / 180;
         const planeHeight = 2 * Math.tan(vFOV / 2) * distanceFromCamera;
         const planeWidth = planeHeight * camera.aspect;
@@ -111,7 +113,8 @@ async function loadRoomBackground() {
         });
 
         const bgPlane = new THREE.Mesh(bgGeometry, bgMaterial);
-        bgPlane.position.set(0, CAMERA_CONFIG.LOOK_AT_Y, -500);
+        // Position at same Y as camera look-at, far back in Z
+        bgPlane.position.set(0, 0, backgroundZ);
         bgPlane.renderOrder = -1;
         scene.add(bgPlane);
 

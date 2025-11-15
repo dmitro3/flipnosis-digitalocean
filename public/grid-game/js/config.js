@@ -111,8 +111,8 @@ export function getGridPosition(slotNumber, totalPlayers) {
   const totalHeight = (rows - 1) * GRID_CONFIG.COIN_SPACING_Y;
 
   const x = col * GRID_CONFIG.COIN_SPACING_X - totalWidth / 2;
-  const y = GRID_CONFIG.COIN_Y_POSITION;
-  const z = row * GRID_CONFIG.COIN_SPACING_Y - totalHeight / 2;
+  const y = -row * GRID_CONFIG.COIN_SPACING_Y + totalHeight / 2; // Use Y for rows instead of Z
+  const z = 0; // All coins at same depth - flat grid facing camera
 
   return { x, y, z };
 }

@@ -33,6 +33,13 @@ class GameServer {
     // ✅ ACTIVE: Grid-based multi-player game system (new implementation)
     this.gridGameManager = new GridGameManager()
 
+    // Set broadcast callback for grid game socket emissions
+    this.gridGameManager.setBroadcastCallback((room, event, payload) => {
+      if (this.io) {
+        this.io.to(room).emit(event, payload)
+      }
+    })
+
     // this.flipService = new FlipService() // Temporarily disabled for debugging
     this.flipService = null // Placeholder
 
