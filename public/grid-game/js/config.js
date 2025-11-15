@@ -6,8 +6,8 @@
 // Grid Layout
 export const GRID_CONFIG = {
   MAX_COLUMNS: 6,              // Maximum coins per row
-  COIN_SPACING_X: 200,         // Horizontal spacing between coins
-  COIN_SPACING_Y: 200,         // Vertical spacing between rows
+  COIN_SPACING_X: 280,         // Horizontal spacing between coins
+  COIN_SPACING_Y: 280,         // Vertical spacing between rows
   GRID_START_X: -500,          // Starting X position for grid
   GRID_START_Y: 200,           // Starting Y position for grid
   COIN_Y_POSITION: 0,          // Y position for all coins
@@ -15,8 +15,8 @@ export const GRID_CONFIG = {
 
 // Coin Settings
 export const COIN_CONFIG = {
-  RADIUS: 40,                  // Coin radius
-  THICKNESS: 8,                // Coin thickness
+  RADIUS: 80,                  // Coin radius (increased from 40 to 80)
+  THICKNESS: 12,               // Coin thickness (increased from 8 to 12)
   SEGMENTS: 64,                // Geometry segments for smoothness
   EDGE_COLOR: 0xFFD700,        // Gold edge color
   FLIP_DURATION: 1500,         // Flip animation duration (ms)
