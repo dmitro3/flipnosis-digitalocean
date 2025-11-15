@@ -364,6 +364,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
+            position: relative;
         }
 
         .coin-option:hover {
@@ -512,6 +513,17 @@
                 <h2>Choose Your Coin Design</h2>
                 <button class="modal-close" id="close-coin-picker">&times;</button>
             </div>
+
+            <!-- FLIP Balance Display -->
+            <div style="text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 215, 0, 0.1); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.3);">
+                <div style="color: #FFD700; font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: bold;">
+                    Your FLIP Balance: <span id="flip-balance">Loading...</span>
+                </div>
+                <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8rem; margin-top: 0.3rem;">
+                    Unlock new coin designs with FLIP tokens
+                </div>
+            </div>
+
             <p class="modal-subtitle">Select the coin design other players will see when you flip</p>
 
             <div id="coin-grid" class="coin-grid">

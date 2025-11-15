@@ -15,11 +15,15 @@ import {
 import { calculateGridLayout } from './systems/grid-manager.js';
 import { createCompleteCoinSetup } from './systems/coin-creator.js';
 import { updateFlipAnimations } from './systems/coin-animator.js';
-import { initializeSocket, sendFlipRequest } from './core/socket-manager.js';
+import { initializeSocket, sendFlipRequest, getSocket } from './core/socket-manager.js';
 
 // Global state
 let gameInitialized = false;
 let playerAddress = null;
+let playerFlipBalance = 0;
+let unlockedCoins = ['plain']; // Plain coin is always unlocked
+let customCoinHeads = null;
+let customCoinTails = null;
 
 /**
  * Initialize the game
@@ -228,6 +232,9 @@ function showCoinPickerModal() {
   const modal = document.getElementById('coin-picker-modal');
   if (!modal) return;
 
+  // Fetch player profile data first
+  fetchPlayerProfile();
+
   // Populate coin options
   populateCoinPicker();
 
@@ -247,6 +254,53 @@ function showCoinPickerModal() {
 }
 
 /**
+ * Fetch player profile data (FLIP balance, unlocked coins, custom coins)
+ */
+function fetchPlayerProfile() {
+  const socket = getSocket();
+  if (!socket || !playerAddress) {
+    console.warn('⚠️ Cannot fetch profile: no socket or address');
+    return;
+  }
+
+  console.log('📋 Fetching player profile for:', playerAddress);
+
+  // Remove old listener to prevent duplicates
+  socket.off('player_profile_data');
+
+  // Listen for profile data
+  socket.on('player_profile_data', (profileData) => {
+    console.log('📊 Received profile data:', profileData);
+
+    playerFlipBalance = profileData.flip_balance || 0;
+
+    try {
+      unlockedCoins = JSON.parse(profileData.unlocked_coins || '["plain"]');
+    } catch (e) {
+      unlockedCoins = ['plain'];
+    }
+
+    customCoinHeads = profileData.custom_coin_heads;
+    customCoinTails = profileData.custom_coin_tails;
+
+    console.log('💰 FLIP balance:', playerFlipBalance);
+    console.log('🪙 Unlocked coins:', unlockedCoins);
+
+    // Update balance display if visible
+    const balanceElement = document.getElementById('flip-balance');
+    if (balanceElement) {
+      balanceElement.textContent = playerFlipBalance;
+    }
+
+    // Refresh coin display
+    populateCoinPicker();
+  });
+
+  // Request profile data
+  socket.emit('get_player_profile', { address: playerAddress });
+}
+
+/**
  * Populate coin picker with available coins
  */
 function populateCoinPicker() {
@@ -256,45 +310,151 @@ function populateCoinPicker() {
   // Get currently selected coin from localStorage
   const savedCoinId = localStorage.getItem('selectedCoinId') || 'plain';
 
-  // Default coins (same as CoinSelector.jsx)
+  // Default coins with FLIP unlock costs
   const defaultCoins = [
-    { id: 'plain', name: 'Classic', heads: '/coins/plainh.png', tails: '/coins/plaint.png' },
-    { id: 'skull', name: 'Skull', heads: '/coins/skullh.png', tails: '/coins/skullt.png' },
-    { id: 'trump', name: 'Trump', heads: '/coins/trumpheads.webp', tails: '/coins/trumptails.webp' },
-    { id: 'mario', name: 'Mario', heads: '/coins/mario.png', tails: '/coins/luigi.png' },
-    { id: 'jestress', name: 'Jestress', heads: '/coins/jestressh.png', tails: '/coins/jestresst.png' },
-    { id: 'dragon', name: '龙', heads: '/coins/dragonh.png', tails: '/coins/dragont.png' },
-    { id: 'stinger', name: 'Stinger', heads: '/coins/stingerh.png', tails: '/coins/stingert.png' },
-    { id: 'manga', name: 'Heroine', heads: '/coins/mangah.png', tails: '/coins/mangat.png' },
-    { id: 'pharaoh', name: 'Pharaoh', heads: '/coins/pharaohh.png', tails: '/coins/pharaoht.png' },
-    { id: 'calavera', name: 'Calavera', heads: '/coins/calaverah.png', tails: '/coins/calaverat.png' }
+    { id: 'plain', name: 'Classic', heads: '/coins/plainh.png', tails: '/coins/plaint.png', cost: 0 },
+    { id: 'skull', name: 'Skull', heads: '/coins/skullh.png', tails: '/coins/skullt.png', cost: 100 },
+    { id: 'trump', name: 'Trump', heads: '/coins/trumpheads.webp', tails: '/coins/trumptails.webp', cost: 150 },
+    { id: 'mario', name: 'Mario', heads: '/coins/mario.png', tails: '/coins/luigi.png', cost: 200 },
+    { id: 'jestress', name: 'Jestress', heads: '/coins/jestressh.png', tails: '/coins/jestresst.png', cost: 250 },
+    { id: 'dragon', name: '龙', heads: '/coins/dragonh.png', tails: '/coins/dragont.png', cost: 300 },
+    { id: 'stinger', name: 'Stinger', heads: '/coins/stingerh.png', tails: '/coins/stingert.png', cost: 350 },
+    { id: 'manga', name: 'Heroine', heads: '/coins/mangah.png', tails: '/coins/mangat.png', cost: 400 },
+    { id: 'pharaoh', name: 'Pharaoh', heads: '/coins/pharaohh.png', tails: '/coins/pharaoht.png', cost: 450 },
+    { id: 'calavera', name: 'Calavera', heads: '/coins/calaverah.png', tails: '/coins/calaverat.png', cost: 500 }
   ];
 
   // Clear existing options
   coinGrid.innerHTML = '';
 
-  // Add each coin option
+  // Add each coin option with lock/unlock state
   defaultCoins.forEach(coin => {
+    const isUnlocked = unlockedCoins.includes(coin.id);
+    const canAfford = playerFlipBalance >= coin.cost;
+    const isLocked = !isUnlocked && coin.cost > 0;
+
     const option = document.createElement('div');
     option.className = 'coin-option';
-    if (coin.id === savedCoinId) {
+    option.dataset.coinId = coin.id;
+    option.dataset.cost = coin.cost;
+    option.dataset.unlocked = isUnlocked;
+
+    if (coin.id === savedCoinId && isUnlocked) {
       option.classList.add('selected');
     }
 
+    // Apply styling based on lock state
+    if (isLocked) {
+      option.style.opacity = '0.6';
+      option.style.border = '2px solid rgba(255, 0, 0, 0.5)';
+      option.style.background = 'rgba(255, 0, 0, 0.1)';
+      option.style.cursor = canAfford ? 'pointer' : 'not-allowed';
+    } else {
+      option.style.border = '2px solid rgba(0, 255, 255, 0.3)';
+      option.style.background = 'rgba(0, 255, 255, 0.05)';
+      option.style.cursor = 'pointer';
+    }
+
     option.innerHTML = `
+      ${isLocked ? '<div style="position: absolute; top: 5px; right: 5px; background: rgba(255, 0, 0, 0.8); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">🔒</div>' : ''}
       <div class="coin-preview-pair">
         <img src="${coin.heads}" alt="${coin.name} Heads" />
         <img src="${coin.tails}" alt="${coin.name} Tails" />
       </div>
       <div class="coin-name">${coin.name}</div>
+      <div style="color: ${isUnlocked ? '#00ff88' : canAfford ? '#FFD700' : '#ff4444'}; font-size: 0.75rem; font-weight: bold; margin-top: 0.5rem;">
+        ${isUnlocked ? 'UNLOCKED' : coin.cost > 0 ? `${coin.cost} FLIP` : 'FREE'}
+      </div>
     `;
 
-    option.onclick = () => selectCoin(coin);
+    option.onclick = () => handleCoinClick(coin, isUnlocked);
 
     coinGrid.appendChild(option);
   });
 
-  console.log(`✅ Populated ${defaultCoins.length} coin options`);
+  // Add custom coin if available
+  if (customCoinHeads && customCoinTails) {
+    const option = document.createElement('div');
+    option.className = 'coin-option';
+    option.dataset.coinId = 'custom';
+    option.dataset.cost = 0;
+    option.dataset.unlocked = true;
+    option.style.border = '2px solid rgba(0, 255, 255, 0.3)';
+    option.style.background = 'rgba(0, 255, 255, 0.05)';
+
+    option.innerHTML = `
+      <div class="coin-preview-pair">
+        <img src="${customCoinHeads}" alt="Custom Heads" />
+        <img src="${customCoinTails}" alt="Custom Tails" />
+      </div>
+      <div class="coin-name">Custom</div>
+      <div style="color: #00ff88; font-size: 0.75rem; font-weight: bold; margin-top: 0.5rem;">YOUR COIN</div>
+    `;
+
+    option.onclick = () => selectCoin({ id: 'custom', name: 'Custom', heads: customCoinHeads, tails: customCoinTails });
+
+    coinGrid.appendChild(option);
+  }
+
+  console.log(`✅ Populated ${defaultCoins.length} coin options, unlocked: ${unlockedCoins.length}`);
+}
+
+/**
+ * Handle coin click - check if locked and handle unlock
+ */
+function handleCoinClick(coin, isUnlocked) {
+  console.log('🪙 Coin clicked:', coin.name, 'unlocked:', isUnlocked);
+
+  if (!isUnlocked && coin.cost > 0) {
+    // Try to unlock the coin
+    if (playerFlipBalance >= coin.cost) {
+      if (confirm(`Unlock ${coin.name} for ${coin.cost} FLIP?`)) {
+        unlockCoin(coin);
+      }
+    } else {
+      alert(`Not enough FLIP! You need ${coin.cost} FLIP but only have ${playerFlipBalance} FLIP.`);
+    }
+  } else {
+    // Coin is unlocked, select it
+    selectCoin(coin);
+  }
+}
+
+/**
+ * Unlock a coin via socket
+ */
+function unlockCoin(coin) {
+  const socket = getSocket();
+  if (!socket || !playerAddress) {
+    alert('Cannot unlock coin: not connected');
+    return;
+  }
+
+  console.log('🔓 Unlocking coin:', coin.id, 'cost:', coin.cost);
+
+  socket.emit('unlock_coin', { address: playerAddress, coinId: coin.id, cost: coin.cost });
+
+  socket.once('coin_unlocked', (result) => {
+    if (result.success) {
+      console.log('✅ Coin unlocked!', result);
+      playerFlipBalance = result.newBalance;
+      unlockedCoins = result.unlockedCoins;
+
+      // Update FLIP balance display
+      const balanceElement = document.getElementById('flip-balance');
+      if (balanceElement) {
+        balanceElement.textContent = playerFlipBalance;
+      }
+
+      // Refresh coin display
+      populateCoinPicker();
+
+      // Auto-select the newly unlocked coin
+      selectCoin(coin);
+    } else {
+      alert(`Failed to unlock: ${result.error || 'Unknown error'}`);
+    }
+  });
 }
 
 /**
@@ -310,7 +470,12 @@ function selectCoin(coin) {
 
   // Update selected state in modal
   document.querySelectorAll('.coin-option').forEach(el => el.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
+  const selectedOption = document.querySelector(`[data-coin-id="${coin.id}"]`);
+  if (selectedOption) {
+    selectedOption.classList.add('selected');
+    selectedOption.style.borderColor = '#FFD700';
+    selectedOption.style.borderWidth = '3px';
+  }
 
   // Close modal after a short delay
   setTimeout(() => {
