@@ -1173,6 +1173,7 @@ initialize(server, dbService) {
             slotNumber: result.slotNumber,
             targetFace: result.targetFace,
             targetHit: result.targetHit,
+            power: power || 0.7,
           })
 
           // Check if round should end

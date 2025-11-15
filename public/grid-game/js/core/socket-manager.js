@@ -286,13 +286,13 @@ function handleTargetAnnounced(data) {
 function handleCoinFlipped(data) {
   console.log('🎲 Coin flipped:', data);
 
-  const { slotNumber, result, power, matched } = data;
+  const { slotNumber, targetFace, targetHit, power } = data;
 
   // Mark player as flipped
-  markPlayerFlipped(slotNumber, result);
+  markPlayerFlipped(slotNumber, targetFace);
 
-  // Start flip animation
-  startFlipAnimation(slotNumber, result, power);
+  // Start flip animation (use power or default to 0.7)
+  startFlipAnimation(slotNumber, targetFace, power || 0.7);
 
   // TODO: Play flip sound
 }

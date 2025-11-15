@@ -14,7 +14,7 @@ import {
   updatePlayer,
 } from './core/game-state.js';
 import { calculateGridLayout } from './systems/grid-manager.js';
-import { createCompleteCoinSetup } from './systems/coin-creator.js';
+import { createCompleteCoinSetup, getCoin } from './systems/coin-creator.js';
 import { updateFlipAnimations } from './systems/coin-animator.js';
 import { initializeSocket, sendFlipRequest, getSocket } from './core/socket-manager.js';
 
@@ -164,9 +164,7 @@ export function loadPlayerCoinTextures() {
  * Apply coin textures to a specific slot
  */
 function applyCoinTextures(slotNumber, headsImagePath, tailsImagePath) {
-  const { scene } = getScene();
-  const coins = scene.children.filter(child => child.userData && child.userData.slotNumber !== undefined);
-  const coin = coins.find(c => c.userData.slotNumber === slotNumber);
+  const coin = getCoin(slotNumber);
 
   if (!coin) {
     console.error(`❌ Coin not found for slot ${slotNumber}`);
