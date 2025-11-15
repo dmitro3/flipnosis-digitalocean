@@ -645,17 +645,20 @@ function selectCoin(coin) {
  * Update power bar visual
  */
 function updatePowerBar() {
-  const powerValue = updatePowerMeter();
+  const state = getGameState();
   const powerBar = document.getElementById('power-bar');
 
-  if (powerBar && powerValue !== undefined) {
+  if (powerBar) {
+    // Call updatePowerMeter to increase power if active
+    const powerValue = updatePowerMeter();
     const percentage = Math.floor(powerValue * 100);
     powerBar.style.width = `${percentage}%`;
 
-    // Debug log when charging
-    const state = getGameState();
-    if (state.powerActive && percentage % 10 === 0) {
-      console.log(`⚡ Power charging: ${percentage}%`);
+    // Show percentage in the bar
+    if (state.powerActive) {
+      powerBar.textContent = `${percentage}%`;
+    } else {
+      powerBar.textContent = '';
     }
   }
 }
@@ -684,19 +687,20 @@ function updateGameUI() {
     countdownElement.textContent = `${Math.ceil(state.roundTimeRemaining)}s`;
   }
 
-  // Update player stats
+  // Update player stats - show lives as hearts
   const livesElement = document.getElementById('player-lives');
-  const winsElement = document.getElementById('player-wins');
-  const flipsElement = document.getElementById('total-flips');
-
   if (livesElement) {
-    livesElement.textContent = state.playerStats.lives;
+    const lives = state.playerStats.lives;
+    const hearts = '♥'.repeat(Math.max(0, lives));
+    const emptyHearts = '♡'.repeat(Math.max(0, 3 - lives));
+    livesElement.textContent = hearts + emptyHearts;
   }
-  if (winsElement) {
-    winsElement.textContent = state.playerStats.wins;
-  }
-  if (flipsElement) {
-    flipsElement.textContent = state.playerStats.totalFlips;
+
+  // Update players remaining counter
+  const remainingElement = document.getElementById('players-remaining');
+  if (remainingElement) {
+    const activePlayers = state.players.filter(p => p.isActive && !p.isEliminated).length;
+    remainingElement.textContent = activePlayers;
   }
 }
 

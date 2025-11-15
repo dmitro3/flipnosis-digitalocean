@@ -148,22 +148,28 @@ function handlePlayerJoined(data) {
 
   const { slotNumber, playerAddress, playerName, playerData } = data;
 
-  // Prepare full player data for label update
-  const fullPlayerData = {
-    address: playerAddress,
-    name: playerName || playerData?.name || `Player ${slotNumber + 1}`,
-    isActive: true,
-    lives: playerData?.lives || 3,
-    avatar: playerData?.avatar || null,
-    ...playerData,
-  };
+  // Fetch full player profile from server to get avatar and name
+  const socket = getSocket();
+  socket.emit('player_get_profile', { address: playerAddress }, (profileData) => {
+    console.log(`📊 Received profile for ${playerAddress}:`, profileData);
 
-  // Update player in state
-  updatePlayer(slotNumber, fullPlayerData);
+    // Prepare full player data with profile info
+    const fullPlayerData = {
+      address: playerAddress,
+      name: profileData?.name || playerName || playerData?.name || `Player ${slotNumber + 1}`,
+      isActive: true,
+      lives: playerData?.lives || 3,
+      avatar: profileData?.avatar || playerData?.avatar || null,
+      ...playerData,
+    };
 
-  // Update player label with real data
-  import('../systems/coin-creator.js').then(({ updatePlayerLabel }) => {
-    updatePlayerLabel(slotNumber, fullPlayerData);
+    // Update player in state
+    updatePlayer(slotNumber, fullPlayerData);
+
+    // Update player label with real data
+    import('../systems/coin-creator.js').then(({ updatePlayerLabel }) => {
+      updatePlayerLabel(slotNumber, fullPlayerData);
+    });
   });
 
   // If this is us, set our slot
@@ -417,23 +423,37 @@ function processRoundResults(results) {
   });
 }
 
+// Store timer interval so we can clear it
+let roundTimerInterval = null;
+
 /**
  * Start round countdown timer
  */
 function startRoundTimer(duration) {
+  // Clear any existing timer
+  if (roundTimerInterval) {
+    clearInterval(roundTimerInterval);
+  }
+
   let timeRemaining = duration;
 
-  const timerInterval = setInterval(() => {
+  // Update immediately
+  const countdownElement = document.getElementById('countdown');
+  if (countdownElement) {
+    countdownElement.textContent = `${timeRemaining}s`;
+  }
+
+  roundTimerInterval = setInterval(() => {
     timeRemaining--;
 
     // Update countdown display
-    const countdownElement = document.getElementById('countdown');
     if (countdownElement) {
       countdownElement.textContent = `${timeRemaining}s`;
     }
 
     if (timeRemaining <= 0) {
-      clearInterval(timerInterval);
+      clearInterval(roundTimerInterval);
+      roundTimerInterval = null;
     }
   }, 1000);
 }
