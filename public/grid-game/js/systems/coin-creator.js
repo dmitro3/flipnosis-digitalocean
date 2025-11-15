@@ -133,19 +133,41 @@ function createCoinFaceMaterial(textureUrl, defaultText) {
 }
 
 /**
- * Create background plane for coin
+ * Create background plane for coin with gold frame
  */
 export function createCoinBackground(slotNumber, position) {
   const scene = getScene();
 
-  const bgSize = COIN_CONFIG.RADIUS * 2.5;
-  const geometry = new THREE.PlaneGeometry(bgSize, bgSize);
+  const bgSize = COIN_CONFIG.RADIUS * 2.8;
+  const frameThickness = 8;
 
-  const color = getPlayerBackgroundColor(slotNumber);
+  // Create canvas for background with gold frame
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  // Draw gold frame (outer border)
+  ctx.fillStyle = '#FFD700'; // Gold
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Draw dark navy background (inner area)
+  ctx.fillStyle = '#0a0f23'; // Dark navy
+  ctx.fillRect(frameThickness, frameThickness, 512 - frameThickness * 2, 512 - frameThickness * 2);
+
+  // Add inner gold glow/highlight
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(frameThickness + 2, frameThickness + 2, 512 - frameThickness * 2 - 4, 512 - frameThickness * 2 - 4);
+
+  // Create texture from canvas
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 16;
+
+  const geometry = new THREE.PlaneGeometry(bgSize, bgSize);
   const material = new THREE.MeshBasicMaterial({
-    color: color,
-    transparent: true,
-    opacity: 0.3,
+    map: texture,
+    transparent: false,
     side: THREE.DoubleSide,
   });
 
