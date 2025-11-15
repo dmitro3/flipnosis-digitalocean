@@ -319,6 +319,9 @@ function setupUI() {
 
     // Send flip request with power
     handleFlipButtonRelease(finalPower);
+
+    // Reset power bar after release
+    state.powerValue = 0;
   });
 
   flipButton.addEventListener('mouseleave', (e) => {
@@ -333,6 +336,9 @@ function setupUI() {
 
     // Send flip request with power
     handleFlipButtonRelease(finalPower);
+
+    // Reset power bar after release
+    state.powerValue = 0;
   });
 
   // Mute button

@@ -98,7 +98,10 @@ export function startRound(roundNumber, target) {
   state.roundActive = true;
   state.roundTarget = target;
   state.roundTimeRemaining = GAME_CONFIG.ROUND_DURATION;
-  state.powerActive = true;
+
+  // Reset power meter (don't activate it - only mousedown should do that)
+  state.powerActive = false;
+  state.powerValue = 0;
 
   // Reset player flip states
   state.players.forEach(player => {
