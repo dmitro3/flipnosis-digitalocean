@@ -287,13 +287,21 @@ function handleTargetAnnounced(data) {
 function handleCoinFlipped(data) {
   console.log('🎲 Coin flipped:', data);
 
-  const { slotNumber, targetFace, targetHit, power } = data;
+  const { slotNumber, targetFace, targetHit, power, playerAddress } = data;
 
   // Mark player as flipped
   markPlayerFlipped(slotNumber, targetFace);
 
   // Start flip animation (use power or default to 0.7)
   startFlipAnimation(slotNumber, targetFace, power || 0.7);
+
+  // Show win/loss notification for current player
+  const state = getGameState();
+  if (state.playerSlot === slotNumber) {
+    setTimeout(() => {
+      showFlipResult(targetHit);
+    }, 1500); // Show after flip completes
+  }
 
   // TODO: Play flip sound
 }
@@ -431,6 +439,70 @@ function showEliminationMessage() {
   console.log('💀 You have been eliminated!');
 
   alert('💀 You have been eliminated! You can still watch the game.');
+}
+
+/**
+ * Show flip result notification
+ */
+function showFlipResult(targetHit) {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 30px 60px;
+    background: ${targetHit ? 'rgba(0, 255, 0, 0.9)' : 'rgba(255, 0, 0, 0.9)'};
+    color: white;
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    font-weight: bold;
+    border-radius: 20px;
+    box-shadow: 0 0 30px ${targetHit ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)'};
+    z-index: 10000;
+    animation: fadeIn 0.3s ease-out;
+  `;
+
+  notification.textContent = targetHit ? '✓ HIT!' : '✗ MISS!';
+  document.body.appendChild(notification);
+
+  // Add CSS animation
+  if (!document.getElementById('notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.5);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+        }
+      }
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+        }
+        to {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.5);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Remove after 2 seconds with fade out
+  setTimeout(() => {
+    notification.style.animation = 'fadeOut 0.3s ease-out';
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 2000);
 }
 
 /**

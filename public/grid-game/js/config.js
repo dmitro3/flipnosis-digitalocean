@@ -15,8 +15,8 @@ export const GRID_CONFIG = {
 
 // Coin Settings
 export const COIN_CONFIG = {
-  RADIUS: 80,                  // Coin radius (increased from 40 to 80)
-  THICKNESS: 12,               // Coin thickness (increased from 8 to 12)
+  RADIUS: 120,                 // Coin radius (1.5x larger: 80 * 1.5 = 120)
+  THICKNESS: 18,               // Coin thickness (1.5x larger: 12 * 1.5 = 18)
   SEGMENTS: 64,                // Geometry segments for smoothness
   EDGE_COLOR: 0xFFD700,        // Gold edge color
   FLIP_DURATION: 1500,         // Flip animation duration (ms)

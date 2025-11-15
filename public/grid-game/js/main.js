@@ -283,9 +283,57 @@ function setupUI() {
     sidebarToggle.textContent = sidebar.classList.contains('hidden') ? '▶' : '◀';
   });
 
-  // Flip button
+  // Flip button - use mousedown/mouseup for power charging
   const flipButton = document.getElementById('flip-button');
-  flipButton.addEventListener('click', handleFlipButtonClick);
+  let isCharging = false;
+  let chargeStartTime = 0;
+
+  flipButton.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const state = getGameState();
+
+    if (!state.roundActive) {
+      console.warn('⚠️ No active round');
+      return;
+    }
+
+    console.log('⚡ Started charging power');
+    isCharging = true;
+    chargeStartTime = Date.now();
+    state.powerActive = true;
+    state.powerValue = 0;
+    state.powerDirection = 1;
+  });
+
+  flipButton.addEventListener('mouseup', (e) => {
+    e.preventDefault();
+    if (!isCharging) return;
+
+    const state = getGameState();
+    const holdDuration = Date.now() - chargeStartTime;
+    const finalPower = state.powerValue; // Already 0-1 range
+
+    console.log(`⚡ Released power at ${(finalPower * 100).toFixed(0)}% (${finalPower.toFixed(2)})`);
+    isCharging = false;
+    state.powerActive = false;
+
+    // Send flip request with power
+    handleFlipButtonRelease(finalPower);
+  });
+
+  flipButton.addEventListener('mouseleave', (e) => {
+    if (!isCharging) return;
+
+    const state = getGameState();
+    const finalPower = state.powerValue; // Already 0-1 range
+
+    console.log(`⚡ Released power (mouseleave) at ${(finalPower * 100).toFixed(0)}%`);
+    isCharging = false;
+    state.powerActive = false;
+
+    // Send flip request with power
+    handleFlipButtonRelease(finalPower);
+  });
 
   // Mute button
   const muteButton = document.getElementById('mute-button');
@@ -640,29 +688,46 @@ function updateGameUI() {
 }
 
 /**
- * Handle flip button click
+ * Handle flip button release (mouseup or mouseleave)
  */
-function handleFlipButtonClick() {
-  console.log('🎲 Flip button clicked');
+function handleFlipButtonRelease(finalPower) {
+  console.log(`🎲 Flip button released with power ${finalPower.toFixed(2)}`);
 
-  // Send flip request to server
-  const success = sendFlipRequest();
+  // Send flip request to server with power
+  const socket = getSocket();
+  const state = getGameState();
 
-  if (success) {
-    console.log('✅ Flip request sent');
+  if (!socket || !socket.connected) {
+    console.error('❌ Not connected to server');
+    return;
+  }
 
-    // Disable button temporarily
-    const flipButton = document.getElementById('flip-button');
-    if (flipButton) {
-      flipButton.disabled = true;
-      flipButton.textContent = 'FLIPPING...';
+  if (!state.roundActive) {
+    console.warn('⚠️ No active round');
+    return;
+  }
 
-      // Re-enable after 2 seconds
-      setTimeout(() => {
-        flipButton.disabled = false;
-        flipButton.textContent = 'FLIP COIN';
-      }, 2000);
-    }
+  console.log('🎲 Sending flip request to server with power...');
+
+  socket.emit('grid_flip_coin', {
+    gameId: state.gameId,
+    playerSlot: state.playerSlot,
+    playerAddress: state.playerAddress,
+    choice: state.roundTarget, // Match the target
+    power: finalPower,
+  });
+
+  // Disable button temporarily
+  const flipButton = document.getElementById('flip-button');
+  if (flipButton) {
+    flipButton.disabled = true;
+    flipButton.textContent = 'FLIPPING...';
+
+    // Re-enable after 2 seconds
+    setTimeout(() => {
+      flipButton.disabled = false;
+      flipButton.textContent = 'FLIP COIN';
+    }, 2000);
   }
 }
 

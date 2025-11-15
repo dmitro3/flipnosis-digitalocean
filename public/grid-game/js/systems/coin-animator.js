@@ -108,9 +108,10 @@ export function updateFlipAnimations() {
     // Calculate rotation
     const rotationAmount = animation.totalRotations * 2 * Math.PI * easedProgress;
 
+    // Clean rotation without wobble
     coin.rotation.x = animation.startRotation.x + rotationAmount;
-    coin.rotation.y = Math.PI / 2 + (Math.sin(progress * Math.PI * 4) * 0.2); // Wobble
-    coin.rotation.z = Math.sin(progress * Math.PI * 2) * 0.1; // Slight tilt
+    coin.rotation.y = Math.PI / 2; // Fixed facing direction
+    coin.rotation.z = 0; // No tilt
 
     animation.progress = progress;
   });

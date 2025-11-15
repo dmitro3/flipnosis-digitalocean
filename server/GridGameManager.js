@@ -393,6 +393,9 @@ class GridGameManager {
         eliminated: eliminated,
       });
       console.log(`📡 Broadcasted grid_round_end for round ${completedRound}`);
+
+      // Also broadcast state update
+      this.broadcastCallback(room, 'grid_state_update', this.getFullGameState(gameId));
     }
 
     // Check for winner
@@ -412,6 +415,7 @@ class GridGameManager {
           winner: game.winner,
           finalRound: completedRound,
         });
+        this.broadcastCallback(room, 'grid_state_update', this.getFullGameState(gameId));
       }
     } else if (activePlayers.length === 0) {
       // Everyone eliminated - last one eliminated wins
@@ -427,6 +431,7 @@ class GridGameManager {
           winner: game.winner,
           finalRound: completedRound,
         });
+        this.broadcastCallback(room, 'grid_state_update', this.getFullGameState(gameId));
       }
     } else {
       // Continue to next round

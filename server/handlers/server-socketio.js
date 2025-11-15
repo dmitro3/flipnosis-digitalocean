@@ -1179,23 +1179,10 @@ initialize(server, dbService) {
           // Check if round should end
           if (this.gridGameManager.allPlayersFlipped(gameId)) {
             setTimeout(() => {
-              const roundResult = this.gridGameManager.endRound(gameId)
+              this.gridGameManager.endRound(gameId)
 
-              // Broadcast round end
-              this.io.to(`game_${gameId}`).emit('grid_round_end', roundResult)
-
-              // Broadcast updated state
-              this.gridGameManager.broadcastState(gameId, (room, event, payload) => {
-                this.io.to(room).emit(event, payload)
-              })
-
-              // If game is over, handle winner
-              if (roundResult.gameOver) {
-                this.io.to(`game_${gameId}`).emit('grid_game_end', {
-                  winner: roundResult.winner,
-                  gameId,
-                })
-              }
+              // GridGameManager.endRound now handles all broadcasts internally
+              // No need to broadcast here - prevents duplicate broadcasts
             }, 2000) // 2 second delay for animations
           }
         } else {
