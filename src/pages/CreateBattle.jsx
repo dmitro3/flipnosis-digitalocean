@@ -555,13 +555,13 @@ const ToggleSwitch = styled.label`
   display: inline-block;
   width: 60px;
   height: 34px;
-  
+
   input {
     opacity: 0;
     width: 0;
     height: 0;
   }
-  
+
   .slider {
     position: absolute;
     cursor: pointer;
@@ -575,7 +575,7 @@ const ToggleSwitch = styled.label`
     border: 2px solid #00ffff;
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
   }
-  
+
   .slider:before {
     position: absolute;
     content: "";
@@ -587,15 +587,60 @@ const ToggleSwitch = styled.label`
     transition: .4s;
     border-radius: 50%;
   }
-  
+
   input:checked + .slider {
     background: linear-gradient(135deg, #00ff00, #39ff14);
     border-color: #00ff00;
     box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
   }
-  
+
   input:checked + .slider:before {
     transform: translateX(26px);
+  }
+`
+
+const ModeSelector = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+`
+
+const ModeButton = styled.button`
+  background: ${props => props.selected
+    ? 'linear-gradient(135deg, #ff1493, #ff69b4)'
+    : 'linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1))'};
+  border: 2px solid ${props => props.selected ? '#ff1493' : '#00ffff'};
+  border-radius: 12px;
+  padding: 0.8rem 1.5rem;
+  color: white;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: ${props => props.selected
+    ? '0 0 25px rgba(255, 20, 147, 0.6)'
+    : '0 0 15px rgba(0, 255, 255, 0.2)'};
+  backdrop-filter: blur(5px);
+
+  &:hover {
+    border-color: ${props => props.selected ? '#ff69b4' : '#9d00ff'};
+    transform: translateY(-2px);
+    box-shadow: ${props => props.selected
+      ? '0 0 30px rgba(255, 20, 147, 0.8)'
+      : '0 0 25px rgba(157, 0, 255, 0.4)'};
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
   }
 `
 
@@ -612,6 +657,7 @@ const CreateBattle = () => {
   const [creatorParticipates, setCreatorParticipates] = useState(false)
   const [ethPriceUSD, setEthPriceUSD] = useState(0)
   const [selectedRoom, setSelectedRoom] = useState(1) // Default to Potion Room (id: 1)
+  const [gameMode, setGameMode] = useState('6player') // Default to 6-player mode
 
   // Progress tracking
   const [currentStep, setCurrentStep] = useState(0)
@@ -652,6 +698,18 @@ const CreateBattle = () => {
     return () => clearInterval(interval)
   }, [])
 
+  // Get max players based on game mode
+  const getMaxPlayers = () => {
+    const modes = {
+      '1v1': 2,
+      '6player': 6,
+      '12player': 12,
+      '18player': 18,
+      '24player': 24
+    }
+    return modes[gameMode] || 6
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!selectedNFT) {
@@ -688,10 +746,11 @@ const CreateBattle = () => {
       setStepStatus({ create: true, approve: false, deposit: false })
       
       // Calculate pricing in ETH
+      const maxPlayers = getMaxPlayers()
       const totalEthNum = Math.round(parseFloat(totalEth) * 1e6) / 1e6
-      // If creator participates, they take 1 seat, so only 3 other players pay
-      const payingPlayers = creatorParticipates ? 3 : 4
-      const perPlayerEth = Math.round((totalEthNum / 4) * 1e6) / 1e6
+      // If creator participates, they take 1 seat, so paying players = maxPlayers - 1
+      const payingPlayers = creatorParticipates ? maxPlayers - 1 : maxPlayers
+      const perPlayerEth = Math.round((totalEthNum / maxPlayers) * 1e6) / 1e6
       const entryFeeWei = ethers.parseEther(perPlayerEth.toString())
 
       // Percent fee: 5% of per-player entry (in wei)
@@ -730,7 +789,9 @@ const CreateBattle = () => {
         entry_fee: perPlayerEth, // store for display if server desires
         service_fee: ethers.formatEther(serviceFeeWei),
         creator_participates: creatorParticipates, // Add creator participation flag
-        room_type: selectedRoom === 2 ? 'lab' : selectedRoom === 3 ? 'cyber' : selectedRoom === 4 ? 'mech' : 'potion' // Add room type (default to potion if not selected)
+        room_type: selectedRoom === 2 ? 'lab' : selectedRoom === 3 ? 'cyber' : selectedRoom === 4 ? 'mech' : 'potion', // Add room type (default to potion if not selected)
+        game_mode: gameMode, // Add game mode (1v1, 6player, etc.)
+        max_players: maxPlayers // Add max players for this game
       }
       
       // Validate required fields
@@ -864,7 +925,46 @@ const CreateBattle = () => {
                 </Button>
               </div>
             )}
-            
+
+            {/* Game Mode Selector */}
+            <ModeSelector>
+              <ModeButton
+                type="button"
+                selected={gameMode === '1v1'}
+                onClick={() => setGameMode('1v1')}
+              >
+                1v1
+              </ModeButton>
+              <ModeButton
+                type="button"
+                selected={gameMode === '6player'}
+                onClick={() => setGameMode('6player')}
+              >
+                6 Players
+              </ModeButton>
+              <ModeButton
+                type="button"
+                selected={gameMode === '12player'}
+                onClick={() => setGameMode('12player')}
+              >
+                12 Players
+              </ModeButton>
+              <ModeButton
+                type="button"
+                selected={gameMode === '18player'}
+                onClick={() => setGameMode('18player')}
+              >
+                18 Players
+              </ModeButton>
+              <ModeButton
+                type="button"
+                selected={gameMode === '24player'}
+                onClick={() => setGameMode('24player')}
+              >
+                24 Players
+              </ModeButton>
+            </ModeSelector>
+
             <form onSubmit={handleSubmit}>
               <FourBoxGrid>
                 {/* Top Left: Load Your NFT */}
@@ -992,7 +1092,9 @@ const CreateBattle = () => {
                       <div>
                         <ToggleLabel>Creator Participates</ToggleLabel>
                         <ToggleDescription>
-                          {creatorParticipates ? 'You will take 1 seat (3 others join)' : 'You will not participate (4 others join)'}
+                          {creatorParticipates
+                            ? `You will take 1 seat (${getMaxPlayers() - 1} others join)`
+                            : `You will not participate (${getMaxPlayers()} others join)`}
                         </ToggleDescription>
                       </div>
                       <ToggleSwitch>
@@ -1022,12 +1124,13 @@ const CreateBattle = () => {
                             <span>{(() => {
                               const n = parseFloat(totalEth || '0')
                               if (!n || n <= 0) return '0 ETH'
-                              const perPlayer = n / 4
+                              const maxPlayers = getMaxPlayers()
+                              const perPlayer = n / maxPlayers
                               return parseFloat(perPlayer.toFixed(6)).toString() + ' ETH'
                             })()}</span>
                             {ethPriceUSD > 0 && (
                               <span style={{ fontSize: '0.95rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
-                                ≈ ${((parseFloat(totalEth || '0') / 4) * ethPriceUSD).toFixed(2)} USD
+                                ≈ ${((parseFloat(totalEth || '0') / getMaxPlayers()) * ethPriceUSD).toFixed(2)} USD
                               </span>
                             )}
                           </span>
@@ -1038,15 +1141,22 @@ const CreateBattle = () => {
                             <span>{(() => {
                               const n = parseFloat(totalEth || '0')
                               if (!n || n <= 0) return '0 ETH'
+                              const maxPlayers = getMaxPlayers()
                               // Total pool = what others contribute
-                              // If creator participates: 3 others pay = 0.75 ETH
-                              // If creator doesn't: 4 others pay = 1.0 ETH
-                              const poolFromOthers = creatorParticipates ? n * 0.75 : n
+                              // If creator participates: (maxPlayers - 1) others pay
+                              // If creator doesn't: maxPlayers others pay
+                              const payingPlayers = creatorParticipates ? maxPlayers - 1 : maxPlayers
+                              const poolFromOthers = (n / maxPlayers) * payingPlayers
                               return parseFloat(poolFromOthers.toFixed(6)).toString() + ' ETH'
                             })()}</span>
                             {ethPriceUSD > 0 && (
                               <span style={{ fontSize: '0.95rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
-                                ≈ ${((creatorParticipates ? parseFloat(totalEth || '0') * 0.75 : parseFloat(totalEth || '0')) * ethPriceUSD).toFixed(2)} USD
+                                ≈ ${((() => {
+                                  const n = parseFloat(totalEth || '0')
+                                  const maxPlayers = getMaxPlayers()
+                                  const payingPlayers = creatorParticipates ? maxPlayers - 1 : maxPlayers
+                                  return (n / maxPlayers) * payingPlayers * ethPriceUSD
+                                })()).toFixed(2)} USD
                               </span>
                             )}
                           </span>
@@ -1080,14 +1190,16 @@ const CreateBattle = () => {
                             <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{(() => {
                               const n = parseFloat(totalEth || '0')
                               if (!n || n <= 0) return '0 ETH'
-                              
+                              const maxPlayers = getMaxPlayers()
+
                               // Pool from others (what creator earns from)
-                              const poolFromOthers = creatorParticipates ? n * 0.75 : n
-                              
+                              const payingPlayers = creatorParticipates ? maxPlayers - 1 : maxPlayers
+                              const poolFromOthers = (n / maxPlayers) * payingPlayers
+
                               // Service fee is 5% of the total pool amount
                               // Note: Flat fee is paid by players, not deducted from creator earnings
                               const serviceFee = n * 0.05
-                              
+
                               // Earnings = pool from others - service fee
                               const earnings = poolFromOthers - serviceFee
                               return parseFloat(earnings.toFixed(6)).toString() + ' ETH'
@@ -1097,7 +1209,9 @@ const CreateBattle = () => {
                                 ≈ ${((() => {
                                   const n = parseFloat(totalEth || '0')
                                   if (!n || n <= 0) return 0
-                                  const poolFromOthers = creatorParticipates ? n * 0.75 : n
+                                  const maxPlayers = getMaxPlayers()
+                                  const payingPlayers = creatorParticipates ? maxPlayers - 1 : maxPlayers
+                                  const poolFromOthers = (n / maxPlayers) * payingPlayers
                                   const serviceFee = n * 0.05
                                   const earnings = poolFromOthers - serviceFee
                                   return earnings * ethPriceUSD
