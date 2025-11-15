@@ -7,7 +7,15 @@
 class GridGameManager {
   constructor() {
     this.games = new Map(); // gameId -> game state
+    this.broadcastCallback = null; // Will be set by socket handler
     console.log('🎮 GridGameManager initialized');
+  }
+
+  /**
+   * Set broadcast callback for socket emissions
+   */
+  setBroadcastCallback(callback) {
+    this.broadcastCallback = callback;
   }
 
   /**
@@ -186,6 +194,24 @@ class GridGameManager {
 
     // Start first round
     this.startRound(gameId);
+
+    // Emit socket events to clients
+    if (this.broadcastCallback) {
+      const room = `game_${gameId}`;
+
+      // Broadcast game start
+      this.broadcastCallback(room, 'grid_game_start', { gameId });
+
+      // Broadcast state update
+      this.broadcastCallback(room, 'grid_state_update', this.getFullGameState(gameId));
+
+      // Broadcast round start
+      this.broadcastCallback(room, 'grid_round_start', {
+        roundNumber: game.currentRound,
+        target: game.roundTarget,
+        duration: game.roundTimer,
+      });
+    }
 
     return true;
   }
