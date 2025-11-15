@@ -251,8 +251,13 @@ const StatusBar = styled.div`
 
 const PlayerGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: 1fr;
+  grid-template-columns: ${props => {
+    const maxPlayers = props.maxPlayers || 6;
+    if (maxPlayers <= 6) return 'repeat(3, 1fr)'; // 2 rows of 3
+    if (maxPlayers <= 12) return 'repeat(4, 1fr)'; // 3 rows of 4
+    return 'repeat(6, 1fr)'; // 4 rows of 6 for 18 or 24
+  }};
+  grid-auto-rows: minmax(150px, auto);
   gap: 1rem;
   background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
   border: 3px solid #9d00ff;
@@ -262,7 +267,7 @@ const PlayerGrid = styled.div`
   backdrop-filter: blur(10px);
   box-shadow: 0 0 40px rgba(157, 0, 255, 0.3);
   transition: all 0.3s ease;
-  
+
   &:hover {
     border-color: #00ffff;
     box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
@@ -270,11 +275,10 @@ const PlayerGrid = styled.div`
 
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, 1fr);
     gap: 0.5rem;
     padding: 0.75rem;
-    min-height: 250px;
-    max-height: 250px;
+    min-height: auto;
+    max-height: none;
     border-radius: 15px;
     width: 100%;
     max-width: 100%;
@@ -477,8 +481,8 @@ const LobbyScreen = () => {
       // Hard redirect to avoid any transient React render errors
       if (gameState?.gameId) {
         setTimeout(() => {
-          const roomType = gameState?.room_type || 'potion'
-          window.location.href = `/test-tubes.html?gameId=${gameState.gameId}&room=${roomType}`
+          // Route to grid game for new multi-player modes
+          window.location.href = `/grid-game.html?gameId=${gameState.gameId}`
         }, 50)
       }
     } catch (e) {
@@ -541,7 +545,7 @@ const LobbyScreen = () => {
 
   const isCreator = gameState.creator?.toLowerCase() === address?.toLowerCase()
   const userInGame = gameState.playerSlots?.some(addr => addr?.toLowerCase() === address?.toLowerCase())
-  const canJoin = !userInGame && gameState.currentPlayers < 4
+  const canJoin = !userInGame && gameState.currentPlayers < (gameState.maxPlayers || 6)
 
   // Winner claim gate: only show if player is winner and server marked completed
   const isWinner = gameState?.winner && gameState.winner.toLowerCase?.() === address?.toLowerCase?.()
@@ -966,7 +970,7 @@ const LobbyScreen = () => {
             <>
               <h2>⏳ Waiting for Players</h2>
               <p style={{ fontSize: '1.2rem', margin: 0 }}>
-                {gameState.currentPlayers} / 4 Players
+                {gameState.currentPlayers} / {gameState.maxPlayers || 6} Players
               </p>
             </>
           )}
@@ -975,10 +979,10 @@ const LobbyScreen = () => {
               onClick={handleStartEarly}
               style={{ marginTop: '1rem', background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
             >
-              🚀 Start Game Early ({gameState.currentPlayers}/4)
+              🚀 Start Game Early ({gameState.currentPlayers}/{gameState.maxPlayers || 6})
             </JoinActionButton>
           )}
-          {isCreator && gameState.status !== 'cancelled' && gameState.currentPlayers < 4 && (
+          {isCreator && gameState.status !== 'cancelled' && gameState.currentPlayers < (gameState.maxPlayers || 6) && (
             <JoinActionButton
               onClick={handleCancelGame}
               disabled={isCancelling}
@@ -994,8 +998,8 @@ const LobbyScreen = () => {
           )}
         </StatusBar>
 
-        <PlayerGrid>
-          {Array.from({ length: 4 }, (_, i) => {
+        <PlayerGrid maxPlayers={gameState.maxPlayers || 6}>
+          {Array.from({ length: gameState.maxPlayers || 6 }, (_, i) => {
             const playerAddr = gameState.playerOrder?.[i] || gameState.playerSlots?.[i]
             const player = playerAddr ? gameState.players?.[playerAddr.toLowerCase()] : null
             const isCurrentUser = playerAddr?.toLowerCase() === address?.toLowerCase()
