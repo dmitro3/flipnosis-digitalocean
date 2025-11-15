@@ -130,7 +130,9 @@ export function updateRoundTimer(timeRemaining) {
  * Update power meter
  */
 export function updatePowerMeter() {
-  if (!state.powerActive) return;
+  if (!state.powerActive) {
+    return state.powerValue; // Return current value even when not active
+  }
 
   state.powerValue += GAME_CONFIG.POWER_CYCLE_SPEED * state.powerDirection;
 

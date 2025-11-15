@@ -642,8 +642,15 @@ function updatePowerBar() {
   const powerValue = updatePowerMeter();
   const powerBar = document.getElementById('power-bar');
 
-  if (powerBar) {
-    powerBar.style.width = `${powerValue * 100}%`;
+  if (powerBar && powerValue !== undefined) {
+    const percentage = Math.floor(powerValue * 100);
+    powerBar.style.width = `${percentage}%`;
+
+    // Debug log when charging
+    const state = getGameState();
+    if (state.powerActive && percentage % 10 === 0) {
+      console.log(`⚡ Power charging: ${percentage}%`);
+    }
   }
 }
 

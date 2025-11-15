@@ -223,6 +223,9 @@ class GridGameManager {
     const game = this.games.get(gameId);
     if (!game) return;
 
+    // Reset the ending flag for new round
+    game.isEndingRound = false;
+
     //Set phase to round_active
     game.phase = 'round_active';
 
@@ -235,6 +238,7 @@ class GridGameManager {
       if (!player.isEliminated) {
         player.hasFlipped = false;
         player.choice = null;
+        player.targetHit = false;
       }
     });
 
@@ -327,6 +331,7 @@ class GridGameManager {
 
     player.hasFlipped = true;
     player.choice = choice;
+    player.targetHit = targetHit; // Store result for endRound()
 
     console.log(`🎲 Player ${playerAddress} flipped: power=${power}, target=${game.roundTarget}, hit=${targetHit}`);
 
@@ -357,6 +362,13 @@ class GridGameManager {
     const game = this.games.get(gameId);
     if (!game) return;
 
+    // Prevent duplicate endRound calls for the same round
+    if (game.isEndingRound) {
+      console.log(`⚠️ endRound already in progress for game ${gameId}, skipping duplicate call`);
+      return;
+    }
+
+    game.isEndingRound = true;
     const completedRound = game.currentRound;
     console.log(`🏁 Ending round ${completedRound} for game ${gameId}`);
 
@@ -372,16 +384,28 @@ class GridGameManager {
     Object.values(game.players).forEach(player => {
       if (player.isEliminated) return;
 
+      let lostLife = false;
+
       // Players who didn't flip lose a life
       if (!player.hasFlipped) {
         player.lives--;
+        lostLife = true;
         console.log(`⚠️ Player ${player.address} didn't flip, lives: ${player.lives}`);
+      }
+      // Players who flipped but missed the target lose a life
+      else if (!player.targetHit) {
+        player.lives--;
+        lostLife = true;
+        console.log(`❌ Player ${player.address} missed target, lives: ${player.lives}`);
+      } else {
+        console.log(`✅ Player ${player.address} hit target, lives: ${player.lives}`);
+      }
 
-        if (player.lives <= 0) {
-          player.isEliminated = true;
-          eliminated.push(player.address);
-          console.log(`💀 Player ${player.address} eliminated (didn't flip)`);
-        }
+      // Check for elimination
+      if (lostLife && player.lives <= 0) {
+        player.isEliminated = true;
+        eliminated.push(player.address);
+        console.log(`💀 Player ${player.address} eliminated`);
       }
     });
 
@@ -403,9 +427,10 @@ class GridGameManager {
 
     if (activePlayers.length === 1) {
       // We have a winner!
-      game.winner = activePlayers[0].address;
+      const winnerPlayer = activePlayers[0];
+      game.winner = winnerPlayer.address;
       game.phase = 'game_over';
-      console.log(`🏆 Game ${gameId} over! Winner: ${game.winner}`);
+      console.log(`🏆 Game ${gameId} over! Winner: ${game.winner} (Slot ${winnerPlayer.slotNumber})`);
 
       // Broadcast game end
       if (this.broadcastCallback) {
@@ -413,15 +438,19 @@ class GridGameManager {
         this.broadcastCallback(room, 'grid_game_end', {
           gameId: game.gameId,
           winner: game.winner,
+          winnerSlot: winnerPlayer.slotNumber,
+          winnerName: winnerPlayer.name,
           finalRound: completedRound,
         });
         this.broadcastCallback(room, 'grid_state_update', this.getFullGameState(gameId));
       }
     } else if (activePlayers.length === 0) {
       // Everyone eliminated - last one eliminated wins
-      game.winner = eliminated[eliminated.length - 1];
+      const winnerAddress = eliminated[eliminated.length - 1];
+      const winnerPlayer = game.players[winnerAddress];
+      game.winner = winnerAddress;
       game.phase = 'game_over';
-      console.log(`🏆 Game ${gameId} over! Last survivor: ${game.winner}`);
+      console.log(`🏆 Game ${gameId} over! Last survivor: ${game.winner} (Slot ${winnerPlayer?.slotNumber})`);
 
       // Broadcast game end
       if (this.broadcastCallback) {
@@ -429,6 +458,8 @@ class GridGameManager {
         this.broadcastCallback(room, 'grid_game_end', {
           gameId: game.gameId,
           winner: game.winner,
+          winnerSlot: winnerPlayer?.slotNumber,
+          winnerName: winnerPlayer?.name,
           finalRound: completedRound,
         });
         this.broadcastCallback(room, 'grid_state_update', this.getFullGameState(gameId));

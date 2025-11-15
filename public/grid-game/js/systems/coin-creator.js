@@ -364,6 +364,108 @@ export function createPlayerLabel(slotNumber, position, playerData) {
 }
 
 /**
+ * Update player label with new player data
+ */
+export function updatePlayerLabel(slotNumber, playerData) {
+  const sprite = playerLabels[slotNumber];
+  if (!sprite) {
+    console.warn(`⚠️ No player label found for slot ${slotNumber}`);
+    return;
+  }
+
+  console.log(`🏷️ Updating player label for slot ${slotNumber}:`, playerData);
+
+  // Create new canvas with updated data
+  const canvas = document.createElement('canvas');
+  canvas.width = 320;
+  canvas.height = 100;
+  const ctx = canvas.getContext('2d');
+
+  // Background box with border
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.roundRect = function(x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    return ctx;
+  };
+
+  ctx.roundRect(5, 5, 310, 90, 10).fill();
+
+  // Gold border
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 3;
+  ctx.roundRect(5, 5, 310, 90, 10).stroke();
+
+  // Draw avatar
+  const avatarX = 15;
+  const avatarY = 15;
+  const avatarSize = 70;
+
+  // Avatar background
+  ctx.fillStyle = '#FFD700';
+  ctx.roundRect(avatarX, avatarY, avatarSize, avatarSize, 8).fill();
+
+  // Try to load player avatar if available
+  if (playerData.avatar) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(avatarX, avatarY, avatarSize, avatarSize, 8);
+      ctx.clip();
+      ctx.drawImage(img, avatarX, avatarY, avatarSize, avatarSize);
+      ctx.restore();
+
+      // Update texture
+      const texture = new THREE.CanvasTexture(canvas);
+      sprite.material.map = texture;
+      sprite.material.needsUpdate = true;
+    };
+    img.onerror = () => {
+      drawDefaultAvatar(ctx, avatarX, avatarY, avatarSize, slotNumber);
+      const texture = new THREE.CanvasTexture(canvas);
+      sprite.material.map = texture;
+      sprite.material.needsUpdate = true;
+    };
+    img.src = playerData.avatar;
+  } else {
+    drawDefaultAvatar(ctx, avatarX, avatarY, avatarSize, slotNumber);
+    const texture = new THREE.CanvasTexture(canvas);
+    sprite.material.map = texture;
+    sprite.material.needsUpdate = true;
+  }
+
+  // Player name
+  ctx.fillStyle = '#FFD700';
+  ctx.font = 'bold 24px Orbitron';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  const playerName = playerData.name || `Player ${slotNumber + 1}`;
+  ctx.fillText(playerName, avatarX + avatarSize + 15, avatarY + 8);
+
+  // Player info (lives)
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '18px Orbitron';
+  const livesText = `♥ ${playerData.lives || 3} Lives`;
+  ctx.fillText(livesText, avatarX + avatarSize + 15, avatarY + 40);
+
+  // Update sprite userData
+  sprite.userData.playerData = playerData;
+
+  console.log(`✅ Updated label for slot ${slotNumber} with name: ${playerName}`);
+}
+
+/**
  * Draw default avatar (simple icon)
  */
 function drawDefaultAvatar(ctx, x, y, size, slotNumber) {
@@ -562,6 +664,7 @@ export default {
   createCoin,
   createCoinBackground,
   createPlayerLabel,
+  updatePlayerLabel,
   createCompleteCoinSetup,
   removeCoin,
   updateCoinPosition,

@@ -148,12 +148,22 @@ function handlePlayerJoined(data) {
 
   const { slotNumber, playerAddress, playerName, playerData } = data;
 
-  // Update player in state
-  updatePlayer(slotNumber, {
+  // Prepare full player data for label update
+  const fullPlayerData = {
     address: playerAddress,
-    name: playerName || `Player ${slotNumber + 1}`,
+    name: playerName || playerData?.name || `Player ${slotNumber + 1}`,
     isActive: true,
+    lives: playerData?.lives || 3,
+    avatar: playerData?.avatar || null,
     ...playerData,
+  };
+
+  // Update player in state
+  updatePlayer(slotNumber, fullPlayerData);
+
+  // Update player label with real data
+  import('../systems/coin-creator.js').then(({ updatePlayerLabel }) => {
+    updatePlayerLabel(slotNumber, fullPlayerData);
   });
 
   // If this is us, set our slot
@@ -212,13 +222,13 @@ function handleGameStart(data) {
 function handleGameEnd(data) {
   console.log('🏁 Game ended:', data);
 
-  const { winner, winnerSlot } = data;
+  const { winner, winnerSlot, winnerName } = data;
 
   setGameStatus('completed');
   setWinner(winnerSlot);
 
   // Show winner announcement
-  showWinnerAnnouncement(winner, winnerSlot);
+  showWinnerAnnouncement(winner, winnerSlot, winnerName);
 }
 
 /**
@@ -359,6 +369,13 @@ function handleStateUpdate(data) {
     Object.values(players).forEach((playerData) => {
       if (playerData && playerData.slotNumber !== undefined) {
         updatePlayer(playerData.slotNumber, playerData);
+
+        // Update player label if player is active
+        if (playerData.address) {
+          import('../systems/coin-creator.js').then(({ updatePlayerLabel }) => {
+            updatePlayerLabel(playerData.slotNumber, playerData);
+          });
+        }
       }
     });
   }
@@ -424,11 +441,12 @@ function startRoundTimer(duration) {
 /**
  * Show winner announcement
  */
-function showWinnerAnnouncement(winnerAddress, winnerSlot) {
+function showWinnerAnnouncement(winnerAddress, winnerSlot, winnerName) {
   // TODO: Create winner UI overlay
-  console.log(`🏆 Winner: ${winnerAddress} (Slot ${winnerSlot})`);
+  const displayName = winnerName || `Player ${winnerSlot + 1}`;
+  console.log(`🏆 Winner: ${winnerAddress} (Slot ${winnerSlot}) - ${displayName}`);
 
-  alert(`🏆 Player ${winnerSlot + 1} wins!`);
+  alert(`🏆 ${displayName} wins!`);
 }
 
 /**
