@@ -29,7 +29,7 @@ export const CAMERA_CONFIG = {
   NEAR: 0.1,                   // Near clipping plane
   FAR: 5000,                   // Far clipping plane
   POSITION_X: 0,               // Camera X position
-  POSITION_Y: 400,             // Camera Y position
+  POSITION_Y: 0,               // Camera Y position - centered at 0 for flat view
   POSITION_Z: 1200,            // Camera Z position (distance from grid)
   LOOK_AT_Y: 0,                // Camera look-at Y coordinate
 };

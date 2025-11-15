@@ -215,6 +215,10 @@ function setupUI() {
   // Change coin button
   const changeCoinButton = document.getElementById('change-coin-button');
   changeCoinButton.addEventListener('click', handleChangeCoinClick);
+
+  // Start game button
+  const startGameButton = document.getElementById('start-game-button');
+  startGameButton.addEventListener('click', handleStartGameClick);
 }
 
 /**
@@ -559,6 +563,39 @@ function handleFlipButtonClick() {
         flipButton.textContent = 'FLIP COIN';
       }, 2000);
     }
+  }
+}
+
+/**
+ * Handle start game button click
+ */
+function handleStartGameClick() {
+  console.log('🚀 Start game button clicked');
+
+  const socket = getSocket();
+  if (!socket) {
+    console.error('❌ No socket connection');
+    return;
+  }
+
+  const state = getGameState();
+  if (!state.gameId || !state.playerAddress) {
+    console.error('❌ Missing game ID or player address');
+    return;
+  }
+
+  console.log('🎮 Requesting game start...');
+
+  socket.emit('grid_start_game', {
+    gameId: state.gameId,
+    playerAddress: state.playerAddress,
+  });
+
+  // Disable button
+  const startButton = document.getElementById('start-game-button');
+  if (startButton) {
+    startButton.disabled = true;
+    startButton.textContent = 'STARTING...';
   }
 }
 

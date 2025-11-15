@@ -184,6 +184,12 @@ function handleGameStart(data) {
 
   setGameStatus('active');
 
+  // Hide start button
+  const startButton = document.getElementById('start-game-button');
+  if (startButton) {
+    startButton.style.display = 'none';
+  }
+
   // Update game data
   if (data.gameData) {
     // Update any game-wide settings
@@ -214,6 +220,13 @@ function handleRoundStart(data) {
   const { roundNumber, target, duration } = data;
 
   startRound(roundNumber, target);
+
+  // Enable flip button
+  const flipButton = document.getElementById('flip-button');
+  if (flipButton) {
+    flipButton.disabled = false;
+    flipButton.textContent = 'FLIP COIN';
+  }
 
   // Start countdown timer
   startRoundTimer(duration);

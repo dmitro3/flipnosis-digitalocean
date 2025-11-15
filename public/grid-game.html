@@ -235,6 +235,42 @@
             transform: none;
         }
 
+        /* Flip Button - Green */
+        #flip-button {
+            background: linear-gradient(135deg, #00ff88, #00cc44);
+            border: 2px solid #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        #flip-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #00cc44, #00ff88);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.5);
+        }
+
+        /* Change Coin Button - Yellow */
+        #change-coin-button {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        #change-coin-button:hover {
+            background: linear-gradient(135deg, #FFA500, #FFD700);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+        }
+
+        /* Start Game Button - Pink */
+        #start-game-button {
+            background: linear-gradient(135deg, #ff1493, #ff69b4);
+            border: 2px solid #ff1493;
+            box-shadow: 0 0 15px rgba(255, 20, 147, 0.3);
+        }
+
+        #start-game-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            box-shadow: 0 0 25px rgba(255, 20, 147, 0.5);
+        }
+
         /* Loading Screen */
         #loading-screen {
             position: fixed;
@@ -496,7 +532,8 @@
 
             <!-- Controls -->
             <div class="sidebar-section">
-                <button class="btn" id="flip-button">FLIP COIN</button>
+                <button class="btn" id="start-game-button">START GAME</button>
+                <button class="btn" id="flip-button" disabled>FLIP COIN</button>
                 <button class="btn" id="change-coin-button">Change Coin</button>
                 <button class="btn" id="mute-button">🔊 Sound On</button>
             </div>
