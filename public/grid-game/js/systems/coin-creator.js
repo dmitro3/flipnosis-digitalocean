@@ -18,9 +18,9 @@ const playerLabels = [];
 export function createCoin(slotNumber, position, customTextures = null) {
   const scene = getScene();
 
-  // Coin geometry - matching original implementation
-  const coinRadius = 65;
-  const coinThickness = 16;
+  // Coin geometry - use config values for size
+  const coinRadius = COIN_CONFIG.RADIUS;
+  const coinThickness = COIN_CONFIG.THICKNESS;
   const geometry = new THREE.CylinderGeometry(
     coinRadius,
     coinRadius,

@@ -37,7 +37,7 @@ export const CAMERA_CONFIG = {
 // Game Settings
 export const GAME_CONFIG = {
   ROUND_DURATION: 30,          // Round duration in seconds
-  POWER_CYCLE_SPEED: 0.02,     // Power meter cycle speed
+  POWER_CHARGE_SPEED: 0.006,   // Power meter charge speed (0.6% per frame, like old system)
   SWEET_SPOT_MIN: 0.65,        // Sweet spot start (65%)
   SWEET_SPOT_MAX: 0.75,        // Sweet spot end (75%)
   MAX_LIVES: 3,                // Starting lives per player
