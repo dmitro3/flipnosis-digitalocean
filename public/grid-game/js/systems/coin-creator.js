@@ -253,35 +253,89 @@ export function createCoinBackground(slotNumber, position) {
 }
 
 /**
- * Create player label (name/avatar) above coin
+ * Create player label (name/avatar) below coin
  */
 export function createPlayerLabel(slotNumber, position, playerData) {
-  // For now, we'll use Three.js text
-  // In production, you might use CSS3D or sprites
-
   const scene = getScene();
 
-  // Create text using canvas texture
+  // Create canvas with player info
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 64;
+  canvas.width = 320;
+  canvas.height = 100;
   const ctx = canvas.getContext('2d');
 
-  // Background
-  ctx.fillStyle = 'rgba(0, 255, 255, 0.2)';
-  ctx.fillRect(0, 0, 256, 64);
+  // Background box with border
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.roundRect = function(x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    return ctx;
+  };
 
-  // Border
-  ctx.strokeStyle = '#00ffff';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(0, 0, 256, 64);
+  ctx.roundRect(5, 5, 310, 90, 10).fill();
 
-  // Text
-  ctx.fillStyle = '#00ffff';
+  // Gold border
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 3;
+  ctx.roundRect(5, 5, 310, 90, 10).stroke();
+
+  // Draw avatar placeholder or actual avatar if provided
+  const avatarX = 15;
+  const avatarY = 15;
+  const avatarSize = 70;
+
+  // Avatar background
+  ctx.fillStyle = '#FFD700';
+  ctx.roundRect(avatarX, avatarY, avatarSize, avatarSize, 8).fill();
+
+  // Try to load player avatar if available
+  if (playerData.avatar) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(avatarX, avatarY, avatarSize, avatarSize, 8);
+      ctx.clip();
+      ctx.drawImage(img, avatarX, avatarY, avatarSize, avatarSize);
+      ctx.restore();
+
+      // Update texture
+      const texture = new THREE.CanvasTexture(canvas);
+      sprite.material.map = texture;
+      sprite.material.needsUpdate = true;
+    };
+    img.onerror = () => {
+      // Use default if avatar fails to load
+      drawDefaultAvatar(ctx, avatarX, avatarY, avatarSize, slotNumber);
+    };
+    img.src = playerData.avatar;
+  } else {
+    drawDefaultAvatar(ctx, avatarX, avatarY, avatarSize, slotNumber);
+  }
+
+  // Player name
+  ctx.fillStyle = '#FFD700';
   ctx.font = 'bold 24px Orbitron';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(playerData.name || `Player ${slotNumber + 1}`, 128, 32);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  const playerName = playerData.name || `Player ${slotNumber + 1}`;
+  ctx.fillText(playerName, avatarX + avatarSize + 15, avatarY + 8);
+
+  // Player info (lives, etc.)
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '18px Orbitron';
+  const livesText = `♥ ${playerData.lives || 3} Lives`;
+  ctx.fillText(livesText, avatarX + avatarSize + 15, avatarY + 40);
 
   // Create texture and sprite
   const texture = new THREE.CanvasTexture(canvas);
@@ -291,21 +345,45 @@ export function createPlayerLabel(slotNumber, position, playerData) {
   });
 
   const sprite = new THREE.Sprite(spriteMaterial);
-  sprite.scale.set(120, 30, 1);
+  sprite.scale.set(160, 50, 1);
   sprite.position.set(
     position.x,
-    position.y + COIN_CONFIG.RADIUS + 60,
+    position.y - COIN_CONFIG.RADIUS - 80, // Below coin
     position.z
   );
 
   sprite.userData = {
     slotNumber,
+    playerData,
   };
 
   scene.add(sprite);
   playerLabels[slotNumber] = sprite;
 
   return sprite;
+}
+
+/**
+ * Draw default avatar (simple icon)
+ */
+function drawDefaultAvatar(ctx, x, y, size, slotNumber) {
+  // Draw a simple player icon
+  ctx.fillStyle = '#0a0f23';
+  ctx.beginPath();
+  ctx.arc(x + size / 2, y + size / 3, size / 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Body
+  ctx.beginPath();
+  ctx.arc(x + size / 2, y + size * 0.7, size / 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Player number
+  ctx.fillStyle = '#FFD700';
+  ctx.font = 'bold 16px Orbitron';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`P${slotNumber + 1}`, x + size / 2, y + size * 0.7);
 }
 
 /**
