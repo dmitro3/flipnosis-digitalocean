@@ -1143,14 +1143,17 @@ initialize(server, dbService) {
         })
 
         if (joinResult.success) {
+          // Emit player joined event to the joining player
+          socket.emit('grid_player_joined', {
+            success: true,
+            slotNumber: joinResult.slotNumber,
+            playerAddress: playerAddress,
+            playerData: this.gridGameManager.getFullGameState(gameId).players[playerAddress],
+          })
+
           // Broadcast updated state to all players
           this.gridGameManager.broadcastState(gameId, (room, event, payload) => {
             this.io.to(room).emit(event, payload)
-          })
-
-          socket.emit('grid_joined', {
-            success: true,
-            slotNumber: joinResult.slotNumber,
           })
         } else {
           socket.emit('grid_error', { message: joinResult.error })
@@ -1217,17 +1220,11 @@ initialize(server, dbService) {
         const started = this.gridGameManager.startGame(gameId)
 
         if (started) {
-          // Broadcast game start
-          this.gridGameManager.broadcastState(gameId, (room, event, payload) => {
-            this.io.to(room).emit(event, payload)
-          })
-
-          // Broadcast round start
-          const state = this.gridGameManager.getFullGameState(gameId)
-          this.io.to(`game_${gameId}`).emit('grid_round_start', {
-            roundNumber: state.currentRound,
-            target: state.roundTarget,
-          })
+          // GridGameManager.startGame() already broadcasts all necessary events:
+          // - grid_game_start
+          // - grid_state_update
+          // - grid_round_start
+          // No need to emit them again here
         } else {
           socket.emit('grid_error', { message: 'Failed to start game' })
         }
