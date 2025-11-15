@@ -187,15 +187,17 @@ function applyCoinTextures(slotNumber, headsImagePath, tailsImagePath) {
           tailsTexture.magFilter = THREE.LinearFilter;
           tailsTexture.anisotropy = 16;
 
-          // Apply textures to coin materials
-          // coin.material is an array: [edge, top/heads, bottom/tails]
+          // Apply textures to coin ShaderMaterial uniforms
+          // coin.material is an array: [edge, heads, tails]
           if (coin.material && Array.isArray(coin.material)) {
-            if (coin.material[1]) {
-              coin.material[1].map = headsTexture;
+            // Update heads material (index 1) - ShaderMaterial uniform
+            if (coin.material[1] && coin.material[1].uniforms) {
+              coin.material[1].uniforms.map.value = headsTexture;
               coin.material[1].needsUpdate = true;
             }
-            if (coin.material[2]) {
-              coin.material[2].map = tailsTexture;
+            // Update tails material (index 2) - ShaderMaterial uniform
+            if (coin.material[2] && coin.material[2].uniforms) {
+              coin.material[2].uniforms.map.value = tailsTexture;
               coin.material[2].needsUpdate = true;
             }
           }
