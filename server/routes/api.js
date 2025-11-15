@@ -2526,7 +2526,9 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         entry_fee,
         service_fee,
         creator_participates,
-        room_type
+        room_type,
+        game_mode,
+        max_players
       } = req.body
 
       console.log('📥 Request body received:', {
@@ -2537,7 +2539,9 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         entry_fee,
         service_fee,
         creator_participates,
-        room_type
+        room_type,
+        game_mode,
+        max_players
       })
 
       // Validate required fields
@@ -2564,9 +2568,10 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         nft_chain: nft_chain || 'base',
         entry_fee: parseFloat(entry_fee),
         service_fee: parseFloat(service_fee || 0.50),
-        max_players: 8, // Battle royale game is 8 players max
+        max_players: max_players || 6, // Default to 6 if not specified
         creator_participates: creator_participates || false,
         room_type: room_type || 'potion',
+        game_mode: game_mode || '6player', // Default to 6player mode
         status: 'filling' // Explicitly set initial status
       }
 
