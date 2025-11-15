@@ -83,6 +83,10 @@ async function initGame() {
     initializeSocket(gameId, playerAddress);
     console.log('✅ Socket initialized');
 
+    // Load NFT data
+    updateLoadingText('Loading prize NFT...');
+    loadNFTData(gameId);
+
     // Hide loading screen
     setTimeout(() => {
       hideLoadingScreen();
@@ -207,6 +211,23 @@ function setupUI() {
   // Mute button
   const muteButton = document.getElementById('mute-button');
   muteButton.addEventListener('click', handleMuteButtonClick);
+
+  // Change coin button
+  const changeCoinButton = document.getElementById('change-coin-button');
+  changeCoinButton.addEventListener('click', handleChangeCoinClick);
+
+  // Load player coin images
+  loadPlayerCoinImages();
+}
+
+/**
+ * Handle change coin button click
+ */
+function handleChangeCoinClick() {
+  console.log('🎨 Change coin clicked');
+  // Navigate to coin customization page or show modal
+  // For now, redirect to profile page
+  window.location.href = '/profile';
 }
 
 /**
@@ -298,6 +319,60 @@ function handleMuteButtonClick() {
 
   const isMuted = button.textContent.includes('Off');
   button.textContent = isMuted ? '🔊 Sound On' : '🔇 Sound Off';
+}
+
+/**
+ * Load NFT data from server
+ */
+async function loadNFTData(gameId) {
+  try {
+    const response = await fetch(`/api/battle-royale/${gameId}`);
+    const data = await response.json();
+
+    if (data && data.nft_image) {
+      const nftImage = document.getElementById('nft-image');
+      const nftName = document.getElementById('nft-name');
+
+      if (nftImage) {
+        nftImage.src = data.nft_image;
+        nftImage.alt = data.nft_name || 'Prize NFT';
+      }
+
+      if (nftName) {
+        nftName.textContent = data.nft_name || data.nft_collection || 'Prize NFT';
+      }
+
+      console.log('✅ Loaded NFT data:', data.nft_name);
+    }
+  } catch (error) {
+    console.error('Failed to load NFT data:', error);
+  }
+}
+
+/**
+ * Load player coin images from localStorage/API
+ */
+async function loadPlayerCoinImages() {
+  try {
+    // Check if player has custom coin images in localStorage
+    const headsImage = localStorage.getItem(`coinImage_heads_${playerAddress}`);
+    const tailsImage = localStorage.getItem(`coinImage_tails_${playerAddress}`);
+
+    const headsPreview = document.getElementById('heads-preview');
+    const tailsPreview = document.getElementById('tails-preview');
+
+    if (headsImage && headsPreview) {
+      headsPreview.src = headsImage;
+    }
+
+    if (tailsImage && tailsPreview) {
+      tailsPreview.src = tailsImage;
+    }
+
+    console.log('✅ Loaded player coin images');
+  } catch (error) {
+    console.error('Failed to load player coin images:', error);
+  }
 }
 
 /**

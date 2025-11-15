@@ -42,6 +42,7 @@ class PhysicsGameManager {
       entryFee: gameData.entry_fee,
       serviceFee: gameData.service_fee,
       room_type: gameData.room_type || 'potion', // Add room type
+      game_mode: gameData.game_mode, // Add game mode (1v1, 6player, etc.)
       // Physics state
       physicsInitialized: false,
       material: 'glass', // Default material
@@ -782,6 +783,7 @@ class PhysicsGameManager {
       entryFee: game.entryFee,
       serviceFee: game.serviceFee,
       room_type: game.room_type || 'potion', // Add room type to state
+      game_mode: game.game_mode, // Add game mode for routing
       // Physics Data
       physicsInitialized: game.physicsInitialized,
       material: game.material,
