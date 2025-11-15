@@ -206,58 +206,6 @@
             font-weight: bold;
         }
 
-        /* Coin Picker */
-        #coin-picker {
-            text-align: center;
-        }
-
-        .coin-preview {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-bottom: 1rem;
-        }
-
-        .coin-preview img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 3px solid #00ffff;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .coin-preview img:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
-        }
-
-        /* NFT Preview */
-        #nft-preview {
-            text-align: center;
-        }
-
-        #nft-image {
-            width: 100%;
-            border-radius: 12px;
-            border: 3px solid #ff1493;
-            box-shadow: 0 0 20px rgba(255, 20, 147, 0.4);
-            margin-bottom: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        #nft-image:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 30px rgba(255, 20, 147, 0.6);
-        }
-
-        #nft-name {
-            color: #ff1493;
-            font-weight: bold;
-            font-size: 0.9rem;
-            text-shadow: 0 0 10px rgba(255, 20, 147, 0.5);
-        }
-
         /* Buttons */
         .btn {
             width: 100%;
@@ -416,6 +364,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
+            position: relative;
         }
 
         .coin-option:hover {
@@ -545,31 +494,11 @@
                 </div>
             </div>
 
-            <!-- Coin Picker -->
-            <div class="sidebar-section">
-                <div class="sidebar-title">Your Coin</div>
-                <div id="coin-picker">
-                    <div class="coin-preview">
-                        <img id="heads-preview" src="/images/heads-default.png" alt="Heads" />
-                        <img id="tails-preview" src="/images/tails-default.png" alt="Tails" />
-                    </div>
-                    <button class="btn" id="change-coin-button">Change Coin</button>
-                </div>
-            </div>
-
             <!-- Controls -->
             <div class="sidebar-section">
                 <button class="btn" id="flip-button">FLIP COIN</button>
+                <button class="btn" id="change-coin-button">Change Coin</button>
                 <button class="btn" id="mute-button">🔊 Sound On</button>
-            </div>
-
-            <!-- Prize NFT -->
-            <div class="sidebar-section" id="prize-nft-section">
-                <div class="sidebar-title">🏆 Prize</div>
-                <div id="nft-preview">
-                    <img id="nft-image" src="" alt="Prize NFT" />
-                    <div id="nft-name">Loading...</div>
-                </div>
             </div>
         </div>
     </div>
@@ -584,6 +513,17 @@
                 <h2>Choose Your Coin Design</h2>
                 <button class="modal-close" id="close-coin-picker">&times;</button>
             </div>
+
+            <!-- FLIP Balance Display -->
+            <div style="text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 215, 0, 0.1); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.3);">
+                <div style="color: #FFD700; font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: bold;">
+                    Your FLIP Balance: <span id="flip-balance">Loading...</span>
+                </div>
+                <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8rem; margin-top: 0.3rem;">
+                    Unlock new coin designs with FLIP tokens
+                </div>
+            </div>
+
             <p class="modal-subtitle">Select the coin design other players will see when you flip</p>
 
             <div id="coin-grid" class="coin-grid">
