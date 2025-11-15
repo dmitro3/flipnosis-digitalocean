@@ -10,7 +10,11 @@ import {
   updatePowerMeter,
   getPowerValue,
   getGameState,
+  updatePlayer,
 } from './core/game-state.js';
+import { calculateGridLayout } from './systems/grid-manager.js';
+import { createCompleteCoinSetup } from './systems/coin-creator.js';
+import { updateFlipAnimations } from './systems/coin-animator.js';
 
 // Global state
 let gameInitialized = false;
@@ -48,9 +52,14 @@ async function initGame() {
     setupUI();
     console.log('✅ UI initialized');
 
+    // Create grid and coins
+    createInitialGrid(mockGameData.maxPlayers);
+    console.log('✅ Grid and coins created');
+
     // Register update callbacks
     registerUpdateCallback(updatePowerBar);
     registerUpdateCallback(updateGameUI);
+    registerUpdateCallback(updateFlipAnimations);
 
     // Start animation loop
     startAnimationLoop();
@@ -60,7 +69,6 @@ async function initGame() {
     hideLoadingScreen();
 
     // TODO: Initialize socket connection
-    // TODO: Create grid and coins
     // TODO: Handle player joins
 
     gameInitialized = true;
@@ -70,6 +78,39 @@ async function initGame() {
     console.error('❌ Error initializing game:', error);
     showError('Failed to initialize game: ' + error.message);
   }
+}
+
+/**
+ * Create initial grid with mock players
+ */
+function createInitialGrid(maxPlayers) {
+  console.log(`📐 Creating grid for ${maxPlayers} players...`);
+
+  const layout = calculateGridLayout(maxPlayers);
+  console.log('Grid layout:', layout);
+
+  // Create coins for each slot
+  for (let i = 0; i < maxPlayers; i++) {
+    const position = layout.positions[i];
+
+    // Mock player data
+    const playerData = {
+      slotNumber: i,
+      address: null,
+      name: `Player ${i + 1}`,
+      avatar: null,
+      isActive: false,
+      isEliminated: false,
+    };
+
+    // Update player in state
+    updatePlayer(i, playerData);
+
+    // Create coin, background, and label
+    createCompleteCoinSetup(i, position, playerData, null);
+  }
+
+  console.log(`✅ Created ${maxPlayers} coins in grid`);
 }
 
 /**
