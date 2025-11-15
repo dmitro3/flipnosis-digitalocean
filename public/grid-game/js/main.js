@@ -225,9 +225,110 @@ function setupUI() {
  */
 function handleChangeCoinClick() {
   console.log('🎨 Change coin clicked');
-  // Navigate to coin customization page or show modal
-  // For now, redirect to profile page
-  window.location.href = '/profile';
+  showCoinPickerModal();
+}
+
+/**
+ * Show coin picker modal
+ */
+function showCoinPickerModal() {
+  const modal = document.getElementById('coin-picker-modal');
+  if (!modal) return;
+
+  // Populate coin options
+  populateCoinPicker();
+
+  // Show modal
+  modal.classList.remove('hidden');
+
+  // Setup close handlers
+  const closeButton = document.getElementById('close-coin-picker');
+  closeButton.onclick = () => modal.classList.add('hidden');
+
+  // Close on backdrop click
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.classList.add('hidden');
+    }
+  };
+}
+
+/**
+ * Populate coin picker with available coins
+ */
+function populateCoinPicker() {
+  const coinGrid = document.getElementById('coin-grid');
+  if (!coinGrid) return;
+
+  // Get currently selected coin from localStorage
+  const savedCoinId = localStorage.getItem('selectedCoinId') || 'plain';
+
+  // Default coins (same as CoinSelector.jsx)
+  const defaultCoins = [
+    { id: 'plain', name: 'Classic', heads: '/coins/plainh.png', tails: '/coins/plaint.png' },
+    { id: 'skull', name: 'Skull', heads: '/coins/skullh.png', tails: '/coins/skullt.png' },
+    { id: 'trump', name: 'Trump', heads: '/coins/trumpheads.webp', tails: '/coins/trumptails.webp' },
+    { id: 'mario', name: 'Mario', heads: '/coins/mario.png', tails: '/coins/luigi.png' },
+    { id: 'jestress', name: 'Jestress', heads: '/coins/jestressh.png', tails: '/coins/jestresst.png' },
+    { id: 'dragon', name: '龙', heads: '/coins/dragonh.png', tails: '/coins/dragont.png' },
+    { id: 'stinger', name: 'Stinger', heads: '/coins/stingerh.png', tails: '/coins/stingert.png' },
+    { id: 'manga', name: 'Heroine', heads: '/coins/mangah.png', tails: '/coins/mangat.png' },
+    { id: 'pharaoh', name: 'Pharaoh', heads: '/coins/pharaohh.png', tails: '/coins/pharaoht.png' },
+    { id: 'calavera', name: 'Calavera', heads: '/coins/calaverah.png', tails: '/coins/calaverat.png' }
+  ];
+
+  // Clear existing options
+  coinGrid.innerHTML = '';
+
+  // Add each coin option
+  defaultCoins.forEach(coin => {
+    const option = document.createElement('div');
+    option.className = 'coin-option';
+    if (coin.id === savedCoinId) {
+      option.classList.add('selected');
+    }
+
+    option.innerHTML = `
+      <div class="coin-preview-pair">
+        <img src="${coin.heads}" alt="${coin.name} Heads" />
+        <img src="${coin.tails}" alt="${coin.name} Tails" />
+      </div>
+      <div class="coin-name">${coin.name}</div>
+    `;
+
+    option.onclick = () => selectCoin(coin);
+
+    coinGrid.appendChild(option);
+  });
+
+  console.log(`✅ Populated ${defaultCoins.length} coin options`);
+}
+
+/**
+ * Select a coin
+ */
+function selectCoin(coin) {
+  console.log('🪙 Selected coin:', coin.name);
+
+  // Save to localStorage
+  localStorage.setItem('selectedCoinId', coin.id);
+  localStorage.setItem(`coinImage_heads_${playerAddress}`, coin.heads);
+  localStorage.setItem(`coinImage_tails_${playerAddress}`, coin.tails);
+
+  // Update preview in sidebar
+  const headsPreview = document.getElementById('heads-preview');
+  const tailsPreview = document.getElementById('tails-preview');
+  if (headsPreview) headsPreview.src = coin.heads;
+  if (tailsPreview) tailsPreview.src = coin.tails;
+
+  // Update selected state in modal
+  document.querySelectorAll('.coin-option').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+
+  // Close modal after a short delay
+  setTimeout(() => {
+    document.getElementById('coin-picker-modal').classList.add('hidden');
+  }, 300);
 }
 
 /**

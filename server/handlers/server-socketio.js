@@ -1,5 +1,6 @@
 const socketIO = require('socket.io')
 const PhysicsGameManager = require('../PhysicsGameManager')
+const GridGameManager = require('../GridGameManager')
 const SocketTracker = require('./SocketTracker')
 const { FlipCollectionService } = require('../services/FlipCollectionService')
 // const FlipService = require('../services/FlipService') // Temporarily disabled for debugging
@@ -28,13 +29,16 @@ class GameServer {
     
     // ✅ ACTIVE: Physics-based game system (current implementation)
     this.physicsGameManager = new PhysicsGameManager(blockchainService, dbService)
-    
+
+    // ✅ ACTIVE: Grid-based multi-player game system (new implementation)
+    this.gridGameManager = new GridGameManager()
+
     // this.flipService = new FlipService() // Temporarily disabled for debugging
     this.flipService = null // Placeholder
-    
+
     // Initialize socket tracker for reliable broadcasting
     this.socketTracker = new SocketTracker()
-    
+
     // Initialize FLIP collection service
     this.flipCollectionService = new FlipCollectionService(dbService ? dbService.databasePath : null)
     
@@ -58,6 +62,7 @@ class GameServer {
       battleRoyaleHandlers: !!this.battleRoyaleHandlers,
       physicsGameManager: !!this.physicsGameManager,
       physicsHandlers: !!this.physicsHandlers,
+      gridGameManager: !!this.gridGameManager,
       socketTracker: !!this.socketTracker
     })
   }
@@ -1095,7 +1100,132 @@ initialize(server, dbService) {
           this.io.to(room).emit(event, payload)
         })
       }))
-      
+
+      // ===== GRID GAME EVENTS =====
+      socket.on('grid_join_room', safeHandler(async (data) => {
+        console.log(`📥 grid_join_room from ${socket.id}`, data)
+        const { gameId, playerAddress } = data
+
+        // Join socket.io room
+        const roomName = `game_${gameId}`
+        socket.join(roomName)
+        this.socketData.set(socket.id, { address: playerAddress, roomId: roomName })
+
+        console.log(`✅ ${playerAddress} joined grid game room ${roomName}`)
+
+        // Load or create game
+        let game = this.gridGameManager.getFullGameState(gameId)
+
+        if (!game) {
+          // Try to load from database
+          const gameData = await this.dbService.getBattleRoyaleGame(gameId)
+          if (gameData) {
+            game = await this.gridGameManager.loadGameFromDatabase(gameId, this.dbService)
+          }
+        }
+
+        // Send current state to player
+        if (game) {
+          socket.emit('grid_state_update', game)
+        }
+
+        // Join player to game
+        const joinResult = this.gridGameManager.joinGame(gameId, playerAddress, {
+          coinImages: data.coinImages || null,
+          name: data.name || null,
+        })
+
+        if (joinResult.success) {
+          // Broadcast updated state to all players
+          this.gridGameManager.broadcastState(gameId, (room, event, payload) => {
+            this.io.to(room).emit(event, payload)
+          })
+
+          socket.emit('grid_joined', {
+            success: true,
+            slotNumber: joinResult.slotNumber,
+          })
+        } else {
+          socket.emit('grid_error', { message: joinResult.error })
+        }
+      }))
+
+      socket.on('grid_flip_coin', safeHandler((data) => {
+        console.log(`🎲 grid_flip_coin from ${socket.id}`, data)
+        const { gameId, playerAddress, choice, power } = data
+
+        const result = this.gridGameManager.flipCoin(gameId, playerAddress, choice, power)
+
+        if (result.success) {
+          // Broadcast flip to all players
+          this.io.to(`game_${gameId}`).emit('grid_coin_flipped', {
+            playerAddress,
+            slotNumber: result.slotNumber,
+            targetFace: result.targetFace,
+            targetHit: result.targetHit,
+          })
+
+          // Check if round should end
+          if (this.gridGameManager.allPlayersFlipped(gameId)) {
+            setTimeout(() => {
+              const roundResult = this.gridGameManager.endRound(gameId)
+
+              // Broadcast round end
+              this.io.to(`game_${gameId}`).emit('grid_round_end', roundResult)
+
+              // Broadcast updated state
+              this.gridGameManager.broadcastState(gameId, (room, event, payload) => {
+                this.io.to(room).emit(event, payload)
+              })
+
+              // If game is over, handle winner
+              if (roundResult.gameOver) {
+                this.io.to(`game_${gameId}`).emit('grid_game_end', {
+                  winner: roundResult.winner,
+                  gameId,
+                })
+              }
+            }, 2000) // 2 second delay for animations
+          }
+        } else {
+          socket.emit('grid_error', { message: result.error })
+        }
+      }))
+
+      socket.on('grid_start_game', safeHandler((data) => {
+        console.log(`🚀 grid_start_game from ${socket.id}`, data)
+        const { gameId, playerAddress } = data
+
+        const game = this.gridGameManager.getFullGameState(gameId)
+        if (!game) {
+          socket.emit('grid_error', { message: 'Game not found' })
+          return
+        }
+
+        if (game.creator?.toLowerCase() !== playerAddress?.toLowerCase()) {
+          socket.emit('grid_error', { message: 'Only creator can start game' })
+          return
+        }
+
+        const started = this.gridGameManager.startGame(gameId)
+
+        if (started) {
+          // Broadcast game start
+          this.gridGameManager.broadcastState(gameId, (room, event, payload) => {
+            this.io.to(room).emit(event, payload)
+          })
+
+          // Broadcast round start
+          const state = this.gridGameManager.getFullGameState(gameId)
+          this.io.to(`game_${gameId}`).emit('grid_round_start', {
+            roundNumber: state.currentRound,
+            target: state.roundTarget,
+          })
+        } else {
+          socket.emit('grid_error', { message: 'Failed to start game' })
+        }
+      }))
+
       // Disconnection
       socket.on('disconnect', safeHandler(() => this.handleDisconnect(socket)))
     })
