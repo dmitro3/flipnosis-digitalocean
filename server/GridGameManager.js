@@ -357,7 +357,8 @@ class GridGameManager {
     const game = this.games.get(gameId);
     if (!game) return;
 
-    console.log(`🏁 Ending round ${game.currentRound} for game ${gameId}`);
+    const completedRound = game.currentRound;
+    console.log(`🏁 Ending round ${completedRound} for game ${gameId}`);
 
     // Clear interval if it exists
     if (game.roundIntervalId) {
@@ -384,6 +385,16 @@ class GridGameManager {
       }
     });
 
+    // Broadcast round_end event BEFORE checking for winner or incrementing round
+    if (this.broadcastCallback) {
+      const room = `game_${gameId}`;
+      this.broadcastCallback(room, 'grid_round_end', {
+        roundNumber: completedRound,
+        eliminated: eliminated,
+      });
+      console.log(`📡 Broadcasted grid_round_end for round ${completedRound}`);
+    }
+
     // Check for winner
     const activePlayers = Object.values(game.players).filter(p => !p.isEliminated);
 
@@ -392,14 +403,35 @@ class GridGameManager {
       game.winner = activePlayers[0].address;
       game.phase = 'game_over';
       console.log(`🏆 Game ${gameId} over! Winner: ${game.winner}`);
+
+      // Broadcast game end
+      if (this.broadcastCallback) {
+        const room = `game_${gameId}`;
+        this.broadcastCallback(room, 'grid_game_end', {
+          gameId: game.gameId,
+          winner: game.winner,
+          finalRound: completedRound,
+        });
+      }
     } else if (activePlayers.length === 0) {
       // Everyone eliminated - last one eliminated wins
       game.winner = eliminated[eliminated.length - 1];
       game.phase = 'game_over';
       console.log(`🏆 Game ${gameId} over! Last survivor: ${game.winner}`);
+
+      // Broadcast game end
+      if (this.broadcastCallback) {
+        const room = `game_${gameId}`;
+        this.broadcastCallback(room, 'grid_game_end', {
+          gameId: game.gameId,
+          winner: game.winner,
+          finalRound: completedRound,
+        });
+      }
     } else {
       // Continue to next round
       game.currentRound++;
+      console.log(`➡️ Moving to round ${game.currentRound}`);
       setTimeout(() => this.startRound(gameId), 3000); // 3 second delay
     }
 

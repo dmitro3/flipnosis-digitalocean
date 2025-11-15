@@ -84,6 +84,8 @@ export const SOCKET_EVENTS = {
   FLIP_COIN: 'grid_flip_coin',
   COIN_FLIPPED: 'grid_coin_flipped',
   PLAYER_ELIMINATED: 'grid_player_eliminated',
+  COIN_UPDATE: 'grid_coin_update',
+  COIN_UPDATED: 'grid_coin_updated',
 
   // State Updates
   STATE_UPDATE: 'grid_state_update',

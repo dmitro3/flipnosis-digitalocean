@@ -82,6 +82,7 @@ function setupSocketListeners(gameId, playerAddress) {
   // Player action events
   socket.on(SOCKET_EVENTS.COIN_FLIPPED, handleCoinFlipped);
   socket.on(SOCKET_EVENTS.PLAYER_ELIMINATED, handlePlayerEliminated);
+  socket.on(SOCKET_EVENTS.COIN_UPDATED, handleCoinUpdated);
 
   // State updates
   socket.on(SOCKET_EVENTS.STATE_UPDATE, handleStateUpdate);
@@ -313,6 +314,28 @@ function handlePlayerEliminated(data) {
   if (state.playerSlot === slotNumber) {
     showEliminationMessage();
   }
+}
+
+/**
+ * Handle coin updated event
+ */
+function handleCoinUpdated(data) {
+  console.log('🪙 Coin updated:', data);
+
+  const { slotNumber, coinData } = data;
+
+  if (slotNumber === undefined || !coinData) {
+    console.warn('⚠️ Invalid coin update data');
+    return;
+  }
+
+  // Update the coin textures for this player
+  import('../systems/coin-creator.js').then(({ updateCoinTextures }) => {
+    updateCoinTextures(slotNumber, coinData.heads, coinData.tails);
+    console.log(`✅ Updated coin textures for slot ${slotNumber}: ${coinData.name}`);
+  }).catch(err => {
+    console.error('❌ Failed to update coin textures:', err);
+  });
 }
 
 /**

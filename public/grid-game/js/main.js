@@ -560,6 +560,27 @@ function selectCoin(coin) {
     selectedOption.style.borderWidth = '3px';
   }
 
+  // Broadcast coin change to all players via socket
+  const socket = getSocket();
+  const state = getGameState();
+  if (socket && socket.connected && state.gameId && state.playerSlot !== null) {
+    console.log('📡 Broadcasting coin update to all players...');
+    socket.emit('grid_coin_update', {
+      gameId: state.gameId,
+      playerAddress: playerAddress,
+      slotNumber: state.playerSlot,
+      coinData: {
+        id: coin.id,
+        name: coin.name,
+        heads: coin.heads,
+        tails: coin.tails,
+        cost: coin.cost || 0
+      }
+    });
+  } else {
+    console.warn('⚠️ Cannot broadcast coin update: socket not connected or game not joined');
+  }
+
   // Close modal after a short delay
   setTimeout(() => {
     document.getElementById('coin-picker-modal').classList.add('hidden');

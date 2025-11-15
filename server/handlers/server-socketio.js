@@ -1203,6 +1203,19 @@ initialize(server, dbService) {
         }
       }))
 
+      socket.on('grid_coin_update', safeHandler((data) => {
+        console.log(`🪙 grid_coin_update from ${socket.id}`, data)
+        const { gameId, playerAddress, slotNumber, coinData } = data
+
+        // Broadcast coin update to all players in the room
+        this.io.to(`game_${gameId}`).emit('grid_coin_updated', {
+          playerAddress,
+          slotNumber,
+          coinData,
+        })
+        console.log(`📡 Broadcasted coin update to all players in game ${gameId}`)
+      }))
+
       socket.on('grid_start_game', safeHandler((data) => {
         console.log(`🚀 grid_start_game from ${socket.id}`, data)
         const { gameId, playerAddress } = data

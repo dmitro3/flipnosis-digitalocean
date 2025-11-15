@@ -190,48 +190,51 @@ function createCoinFaceMaterial(textureUrl, defaultText) {
 }
 
 /**
- * Create background plane for coin with gold frame
+ * Create black shadow behind coin
  */
 export function createCoinBackground(slotNumber, position) {
   const scene = getScene();
 
-  const bgSize = COIN_CONFIG.RADIUS * 2.8;
-  const frameThickness = 8;
+  const shadowSize = COIN_CONFIG.RADIUS * 2.5;
 
-  // Create canvas for background with gold frame
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-
-  // Draw gold frame (outer border)
-  ctx.fillStyle = '#FFD700'; // Gold
-  ctx.fillRect(0, 0, 512, 512);
-
-  // Draw dark navy background (inner area)
-  ctx.fillStyle = '#0a0f23'; // Dark navy
-  ctx.fillRect(frameThickness, frameThickness, 512 - frameThickness * 2, 512 - frameThickness * 2);
-
-  // Add inner gold glow/highlight
-  ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(frameThickness + 2, frameThickness + 2, 512 - frameThickness * 2 - 4, 512 - frameThickness * 2 - 4);
-
-  // Create texture from canvas
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.anisotropy = 16;
-
-  const geometry = new THREE.PlaneGeometry(bgSize, bgSize);
-  const material = new THREE.MeshBasicMaterial({
-    map: texture,
-    transparent: false,
+  // Create radial gradient shadow using shader material
+  const shadowGeometry = new THREE.CircleGeometry(shadowSize, 64);
+  const shadowMaterial = new THREE.ShaderMaterial({
+    transparent: true,
     side: THREE.DoubleSide,
+    depthWrite: false,
+    uniforms: {
+      centerColor: { value: new THREE.Color(0x000000) },
+      edgeColor: { value: new THREE.Color(0x000000) },
+      opacity: { value: 0.6 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 centerColor;
+      uniform vec3 edgeColor;
+      uniform float opacity;
+      varying vec2 vUv;
+      void main() {
+        vec2 center = vec2(0.5, 0.5);
+        float dist = distance(vUv, center);
+        float gradient = smoothstep(0.0, 0.5, dist);
+        vec3 color = mix(centerColor, edgeColor, gradient);
+        float alpha = opacity * (1.0 - smoothstep(0.2, 0.5, dist));
+        gl_FragColor = vec4(color, alpha);
+      }
+    `
   });
 
-  const background = new THREE.Mesh(geometry, material);
+  const background = new THREE.Mesh(shadowGeometry, shadowMaterial);
 
-  // Position behind coin
-  background.position.set(position.x, position.y, position.z - 20);
+  // Position behind coin (further back for shadow effect)
+  background.position.set(position.x, position.y, position.z - 15);
 
   // Rotate to face camera
   background.rotation.y = 0;
@@ -240,6 +243,8 @@ export function createCoinBackground(slotNumber, position) {
     slotNumber,
     isEliminated: false,
   };
+
+  background.renderOrder = -1; // Render behind coin
 
   scene.add(background);
   coinBackgrounds[slotNumber] = background;
@@ -423,6 +428,58 @@ export function clearAllCoins() {
   playerLabels.length = 0;
 }
 
+/**
+ * Update coin textures (for when player changes their coin)
+ */
+export function updateCoinTextures(slotNumber, headsImageUrl, tailsImageUrl) {
+  const coin = coins[slotNumber];
+  if (!coin) {
+    console.warn(`⚠️ Cannot update textures: coin ${slotNumber} not found`);
+    return;
+  }
+
+  console.log(`🎨 Updating coin textures for slot ${slotNumber}`, { headsImageUrl, tailsImageUrl });
+
+  // Load new textures
+  const textureLoader = new THREE.TextureLoader();
+
+  // Load heads texture
+  textureLoader.load(headsImageUrl, (headsTexture) => {
+    headsTexture.minFilter = THREE.LinearFilter;
+    headsTexture.magFilter = THREE.LinearFilter;
+    headsTexture.anisotropy = 16;
+    headsTexture.generateMipmaps = false;
+
+    // Update heads material (index 1)
+    if (coin.material[1] && coin.material[1].uniforms) {
+      coin.material[1].uniforms.map.value = headsTexture;
+      coin.material[1].needsUpdate = true;
+    }
+
+    console.log(`✅ Updated heads texture for slot ${slotNumber}`);
+  }, undefined, (error) => {
+    console.error(`❌ Failed to load heads texture for slot ${slotNumber}:`, error);
+  });
+
+  // Load tails texture
+  textureLoader.load(tailsImageUrl, (tailsTexture) => {
+    tailsTexture.minFilter = THREE.LinearFilter;
+    tailsTexture.magFilter = THREE.LinearFilter;
+    tailsTexture.anisotropy = 16;
+    tailsTexture.generateMipmaps = false;
+
+    // Update tails material (index 2)
+    if (coin.material[2] && coin.material[2].uniforms) {
+      coin.material[2].uniforms.map.value = tailsTexture;
+      coin.material[2].needsUpdate = true;
+    }
+
+    console.log(`✅ Updated tails texture for slot ${slotNumber}`);
+  }, undefined, (error) => {
+    console.error(`❌ Failed to load tails texture for slot ${slotNumber}:`, error);
+  });
+}
+
 export default {
   createCoin,
   createCoinBackground,
@@ -434,4 +491,5 @@ export default {
   getAllCoins,
   getCoin,
   clearAllCoins,
+  updateCoinTextures,
 };
