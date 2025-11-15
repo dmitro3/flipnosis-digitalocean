@@ -3,6 +3,7 @@
  * Initializes and manages the grid-based coin flip game
  */
 
+import * as THREE from 'three';
 import { initializeScene, getScene } from './core/scene-setup.js';
 import { startAnimationLoop, registerUpdateCallback } from './core/animation-loop.js';
 import {
@@ -132,6 +133,84 @@ function createInitialGrid(maxPlayers) {
   }
 
   console.log(`✅ Created ${maxPlayers} coins in grid`);
+}
+
+/**
+ * Load player's coin textures from localStorage and apply to their coin
+ */
+export function loadPlayerCoinTextures() {
+  if (!playerAddress) return;
+
+  const headsImagePath = localStorage.getItem(`coinImage_heads_${playerAddress}`);
+  const tailsImagePath = localStorage.getItem(`coinImage_tails_${playerAddress}`);
+
+  if (!headsImagePath || !tailsImagePath) {
+    console.log('⚠️ No saved coin images, using defaults');
+    return;
+  }
+
+  console.log('🪙 Loading player coin textures:', { headsImagePath, tailsImagePath });
+
+  const state = getGameState();
+  if (state.playerSlot === null) {
+    console.log('⚠️ Player slot not set yet, will apply textures later');
+    return;
+  }
+
+  applyCoinTextures(state.playerSlot, headsImagePath, tailsImagePath);
+}
+
+/**
+ * Apply coin textures to a specific slot
+ */
+function applyCoinTextures(slotNumber, headsImagePath, tailsImagePath) {
+  const { scene } = getScene();
+  const coins = scene.children.filter(child => child.userData && child.userData.slotNumber !== undefined);
+  const coin = coins.find(c => c.userData.slotNumber === slotNumber);
+
+  if (!coin) {
+    console.error(`❌ Coin not found for slot ${slotNumber}`);
+    return;
+  }
+
+  const loader = new THREE.TextureLoader();
+
+  loader.load(
+    headsImagePath,
+    (headsTexture) => {
+      headsTexture.minFilter = THREE.LinearFilter;
+      headsTexture.magFilter = THREE.LinearFilter;
+      headsTexture.anisotropy = 16;
+
+      loader.load(
+        tailsImagePath,
+        (tailsTexture) => {
+          tailsTexture.minFilter = THREE.LinearFilter;
+          tailsTexture.magFilter = THREE.LinearFilter;
+          tailsTexture.anisotropy = 16;
+
+          // Apply textures to coin materials
+          // coin.material is an array: [edge, top/heads, bottom/tails]
+          if (coin.material && Array.isArray(coin.material)) {
+            if (coin.material[1]) {
+              coin.material[1].map = headsTexture;
+              coin.material[1].needsUpdate = true;
+            }
+            if (coin.material[2]) {
+              coin.material[2].map = tailsTexture;
+              coin.material[2].needsUpdate = true;
+            }
+          }
+
+          console.log(`✅ Applied coin textures to slot ${slotNumber}`);
+        },
+        undefined,
+        (error) => console.error('❌ Failed to load tails texture:', error)
+      );
+    },
+    undefined,
+    (error) => console.error('❌ Failed to load heads texture:', error)
+  );
 }
 
 /**

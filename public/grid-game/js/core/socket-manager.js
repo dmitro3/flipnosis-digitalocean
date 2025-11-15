@@ -160,6 +160,15 @@ function handlePlayerJoined(data) {
   if (playerAddress.toLowerCase() === state.playerAddress?.toLowerCase()) {
     setPlayerSlot(slotNumber);
     console.log(`✅ You are in slot ${slotNumber}`);
+
+    // Load and apply player's coin textures
+    setTimeout(() => {
+      import('../main.js').then(module => {
+        if (module.loadPlayerCoinTextures) {
+          module.loadPlayerCoinTextures();
+        }
+      });
+    }, 200);
   }
 }
 

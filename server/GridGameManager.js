@@ -223,6 +223,9 @@ class GridGameManager {
     const game = this.games.get(gameId);
     if (!game) return;
 
+    //Set phase to round_active
+    game.phase = 'round_active';
+
     // Randomly choose heads or tails
     game.roundTarget = Math.random() < 0.5 ? 'heads' : 'tails';
     game.roundTimer = 30;
@@ -236,6 +239,19 @@ class GridGameManager {
     });
 
     console.log(`🎯 Round ${game.currentRound} started for game ${gameId}, target: ${game.roundTarget}`);
+
+    // Emit round start event to clients
+    if (this.broadcastCallback) {
+      const room = `game_${gameId}`;
+      this.broadcastCallback(room, 'grid_round_start', {
+        roundNumber: game.currentRound,
+        target: game.roundTarget,
+        duration: game.roundTimer,
+      });
+
+      // Also broadcast state update
+      this.broadcastCallback(room, 'grid_state_update', this.getFullGameState(gameId));
+    }
 
     // Start countdown timer
     this.startRoundTimer(gameId);
@@ -268,8 +284,15 @@ class GridGameManager {
     const game = this.games.get(gameId);
     if (!game) return false;
 
-    const activePlayers = Object.values(game.players).filter(p => !p.isEliminated);
-    return activePlayers.every(p => p.hasFlipped);
+    // Only check players who are actually in the game (not empty slots)
+    const activePlayers = Object.values(game.players).filter(p => !p.isEliminated && p.address);
+
+    if (activePlayers.length === 0) return false;
+
+    const allFlipped = activePlayers.every(p => p.hasFlipped);
+    console.log(`📊 Flip status: ${activePlayers.filter(p => p.hasFlipped).length}/${activePlayers.length} active players flipped`);
+
+    return allFlipped;
   }
 
   /**
