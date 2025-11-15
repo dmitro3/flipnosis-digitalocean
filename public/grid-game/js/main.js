@@ -29,6 +29,7 @@ async function initGame() {
 
   try {
     // Get game ID from URL
+    updateLoadingText('Getting game ID...');
     const gameId = getGameIdFromUrl();
     if (!gameId) {
       throw new Error('No game ID found in URL');
@@ -37,14 +38,17 @@ async function initGame() {
     console.log(`🎮 Game ID: ${gameId}`);
 
     // Get player address from wallet or URL
+    updateLoadingText('Connecting wallet...');
     playerAddress = await getPlayerAddress();
     console.log(`👤 Player Address: ${playerAddress}`);
 
     // Initialize scene
+    updateLoadingText('Initializing 3D scene...');
     const { scene, camera, renderer } = initializeScene();
     console.log('✅ Scene initialized');
 
     // Initialize game state (we'll get real data from server later)
+    updateLoadingText('Setting up game state...');
     const mockGameData = {
       gameId: gameId,
       playerAddress: playerAddress,
@@ -55,14 +59,17 @@ async function initGame() {
     console.log('✅ Game state initialized');
 
     // Setup UI
+    updateLoadingText('Setting up UI...');
     setupUI();
     console.log('✅ UI initialized');
 
     // Create grid and coins
+    updateLoadingText('Creating coin grid...');
     createInitialGrid(mockGameData.maxPlayers);
     console.log('✅ Grid and coins created');
 
     // Register update callbacks
+    updateLoadingText('Starting animation...');
     registerUpdateCallback(updatePowerBar);
     registerUpdateCallback(updateGameUI);
     registerUpdateCallback(updateFlipAnimations);
@@ -72,18 +79,21 @@ async function initGame() {
     console.log('✅ Animation loop started');
 
     // Initialize socket connection
+    updateLoadingText('Connecting to game server...');
     initializeSocket(gameId, playerAddress);
     console.log('✅ Socket initialized');
 
     // Hide loading screen
-    hideLoadingScreen();
+    setTimeout(() => {
+      hideLoadingScreen();
+    }, 500);
 
     gameInitialized = true;
     console.log('🎉 Grid game initialized successfully!');
 
   } catch (error) {
     console.error('❌ Error initializing game:', error);
-    showError('Failed to initialize game: ' + error.message);
+    showError('Failed to initialize: ' + error.message);
   }
 }
 
@@ -145,7 +155,15 @@ async function getPlayerAddress() {
   const params = new URLSearchParams(window.location.search);
   const addressParam = params.get('address');
   if (addressParam) {
+    console.log('Using address from URL params:', addressParam);
     return addressParam;
+  }
+
+  // Check localStorage (set by BattleRoyaleGameContext)
+  const storedAddress = localStorage.getItem('walletAddress');
+  if (storedAddress) {
+    console.log('Using address from localStorage:', storedAddress);
+    return storedAddress;
   }
 
   // Try to get from MetaMask/wallet
@@ -153,20 +171,19 @@ async function getPlayerAddress() {
     try {
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
       if (accounts && accounts.length > 0) {
+        console.log('Using address from MetaMask (connected):', accounts[0]);
         return accounts[0];
       }
 
-      // Request account access
-      const requestedAccounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      if (requestedAccounts && requestedAccounts.length > 0) {
-        return requestedAccounts[0];
-      }
+      // Don't request account access automatically - user should connect first
+      console.warn('MetaMask not connected, cannot request accounts without user interaction');
     } catch (error) {
       console.error('Error getting wallet address:', error);
     }
   }
 
   // Fallback to mock address
+  console.warn('No wallet address found, using fallback address');
   return '0x0000000000000000000000000000000000000001';
 }
 
@@ -284,6 +301,20 @@ function handleMuteButtonClick() {
 }
 
 /**
+ * Update loading screen text
+ */
+function updateLoadingText(message) {
+  const loadingScreen = document.getElementById('loading-screen');
+  if (loadingScreen) {
+    const loadingText = loadingScreen.querySelector('.loading-text');
+    if (loadingText) {
+      loadingText.textContent = message;
+      console.log(`⏳ ${message}`);
+    }
+  }
+}
+
+/**
  * Hide loading screen
  */
 function hideLoadingScreen() {
@@ -300,6 +331,12 @@ function showError(message) {
   const loadingScreen = document.getElementById('loading-screen');
   if (loadingScreen) {
     const loadingText = loadingScreen.querySelector('.loading-text');
+    const spinner = loadingScreen.querySelector('.loading-spinner');
+
+    if (spinner) {
+      spinner.style.display = 'none';
+    }
+
     if (loadingText) {
       loadingText.textContent = `❌ ${message}`;
       loadingText.style.color = '#ff1493';

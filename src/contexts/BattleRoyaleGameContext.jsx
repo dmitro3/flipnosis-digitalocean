@@ -213,14 +213,24 @@ export const BattleRoyaleGameProvider = ({ gameId, children }) => {
       if (data?.phase === 'round_active' || data?.phase === 'playing') {
         const id = data?.gameId || gameId
         if (id) {
-          console.log('🚀 Physics active phase detected - hard redirecting to test-tubes.html')
-          // Store wallet address in localStorage for the test-tubes page to use
+          // Store wallet address in localStorage for the game page to use
           if (address) {
             localStorage.setItem('walletAddress', address)
           }
-          // Get room type from game data
-          const roomType = data?.room_type || 'potion'
-          window.location.href = `/test-tubes.html?gameId=${id}&room=${roomType}`
+
+          // Route based on game mode
+          const gameMode = data?.game_mode || data?.gameData?.game_mode
+
+          // New multi-player modes go to grid game
+          if (gameMode && ['1v1', '6player', '12player', '18player', '24player'].includes(gameMode)) {
+            console.log('🚀 Grid game mode detected - redirecting to grid-game.html')
+            window.location.href = `/grid-game.html?gameId=${id}`
+          } else {
+            // Old 4-player physics mode goes to test tubes
+            console.log('🚀 Physics active phase detected - hard redirecting to test-tubes.html')
+            const roomType = data?.room_type || 'potion'
+            window.location.href = `/test-tubes.html?gameId=${id}&room=${roomType}`
+          }
         }
       }
     } catch (e) {
