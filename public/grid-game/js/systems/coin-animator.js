@@ -25,23 +25,38 @@ export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
     return false;
   }
 
-  console.log(`🎲 Starting flip animation for slot ${slotNumber}, target: ${targetFace}`);
+  console.log(`🎲 Starting flip animation for slot ${slotNumber}, target: ${targetFace}, power: ${power.toFixed(2)}`);
 
-  // Calculate rotations based on target and power
-  const baseRotations = COIN_CONFIG.FLIP_ROTATIONS;
-  const powerMultiplier = 0.8 + (power * 0.4); // 0.8 to 1.2x
-  const totalRotations = baseRotations * powerMultiplier;
+  // Dramatic rotation scaling based on power
+  // Low power (0-0.2): 3-5 rotations over 1-1.5 seconds
+  // Medium power (0.2-0.7): 5-10 rotations over 1.5-2.5 seconds
+  // High power (0.7-1.0): 10-20 rotations over 2.5-4 seconds
+  const minRotations = 3;
+  const maxRotations = 20;
+  const powerRotations = minRotations + (power * (maxRotations - minRotations));
 
-  // Determine final rotation
+  // Add random extra spins (0-2) so it can't be perfectly gamed
+  const randomExtraSpins = Math.random() * 2;
+  const totalRotations = powerRotations + randomExtraSpins;
+
+  // Duration scales with power - faster spins at high power last longer
+  const minDuration = 1000; // 1 second minimum
+  const maxDuration = 4000; // 4 seconds maximum
+  const duration = minDuration + (power * (maxDuration - minDuration));
+
+  // Determine final rotation with slight randomness
+  // Add random offset to make it less predictable (within ±15 degrees)
+  const randomOffset = (Math.random() - 0.5) * (Math.PI / 12); // ±15 degrees
   const isHeads = targetFace === 'heads';
-  const finalRotationX = isHeads ? Math.PI / 2 : (3 * Math.PI) / 2;
+  const baseRotation = isHeads ? Math.PI / 2 : (3 * Math.PI) / 2;
+  const finalRotationX = baseRotation + randomOffset;
 
   // Create animation state
   const animation = {
     slotNumber,
     targetFace,
     startTime: Date.now(),
-    duration: COIN_CONFIG.FLIP_DURATION,
+    duration: duration,
     startRotation: {
       x: coin.rotation.x,
       y: coin.rotation.y,
@@ -49,6 +64,7 @@ export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
     },
     totalRotations,
     finalRotationX,
+    power,
     progress: 0,
     completed: false,
   };
@@ -102,8 +118,11 @@ export function updateFlipAnimations() {
       return;
     }
 
-    // Easing function (ease-out quad)
-    const easedProgress = 1 - Math.pow(1 - progress, 2);
+    // Easing function - stronger ease-out for dramatic deceleration
+    // High power should start VERY fast and slow down dramatically
+    // Low power should be more consistent
+    const easeStrength = 0.5 + (animation.power * 1.5); // 0.5 to 2.0
+    const easedProgress = 1 - Math.pow(1 - progress, easeStrength);
 
     // Calculate rotation
     const rotationAmount = animation.totalRotations * 2 * Math.PI * easedProgress;

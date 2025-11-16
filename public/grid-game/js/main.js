@@ -687,13 +687,13 @@ function updateGameUI() {
     countdownElement.textContent = `${Math.ceil(state.roundTimeRemaining)}s`;
   }
 
-  // Update player stats - show lives as purple potions
+  // Update player stats - show lives as bright purple potion bottles
   const livesElement = document.getElementById('player-lives');
   if (livesElement) {
     const lives = state.playerStats.lives;
+    // Only show remaining potions (no empty ones)
     const potions = '🧪'.repeat(Math.max(0, lives));
-    const emptyPotions = '⚗️'.repeat(Math.max(0, 3 - lives));
-    livesElement.textContent = potions + emptyPotions;
+    livesElement.textContent = potions || '💀'; // Show skull if no lives
   }
 
   // Update players remaining counter
