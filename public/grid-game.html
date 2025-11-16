@@ -30,8 +30,8 @@
 
         body {
             font-family: 'Orbitron', monospace;
-            background: linear-gradient(135deg, #0a0f23 0%, #1a1f3a 100%);
-            color: white;
+            background: radial-gradient(ellipse at center, #1a0f0a 0%, #0d0805 100%);
+            color: #d4a574;
             overflow: hidden;
             height: 100vh;
             width: 100vw;
@@ -57,125 +57,272 @@
             height: 100%;
         }
 
-        /* Right Sidebar */
+        /* Right Sidebar - Steampunk Brass Panel */
         #sidebar {
-            width: 320px;
-            background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(16, 33, 62, 0.95));
-            border-left: 3px solid #00ffff;
-            box-shadow: -5px 0 30px rgba(0, 255, 255, 0.3);
-            padding: 1.5rem;
+            width: 340px;
+            background:
+                linear-gradient(135deg,
+                    #2a1810 0%,
+                    #3d2817 25%,
+                    #6b4423 50%,
+                    #3d2817 75%,
+                    #2a1810 100%);
+            border-left: 6px ridge #8b6914;
+            box-shadow:
+                -8px 0 40px rgba(0, 0, 0, 0.8),
+                inset 0 0 60px rgba(0, 0, 0, 0.5),
+                inset -3px 0 10px rgba(139, 105, 20, 0.4);
+            padding: 2rem 1.5rem;
             overflow-y: auto;
             position: relative;
             transition: transform 0.3s ease;
+        }
+
+        /* Brass rivets in corners */
+        #sidebar::before,
+        #sidebar::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #cd7f32, #8b5a00);
+            box-shadow:
+                inset -2px -2px 4px rgba(0, 0, 0, 0.6),
+                inset 2px 2px 4px rgba(255, 200, 124, 0.4),
+                0 2px 4px rgba(0, 0, 0, 0.8);
+            border: 1px solid #5d3a1a;
+        }
+
+        #sidebar::before {
+            top: 15px;
+            right: 15px;
+        }
+
+        #sidebar::after {
+            top: 15px;
+            left: 15px;
         }
 
         #sidebar.hidden {
             transform: translateX(100%);
         }
 
-        /* Sidebar Toggle Button */
+        /* Sidebar Toggle Button - Brass Switch */
         #sidebar-toggle {
             position: absolute;
             left: -50px;
             top: 20px;
             width: 50px;
             height: 50px;
-            background: linear-gradient(135deg, #ff1493, #ff69b4);
-            border: 2px solid #ff1493;
+            background:
+                radial-gradient(circle at 30% 30%, #cd7f32, #8b5a00);
+            border: 3px outset #b8860b;
             border-radius: 8px 0 0 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: #ffe4b5;
             font-size: 1.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+            transition: all 0.2s ease;
+            box-shadow:
+                -4px 4px 12px rgba(0, 0, 0, 0.7),
+                inset -2px -2px 6px rgba(0, 0, 0, 0.4),
+                inset 2px 2px 6px rgba(255, 200, 124, 0.3);
         }
 
         #sidebar-toggle:hover {
-            background: linear-gradient(135deg, #ff69b4, #ff1493);
-            box-shadow: 0 0 30px rgba(255, 20, 147, 0.8);
+            background: radial-gradient(circle at 30% 30%, #e89b4a, #a0692f);
+            box-shadow:
+                -4px 4px 16px rgba(0, 0, 0, 0.9),
+                inset -2px -2px 8px rgba(0, 0, 0, 0.5),
+                inset 2px 2px 8px rgba(255, 200, 124, 0.4),
+                0 0 20px rgba(255, 140, 0, 0.5);
+        }
+
+        #sidebar-toggle:active {
+            transform: translateY(2px);
+            box-shadow:
+                -2px 2px 6px rgba(0, 0, 0, 0.7),
+                inset -3px -3px 10px rgba(0, 0, 0, 0.6),
+                inset 1px 1px 4px rgba(255, 200, 124, 0.2);
         }
 
         .sidebar-section {
             margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: rgba(0, 255, 255, 0.05);
-            border: 2px solid rgba(0, 255, 255, 0.3);
-            border-radius: 12px;
+            padding: 1.2rem;
+            background:
+                linear-gradient(145deg, rgba(61, 40, 23, 0.8), rgba(42, 24, 16, 0.9));
+            border: 3px ridge #8b6914;
+            border-radius: 4px;
+            box-shadow:
+                inset 0 0 20px rgba(0, 0, 0, 0.6),
+                0 4px 8px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        /* Rivets for sections */
+        .sidebar-section::before,
+        .sidebar-section::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #b8860b, #6b5016);
+            box-shadow:
+                inset -1px -1px 2px rgba(0, 0, 0, 0.7),
+                inset 1px 1px 2px rgba(255, 200, 124, 0.4);
+            border: 1px solid #4a3a1a;
+        }
+
+        .sidebar-section::before {
+            top: 8px;
+            left: 8px;
+        }
+
+        .sidebar-section::after {
+            top: 8px;
+            right: 8px;
         }
 
         .sidebar-title {
-            color: #00ffff;
-            font-size: 1.2rem;
+            color: #ffa500;
+            font-size: 1.1rem;
             font-weight: 700;
             margin-bottom: 0.8rem;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            text-shadow:
+                0 0 10px rgba(255, 165, 0, 0.6),
+                0 2px 4px rgba(0, 0, 0, 0.8);
             text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
         /* Round Info */
         #round-info {
             text-align: center;
             font-size: 1.5rem;
-            color: #ff1493;
+            color: #ffa500;
             font-weight: bold;
+            text-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
         }
 
-        /* Target Display */
+        /* Target Display - Engraved Panel */
         #target-display {
             text-align: center;
             padding: 1.5rem;
-            background: linear-gradient(135deg, rgba(255, 20, 147, 0.2), rgba(255, 105, 180, 0.2));
-            border: 3px solid #ff1493;
-            border-radius: 12px;
+            background:
+                linear-gradient(135deg, rgba(20, 12, 8, 0.9), rgba(30, 18, 12, 0.95));
+            border: 4px ridge #cd7f32;
+            border-radius: 4px;
             margin: 1rem 0;
+            box-shadow:
+                inset 0 0 30px rgba(0, 0, 0, 0.8),
+                0 4px 12px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(255, 102, 0, 0.3);
+            position: relative;
+        }
+
+        #target-display::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border: 1px solid rgba(205, 127, 50, 0.3);
+            border-radius: 2px;
+            pointer-events: none;
         }
 
         #target-label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+            color: #b8860b;
             margin-bottom: 0.5rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
         }
 
         #target-value {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: bold;
-            color: #ff1493;
-            text-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
+            color: #ff6600;
+            text-shadow:
+                0 0 20px rgba(255, 102, 0, 1),
+                0 0 40px rgba(255, 102, 0, 0.6),
+                0 4px 8px rgba(0, 0, 0, 0.9);
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                text-shadow:
+                    0 0 20px rgba(255, 102, 0, 1),
+                    0 0 40px rgba(255, 102, 0, 0.6),
+                    0 4px 8px rgba(0, 0, 0, 0.9);
+            }
+            50% {
+                text-shadow:
+                    0 0 30px rgba(255, 102, 0, 1),
+                    0 0 60px rgba(255, 102, 0, 0.8),
+                    0 4px 8px rgba(0, 0, 0, 0.9);
+            }
         }
 
         /* Countdown Timer */
         #countdown {
             text-align: center;
-            font-size: 2rem;
-            color: #00ff88;
+            font-size: 2.2rem;
+            color: #39ff14;
             font-weight: bold;
-            text-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
+            text-shadow:
+                0 0 20px rgba(57, 255, 20, 0.9),
+                0 0 40px rgba(57, 255, 20, 0.5),
+                0 3px 6px rgba(0, 0, 0, 0.9);
         }
 
-        /* Power Meter */
+        /* Power Meter - Steampunk Gauge */
         #power-meter-container {
             margin: 1rem 0;
         }
 
         #power-bar-bg {
             width: 100%;
-            height: 30px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid #00ffff;
-            border-radius: 15px;
+            height: 35px;
+            background:
+                linear-gradient(180deg, #1a0f08, #2a1810);
+            border: 3px ridge #8b6914;
+            border-radius: 4px;
             overflow: hidden;
             position: relative;
+            box-shadow:
+                inset 0 0 20px rgba(0, 0, 0, 0.9),
+                0 2px 6px rgba(0, 0, 0, 0.7);
         }
 
         #power-bar {
             height: 100%;
             width: 0%;
-            background: linear-gradient(90deg, #00ffff, #00ff88);
+            background:
+                linear-gradient(90deg,
+                    #39ff14 0%,
+                    #2ecc10 50%,
+                    #39ff14 100%);
             transition: width 0.1s ease;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+            box-shadow:
+                0 0 20px rgba(57, 255, 20, 0.8),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        #power-bar::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                rgba(255, 255, 255, 0.3) 0%,
+                transparent 50%,
+                rgba(0, 0, 0, 0.3) 100%);
         }
 
         #power-sweet-spot {
@@ -184,101 +331,186 @@
             top: 0;
             width: 10%;
             height: 100%;
-            background: rgba(255, 215, 0, 0.3);
-            border-left: 2px solid gold;
-            border-right: 2px solid gold;
+            background: rgba(255, 140, 0, 0.4);
+            border-left: 2px solid #ff8c00;
+            border-right: 2px solid #ff8c00;
+            box-shadow:
+                0 0 15px rgba(255, 140, 0, 0.6),
+                inset 0 0 10px rgba(255, 140, 0, 0.3);
         }
 
         /* Stats */
         .stat-row {
             display: flex;
             justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(139, 105, 20, 0.3);
         }
 
         .stat-label {
-            color: rgba(255, 255, 255, 0.7);
+            color: #b8860b;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
         }
 
         .stat-value {
-            color: #00ffff;
+            color: #ffa500;
             font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 165, 0, 0.6);
         }
 
-        /* Buttons */
+        /* Buttons - Steampunk Switches */
         .btn {
             width: 100%;
-            padding: 0.8rem;
-            margin: 0.5rem 0;
-            background: linear-gradient(135deg, #00ffff, #00cc99);
-            border: 2px solid #00ffff;
-            border-radius: 8px;
-            color: white;
+            padding: 0.9rem;
+            margin: 0.6rem 0;
+            background:
+                radial-gradient(ellipse at top, #cd7f32, #8b5a00);
+            border: 3px outset #b8860b;
+            border-radius: 6px;
+            color: #ffe4b5;
             font-family: 'Orbitron', monospace;
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            transition: all 0.15s ease;
+            box-shadow:
+                0 6px 0 #5d3a1a,
+                0 8px 12px rgba(0, 0, 0, 0.7),
+                inset 0 2px 4px rgba(255, 200, 124, 0.3),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.4);
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
         }
 
-        .btn:hover {
-            background: linear-gradient(135deg, #00cc99, #00ffff);
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.5);
+        .btn:hover:not(:disabled) {
+            background: radial-gradient(ellipse at top, #e89b4a, #a0692f);
             transform: translateY(-2px);
+            box-shadow:
+                0 8px 0 #5d3a1a,
+                0 12px 16px rgba(0, 0, 0, 0.8),
+                inset 0 2px 6px rgba(255, 200, 124, 0.4),
+                inset 0 -2px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow:
+                0 2px 0 #5d3a1a,
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                inset 0 4px 8px rgba(0, 0, 0, 0.6),
+                inset 0 -2px 4px rgba(255, 200, 124, 0.2);
         }
 
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+            box-shadow:
+                0 4px 0 #3d2817,
+                0 6px 8px rgba(0, 0, 0, 0.5);
         }
 
-        /* Flip Button - Green */
+        /* Flip Button - Neon Green Glow */
         #flip-button {
-            background: linear-gradient(135deg, #00ff88, #00cc44);
-            border: 2px solid #00ff88;
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+            background:
+                radial-gradient(ellipse at top, #cd7f32, #8b5a00);
+            border: 3px outset #b8860b;
+            box-shadow:
+                0 6px 0 #5d3a1a,
+                0 8px 12px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(57, 255, 20, 0.4),
+                inset 0 2px 4px rgba(255, 200, 124, 0.3),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.4);
         }
 
         #flip-button:hover:not(:disabled) {
-            background: linear-gradient(135deg, #00cc44, #00ff88);
-            box-shadow: 0 0 25px rgba(0, 255, 136, 0.5);
+            background: radial-gradient(ellipse at top, #e89b4a, #a0692f);
+            box-shadow:
+                0 8px 0 #5d3a1a,
+                0 12px 16px rgba(0, 0, 0, 0.8),
+                0 0 50px rgba(57, 255, 20, 0.8),
+                0 0 80px rgba(57, 255, 20, 0.4),
+                inset 0 2px 6px rgba(255, 200, 124, 0.4);
         }
 
-        /* Change Coin Button - Yellow */
+        #flip-button:active:not(:disabled) {
+            box-shadow:
+                0 2px 0 #5d3a1a,
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(57, 255, 20, 0.6),
+                inset 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Change Coin Button - Orange Glow */
         #change-coin-button {
-            background: linear-gradient(135deg, #FFD700, #FFA500);
-            border: 2px solid #FFD700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            background: radial-gradient(ellipse at top, #cd7f32, #8b5a00);
+            border: 3px outset #b8860b;
+            box-shadow:
+                0 6px 0 #5d3a1a,
+                0 8px 12px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(255, 140, 0, 0.4),
+                inset 0 2px 4px rgba(255, 200, 124, 0.3),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.4);
         }
 
-        #change-coin-button:hover {
-            background: linear-gradient(135deg, #FFA500, #FFD700);
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+        #change-coin-button:hover:not(:disabled) {
+            background: radial-gradient(ellipse at top, #e89b4a, #a0692f);
+            box-shadow:
+                0 8px 0 #5d3a1a,
+                0 12px 16px rgba(0, 0, 0, 0.8),
+                0 0 50px rgba(255, 140, 0, 0.8),
+                0 0 80px rgba(255, 140, 0, 0.4),
+                inset 0 2px 6px rgba(255, 200, 124, 0.4);
         }
 
-        /* Start Game Button - Pink */
+        #change-coin-button:active:not(:disabled) {
+            box-shadow:
+                0 2px 0 #5d3a1a,
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(255, 140, 0, 0.6),
+                inset 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Start Game Button - Intense Orange Glow */
         #start-game-button {
-            background: linear-gradient(135deg, #ff1493, #ff69b4);
-            border: 2px solid #ff1493;
-            box-shadow: 0 0 15px rgba(255, 20, 147, 0.3);
+            background: radial-gradient(ellipse at top, #cd7f32, #8b5a00);
+            border: 3px outset #b8860b;
+            box-shadow:
+                0 6px 0 #5d3a1a,
+                0 8px 12px rgba(0, 0, 0, 0.7),
+                0 0 35px rgba(255, 102, 0, 0.5),
+                inset 0 2px 4px rgba(255, 200, 124, 0.3),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.4);
         }
 
         #start-game-button:hover:not(:disabled) {
-            background: linear-gradient(135deg, #ff69b4, #ff1493);
-            box-shadow: 0 0 25px rgba(255, 20, 147, 0.5);
+            background: radial-gradient(ellipse at top, #e89b4a, #a0692f);
+            box-shadow:
+                0 8px 0 #5d3a1a,
+                0 12px 16px rgba(0, 0, 0, 0.8),
+                0 0 60px rgba(255, 102, 0, 0.9),
+                0 0 90px rgba(255, 102, 0, 0.5),
+                inset 0 2px 6px rgba(255, 200, 124, 0.4);
         }
 
-        /* Loading Screen */
+        #start-game-button:active:not(:disabled) {
+            box-shadow:
+                0 2px 0 #5d3a1a,
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                0 0 45px rgba(255, 102, 0, 0.7),
+                inset 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Loading Screen - Steampunk */
         #loading-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0a0f23 0%, #1a1f3a 100%);
+            background: radial-gradient(ellipse at center, #1a0f0a 0%, #0d0805 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -291,13 +523,16 @@
         }
 
         .loading-spinner {
-            border: 4px solid rgba(0, 255, 255, 0.2);
-            border-top: 4px solid #00ffff;
+            border: 5px ridge #8b6914;
+            border-top: 5px solid #ff8c00;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
+            width: 70px;
+            height: 70px;
+            animation: spin 1.5s linear infinite;
+            margin-bottom: 1.5rem;
+            box-shadow:
+                0 0 30px rgba(255, 140, 0, 0.5),
+                inset 0 0 20px rgba(0, 0, 0, 0.6);
         }
 
         @keyframes spin {
@@ -306,19 +541,22 @@
         }
 
         .loading-text {
-            color: #00ffff;
-            font-size: 1.2rem;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            color: #ffa500;
+            font-size: 1.3rem;
+            text-shadow:
+                0 0 15px rgba(255, 165, 0, 0.7),
+                0 3px 6px rgba(0, 0, 0, 0.9);
+            letter-spacing: 2px;
         }
 
-        /* Modal */
+        /* Modal - Steampunk Panel */
         .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.92);
             backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
@@ -334,56 +572,115 @@
         }
 
         .modal-content {
-            background: linear-gradient(135deg, rgba(10, 15, 35, 0.98), rgba(16, 33, 62, 0.98));
-            border: 3px solid #00ffff;
-            border-radius: 20px;
-            padding: 2rem;
+            background:
+                linear-gradient(135deg,
+                    #2a1810 0%,
+                    #3d2817 25%,
+                    #6b4423 50%,
+                    #3d2817 75%,
+                    #2a1810 100%);
+            border: 6px ridge #8b6914;
+            border-radius: 8px;
+            padding: 2.5rem;
             max-width: 900px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+            box-shadow:
+                0 0 60px rgba(0, 0, 0, 0.9),
+                inset 0 0 40px rgba(0, 0, 0, 0.4),
+                0 0 80px rgba(255, 140, 0, 0.3);
+            position: relative;
+        }
+
+        /* Rivets for modal corners */
+        .modal-content::before,
+        .modal-content::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #cd7f32, #8b5a00);
+            box-shadow:
+                inset -2px -2px 4px rgba(0, 0, 0, 0.6),
+                inset 2px 2px 4px rgba(255, 200, 124, 0.4);
+            border: 1px solid #5d3a1a;
+        }
+
+        .modal-content::before {
+            top: 20px;
+            left: 20px;
+        }
+
+        .modal-content::after {
+            top: 20px;
+            right: 20px;
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px ridge #8b6914;
         }
 
         .modal-header h2 {
-            color: #00ffff;
-            font-size: 1.8rem;
+            color: #ffa500;
+            font-size: 1.9rem;
             margin: 0;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+            text-shadow:
+                0 0 15px rgba(255, 165, 0, 0.8),
+                0 3px 6px rgba(0, 0, 0, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
         .modal-close {
-            background: none;
-            border: none;
-            color: #ff1493;
-            font-size: 2.5rem;
+            background: radial-gradient(circle at 30% 30%, #cd7f32, #8b5a00);
+            border: 3px outset #b8860b;
+            color: #ffe4b5;
+            font-size: 2rem;
             cursor: pointer;
             padding: 0;
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            box-shadow:
+                0 4px 0 #5d3a1a,
+                0 6px 10px rgba(0, 0, 0, 0.7),
+                inset 0 2px 4px rgba(255, 200, 124, 0.3);
         }
 
         .modal-close:hover {
-            background: rgba(255, 20, 147, 0.2);
-            transform: rotate(90deg);
+            background: radial-gradient(circle at 30% 30%, #e89b4a, #a0692f);
+            transform: rotate(90deg) translateY(-2px);
+            box-shadow:
+                0 6px 0 #5d3a1a,
+                0 10px 14px rgba(0, 0, 0, 0.8),
+                0 0 20px rgba(255, 102, 0, 0.5),
+                inset 0 2px 6px rgba(255, 200, 124, 0.4);
+        }
+
+        .modal-close:active {
+            transform: rotate(90deg) translateY(2px);
+            box-shadow:
+                0 2px 0 #5d3a1a,
+                0 4px 6px rgba(0, 0, 0, 0.6),
+                inset 0 4px 8px rgba(0, 0, 0, 0.6);
         }
 
         .modal-subtitle {
-            color: rgba(255, 255, 255, 0.8);
+            color: #d4a574;
             text-align: center;
             margin-bottom: 2rem;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
         }
 
         .coin-grid {
@@ -393,25 +690,36 @@
         }
 
         .coin-option {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 1rem;
+            background: linear-gradient(145deg, rgba(61, 40, 23, 0.6), rgba(42, 24, 16, 0.8));
+            border: 3px ridge #8b6914;
+            border-radius: 6px;
+            padding: 1.2rem;
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
             position: relative;
+            box-shadow:
+                inset 0 0 15px rgba(0, 0, 0, 0.5),
+                0 4px 8px rgba(0, 0, 0, 0.5);
         }
 
         .coin-option:hover {
-            background: rgba(0, 255, 255, 0.1);
-            border-color: #00ffff;
+            background: linear-gradient(145deg, rgba(107, 68, 35, 0.7), rgba(61, 40, 23, 0.9));
+            border-color: #cd7f32;
             transform: translateY(-5px);
+            box-shadow:
+                inset 0 0 20px rgba(0, 0, 0, 0.4),
+                0 8px 16px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(255, 140, 0, 0.4);
         }
 
         .coin-option.selected {
-            background: rgba(255, 215, 0, 0.2);
-            border-color: #FFD700;
+            background: linear-gradient(145deg, rgba(107, 68, 35, 0.8), rgba(61, 40, 23, 1));
+            border: 3px solid #ff8c00;
+            box-shadow:
+                inset 0 0 20px rgba(0, 0, 0, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(255, 140, 0, 0.6);
         }
 
         .coin-preview-pair {
@@ -425,14 +733,17 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            border: 3px solid #FFD700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            border: 3px ridge #b8860b;
+            box-shadow:
+                0 0 20px rgba(255, 140, 0, 0.4),
+                inset 0 0 10px rgba(0, 0, 0, 0.3);
         }
 
         .coin-name {
-            color: white;
+            color: #ffa500;
             font-weight: bold;
             font-size: 1rem;
+            text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
         }
 
         /* Mobile Responsive */
