@@ -371,24 +371,75 @@
             background:
                 linear-gradient(90deg,
                     #39ff14 0%,
-                    #2ecc10 50%,
+                    #00ff00 25%,
+                    #39ff14 50%,
+                    #00ff00 75%,
                     #39ff14 100%);
+            background-size: 200% 100%;
+            animation: electricFlow 0.8s linear infinite;
             transition: width 0.1s ease;
             box-shadow:
-                0 0 20px rgba(57, 255, 20, 0.8),
-                inset 0 2px 4px rgba(255, 255, 255, 0.3),
-                inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+                0 0 30px rgba(57, 255, 20, 1),
+                0 0 50px rgba(57, 255, 20, 0.8),
+                0 0 70px rgba(0, 255, 0, 0.6),
+                inset 0 0 15px rgba(255, 255, 255, 0.5),
+                inset 0 2px 8px rgba(255, 255, 255, 0.6),
+                inset 0 -2px 8px rgba(0, 0, 0, 0.4);
             position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes electricFlow {
+            0% {
+                background-position: 0% 0%;
+                box-shadow:
+                    0 0 30px rgba(57, 255, 20, 1),
+                    0 0 50px rgba(57, 255, 20, 0.8),
+                    0 0 70px rgba(0, 255, 0, 0.6),
+                    inset 0 0 15px rgba(255, 255, 255, 0.5);
+            }
+            50% {
+                background-position: 100% 0%;
+                box-shadow:
+                    0 0 40px rgba(57, 255, 20, 1),
+                    0 0 60px rgba(57, 255, 20, 1),
+                    0 0 80px rgba(0, 255, 0, 0.8),
+                    inset 0 0 20px rgba(255, 255, 255, 0.7);
+            }
+            100% {
+                background-position: 200% 0%;
+                box-shadow:
+                    0 0 30px rgba(57, 255, 20, 1),
+                    0 0 50px rgba(57, 255, 20, 0.8),
+                    0 0 70px rgba(0, 255, 0, 0.6),
+                    inset 0 0 15px rgba(255, 255, 255, 0.5);
+            }
         }
 
         #power-bar::after {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg,
-                rgba(255, 255, 255, 0.3) 0%,
-                transparent 50%,
-                rgba(0, 0, 0, 0.3) 100%);
+            background:
+                repeating-linear-gradient(90deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.4) 10%,
+                    transparent 20%,
+                    rgba(255, 255, 255, 0.2) 30%,
+                    transparent 40%);
+            background-size: 50px 100%;
+            animation: electricSpark 0.5s linear infinite;
+        }
+
+        @keyframes electricSpark {
+            0% {
+                transform: translateX(0);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateX(50px);
+                opacity: 0.6;
+            }
         }
 
         #power-sweet-spot {
@@ -496,8 +547,10 @@
             box-shadow:
                 0 8px 0 #5d3a1a,
                 0 12px 16px rgba(0, 0, 0, 0.8),
-                0 0 50px rgba(57, 255, 20, 0.8),
-                0 0 80px rgba(57, 255, 20, 0.4),
+                0 0 80px rgba(57, 255, 20, 1),
+                0 0 120px rgba(57, 255, 20, 1),
+                0 0 160px rgba(0, 255, 0, 0.8),
+                0 0 200px rgba(0, 255, 0, 0.6),
                 inset 0 2px 6px rgba(255, 200, 124, 0.4);
         }
 
@@ -509,14 +562,14 @@
                 inset 0 4px 8px rgba(0, 0, 0, 0.6);
         }
 
-        /* Change Coin Button - Orange Glow */
+        /* Change Coin Button - Purple Glow */
         #change-coin-button {
             background: radial-gradient(ellipse at top, #cd7f32, #8b5a00);
             border: 3px outset #b8860b;
             box-shadow:
                 0 6px 0 #5d3a1a,
                 0 8px 12px rgba(0, 0, 0, 0.7),
-                0 0 30px rgba(255, 140, 0, 0.4),
+                0 0 30px rgba(168, 85, 247, 0.4),
                 inset 0 2px 4px rgba(255, 200, 124, 0.3),
                 inset 0 -2px 4px rgba(0, 0, 0, 0.4);
         }
@@ -526,8 +579,10 @@
             box-shadow:
                 0 8px 0 #5d3a1a,
                 0 12px 16px rgba(0, 0, 0, 0.8),
-                0 0 50px rgba(255, 140, 0, 0.8),
-                0 0 80px rgba(255, 140, 0, 0.4),
+                0 0 80px rgba(168, 85, 247, 1),
+                0 0 120px rgba(168, 85, 247, 1),
+                0 0 160px rgba(192, 132, 252, 0.9),
+                0 0 200px rgba(232, 121, 249, 0.7),
                 inset 0 2px 6px rgba(255, 200, 124, 0.4);
         }
 
@@ -535,8 +590,23 @@
             box-shadow:
                 0 2px 0 #5d3a1a,
                 0 4px 8px rgba(0, 0, 0, 0.6),
-                0 0 40px rgba(255, 140, 0, 0.6),
+                0 0 60px rgba(168, 85, 247, 0.8),
                 inset 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Mute Button - Small */
+        #mute-button {
+            width: auto;
+            padding: 0.4rem 0.8rem;
+            margin: 0.5rem auto;
+            font-size: 0.7rem;
+            display: block;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        #mute-button:hover:not(:disabled) {
+            opacity: 1;
         }
 
         /* Start Game Button - Intense Orange Glow */
@@ -912,8 +982,10 @@
                 <button class="btn" id="start-game-button">START GAME</button>
                 <button class="btn" id="flip-button" disabled>FLIP COIN</button>
                 <button class="btn" id="change-coin-button">Change Coin</button>
-                <button class="btn" id="mute-button">🔊 Sound On</button>
             </div>
+
+            <!-- Mute Control -->
+            <button class="btn" id="mute-button">MUTE</button>
         </div>
     </div>
 

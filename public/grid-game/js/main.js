@@ -789,8 +789,8 @@ function handleMuteButtonClick() {
   // TODO: Implement audio muting
   console.log('🔇 Toggle mute');
 
-  const isMuted = button.textContent.includes('Off');
-  button.textContent = isMuted ? '🔊 Sound On' : '🔇 Sound Off';
+  const isMuted = button.textContent === 'MUTE';
+  button.textContent = isMuted ? 'UNMUTE' : 'MUTE';
 }
 
 /**
