@@ -23,6 +23,8 @@ import { markCoinEliminated } from '../systems/coin-creator.js';
 
 let socket = null;
 let isConnected = false;
+let autoStartTimer = null;
+let autoStartCountdown = 20;
 
 /**
  * Initialize socket connection
@@ -187,6 +189,9 @@ function handlePlayerJoined(data) {
       });
     }, 200);
   }
+
+  // Start auto-start countdown when first player joins
+  startAutoStartCountdown();
 }
 
 /**
@@ -207,6 +212,13 @@ function handlePlayerLeft(data) {
  */
 function handleGameStart(data) {
   console.log('🎮 Game started:', data);
+
+  // Clear auto-start timer if running
+  if (autoStartTimer) {
+    clearInterval(autoStartTimer);
+    autoStartTimer = null;
+    autoStartCountdown = 20;
+  }
 
   setGameStatus('active');
 
@@ -370,11 +382,22 @@ function handleStateUpdate(data) {
 
   const { players, roundTarget, currentRound, phase, roundTimer } = data;
 
+  // Get current state to check our slot
+  const state = getGameState();
+
   // Update players (players is an object, not array)
   if (players && typeof players === 'object') {
     Object.values(players).forEach((playerData) => {
       if (playerData && playerData.slotNumber !== undefined) {
         updatePlayer(playerData.slotNumber, playerData);
+
+        // If this is our player, sync lives to playerStats
+        if (state.playerSlot !== null && playerData.slotNumber === state.playerSlot) {
+          if (playerData.lives !== undefined) {
+            updatePlayerStats({ lives: playerData.lives });
+            console.log(`💚 Synced lives to sidebar: ${playerData.lives}`);
+          }
+        }
 
         // Update player label if player is active
         if (playerData.address) {
@@ -387,7 +410,6 @@ function handleStateUpdate(data) {
   }
 
   // Update game state from server data
-  const state = getGameState();
   if (roundTarget) {
     state.roundTarget = roundTarget;
   }
@@ -454,6 +476,55 @@ function startRoundTimer(duration) {
     if (timeRemaining <= 0) {
       clearInterval(roundTimerInterval);
       roundTimerInterval = null;
+    }
+  }, 1000);
+}
+
+/**
+ * Start auto-start countdown (20 seconds)
+ */
+function startAutoStartCountdown() {
+  // Only start countdown if not already running and game hasn't started
+  const state = getGameState();
+  if (autoStartTimer || state.gameStatus !== 'waiting') {
+    return;
+  }
+
+  console.log('⏱️ Starting 20 second auto-start countdown...');
+
+  // Hide start button and show countdown
+  const startButton = document.getElementById('start-game-button');
+  if (startButton) {
+    startButton.textContent = `AUTO-START IN ${autoStartCountdown}s`;
+    startButton.disabled = true;
+  }
+
+  autoStartTimer = setInterval(() => {
+    autoStartCountdown--;
+
+    // Update button text
+    if (startButton) {
+      startButton.textContent = `AUTO-START IN ${autoStartCountdown}s`;
+    }
+
+    console.log(`⏱️ Auto-start in ${autoStartCountdown} seconds...`);
+
+    // When countdown reaches 0, start the game
+    if (autoStartCountdown <= 0) {
+      clearInterval(autoStartTimer);
+      autoStartTimer = null;
+      autoStartCountdown = 20; // Reset for next time
+
+      console.log('🚀 Auto-starting game!');
+
+      // Emit start game event
+      const state = getGameState();
+      if (socket && socket.connected && state.gameId && state.playerAddress) {
+        socket.emit('grid_start_game', {
+          gameId: state.gameId,
+          playerAddress: state.playerAddress,
+        });
+      }
     }
   }, 1000);
 }

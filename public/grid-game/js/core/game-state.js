@@ -131,14 +131,14 @@ export function updateRoundTimer(timeRemaining) {
 
 /**
  * Update power meter
- * Increases linearly from 0 to 1 while charging (like old tube system)
+ * Increases linearly from 0 to 1 while charging
  */
 export function updatePowerMeter() {
   if (!state.powerActive) {
     return state.powerValue; // Return current value even when not active
   }
 
-  // Linear increase (like old code: tube.power = Math.min(tube.power + 0.6, 100))
+  // Linear increase: charge speed increases power value up to 1.0
   state.powerValue = Math.min(state.powerValue + GAME_CONFIG.POWER_CHARGE_SPEED, 1.0);
 
   return state.powerValue;
@@ -230,10 +230,11 @@ export function incrementTotalFlips() {
 }
 
 /**
- * Get entire game state (read-only)
+ * Get entire game state
+ * Returns the actual state object (not a copy) so modifications work
  */
 export function getGameState() {
-  return { ...state };
+  return state;
 }
 
 /**

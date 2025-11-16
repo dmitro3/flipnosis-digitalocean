@@ -687,13 +687,13 @@ function updateGameUI() {
     countdownElement.textContent = `${Math.ceil(state.roundTimeRemaining)}s`;
   }
 
-  // Update player stats - show lives as hearts
+  // Update player stats - show lives as purple potions
   const livesElement = document.getElementById('player-lives');
   if (livesElement) {
     const lives = state.playerStats.lives;
-    const hearts = '♥'.repeat(Math.max(0, lives));
-    const emptyHearts = '♡'.repeat(Math.max(0, 3 - lives));
-    livesElement.textContent = hearts + emptyHearts;
+    const potions = '🧪'.repeat(Math.max(0, lives));
+    const emptyPotions = '⚗️'.repeat(Math.max(0, 3 - lives));
+    livesElement.textContent = potions + emptyPotions;
   }
 
   // Update players remaining counter
