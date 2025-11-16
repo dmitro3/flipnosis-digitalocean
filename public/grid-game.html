@@ -78,30 +78,56 @@
             transition: transform 0.3s ease;
         }
 
-        /* Brass rivets in corners */
+        /* Steampunk lamps in corners */
         #sidebar::before,
         #sidebar::after {
             content: '';
             position: absolute;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #cd7f32, #8b5a00);
+            width: 24px;
+            height: 30px;
+            background:
+                linear-gradient(180deg,
+                    #3d2817 0%,
+                    #6b4423 40%,
+                    transparent 40%);
+            clip-path: polygon(20% 0%, 80% 0%, 100% 40%, 0% 40%);
             box-shadow:
-                inset -2px -2px 4px rgba(0, 0, 0, 0.6),
-                inset 2px 2px 4px rgba(255, 200, 124, 0.4),
-                0 2px 4px rgba(0, 0, 0, 0.8);
-            border: 1px solid #5d3a1a;
+                inset 0 2px 4px rgba(255, 200, 124, 0.3),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.5),
+                0 4px 8px rgba(0, 0, 0, 0.6);
+            border: 1px solid #8b6914;
         }
 
-        #sidebar::before {
-            top: 15px;
-            right: 15px;
-        }
-
+        /* Left lamp - points inward (right) */
         #sidebar::after {
-            top: 15px;
+            top: 10px;
             left: 15px;
+            transform: rotate(15deg);
+        }
+
+        /* Right lamp - points inward (left) */
+        #sidebar::before {
+            top: 10px;
+            right: 15px;
+            transform: rotate(-15deg);
+        }
+
+        /* Lamp bulbs/glow */
+        .sidebar-section:first-child::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, #ff8c00, #ff6600);
+            box-shadow:
+                0 0 15px rgba(255, 140, 0, 0.6),
+                inset -2px -2px 4px rgba(0, 0, 0, 0.4);
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.8;
+            z-index: 10;
         }
 
         #sidebar.hidden {
@@ -162,8 +188,8 @@
             position: relative;
         }
 
-        /* Rivets for sections */
-        .sidebar-section::before,
+        /* Rivets for sections (not first section which has lamp bulb) */
+        .sidebar-section:not(:first-child)::before,
         .sidebar-section::after {
             content: '';
             position: absolute;
@@ -177,7 +203,7 @@
             border: 1px solid #4a3a1a;
         }
 
-        .sidebar-section::before {
+        .sidebar-section:not(:first-child)::before {
             top: 8px;
             left: 8px;
         }
@@ -268,15 +294,54 @@
             }
         }
 
+        /* Two-column stats layout */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .stat-box {
+            background: linear-gradient(145deg, rgba(20, 12, 8, 0.8), rgba(30, 18, 12, 0.9));
+            border: 2px ridge #8b6914;
+            border-radius: 4px;
+            padding: 0.8rem;
+            text-align: center;
+            box-shadow:
+                inset 0 0 15px rgba(0, 0, 0, 0.7),
+                0 2px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        .stat-box-title {
+            font-size: 0.75rem;
+            color: #b8860b;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .stat-box-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
         /* Countdown Timer */
         #countdown {
             text-align: center;
-            font-size: 2.2rem;
             color: #39ff14;
             font-weight: bold;
             text-shadow:
                 0 0 20px rgba(57, 255, 20, 0.9),
                 0 0 40px rgba(57, 255, 20, 0.5),
+                0 3px 6px rgba(0, 0, 0, 0.9);
+        }
+
+        /* Players Remaining */
+        #players-remaining {
+            color: #FFD700;
+            text-shadow:
+                0 0 15px rgba(255, 215, 0, 0.7),
                 0 3px 6px rgba(0, 0, 0, 0.9);
         }
 
@@ -807,10 +872,18 @@
                 <div id="target-value">HEADS</div>
             </div>
 
-            <!-- Countdown Timer -->
+            <!-- Timer & Players Grid -->
             <div class="sidebar-section">
-                <div class="sidebar-title">Time Remaining</div>
-                <div id="countdown">30s</div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-box-title">Time</div>
+                        <div class="stat-box-value" id="countdown">30s</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-title">Players</div>
+                        <div class="stat-box-value" id="players-remaining">0</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Power Meter -->
@@ -824,20 +897,11 @@
                 </div>
             </div>
 
-            <!-- Your Stats -->
+            <!-- Lives -->
             <div class="sidebar-section">
-                <div class="sidebar-title">Your Stats</div>
-                <div class="stat-row">
-                    <span class="stat-label">Lives:</span>
-                    <span class="stat-value" id="player-lives" style="font-size: 1.5rem; color: #ff6b6b;">♥♥♥</span>
-                </div>
-            </div>
-
-            <!-- Players Remaining -->
-            <div class="sidebar-section">
-                <div class="sidebar-title">Players Remaining</div>
-                <div class="stat-row">
-                    <span class="stat-value" id="players-remaining" style="font-size: 2rem; color: #FFD700; text-align: center; width: 100%;">0</span>
+                <div class="sidebar-title">Lives</div>
+                <div style="text-align: center;">
+                    <span id="player-lives" style="font-size: 2rem; color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.8);">🧪🧪🧪</span>
                 </div>
             </div>
 
