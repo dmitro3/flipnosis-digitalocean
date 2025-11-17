@@ -371,6 +371,40 @@ function setupUI() {
   // Start game button
   const startGameButton = document.getElementById('start-game-button');
   startGameButton.addEventListener('click', handleStartGameClick);
+
+  // Theme toggle
+  setupThemeToggle();
+}
+
+/**
+ * Setup theme toggle functionality
+ */
+function setupThemeToggle() {
+  const themeToggle = document.getElementById('theme-toggle');
+  const sidebar = document.getElementById('sidebar');
+
+  if (!themeToggle || !sidebar) return;
+
+  // Load saved theme from localStorage
+  const savedTheme = localStorage.getItem('sidebarTheme') || 'brass';
+
+  if (savedTheme === 'black') {
+    sidebar.setAttribute('data-theme', 'black');
+    themeToggle.checked = true;
+  }
+
+  // Handle theme toggle
+  themeToggle.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      sidebar.setAttribute('data-theme', 'black');
+      localStorage.setItem('sidebarTheme', 'black');
+      console.log('🎨 Switched to black theme');
+    } else {
+      sidebar.removeAttribute('data-theme');
+      localStorage.setItem('sidebarTheme', 'brass');
+      console.log('🎨 Switched to brass theme');
+    }
+  });
 }
 
 /**

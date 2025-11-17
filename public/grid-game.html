@@ -639,6 +639,159 @@
                 inset 0 4px 8px rgba(0, 0, 0, 0.6);
         }
 
+        /* Theme Toggle Switch */
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .theme-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(145deg, #8b6914, #6b5016);
+            border: 2px solid #d4a574;
+            transition: all 0.3s ease;
+            border-radius: 24px;
+            box-shadow:
+                inset 0 2px 4px rgba(0, 0, 0, 0.6),
+                0 0 10px rgba(139, 105, 20, 0.3);
+        }
+
+        .theme-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 2px;
+            background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b);
+            transition: all 0.3s ease;
+            border-radius: 50%;
+            box-shadow:
+                0 2px 4px rgba(0, 0, 0, 0.5),
+                inset -1px -1px 3px rgba(0, 0, 0, 0.4),
+                inset 1px 1px 3px rgba(255, 255, 255, 0.4);
+        }
+
+        input:checked + .theme-slider {
+            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+            border-color: #666;
+            box-shadow:
+                inset 0 2px 4px rgba(0, 0, 0, 0.9),
+                0 0 15px rgba(0, 255, 255, 0.3);
+        }
+
+        input:checked + .theme-slider:before {
+            transform: translateX(26px);
+            background: radial-gradient(circle at 30% 30%, #00ffff, #008b8b);
+            box-shadow:
+                0 2px 6px rgba(0, 255, 255, 0.5),
+                inset -1px -1px 3px rgba(0, 0, 0, 0.4),
+                inset 1px 1px 3px rgba(0, 255, 255, 0.4);
+        }
+
+        .theme-slider:hover {
+            box-shadow:
+                inset 0 2px 4px rgba(0, 0, 0, 0.6),
+                0 0 20px rgba(139, 105, 20, 0.5);
+        }
+
+        input:checked + .theme-slider:hover {
+            box-shadow:
+                inset 0 2px 4px rgba(0, 0, 0, 0.9),
+                0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        /* Black Theme Styling */
+        #sidebar[data-theme="black"] {
+            background:
+                linear-gradient(135deg,
+                    #0a0a0a 0%,
+                    #1a1a1a 25%,
+                    #2a2a2a 50%,
+                    #1a1a1a 75%,
+                    #0a0a0a 100%);
+            border-left: 6px solid #333;
+            box-shadow:
+                -8px 0 40px rgba(0, 0, 0, 0.9),
+                inset 0 0 60px rgba(0, 0, 0, 0.8),
+                inset -3px 0 20px rgba(0, 255, 255, 0.15),
+                0 0 40px rgba(0, 255, 255, 0.1);
+        }
+
+        #sidebar[data-theme="black"] .sidebar-section {
+            background:
+                linear-gradient(145deg, rgba(20, 20, 20, 0.95), rgba(10, 10, 10, 0.98));
+            border: 3px solid #444;
+            box-shadow:
+                inset 0 0 30px rgba(0, 0, 0, 0.9),
+                0 4px 12px rgba(0, 0, 0, 0.8),
+                0 0 20px rgba(0, 255, 255, 0.08);
+        }
+
+        #sidebar[data-theme="black"] .sidebar-section:not(:first-child)::before,
+        #sidebar[data-theme="black"] .sidebar-section::after {
+            background: radial-gradient(circle at 30% 30%, #00ffff, #006666);
+            box-shadow:
+                inset -1px -1px 2px rgba(0, 0, 0, 0.8),
+                inset 1px 1px 2px rgba(0, 255, 255, 0.6),
+                0 0 8px rgba(0, 255, 255, 0.4);
+            border: 1px solid #00ffff;
+        }
+
+        #sidebar[data-theme="black"] h2,
+        #sidebar[data-theme="black"] h3 {
+            color: #00ffff;
+            text-shadow:
+                0 0 15px rgba(0, 255, 255, 0.8),
+                0 3px 8px rgba(0, 0, 0, 0.9);
+        }
+
+        #sidebar[data-theme="black"] .sidebar-section > div,
+        #sidebar[data-theme="black"] span:not(#auto-start-display):not(.theme-slider) {
+            color: #b0e0e6 !important;
+        }
+
+        #sidebar[data-theme="black"] #power-bar-container {
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid #333;
+            box-shadow:
+                inset 0 0 20px rgba(0, 0, 0, 0.9),
+                0 0 15px rgba(0, 255, 255, 0.1);
+        }
+
+        #sidebar[data-theme="black"] #sidebar-toggle {
+            background: radial-gradient(circle at 30% 30%, #1a1a1a, #000000);
+            border: 3px solid #333;
+            color: #00ffff;
+            box-shadow:
+                -4px 4px 12px rgba(0, 0, 0, 0.9),
+                inset -2px -2px 6px rgba(0, 0, 0, 0.8),
+                inset 2px 2px 6px rgba(0, 255, 255, 0.2),
+                0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        #sidebar[data-theme="black"] #sidebar-toggle:hover {
+            background: radial-gradient(circle at 30% 30%, #2a2a2a, #0a0a0a);
+            box-shadow:
+                -4px 4px 16px rgba(0, 0, 0, 1),
+                inset -2px -2px 8px rgba(0, 0, 0, 0.9),
+                inset 2px 2px 8px rgba(0, 255, 255, 0.3),
+                0 0 30px rgba(0, 255, 255, 0.3);
+        }
+
         /* Loading Screen - Steampunk */
         #loading-screen {
             position: fixed;
@@ -1002,6 +1155,21 @@
                     display: none;
                     white-space: nowrap;
                 ">AUTO-START</div>
+            </div>
+
+            <!-- Theme Toggle -->
+            <div style="margin-top: 2rem; padding-top: 1rem; border-top: 2px solid rgba(139, 105, 20, 0.3);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="font-size: 0.75rem; color: #d4a574; font-weight: 600;">PANEL THEME</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 0.7rem; color: #d4a574; opacity: 0.8;">Brass</span>
+                    <label class="theme-switch">
+                        <input type="checkbox" id="theme-toggle">
+                        <span class="theme-slider"></span>
+                    </label>
+                    <span style="font-size: 0.7rem; color: #d4a574; opacity: 0.8;">Black</span>
+                </div>
             </div>
         </div>
     </div>
