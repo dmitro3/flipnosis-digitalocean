@@ -209,12 +209,12 @@ const JoinButton = styled(Button)`
 const RoomGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 0.6rem;
+  gap: 0.4rem;
   flex: 1;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr 1fr;
-    gap: 0.4rem;
+    gap: 0.3rem;
   }
 `
 
@@ -222,20 +222,20 @@ const RoomOption = styled.div`
   aspect-ratio: 1;
   background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1));
   border: 2px solid #00ffff;
-  border-radius: 12px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-height: 32px;
+  min-height: 20px;
   backdrop-filter: blur(5px);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
-  
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+
   &:hover {
     border-color: #9d00ff;
     background: linear-gradient(135deg, rgba(157, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
-    box-shadow: 0 0 25px rgba(157, 0, 255, 0.4);
+    box-shadow: 0 0 20px rgba(157, 0, 255, 0.4);
     transform: scale(1.05);
   }
 `
@@ -974,7 +974,12 @@ const CreateBattle = () => {
                 {/* Second Column: Room Size */}
                 <Box>
                   <BoxTitle>Room Size</BoxTitle>
-                  <ModeSelector style={{ gap: '0.6rem', flexWrap: 'wrap' }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gridTemplateRows: 'auto auto',
+                    gap: '0.6rem'
+                  }}>
                     <ModeButton
                       type="button"
                       selected={gameMode === '1v1'}
@@ -1000,6 +1005,7 @@ const CreateBattle = () => {
                       type="button"
                       selected={gameMode === '18player'}
                       onClick={() => setGameMode('18player')}
+                      style={{ gridColumn: 'span 1' }}
                     >
                       18 Players
                     </ModeButton>
@@ -1007,10 +1013,11 @@ const CreateBattle = () => {
                       type="button"
                       selected={gameMode === '24player'}
                       onClick={() => setGameMode('24player')}
+                      style={{ gridColumn: 'span 1' }}
                     >
                       24 Players
                     </ModeButton>
-                  </ModeSelector>
+                  </div>
                 </Box>
 
                 {/* Third Column: Choose Your Room */}
@@ -1032,41 +1039,41 @@ const CreateBattle = () => {
                         style={{
                           borderColor: selectedRoom === room.id ? '#9d00ff' : '#00ffff',
                           background: selectedRoom === room.id ? 'linear-gradient(135deg, rgba(157, 0, 255, 0.3), rgba(0, 255, 255, 0.3))' : 'linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1))',
-                          boxShadow: selectedRoom === room.id ? '0 0 30px rgba(157, 0, 255, 0.6)' : '0 0 15px rgba(0, 255, 255, 0.2)',
+                          boxShadow: selectedRoom === room.id ? '0 0 20px rgba(157, 0, 255, 0.6)' : '0 0 10px rgba(0, 255, 255, 0.2)',
                           flexDirection: 'column',
-                          padding: '0.5rem'
+                          padding: '0.35rem'
                         }}
                       >
                         {room.image ? (
-                          <img 
-                            src={room.image} 
+                          <img
+                            src={room.image}
                             alt={room.label}
                             style={{
                               width: '100%',
-                              height: '60%',
+                              height: '40%',
                               objectFit: 'cover',
-                              borderRadius: '8px',
-                              marginBottom: '0.3rem'
+                              borderRadius: '5px',
+                              marginBottom: '0.2rem'
                             }}
                           />
                         ) : (
-                          <div style={{ 
-                            color: selectedRoom === room.id ? '#9d00ff' : '#00ffff', 
-                            fontSize: '1.5rem',
+                          <div style={{
+                            color: selectedRoom === room.id ? '#9d00ff' : '#00ffff',
+                            fontSize: '1rem',
                             textAlign: 'center',
                             textShadow: selectedRoom === room.id ? '0 0 10px rgba(157, 0, 255, 0.8)' : '0 0 5px rgba(0, 255, 255, 0.5)',
-                            marginBottom: '0.3rem'
+                            marginBottom: '0.2rem'
                           }}>
                             🏠
                           </div>
                         )}
                         <div style={{
                           color: selectedRoom === room.id ? '#9d00ff' : '#ff8c00',
-                          fontSize: '1.4rem',
+                          fontSize: '0.95rem',
                           textAlign: 'center',
                           fontFamily: 'Orbitron, sans-serif',
                           fontWeight: 'bold',
-                          textShadow: selectedRoom === room.id ? '0 0 10px rgba(157, 0, 255, 0.8)' : '0 0 10px rgba(255, 140, 0, 0.8)'
+                          textShadow: selectedRoom === room.id ? '0 0 8px rgba(157, 0, 255, 0.8)' : '0 0 8px rgba(255, 140, 0, 0.8)'
                         }}>
                           {room.label}
                           {selectedRoom === room.id && ' ✓'}
