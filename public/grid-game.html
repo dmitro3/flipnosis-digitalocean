@@ -529,37 +529,41 @@
                 0 6px 8px rgba(0, 0, 0, 0.5);
         }
 
-        /* Flip Button - Neon Green Glow */
+        /* Flip Button - Neon Green */
         #flip-button {
             background:
-                radial-gradient(ellipse at top, #cd7f32, #8b5a00);
-            border: 3px outset #b8860b;
+                radial-gradient(ellipse at top, #00ff00, #00cc00);
+            border: 3px outset #39ff14;
+            color: #000000;
             box-shadow:
-                0 6px 0 #5d3a1a,
+                0 6px 0 #006600,
                 0 8px 12px rgba(0, 0, 0, 0.7),
-                0 0 30px rgba(57, 255, 20, 0.4),
-                inset 0 2px 4px rgba(255, 200, 124, 0.3),
-                inset 0 -2px 4px rgba(0, 0, 0, 0.4);
+                0 0 40px rgba(57, 255, 20, 0.8),
+                0 0 60px rgba(0, 255, 0, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
         }
 
         #flip-button:hover:not(:disabled) {
-            background: radial-gradient(ellipse at top, #e89b4a, #a0692f);
+            background: radial-gradient(ellipse at top, #39ff14, #00ff00);
             box-shadow:
-                0 8px 0 #5d3a1a,
+                0 8px 0 #006600,
                 0 12px 16px rgba(0, 0, 0, 0.8),
                 0 0 80px rgba(57, 255, 20, 1),
                 0 0 120px rgba(57, 255, 20, 1),
                 0 0 160px rgba(0, 255, 0, 0.8),
                 0 0 200px rgba(0, 255, 0, 0.6),
-                inset 0 2px 6px rgba(255, 200, 124, 0.4);
+                inset 0 2px 6px rgba(255, 255, 255, 0.4);
         }
 
         #flip-button:active:not(:disabled) {
             box-shadow:
-                0 2px 0 #5d3a1a,
+                0 2px 0 #006600,
                 0 4px 8px rgba(0, 0, 0, 0.6),
-                0 0 40px rgba(57, 255, 20, 0.6),
-                inset 0 4px 8px rgba(0, 0, 0, 0.6);
+                0 0 60px rgba(57, 255, 20, 0.8),
+                0 0 80px rgba(0, 255, 0, 0.6),
+                inset 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
         /* Change Coin Button - Purple Glow */
@@ -610,136 +614,30 @@
         }
 
 
-        /* Theme Options - Three Buttons */
-        .theme-options {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: space-between;
-        }
-
-        .theme-option-btn {
-            flex: 1;
-            padding: 0.6rem 0.4rem;
-            background: linear-gradient(145deg, rgba(61, 40, 23, 0.6), rgba(42, 24, 16, 0.8));
-            border: 2px solid #8b6914;
-            border-radius: 6px;
-            color: #d4a574;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.65rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow:
-                inset 0 0 10px rgba(0, 0, 0, 0.4),
-                0 2px 6px rgba(0, 0, 0, 0.5);
-        }
-
-        .theme-option-btn:hover {
-            transform: translateY(-2px);
-            box-shadow:
-                inset 0 0 15px rgba(0, 0, 0, 0.3),
-                0 4px 12px rgba(0, 0, 0, 0.6);
-        }
-
-        .theme-option-btn.active {
-            border: 2px solid #ff8c00;
-            background: linear-gradient(145deg, rgba(107, 68, 35, 0.8), rgba(61, 40, 23, 1));
-            color: #ffa500;
-            box-shadow:
-                inset 0 0 20px rgba(0, 0, 0, 0.4),
-                0 4px 12px rgba(255, 140, 0, 0.4);
-        }
-
-        /* Yellow Theme Styling */
-        #sidebar[data-theme="yellow"] {
-            background:
-                linear-gradient(135deg,
-                    #ffd700 0%,
-                    #ffed4e 25%,
-                    #fff44f 50%,
-                    #ffed4e 75%,
-                    #ffd700 100%);
-            border-left: 6px solid #f4c430;
-            box-shadow:
-                -8px 0 40px rgba(255, 215, 0, 0.5),
-                inset 0 0 60px rgba(255, 255, 255, 0.3),
-                inset -3px 0 20px rgba(255, 215, 0, 0.4);
-        }
-
-        #sidebar[data-theme="yellow"] .sidebar-section {
-            background:
-                linear-gradient(145deg, rgba(255, 250, 205, 0.95), rgba(255, 255, 224, 0.98));
-            border: 3px solid #daa520;
-            box-shadow:
-                inset 0 0 30px rgba(255, 215, 0, 0.1),
-                0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        #sidebar[data-theme="yellow"] .sidebar-section:not(:first-child)::before,
-        #sidebar[data-theme="yellow"] .sidebar-section::after {
-            background: radial-gradient(circle at 30% 30%, #ffd700, #daa520);
-            box-shadow:
-                inset -1px -1px 2px rgba(0, 0, 0, 0.3),
-                inset 1px 1px 2px rgba(255, 255, 255, 0.6);
-            border: 1px solid #b8860b;
-        }
-
-        #sidebar[data-theme="yellow"] h2,
-        #sidebar[data-theme="yellow"] h3 {
-            color: #8b6914;
-            text-shadow:
-                0 1px 2px rgba(255, 255, 255, 0.5);
-        }
-
-        #sidebar[data-theme="yellow"] .sidebar-section > div,
-        #sidebar[data-theme="yellow"] span:not(#auto-start-display):not(.theme-option-btn) {
-            color: #654321 !important;
-        }
-
-        #sidebar[data-theme="yellow"] #sidebar-toggle {
-            background: radial-gradient(circle at 30% 30%, #ffed4e, #ffd700);
-            border: 3px solid #daa520;
-            color: #654321;
-            box-shadow:
-                -4px 4px 12px rgba(0, 0, 0, 0.2),
-                inset -2px -2px 6px rgba(218, 165, 32, 0.4),
-                inset 2px 2px 6px rgba(255, 255, 255, 0.6);
-        }
-
-        #sidebar[data-theme="yellow"] #sidebar-toggle:hover {
-            background: radial-gradient(circle at 30% 30%, #fff44f, #ffed4e);
-            box-shadow:
-                -4px 4px 16px rgba(0, 0, 0, 0.3),
-                inset -2px -2px 8px rgba(218, 165, 32, 0.5),
-                inset 2px 2px 8px rgba(255, 255, 255, 0.7);
-        }
-
         /* Black Theme Styling */
         #sidebar[data-theme="black"] {
             background:
                 linear-gradient(135deg,
-                    #0a0a0a 0%,
-                    #1a1a1a 25%,
-                    #2a2a2a 50%,
-                    #1a1a1a 75%,
-                    #0a0a0a 100%);
-            border-left: 6px solid #333;
+                    #000000 0%,
+                    #050505 25%,
+                    #0a0a0a 50%,
+                    #050505 75%,
+                    #000000 100%);
+            border-left: 6px solid #1a1a1a;
             box-shadow:
-                -8px 0 40px rgba(0, 0, 0, 0.9),
-                inset 0 0 60px rgba(0, 0, 0, 0.8),
+                -8px 0 40px rgba(0, 0, 0, 1),
+                inset 0 0 60px rgba(0, 0, 0, 0.95),
                 inset -3px 0 20px rgba(0, 255, 255, 0.15),
                 0 0 40px rgba(0, 255, 255, 0.1);
         }
 
         #sidebar[data-theme="black"] .sidebar-section {
             background:
-                linear-gradient(145deg, rgba(20, 20, 20, 0.95), rgba(10, 10, 10, 0.98));
-            border: 3px solid #444;
+                linear-gradient(145deg, rgba(5, 5, 5, 0.98), rgba(0, 0, 0, 1));
+            border: 3px solid #222;
             box-shadow:
-                inset 0 0 30px rgba(0, 0, 0, 0.9),
-                0 4px 12px rgba(0, 0, 0, 0.8),
+                inset 0 0 30px rgba(0, 0, 0, 0.95),
+                0 4px 12px rgba(0, 0, 0, 0.9),
                 0 0 20px rgba(0, 255, 255, 0.08);
         }
 
@@ -775,21 +673,21 @@
         }
 
         #sidebar[data-theme="black"] #sidebar-toggle {
-            background: radial-gradient(circle at 30% 30%, #1a1a1a, #000000);
-            border: 3px solid #333;
+            background: radial-gradient(circle at 30% 30%, #0a0a0a, #000000);
+            border: 3px solid #1a1a1a;
             color: #00ffff;
             box-shadow:
-                -4px 4px 12px rgba(0, 0, 0, 0.9),
-                inset -2px -2px 6px rgba(0, 0, 0, 0.8),
+                -4px 4px 12px rgba(0, 0, 0, 1),
+                inset -2px -2px 6px rgba(0, 0, 0, 0.9),
                 inset 2px 2px 6px rgba(0, 255, 255, 0.2),
                 0 0 20px rgba(0, 255, 255, 0.1);
         }
 
         #sidebar[data-theme="black"] #sidebar-toggle:hover {
-            background: radial-gradient(circle at 30% 30%, #2a2a2a, #0a0a0a);
+            background: radial-gradient(circle at 30% 30%, #151515, #050505);
             box-shadow:
                 -4px 4px 16px rgba(0, 0, 0, 1),
-                inset -2px -2px 8px rgba(0, 0, 0, 0.9),
+                inset -2px -2px 8px rgba(0, 0, 0, 0.95),
                 inset 2px 2px 8px rgba(0, 255, 255, 0.3),
                 0 0 30px rgba(0, 255, 255, 0.3);
         }
@@ -1085,7 +983,7 @@
         <div id="canvas-container"></div>
 
         <!-- Right Sidebar -->
-        <div id="sidebar">
+        <div id="sidebar" data-theme="black">
             <button id="sidebar-toggle">◀</button>
 
             <!-- Round Info -->
@@ -1135,40 +1033,30 @@
             <!-- Controls -->
             <div class="sidebar-section">
                 <button class="btn" id="flip-button" disabled>FLIP COIN</button>
-                <button class="btn" id="change-coin-button">Change Coin</button>
             </div>
 
-            <!-- Mute Control and Auto-Start Display -->
+            <!-- Mute and Change Coin Controls -->
             <div style="display: flex; gap: 0.75rem; align-items: center;">
                 <button class="btn" id="mute-button" style="flex: 1;">MUTE</button>
-                <div id="auto-start-display" style="
-                    flex: 1;
-                    padding: 0.5rem 0.75rem;
-                    background: rgba(57, 255, 20, 0.1);
-                    border: 2px solid rgba(57, 255, 20, 0.3);
-                    border-radius: 8px;
-                    text-align: center;
-                    font-size: 0.75rem;
-                    font-weight: 600;
-                    color: #39ff14;
-                    text-shadow: 0 0 10px rgba(57, 255, 20, 0.8);
-                    box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
-                    display: none;
-                    white-space: nowrap;
-                ">AUTO-START</div>
+                <button class="btn" id="change-coin-button" style="flex: 1;">Change Coin</button>
             </div>
 
-            <!-- Theme Options -->
-            <div style="margin-top: 2rem; padding-top: 1rem; border-top: 2px solid rgba(139, 105, 20, 0.3);">
-                <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;">
-                    <span style="font-size: 0.75rem; color: #d4a574; font-weight: 600;">PANEL THEME</span>
-                </div>
-                <div class="theme-options">
-                    <button class="theme-option-btn active" data-theme="brass">Brass</button>
-                    <button class="theme-option-btn" data-theme="yellow">Yellow</button>
-                    <button class="theme-option-btn" data-theme="black">Black</button>
-                </div>
-            </div>
+            <!-- Auto-Start Display -->
+            <div id="auto-start-display" style="
+                padding: 0.5rem 0.75rem;
+                background: rgba(57, 255, 20, 0.1);
+                border: 2px solid rgba(57, 255, 20, 0.3);
+                border-radius: 8px;
+                text-align: center;
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: #39ff14;
+                text-shadow: 0 0 10px rgba(57, 255, 20, 0.8);
+                box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
+                display: none;
+                white-space: nowrap;
+            ">AUTO-START</div>
+
         </div>
     </div>
 

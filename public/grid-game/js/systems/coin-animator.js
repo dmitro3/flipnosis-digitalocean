@@ -58,7 +58,14 @@ export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
 
   // Calculate total rotation: full spins + final landing rotation
   // We want to end at targetRotation, so we calculate the difference and add full rotations
-  const rotationDifference = targetRotation - normalizedCurrent;
+  let rotationDifference = targetRotation - normalizedCurrent;
+
+  // ALWAYS rotate forward (positive direction), never backwards
+  // If difference is negative, add 2π to go the "long way" forward
+  if (rotationDifference < 0) {
+    rotationDifference += 2 * Math.PI;
+  }
+
   const totalRotation = (fullRotations * 2 * Math.PI) + rotationDifference;
 
   console.log(`  💫 Will perform ${fullRotations} full rotations + final landing = ${(totalRotation / Math.PI).toFixed(2)}π radians over ${(duration/1000).toFixed(2)}s`);
