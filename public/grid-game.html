@@ -529,7 +529,7 @@
                 0 6px 8px rgba(0, 0, 0, 0.5);
         }
 
-        /* Flip Button - Neon Green */
+        /* Flip Button - Neon Green with PULSING */
         #flip-button {
             background:
                 radial-gradient(ellipse at top, #00ff00, #00cc00);
@@ -543,10 +543,36 @@
                 inset 0 2px 4px rgba(255, 255, 255, 0.3),
                 inset 0 -2px 4px rgba(0, 0, 0, 0.3);
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+            animation: neonGreenPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes neonGreenPulse {
+            0%, 100% {
+                box-shadow:
+                    0 6px 0 #006600,
+                    0 8px 12px rgba(0, 0, 0, 0.7),
+                    0 0 40px rgba(57, 255, 20, 0.8),
+                    0 0 60px rgba(0, 255, 0, 0.6),
+                    0 0 80px rgba(57, 255, 20, 0.4),
+                    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow:
+                    0 6px 0 #006600,
+                    0 8px 12px rgba(0, 0, 0, 0.7),
+                    0 0 80px rgba(57, 255, 20, 1),
+                    0 0 120px rgba(57, 255, 20, 1),
+                    0 0 160px rgba(0, 255, 0, 0.8),
+                    0 0 200px rgba(57, 255, 20, 0.6),
+                    inset 0 2px 4px rgba(255, 255, 255, 0.4);
+                transform: scale(1.02);
+            }
         }
 
         #flip-button:hover:not(:disabled) {
             background: radial-gradient(ellipse at top, #39ff14, #00ff00);
+            animation: neonGreenPulseHover 0.8s ease-in-out infinite;
             box-shadow:
                 0 8px 0 #006600,
                 0 12px 16px rgba(0, 0, 0, 0.8),
@@ -557,7 +583,31 @@
                 inset 0 2px 6px rgba(255, 255, 255, 0.4);
         }
 
+        @keyframes neonGreenPulseHover {
+            0%, 100% {
+                box-shadow:
+                    0 8px 0 #006600,
+                    0 12px 16px rgba(0, 0, 0, 0.8),
+                    0 0 80px rgba(57, 255, 20, 1),
+                    0 0 120px rgba(57, 255, 20, 1),
+                    0 0 160px rgba(0, 255, 0, 0.8),
+                    0 0 200px rgba(0, 255, 0, 0.6),
+                    inset 0 2px 6px rgba(255, 255, 255, 0.4);
+            }
+            50% {
+                box-shadow:
+                    0 8px 0 #006600,
+                    0 12px 16px rgba(0, 0, 0, 0.8),
+                    0 0 120px rgba(57, 255, 20, 1),
+                    0 0 180px rgba(57, 255, 20, 1),
+                    0 0 220px rgba(0, 255, 0, 0.9),
+                    0 0 260px rgba(0, 255, 0, 0.7),
+                    inset 0 2px 6px rgba(255, 255, 255, 0.5);
+            }
+        }
+
         #flip-button:active:not(:disabled) {
+            animation: none;
             box-shadow:
                 0 2px 0 #006600,
                 0 4px 8px rgba(0, 0, 0, 0.6),
@@ -566,7 +616,11 @@
                 inset 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
-        /* Change Coin Button - Purple */
+        #flip-button:disabled {
+            animation: none;
+        }
+
+        /* Change Coin Button - NEON PURPLE */
         #change-coin-button {
             background: radial-gradient(ellipse at top, #a855f7, #7c3aed);
             border: 3px outset #c084fc;
@@ -574,22 +628,49 @@
             box-shadow:
                 0 6px 0 #4c1d95,
                 0 8px 12px rgba(0, 0, 0, 0.7),
-                0 0 40px rgba(168, 85, 247, 0.8),
-                0 0 60px rgba(168, 85, 247, 0.6),
+                0 0 60px rgba(168, 85, 247, 1),
+                0 0 90px rgba(168, 85, 247, 0.9),
+                0 0 120px rgba(192, 132, 252, 0.8),
+                0 0 150px rgba(168, 85, 247, 0.6),
                 inset 0 2px 4px rgba(255, 255, 255, 0.3),
                 inset 0 -2px 4px rgba(0, 0, 0, 0.3);
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 15px rgba(168, 85, 247, 0.8);
+            animation: neonPurplePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes neonPurplePulse {
+            0%, 100% {
+                box-shadow:
+                    0 6px 0 #4c1d95,
+                    0 8px 12px rgba(0, 0, 0, 0.7),
+                    0 0 60px rgba(168, 85, 247, 1),
+                    0 0 90px rgba(168, 85, 247, 0.9),
+                    0 0 120px rgba(192, 132, 252, 0.8),
+                    0 0 150px rgba(168, 85, 247, 0.6),
+                    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            }
+            50% {
+                box-shadow:
+                    0 6px 0 #4c1d95,
+                    0 8px 12px rgba(0, 0, 0, 0.7),
+                    0 0 80px rgba(168, 85, 247, 1),
+                    0 0 120px rgba(168, 85, 247, 1),
+                    0 0 160px rgba(192, 132, 252, 0.95),
+                    0 0 200px rgba(168, 85, 247, 0.8),
+                    inset 0 2px 4px rgba(255, 255, 255, 0.4);
+            }
         }
 
         #change-coin-button:hover:not(:disabled) {
             background: radial-gradient(ellipse at top, #c084fc, #a855f7);
+            animation: none;
             box-shadow:
                 0 8px 0 #4c1d95,
                 0 12px 16px rgba(0, 0, 0, 0.8),
-                0 0 80px rgba(168, 85, 247, 1),
-                0 0 120px rgba(168, 85, 247, 1),
-                0 0 160px rgba(192, 132, 252, 0.9),
-                0 0 200px rgba(232, 121, 249, 0.7),
+                0 0 100px rgba(168, 85, 247, 1),
+                0 0 150px rgba(168, 85, 247, 1),
+                0 0 200px rgba(192, 132, 252, 0.95),
+                0 0 250px rgba(232, 121, 249, 0.9),
                 inset 0 2px 6px rgba(255, 255, 255, 0.4);
         }
 
@@ -602,37 +683,65 @@
                 inset 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
-        /* Mute Button - Red */
+        /* Mute Button - NEON RED */
         #mute-button {
-            background: radial-gradient(ellipse at top, #ef4444, #dc2626);
-            border: 3px outset #f87171;
+            background: radial-gradient(ellipse at top, #ff0000, #cc0000);
+            border: 3px outset #ff3333;
             color: #ffffff;
             box-shadow:
-                0 6px 0 #7f1d1d,
+                0 6px 0 #660000,
                 0 8px 12px rgba(0, 0, 0, 0.7),
-                0 0 40px rgba(239, 68, 68, 0.6),
-                0 0 60px rgba(239, 68, 68, 0.4),
+                0 0 60px rgba(255, 0, 0, 1),
+                0 0 90px rgba(255, 0, 0, 0.8),
+                0 0 120px rgba(255, 51, 51, 0.7),
+                0 0 150px rgba(255, 0, 0, 0.5),
                 inset 0 2px 4px rgba(255, 255, 255, 0.3),
                 inset 0 -2px 4px rgba(0, 0, 0, 0.3);
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 0, 0, 0.8);
+            animation: neonRedPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes neonRedPulse {
+            0%, 100% {
+                box-shadow:
+                    0 6px 0 #660000,
+                    0 8px 12px rgba(0, 0, 0, 0.7),
+                    0 0 60px rgba(255, 0, 0, 1),
+                    0 0 90px rgba(255, 0, 0, 0.8),
+                    0 0 120px rgba(255, 51, 51, 0.7),
+                    0 0 150px rgba(255, 0, 0, 0.5),
+                    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            }
+            50% {
+                box-shadow:
+                    0 6px 0 #660000,
+                    0 8px 12px rgba(0, 0, 0, 0.7),
+                    0 0 80px rgba(255, 0, 0, 1),
+                    0 0 120px rgba(255, 0, 0, 1),
+                    0 0 160px rgba(255, 51, 51, 0.9),
+                    0 0 200px rgba(255, 0, 0, 0.7),
+                    inset 0 2px 4px rgba(255, 255, 255, 0.4);
+            }
         }
 
         #mute-button:hover:not(:disabled) {
-            background: radial-gradient(ellipse at top, #f87171, #ef4444);
+            background: radial-gradient(ellipse at top, #ff3333, #ff0000);
+            animation: none;
             box-shadow:
-                0 8px 0 #7f1d1d,
+                0 8px 0 #660000,
                 0 12px 16px rgba(0, 0, 0, 0.8),
-                0 0 60px rgba(239, 68, 68, 1),
-                0 0 90px rgba(239, 68, 68, 0.8),
-                0 0 120px rgba(248, 113, 113, 0.6),
+                0 0 100px rgba(255, 0, 0, 1),
+                0 0 150px rgba(255, 0, 0, 1),
+                0 0 200px rgba(255, 51, 51, 0.9),
+                0 0 250px rgba(255, 0, 0, 0.8),
                 inset 0 2px 6px rgba(255, 255, 255, 0.4);
         }
 
         #mute-button:active:not(:disabled) {
             box-shadow:
-                0 2px 0 #7f1d1d,
+                0 2px 0 #660000,
                 0 4px 8px rgba(0, 0, 0, 0.6),
-                0 0 40px rgba(239, 68, 68, 0.6),
+                0 0 60px rgba(255, 0, 0, 0.8),
                 inset 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
@@ -1053,15 +1162,15 @@
                 </div>
             </div>
 
-            <!-- Controls -->
-            <div class="sidebar-section">
-                <button class="btn" id="flip-button" disabled>FLIP COIN</button>
-            </div>
-
             <!-- Mute and Change Coin Controls -->
             <div style="display: flex; gap: 0.75rem; align-items: center;">
                 <button class="btn" id="mute-button" style="flex: 1;">MUTE</button>
                 <button class="btn" id="change-coin-button" style="flex: 1;">COINS</button>
+            </div>
+
+            <!-- Flip Button - Below mute/coins with pulsing effect -->
+            <div class="sidebar-section">
+                <button class="btn" id="flip-button" disabled>FLIP COIN</button>
             </div>
 
             <!-- Auto-Start Display -->

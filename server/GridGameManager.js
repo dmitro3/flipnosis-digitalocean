@@ -339,12 +339,19 @@ class GridGameManager {
     player.choice = choice;
     player.targetHit = targetHit; // Store result for endRound()
 
-    console.log(`🎲 Player ${playerAddress} flipped: choice=${choice}, target=${game.roundTarget}, choiceMatches=${choiceMatches}, powerSuccess=${powerSuccess}, hit=${targetHit}`);
+    // Determine the actual face the coin landed on
+    // If they hit the target, coin shows the target
+    // If they missed, coin shows the opposite face
+    const resultFace = targetHit
+      ? game.roundTarget
+      : (game.roundTarget === 'heads' ? 'tails' : 'heads');
+
+    console.log(`🎲 Player ${playerAddress} flipped: choice=${choice}, target=${game.roundTarget}, choiceMatches=${choiceMatches}, powerSuccess=${powerSuccess}, hit=${targetHit}, resultFace=${resultFace}`);
 
     return {
       success: true,
       targetHit,
-      targetFace: game.roundTarget,
+      targetFace: resultFace,  // Send the actual result face, not always the target
       slotNumber: player.slotNumber,
     };
   }

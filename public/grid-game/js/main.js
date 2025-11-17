@@ -776,7 +776,8 @@ export function updateGameUI() {
   // Update players remaining counter
   const remainingElement = document.getElementById('players-remaining');
   if (remainingElement) {
-    const activePlayers = state.players.filter(p => p.isActive && !p.isEliminated).length;
+    // Count players with an address (joined the game) who are not eliminated
+    const activePlayers = state.players.filter(p => p.address && !p.isEliminated).length;
     remainingElement.textContent = activePlayers;
   }
 }
