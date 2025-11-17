@@ -138,21 +138,21 @@ export function updateFlipAnimations() {
 
     // Easing function - creates natural deceleration curve
     // Higher power = more dramatic initial speed, longer tail
-    // Uses cubic or quartic ease-out for smooth, natural slowdown
-    const easeStrength = 3.0 + (animation.power * 2.0); // 3.0 to 5.0
-    const easedProgress = 1 - Math.pow(1 - progress, easeStrength);
+    // Uses quartic ease-out for smooth, natural slowdown
+    const easeStrength = 4.0 + (animation.power * 1.5); // 4.0 to 5.5 for smoother deceleration
+    let easedProgress = 1 - Math.pow(1 - progress, easeStrength);
 
-    // Apply extra smoothing in the last 20% for ultra-gradual stop
-    // This creates the "slow landing" effect the user wants
-    let finalProgress = easedProgress;
-    if (progress > 0.8) {
-      const endPhase = (progress - 0.8) / 0.2; // 0 to 1 in last 20%
-      const endSmoothFactor = 1 - (0.12 * Math.pow(endPhase, 2));
-      finalProgress = easedProgress * endSmoothFactor;
+    // Apply extra smoothing in the last 30% for ultra-gradual stop
+    // We slow down the RATE of progress, not multiply the value (which would cause backwards rotation)
+    if (progress > 0.7) {
+      const endPhase = (progress - 0.7) / 0.3; // 0 to 1 in last 30%
+      // Exponentially slow down the rate of change as we approach the end
+      const slowdownFactor = 1.0 + (endPhase * endPhase * 2.0); // 1.0 to 3.0
+      easedProgress = 1 - Math.pow(1 - progress, easeStrength * slowdownFactor);
     }
 
     // Calculate current rotation based on eased progress
-    const currentRotation = animation.totalRotation * finalProgress;
+    const currentRotation = animation.totalRotation * easedProgress;
 
     // Apply rotation - smooth and continuous
     coin.rotation.x = animation.startRotation.x + currentRotation;
