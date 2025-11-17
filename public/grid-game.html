@@ -529,12 +529,12 @@
                 0 6px 8px rgba(0, 0, 0, 0.5);
         }
 
-        /* Flip Button - Neon Green with PULSING */
+        /* Flip Button - Neon Green NO PULSING */
         #flip-button {
             background:
                 radial-gradient(ellipse at top, #00ff00, #00cc00);
             border: 3px outset #39ff14;
-            color: #000000;
+            color: #ffffff; /* White text */
             box-shadow:
                 0 6px 0 #006600,
                 0 8px 12px rgba(0, 0, 0, 0.7),
@@ -543,36 +543,11 @@
                 inset 0 2px 4px rgba(255, 255, 255, 0.3),
                 inset 0 -2px 4px rgba(0, 0, 0, 0.3);
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
-            animation: neonGreenPulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes neonGreenPulse {
-            0%, 100% {
-                box-shadow:
-                    0 6px 0 #006600,
-                    0 8px 12px rgba(0, 0, 0, 0.7),
-                    0 0 40px rgba(57, 255, 20, 0.8),
-                    0 0 60px rgba(0, 255, 0, 0.6),
-                    0 0 80px rgba(57, 255, 20, 0.4),
-                    inset 0 2px 4px rgba(255, 255, 255, 0.3);
-                transform: scale(1);
-            }
-            50% {
-                box-shadow:
-                    0 6px 0 #006600,
-                    0 8px 12px rgba(0, 0, 0, 0.7),
-                    0 0 80px rgba(57, 255, 20, 1),
-                    0 0 120px rgba(57, 255, 20, 1),
-                    0 0 160px rgba(0, 255, 0, 0.8),
-                    0 0 200px rgba(57, 255, 20, 0.6),
-                    inset 0 2px 4px rgba(255, 255, 255, 0.4);
-                transform: scale(1.02);
-            }
+            /* NO animation */
         }
 
         #flip-button:hover:not(:disabled) {
             background: radial-gradient(ellipse at top, #39ff14, #00ff00);
-            animation: neonGreenPulseHover 0.8s ease-in-out infinite;
             box-shadow:
                 0 8px 0 #006600,
                 0 12px 16px rgba(0, 0, 0, 0.8),
@@ -583,31 +558,7 @@
                 inset 0 2px 6px rgba(255, 255, 255, 0.4);
         }
 
-        @keyframes neonGreenPulseHover {
-            0%, 100% {
-                box-shadow:
-                    0 8px 0 #006600,
-                    0 12px 16px rgba(0, 0, 0, 0.8),
-                    0 0 80px rgba(57, 255, 20, 1),
-                    0 0 120px rgba(57, 255, 20, 1),
-                    0 0 160px rgba(0, 255, 0, 0.8),
-                    0 0 200px rgba(0, 255, 0, 0.6),
-                    inset 0 2px 6px rgba(255, 255, 255, 0.4);
-            }
-            50% {
-                box-shadow:
-                    0 8px 0 #006600,
-                    0 12px 16px rgba(0, 0, 0, 0.8),
-                    0 0 120px rgba(57, 255, 20, 1),
-                    0 0 180px rgba(57, 255, 20, 1),
-                    0 0 220px rgba(0, 255, 0, 0.9),
-                    0 0 260px rgba(0, 255, 0, 0.7),
-                    inset 0 2px 6px rgba(255, 255, 255, 0.5);
-            }
-        }
-
         #flip-button:active:not(:disabled) {
-            animation: none;
             box-shadow:
                 0 2px 0 #006600,
                 0 4px 8px rgba(0, 0, 0, 0.6),
@@ -617,109 +568,105 @@
         }
 
         #flip-button:disabled {
-            animation: none;
+            /* No animation when disabled */
         }
 
-        /* Change Coin Button - NEON PURPLE */
+        /* Change Coin Button - DARKER NEON PURPLE */
         #change-coin-button {
-            background: radial-gradient(ellipse at top, #a855f7, #7c3aed);
-            border: 3px outset #c084fc;
+            background: radial-gradient(ellipse at top, #7c3aed, #5b21b6);
+            border: 3px outset #8b5cf6;
             color: #ffffff;
+            padding: 0.6rem; /* Smaller */
+            font-size: 0.9rem; /* Smaller text */
             box-shadow:
-                0 6px 0 #4c1d95,
-                0 8px 12px rgba(0, 0, 0, 0.7),
-                0 0 60px rgba(168, 85, 247, 1),
-                0 0 90px rgba(168, 85, 247, 0.9),
-                0 0 120px rgba(192, 132, 252, 0.8),
-                0 0 150px rgba(168, 85, 247, 0.6),
+                0 4px 0 #3b0764,
+                0 6px 10px rgba(0, 0, 0, 0.7),
+                0 0 40px rgba(124, 58, 237, 0.9),
+                0 0 60px rgba(91, 33, 182, 0.8),
+                0 0 80px rgba(139, 92, 246, 0.7),
                 inset 0 2px 4px rgba(255, 255, 255, 0.3),
                 inset 0 -2px 4px rgba(0, 0, 0, 0.3);
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 15px rgba(168, 85, 247, 0.8);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(124, 58, 237, 0.8);
             animation: neonPurplePulse 2s ease-in-out infinite;
         }
 
         @keyframes neonPurplePulse {
             0%, 100% {
                 box-shadow:
-                    0 6px 0 #4c1d95,
-                    0 8px 12px rgba(0, 0, 0, 0.7),
-                    0 0 60px rgba(168, 85, 247, 1),
-                    0 0 90px rgba(168, 85, 247, 0.9),
-                    0 0 120px rgba(192, 132, 252, 0.8),
-                    0 0 150px rgba(168, 85, 247, 0.6),
+                    0 4px 0 #3b0764,
+                    0 6px 10px rgba(0, 0, 0, 0.7),
+                    0 0 40px rgba(124, 58, 237, 0.9),
+                    0 0 60px rgba(91, 33, 182, 0.8),
+                    0 0 80px rgba(139, 92, 246, 0.7),
                     inset 0 2px 4px rgba(255, 255, 255, 0.3);
             }
             50% {
                 box-shadow:
-                    0 6px 0 #4c1d95,
-                    0 8px 12px rgba(0, 0, 0, 0.7),
-                    0 0 80px rgba(168, 85, 247, 1),
-                    0 0 120px rgba(168, 85, 247, 1),
-                    0 0 160px rgba(192, 132, 252, 0.95),
-                    0 0 200px rgba(168, 85, 247, 0.8),
+                    0 4px 0 #3b0764,
+                    0 6px 10px rgba(0, 0, 0, 0.7),
+                    0 0 60px rgba(124, 58, 237, 1),
+                    0 0 90px rgba(91, 33, 182, 0.9),
+                    0 0 120px rgba(139, 92, 246, 0.8),
                     inset 0 2px 4px rgba(255, 255, 255, 0.4);
             }
         }
 
         #change-coin-button:hover:not(:disabled) {
-            background: radial-gradient(ellipse at top, #c084fc, #a855f7);
+            background: radial-gradient(ellipse at top, #8b5cf6, #7c3aed);
             animation: none;
             box-shadow:
-                0 8px 0 #4c1d95,
-                0 12px 16px rgba(0, 0, 0, 0.8),
-                0 0 100px rgba(168, 85, 247, 1),
-                0 0 150px rgba(168, 85, 247, 1),
-                0 0 200px rgba(192, 132, 252, 0.95),
-                0 0 250px rgba(232, 121, 249, 0.9),
+                0 6px 0 #3b0764,
+                0 8px 12px rgba(0, 0, 0, 0.8),
+                0 0 70px rgba(124, 58, 237, 1),
+                0 0 100px rgba(91, 33, 182, 1),
+                0 0 130px rgba(139, 92, 246, 0.9),
                 inset 0 2px 6px rgba(255, 255, 255, 0.4);
         }
 
         #change-coin-button:active:not(:disabled) {
             box-shadow:
-                0 2px 0 #4c1d95,
+                0 2px 0 #3b0764,
                 0 4px 8px rgba(0, 0, 0, 0.6),
-                0 0 60px rgba(168, 85, 247, 0.8),
-                0 0 80px rgba(168, 85, 247, 0.6),
+                0 0 40px rgba(124, 58, 237, 0.8),
                 inset 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
-        /* Mute Button - NEON RED */
+        /* Mute Button - NEON RED (Smaller) */
         #mute-button {
             background: radial-gradient(ellipse at top, #ff0000, #cc0000);
             border: 3px outset #ff3333;
             color: #ffffff;
+            padding: 0.6rem; /* Smaller */
+            font-size: 0.9rem; /* Smaller text */
             box-shadow:
-                0 6px 0 #660000,
-                0 8px 12px rgba(0, 0, 0, 0.7),
-                0 0 60px rgba(255, 0, 0, 1),
-                0 0 90px rgba(255, 0, 0, 0.8),
-                0 0 120px rgba(255, 51, 51, 0.7),
-                0 0 150px rgba(255, 0, 0, 0.5),
+                0 4px 0 #660000,
+                0 6px 10px rgba(0, 0, 0, 0.7),
+                0 0 40px rgba(255, 0, 0, 1),
+                0 0 60px rgba(255, 0, 0, 0.8),
+                0 0 80px rgba(255, 51, 51, 0.7),
                 inset 0 2px 4px rgba(255, 255, 255, 0.3),
                 inset 0 -2px 4px rgba(0, 0, 0, 0.3);
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 0, 0, 0.8);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 0, 0, 0.8);
             animation: neonRedPulse 2s ease-in-out infinite;
         }
 
         @keyframes neonRedPulse {
             0%, 100% {
                 box-shadow:
-                    0 6px 0 #660000,
-                    0 8px 12px rgba(0, 0, 0, 0.7),
-                    0 0 60px rgba(255, 0, 0, 1),
-                    0 0 90px rgba(255, 0, 0, 0.8),
-                    0 0 120px rgba(255, 51, 51, 0.7),
-                    0 0 150px rgba(255, 0, 0, 0.5),
+                    0 4px 0 #660000,
+                    0 6px 10px rgba(0, 0, 0, 0.7),
+                    0 0 40px rgba(255, 0, 0, 1),
+                    0 0 60px rgba(255, 0, 0, 0.8),
+                    0 0 80px rgba(255, 51, 51, 0.7),
                     inset 0 2px 4px rgba(255, 255, 255, 0.3);
             }
             50% {
                 box-shadow:
-                    0 6px 0 #660000,
-                    0 8px 12px rgba(0, 0, 0, 0.7),
-                    0 0 80px rgba(255, 0, 0, 1),
-                    0 0 120px rgba(255, 0, 0, 1),
-                    0 0 160px rgba(255, 51, 51, 0.9),
-                    0 0 200px rgba(255, 0, 0, 0.7),
+                    0 4px 0 #660000,
+                    0 6px 10px rgba(0, 0, 0, 0.7),
+                    0 0 60px rgba(255, 0, 0, 1),
+                    0 0 90px rgba(255, 0, 0, 1),
+                    0 0 120px rgba(255, 51, 51, 0.9),
                     inset 0 2px 4px rgba(255, 255, 255, 0.4);
             }
         }
@@ -728,12 +675,11 @@
             background: radial-gradient(ellipse at top, #ff3333, #ff0000);
             animation: none;
             box-shadow:
-                0 8px 0 #660000,
-                0 12px 16px rgba(0, 0, 0, 0.8),
+                0 6px 0 #660000,
+                0 8px 12px rgba(0, 0, 0, 0.8),
+                0 0 70px rgba(255, 0, 0, 1),
                 0 0 100px rgba(255, 0, 0, 1),
-                0 0 150px rgba(255, 0, 0, 1),
-                0 0 200px rgba(255, 51, 51, 0.9),
-                0 0 250px rgba(255, 0, 0, 0.8),
+                0 0 130px rgba(255, 51, 51, 0.9),
                 inset 0 2px 6px rgba(255, 255, 255, 0.4);
         }
 
@@ -741,10 +687,53 @@
             box-shadow:
                 0 2px 0 #660000,
                 0 4px 8px rgba(0, 0, 0, 0.6),
-                0 0 60px rgba(255, 0, 0, 0.8),
+                0 0 40px rgba(255, 0, 0, 0.8),
                 inset 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
+
+        /* You've Earned Display - Similar to Target but smaller */
+        #earned-display {
+            text-align: center;
+            padding: 1rem;
+            background:
+                linear-gradient(135deg, rgba(20, 12, 8, 0.9), rgba(30, 18, 12, 0.95));
+            border: 3px ridge #cd7f32;
+            border-radius: 4px;
+            margin: 1rem 0 0.75rem 0;
+            box-shadow:
+                inset 0 0 25px rgba(0, 0, 0, 0.8),
+                0 4px 10px rgba(0, 0, 0, 0.6),
+                0 0 30px rgba(255, 215, 0, 0.2);
+            position: relative;
+        }
+
+        #earned-display::before {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border: 1px solid rgba(205, 127, 50, 0.3);
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
+        #earned-label {
+            font-size: 0.7rem;
+            color: #b8860b;
+            margin-bottom: 0.4rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        #earned-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow:
+                0 0 15px rgba(255, 215, 0, 1),
+                0 0 30px rgba(255, 215, 0, 0.6),
+                0 4px 8px rgba(0, 0, 0, 0.9);
+        }
 
         /* Black Theme Styling */
         #sidebar[data-theme="black"] {
@@ -1154,23 +1143,29 @@
                 </div>
             </div>
 
-            <!-- Lives -->
-            <div class="sidebar-section">
-                <div class="sidebar-title">Lives</div>
+            <!-- Lives - Smaller -->
+            <div class="sidebar-section" style="padding: 0.8rem; margin-bottom: 1rem;">
+                <div class="sidebar-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;">Lives</div>
                 <div style="text-align: center;">
-                    <span id="player-lives" style="font-size: 2.5rem; filter: drop-shadow(0 0 8px #a855f7) drop-shadow(0 0 15px #c084fc) drop-shadow(0 0 25px #e879f9) hue-rotate(280deg) saturate(2); text-shadow: 0 0 20px rgba(168, 85, 247, 0.9), 0 0 40px rgba(192, 132, 252, 0.6);">🧪🧪🧪</span>
+                    <span id="player-lives" style="font-size: 2rem; filter: drop-shadow(0 0 10px #39ff14) drop-shadow(0 0 20px #00ff00) drop-shadow(0 0 30px #39ff14); text-shadow: 0 0 20px rgba(57, 255, 20, 1), 0 0 40px rgba(0, 255, 0, 0.8), 0 0 60px rgba(57, 255, 20, 0.6);">🧪🧪🧪</span>
                 </div>
             </div>
 
-            <!-- Mute and Change Coin Controls -->
-            <div style="display: flex; gap: 0.75rem; align-items: center;">
-                <button class="btn" id="mute-button" style="flex: 1;">MUTE</button>
-                <button class="btn" id="change-coin-button" style="flex: 1;">COINS</button>
-            </div>
-
-            <!-- Flip Button - Below mute/coins with pulsing effect -->
+            <!-- Flip Button -->
             <div class="sidebar-section">
                 <button class="btn" id="flip-button" disabled>FLIP COIN</button>
+            </div>
+
+            <!-- You've Earned Display -->
+            <div id="earned-display">
+                <div id="earned-label">You've Earned</div>
+                <div id="earned-value">0 FLIP</div>
+            </div>
+
+            <!-- Mute and Change Coin Controls -->
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem;">
+                <button class="btn" id="mute-button" style="flex: 1;">MUTE</button>
+                <button class="btn" id="change-coin-button" style="flex: 1;">COINS</button>
             </div>
 
             <!-- Auto-Start Display -->
