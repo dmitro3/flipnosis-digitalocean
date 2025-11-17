@@ -12,6 +12,7 @@ const flipAnimations = new Map();
 
 /**
  * Start flip animation for a coin
+ * NO LONGER PREDETERMINES RESULT - determines after landing
  */
 export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
   const coin = getCoin(slotNumber);
@@ -25,12 +26,13 @@ export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
     return false;
   }
 
-  console.log(`🎲 Starting flip animation for slot ${slotNumber}, target: ${targetFace}, power: ${power.toFixed(2)}`);
+  console.log(`🎲 Starting flip animation for slot ${slotNumber}, power: ${power.toFixed(2)}`);
 
   // Dramatic rotation scaling based on power
-  // Low power (0-0.2): 3-5 rotations over 1-1.5 seconds
-  // Medium power (0.2-0.7): 5-10 rotations over 1.5-2.5 seconds
-  // High power (0.7-1.0): 10-20 rotations over 2.5-4 seconds
+  // Low power (0-0.2): 3-5 rotations over 2-3 seconds
+  // Medium power (0.2-0.7): 5-10 rotations over 3-4.5 seconds
+  // High power (0.7-1.0): 10-20 rotations over 4.5-7 seconds
+  // INCREASED DURATIONS for longer tail
   const minRotations = 3;
   const maxRotations = 20;
   const powerRotations = minRotations + (power * (maxRotations - minRotations));
@@ -39,17 +41,16 @@ export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
   const randomExtraSpins = Math.random() * 2;
   const totalRotations = powerRotations + randomExtraSpins;
 
-  // Duration scales with power - faster spins at high power last longer
-  const minDuration = 1000; // 1 second minimum
-  const maxDuration = 4000; // 4 seconds maximum
+  // Duration scales with power - MUCH longer for dramatic tail
+  const minDuration = 2000; // 2 seconds minimum
+  const maxDuration = 7000; // 7 seconds maximum (extended for long tail)
   const duration = minDuration + (power * (maxDuration - minDuration));
 
-  // Determine final rotation with slight randomness
-  // Add random offset to make it less predictable (within ±15 degrees)
-  const randomOffset = (Math.random() - 0.5) * (Math.PI / 12); // ±15 degrees
-  const isHeads = targetFace === 'heads';
-  const baseRotation = isHeads ? Math.PI / 2 : (3 * Math.PI) / 2;
-  const finalRotationX = baseRotation + randomOffset;
+  // CHANGED: Don't predetermine the result
+  // Let the coin land naturally, then determine the side based on final position
+  // Add a random final rotation that will land on either heads or tails
+  const randomLanding = Math.random(); // 0-1
+  const finalRotationX = totalRotations * 2 * Math.PI + (randomLanding < 0.5 ? Math.PI / 2 : (3 * Math.PI) / 2);
 
   // Create animation state
   const animation = {
@@ -110,23 +111,32 @@ export function updateFlipAnimations() {
       coin.rotation.z = 0;
 
       coin.userData.isFlipping = false;
-      coin.userData.currentFace = animation.targetFace;
 
-      console.log(`✅ Flip animation complete for slot ${slotNumber}: ${animation.targetFace}`);
+      // CHANGED: Determine the face AFTER landing based on final rotation
+      const normalizedRotation = animation.finalRotationX % (2 * Math.PI);
+      const isHeads = (normalizedRotation >= 0 && normalizedRotation < Math.PI) ||
+                      (normalizedRotation >= Math.PI / 4 && normalizedRotation < 3 * Math.PI / 4) ||
+                      (normalizedRotation >= 5 * Math.PI / 4 && normalizedRotation < 7 * Math.PI / 4);
+      const landedFace = isHeads ? 'heads' : 'tails';
+
+      coin.userData.currentFace = landedFace;
+      coin.userData.targetFace = landedFace;
+
+      console.log(`✅ Flip animation complete for slot ${slotNumber}: landed on ${landedFace} (rotation: ${normalizedRotation.toFixed(2)})`);
 
       flipAnimations.delete(slotNumber);
       return;
     }
 
-    // Easing function - exponential decay for smooth, gradual slow-stop
-    // Creates a long deceleration tail that feels natural
-    // Higher power = more dramatic initial speed, but always ends with gradual stop
-    const easeStrength = 2.5 + (animation.power * 2.5); // 2.5 to 5.0 for strong ease-out
+    // Easing function - EXTREME exponential decay for VERY long, gradual slow-stop
+    // Creates an ultra-long deceleration tail that feels natural
+    // Higher power = more dramatic initial speed, but ALWAYS ends with SUPER gradual stop
+    const easeStrength = 3.5 + (animation.power * 3.5); // 3.5 to 7.0 for VERY strong ease-out
     const easedProgress = 1 - Math.pow(1 - progress, easeStrength);
 
-    // Apply additional smoothing for the last 20% to ensure gradual stop
-    const smoothProgress = progress > 0.8
-      ? easedProgress * (1 - 0.05 * Math.pow((progress - 0.8) / 0.2, 2))
+    // Apply MUCH MORE smoothing for the last 30% to ensure REALLY gradual stop
+    const smoothProgress = progress > 0.7
+      ? easedProgress * (1 - 0.15 * Math.pow((progress - 0.7) / 0.3, 3))
       : easedProgress;
 
     // Calculate rotation using the smoothed progress for gradual deceleration

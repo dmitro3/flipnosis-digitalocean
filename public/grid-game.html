@@ -609,109 +609,111 @@
             opacity: 1;
         }
 
-        /* Start Game Button - Intense Orange Glow */
-        #start-game-button {
-            background: radial-gradient(ellipse at top, #cd7f32, #8b5a00);
-            border: 3px outset #b8860b;
-            box-shadow:
-                0 6px 0 #5d3a1a,
-                0 8px 12px rgba(0, 0, 0, 0.7),
-                0 0 35px rgba(255, 102, 0, 0.5),
-                inset 0 2px 4px rgba(255, 200, 124, 0.3),
-                inset 0 -2px 4px rgba(0, 0, 0, 0.4);
+
+        /* Theme Options - Three Buttons */
+        .theme-options {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: space-between;
         }
 
-        #start-game-button:hover:not(:disabled) {
-            background: radial-gradient(ellipse at top, #e89b4a, #a0692f);
-            box-shadow:
-                0 8px 0 #5d3a1a,
-                0 12px 16px rgba(0, 0, 0, 0.8),
-                0 0 60px rgba(255, 102, 0, 0.9),
-                0 0 90px rgba(255, 102, 0, 0.5),
-                inset 0 2px 6px rgba(255, 200, 124, 0.4);
-        }
-
-        #start-game-button:active:not(:disabled) {
-            box-shadow:
-                0 2px 0 #5d3a1a,
-                0 4px 8px rgba(0, 0, 0, 0.6),
-                0 0 45px rgba(255, 102, 0, 0.7),
-                inset 0 4px 8px rgba(0, 0, 0, 0.6);
-        }
-
-        /* Theme Toggle Switch */
-        .theme-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-
-        .theme-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .theme-slider {
-            position: absolute;
+        .theme-option-btn {
+            flex: 1;
+            padding: 0.6rem 0.4rem;
+            background: linear-gradient(145deg, rgba(61, 40, 23, 0.6), rgba(42, 24, 16, 0.8));
+            border: 2px solid #8b6914;
+            border-radius: 6px;
+            color: #d4a574;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65rem;
+            font-weight: 600;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(145deg, #8b6914, #6b5016);
-            border: 2px solid #d4a574;
             transition: all 0.3s ease;
-            border-radius: 24px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             box-shadow:
-                inset 0 2px 4px rgba(0, 0, 0, 0.6),
-                0 0 10px rgba(139, 105, 20, 0.3);
+                inset 0 0 10px rgba(0, 0, 0, 0.4),
+                0 2px 6px rgba(0, 0, 0, 0.5);
         }
 
-        .theme-slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 2px;
-            background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b);
-            transition: all 0.3s ease;
-            border-radius: 50%;
+        .theme-option-btn:hover {
+            transform: translateY(-2px);
             box-shadow:
-                0 2px 4px rgba(0, 0, 0, 0.5),
-                inset -1px -1px 3px rgba(0, 0, 0, 0.4),
-                inset 1px 1px 3px rgba(255, 255, 255, 0.4);
+                inset 0 0 15px rgba(0, 0, 0, 0.3),
+                0 4px 12px rgba(0, 0, 0, 0.6);
         }
 
-        input:checked + .theme-slider {
-            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
-            border-color: #666;
+        .theme-option-btn.active {
+            border: 2px solid #ff8c00;
+            background: linear-gradient(145deg, rgba(107, 68, 35, 0.8), rgba(61, 40, 23, 1));
+            color: #ffa500;
             box-shadow:
-                inset 0 2px 4px rgba(0, 0, 0, 0.9),
-                0 0 15px rgba(0, 255, 255, 0.3);
+                inset 0 0 20px rgba(0, 0, 0, 0.4),
+                0 4px 12px rgba(255, 140, 0, 0.4);
         }
 
-        input:checked + .theme-slider:before {
-            transform: translateX(26px);
-            background: radial-gradient(circle at 30% 30%, #00ffff, #008b8b);
+        /* White Theme Styling */
+        #sidebar[data-theme="white"] {
+            background:
+                linear-gradient(135deg,
+                    #f5f5f5 0%,
+                    #e8e8e8 25%,
+                    #ffffff 50%,
+                    #e8e8e8 75%,
+                    #f5f5f5 100%);
+            border-left: 6px solid #c0c0c0;
             box-shadow:
-                0 2px 6px rgba(0, 255, 255, 0.5),
-                inset -1px -1px 3px rgba(0, 0, 0, 0.4),
-                inset 1px 1px 3px rgba(0, 255, 255, 0.4);
+                -8px 0 40px rgba(0, 0, 0, 0.3),
+                inset 0 0 60px rgba(255, 255, 255, 0.8),
+                inset -3px 0 20px rgba(200, 200, 200, 0.3);
         }
 
-        .theme-slider:hover {
+        #sidebar[data-theme="white"] .sidebar-section {
+            background:
+                linear-gradient(145deg, rgba(240, 240, 240, 0.95), rgba(255, 255, 255, 0.98));
+            border: 3px solid #c0c0c0;
             box-shadow:
-                inset 0 2px 4px rgba(0, 0, 0, 0.6),
-                0 0 20px rgba(139, 105, 20, 0.5);
+                inset 0 0 30px rgba(0, 0, 0, 0.05),
+                0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        input:checked + .theme-slider:hover {
+        #sidebar[data-theme="white"] .sidebar-section:not(:first-child)::before,
+        #sidebar[data-theme="white"] .sidebar-section::after {
+            background: radial-gradient(circle at 30% 30%, #silver, #gray);
             box-shadow:
-                inset 0 2px 4px rgba(0, 0, 0, 0.9),
-                0 0 20px rgba(0, 255, 255, 0.5);
+                inset -1px -1px 2px rgba(0, 0, 0, 0.3),
+                inset 1px 1px 2px rgba(255, 255, 255, 0.8);
+            border: 1px solid #a0a0a0;
+        }
+
+        #sidebar[data-theme="white"] h2,
+        #sidebar[data-theme="white"] h3 {
+            color: #333;
+            text-shadow:
+                0 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        #sidebar[data-theme="white"] .sidebar-section > div,
+        #sidebar[data-theme="white"] span:not(#auto-start-display):not(.theme-option-btn) {
+            color: #444 !important;
+        }
+
+        #sidebar[data-theme="white"] #sidebar-toggle {
+            background: radial-gradient(circle at 30% 30%, #e0e0e0, #c0c0c0);
+            border: 3px solid #a0a0a0;
+            color: #333;
+            box-shadow:
+                -4px 4px 12px rgba(0, 0, 0, 0.2),
+                inset -2px -2px 6px rgba(0, 0, 0, 0.1),
+                inset 2px 2px 6px rgba(255, 255, 255, 0.8);
+        }
+
+        #sidebar[data-theme="white"] #sidebar-toggle:hover {
+            background: radial-gradient(circle at 30% 30%, #f0f0f0, #d0d0d0);
+            box-shadow:
+                -4px 4px 16px rgba(0, 0, 0, 0.3),
+                inset -2px -2px 8px rgba(0, 0, 0, 0.15),
+                inset 2px 2px 8px rgba(255, 255, 255, 0.9);
         }
 
         /* Black Theme Styling */
@@ -1132,7 +1134,6 @@
 
             <!-- Controls -->
             <div class="sidebar-section">
-                <button class="btn" id="start-game-button">START GAME</button>
                 <button class="btn" id="flip-button" disabled>FLIP COIN</button>
                 <button class="btn" id="change-coin-button">Change Coin</button>
             </div>
@@ -1157,18 +1158,15 @@
                 ">AUTO-START</div>
             </div>
 
-            <!-- Theme Toggle -->
+            <!-- Theme Options -->
             <div style="margin-top: 2rem; padding-top: 1rem; border-top: 2px solid rgba(139, 105, 20, 0.3);">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;">
                     <span style="font-size: 0.75rem; color: #d4a574; font-weight: 600;">PANEL THEME</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <span style="font-size: 0.7rem; color: #d4a574; opacity: 0.8;">Brass</span>
-                    <label class="theme-switch">
-                        <input type="checkbox" id="theme-toggle">
-                        <span class="theme-slider"></span>
-                    </label>
-                    <span style="font-size: 0.7rem; color: #d4a574; opacity: 0.8;">Black</span>
+                <div class="theme-options">
+                    <button class="theme-option-btn active" data-theme="brass">Brass</button>
+                    <button class="theme-option-btn" data-theme="white">White</button>
+                    <button class="theme-option-btn" data-theme="black">Black</button>
                 </div>
             </div>
         </div>

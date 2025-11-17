@@ -368,42 +368,66 @@ function setupUI() {
   const changeCoinButton = document.getElementById('change-coin-button');
   changeCoinButton.addEventListener('click', handleChangeCoinClick);
 
-  // Start game button
-  const startGameButton = document.getElementById('start-game-button');
-  startGameButton.addEventListener('click', handleStartGameClick);
+  // Theme options
+  setupThemeOptions();
 
-  // Theme toggle
-  setupThemeToggle();
+  // Auto-start the game
+  setTimeout(() => {
+    handleStartGameClick();
+  }, 1000); // Auto-start after 1 second
 }
 
 /**
- * Setup theme toggle functionality
+ * Setup theme options with three buttons
  */
-function setupThemeToggle() {
-  const themeToggle = document.getElementById('theme-toggle');
+function setupThemeOptions() {
+  const themeButtons = document.querySelectorAll('.theme-option-btn');
   const sidebar = document.getElementById('sidebar');
 
-  if (!themeToggle || !sidebar) return;
+  if (!themeButtons.length || !sidebar) return;
 
   // Load saved theme from localStorage
   const savedTheme = localStorage.getItem('sidebarTheme') || 'brass';
 
+  // Apply saved theme on load
   if (savedTheme === 'black') {
     sidebar.setAttribute('data-theme', 'black');
-    themeToggle.checked = true;
+  } else if (savedTheme === 'white') {
+    sidebar.setAttribute('data-theme', 'white');
+  } else {
+    sidebar.removeAttribute('data-theme'); // Default brass
   }
 
-  // Handle theme toggle
-  themeToggle.addEventListener('change', (e) => {
-    if (e.target.checked) {
-      sidebar.setAttribute('data-theme', 'black');
-      localStorage.setItem('sidebarTheme', 'black');
-      console.log('🎨 Switched to black theme');
+  // Set active button
+  themeButtons.forEach(btn => {
+    const btnTheme = btn.getAttribute('data-theme');
+    if (btnTheme === savedTheme) {
+      btn.classList.add('active');
     } else {
-      sidebar.removeAttribute('data-theme');
-      localStorage.setItem('sidebarTheme', 'brass');
-      console.log('🎨 Switched to brass theme');
+      btn.classList.remove('active');
     }
+  });
+
+  // Handle theme button clicks
+  themeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selectedTheme = btn.getAttribute('data-theme');
+
+      // Update active state
+      themeButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Apply theme
+      if (selectedTheme === 'brass') {
+        sidebar.removeAttribute('data-theme');
+        localStorage.setItem('sidebarTheme', 'brass');
+        console.log('🎨 Switched to brass theme');
+      } else {
+        sidebar.setAttribute('data-theme', selectedTheme);
+        localStorage.setItem('sidebarTheme', selectedTheme);
+        console.log(`🎨 Switched to ${selectedTheme} theme`);
+      }
+    });
   });
 }
 
