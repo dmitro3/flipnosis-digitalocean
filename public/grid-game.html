@@ -984,8 +984,25 @@
                 <button class="btn" id="change-coin-button">Change Coin</button>
             </div>
 
-            <!-- Mute Control -->
-            <button class="btn" id="mute-button">MUTE</button>
+            <!-- Mute Control and Auto-Start Display -->
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <button class="btn" id="mute-button" style="flex: 1;">MUTE</button>
+                <div id="auto-start-display" style="
+                    flex: 1;
+                    padding: 0.5rem 0.75rem;
+                    background: rgba(57, 255, 20, 0.1);
+                    border: 2px solid rgba(57, 255, 20, 0.3);
+                    border-radius: 8px;
+                    text-align: center;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: #39ff14;
+                    text-shadow: 0 0 10px rgba(57, 255, 20, 0.8);
+                    box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
+                    display: none;
+                    white-space: nowrap;
+                ">AUTO-START</div>
+            </div>
         </div>
     </div>
 

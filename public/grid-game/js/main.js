@@ -14,7 +14,7 @@ import {
   updatePlayer,
 } from './core/game-state.js';
 import { calculateGridLayout } from './systems/grid-manager.js';
-import { createCompleteCoinSetup, getCoin } from './systems/coin-creator.js';
+import { createCompleteCoinSetup, getCoin, updateChargeGlows, showChargeGlow, hideChargeGlow } from './systems/coin-creator.js';
 import { updateFlipAnimations } from './systems/coin-animator.js';
 import { initializeSocket, sendFlipRequest, getSocket } from './core/socket-manager.js';
 
@@ -78,6 +78,7 @@ async function initGame() {
     registerUpdateCallback(updatePowerBar);
     registerUpdateCallback(updateGameUI);
     registerUpdateCallback(updateFlipAnimations);
+    registerUpdateCallback(() => updateChargeGlows(0.016)); // ~60fps delta time
 
     // Start animation loop
     startAnimationLoop();
@@ -303,6 +304,12 @@ function setupUI() {
     state.powerActive = true;
     state.powerValue = 0;
     state.powerDirection = 1;
+
+    // Show charging effect for player's coin
+    if (state.playerSlot !== null && state.playerSlot !== undefined) {
+      showChargeGlow(state.playerSlot);
+      console.log(`✨ Showing charge glow for slot ${state.playerSlot}`);
+    }
   });
 
   flipButton.addEventListener('mouseup', (e) => {
@@ -316,6 +323,12 @@ function setupUI() {
     console.log(`⚡ Released power at ${(finalPower * 100).toFixed(0)}% (${finalPower.toFixed(2)})`);
     isCharging = false;
     state.powerActive = false;
+
+    // Hide charging effect
+    if (state.playerSlot !== null && state.playerSlot !== undefined) {
+      hideChargeGlow(state.playerSlot);
+      console.log(`✨ Hiding charge glow for slot ${state.playerSlot}`);
+    }
 
     // Send flip request with power
     handleFlipButtonRelease(finalPower);
@@ -333,6 +346,12 @@ function setupUI() {
     console.log(`⚡ Released power (mouseleave) at ${(finalPower * 100).toFixed(0)}%`);
     isCharging = false;
     state.powerActive = false;
+
+    // Hide charging effect
+    if (state.playerSlot !== null && state.playerSlot !== undefined) {
+      hideChargeGlow(state.playerSlot);
+      console.log(`✨ Hiding charge glow for slot ${state.playerSlot}`);
+    }
 
     // Send flip request with power
     handleFlipButtonRelease(finalPower);

@@ -11,6 +11,7 @@ import { getScene } from '../core/scene-setup.js';
 const coins = [];
 const coinBackgrounds = [];
 const playerLabels = [];
+const chargeGlows = []; // Store charging effect glows
 
 /**
  * Create a single coin at specified position
@@ -253,6 +254,170 @@ export function createCoinBackground(slotNumber, position) {
 }
 
 /**
+ * Create neon green charging glow effect behind coin
+ */
+export function createChargeGlow(slotNumber, position) {
+  const scene = getScene();
+
+  const glowSize = COIN_CONFIG.RADIUS * 3.5; // Larger than coin for dramatic effect
+
+  // Create animated electric glow using shader material
+  const glowGeometry = new THREE.CircleGeometry(glowSize, 64);
+  const glowMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    uniforms: {
+      time: { value: 0 },
+      centerColor: { value: new THREE.Color(0x39ff14) }, // Neon green
+      edgeColor: { value: new THREE.Color(0x00ff00) },
+      opacity: { value: 0.8 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 centerColor;
+      uniform vec3 edgeColor;
+      uniform float opacity;
+      uniform float time;
+      varying vec2 vUv;
+
+      // Pseudo-random function
+      float random(vec2 st) {
+        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+      }
+
+      void main() {
+        vec2 center = vec2(0.5, 0.5);
+        float dist = distance(vUv, center);
+
+        // Pulsing effect
+        float pulse = sin(time * 8.0) * 0.2 + 0.8;
+
+        // Electric noise/smoke effect
+        float noise = random(vUv * 10.0 + time * 2.0) * 0.3;
+
+        // Radial gradient with noise
+        float gradient = smoothstep(0.0, 0.5, dist);
+        vec3 color = mix(centerColor, edgeColor, gradient + noise);
+
+        // Animated alpha with electric sparks
+        float sparkle = random(vUv * 20.0 + time * 5.0) > 0.9 ? 0.5 : 0.0;
+        float alpha = (opacity * (1.0 - smoothstep(0.1, 0.5, dist)) * pulse) + sparkle;
+
+        gl_FragColor = vec4(color, alpha);
+      }
+    `
+  });
+
+  const chargeGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+
+  // Position behind coin (same z-plane as background shadow)
+  chargeGlow.position.set(position.x, position.y, position.z - 10);
+
+  // Rotate to face camera
+  chargeGlow.rotation.y = 0;
+
+  chargeGlow.userData = {
+    slotNumber,
+    isActive: false,
+    shakeOffset: { x: 0, y: 0 },
+  };
+
+  chargeGlow.renderOrder = 0; // Render between background and coin
+  chargeGlow.visible = false; // Hidden by default
+
+  scene.add(chargeGlow);
+  chargeGlows[slotNumber] = chargeGlow;
+
+  return chargeGlow;
+}
+
+/**
+ * Show charging effect for a coin
+ */
+export function showChargeGlow(slotNumber) {
+  const chargeGlow = chargeGlows[slotNumber];
+  if (chargeGlow) {
+    chargeGlow.visible = true;
+    chargeGlow.userData.isActive = true;
+  }
+}
+
+/**
+ * Hide charging effect for a coin
+ */
+export function hideChargeGlow(slotNumber) {
+  const chargeGlow = chargeGlows[slotNumber];
+  const coin = coins[slotNumber];
+
+  if (chargeGlow) {
+    chargeGlow.visible = false;
+    chargeGlow.userData.isActive = false;
+  }
+
+  // Reset coin position to original (stop shaking)
+  if (coin && coin.userData.originalPosition) {
+    coin.position.x = coin.userData.originalPosition.x;
+    coin.position.y = coin.userData.originalPosition.y;
+    coin.position.z = coin.userData.originalPosition.z;
+  }
+}
+
+/**
+ * Update charge glow animation (call in animation loop)
+ */
+export function updateChargeGlows(deltaTime) {
+  chargeGlows.forEach((glow, index) => {
+    if (!glow || !glow.userData.isActive) return;
+
+    // Update time uniform for animated shader
+    if (glow.material.uniforms.time) {
+      glow.material.uniforms.time.value += deltaTime;
+    }
+
+    const coin = coins[index];
+    if (!coin) return;
+
+    // Store original position if not stored
+    if (!coin.userData.originalPosition) {
+      coin.userData.originalPosition = {
+        x: coin.position.x,
+        y: coin.position.y,
+        z: coin.position.z
+      };
+    }
+
+    // Shake effect - random jitter for both coin and glow
+    const shakeIntensity = 2.5;
+    const shakeX = (Math.random() - 0.5) * shakeIntensity;
+    const shakeY = (Math.random() - 0.5) * shakeIntensity;
+
+    // Apply shake to coin position
+    coin.position.x = coin.userData.originalPosition.x + shakeX;
+    coin.position.y = coin.userData.originalPosition.y + shakeY;
+
+    // Apply shake to glow (with slightly different offset for smoky effect)
+    const glowShakeX = shakeX + (Math.random() - 0.5) * 1.5;
+    const glowShakeY = shakeY + (Math.random() - 0.5) * 1.5;
+    glow.position.x = coin.userData.originalPosition.x + glowShakeX;
+    glow.position.y = coin.userData.originalPosition.y + glowShakeY;
+  });
+}
+
+/**
+ * Get charge glow for a coin
+ */
+export function getChargeGlow(slotNumber) {
+  return chargeGlows[slotNumber];
+}
+
+/**
  * Create player label (name/avatar) below coin
  */
 export function createPlayerLabel(slotNumber, position, playerData) {
@@ -489,14 +654,15 @@ function drawDefaultAvatar(ctx, x, y, size, slotNumber) {
 }
 
 /**
- * Create complete coin setup (coin + background + label)
+ * Create complete coin setup (coin + background + charge glow + label)
  */
 export function createCompleteCoinSetup(slotNumber, position, playerData, customTextures) {
   const coin = createCoin(slotNumber, position, customTextures);
   const background = createCoinBackground(slotNumber, position);
+  const chargeGlow = createChargeGlow(slotNumber, position);
   const label = createPlayerLabel(slotNumber, position, playerData);
 
-  return { coin, background, label };
+  return { coin, background, chargeGlow, label };
 }
 
 /**
@@ -519,6 +685,14 @@ export function removeCoin(slotNumber) {
     coinBackgrounds[slotNumber].geometry.dispose();
     coinBackgrounds[slotNumber].material.dispose();
     coinBackgrounds[slotNumber] = null;
+  }
+
+  // Remove charge glow
+  if (chargeGlows[slotNumber]) {
+    scene.remove(chargeGlows[slotNumber]);
+    chargeGlows[slotNumber].geometry.dispose();
+    chargeGlows[slotNumber].material.dispose();
+    chargeGlows[slotNumber] = null;
   }
 
   // Remove label
@@ -605,6 +779,7 @@ export function clearAllCoins() {
   }
   coins.length = 0;
   coinBackgrounds.length = 0;
+  chargeGlows.length = 0;
   playerLabels.length = 0;
 }
 
@@ -663,6 +838,11 @@ export function updateCoinTextures(slotNumber, headsImageUrl, tailsImageUrl) {
 export default {
   createCoin,
   createCoinBackground,
+  createChargeGlow,
+  showChargeGlow,
+  hideChargeGlow,
+  updateChargeGlows,
+  getChargeGlow,
   createPlayerLabel,
   updatePlayerLabel,
   createCompleteCoinSetup,

@@ -118,14 +118,19 @@ export function updateFlipAnimations() {
       return;
     }
 
-    // Easing function - stronger ease-out for dramatic deceleration
-    // High power should start VERY fast and slow down dramatically
-    // Low power should be more consistent
-    const easeStrength = 0.5 + (animation.power * 1.5); // 0.5 to 2.0
+    // Easing function - exponential decay for smooth, gradual slow-stop
+    // Creates a long deceleration tail that feels natural
+    // Higher power = more dramatic initial speed, but always ends with gradual stop
+    const easeStrength = 2.5 + (animation.power * 2.5); // 2.5 to 5.0 for strong ease-out
     const easedProgress = 1 - Math.pow(1 - progress, easeStrength);
 
-    // Calculate rotation
-    const rotationAmount = animation.totalRotations * 2 * Math.PI * easedProgress;
+    // Apply additional smoothing for the last 20% to ensure gradual stop
+    const smoothProgress = progress > 0.8
+      ? easedProgress * (1 - 0.05 * Math.pow((progress - 0.8) / 0.2, 2))
+      : easedProgress;
+
+    // Calculate rotation using the smoothed progress for gradual deceleration
+    const rotationAmount = animation.totalRotations * 2 * Math.PI * smoothProgress;
 
     // Clean rotation without wobble
     coin.rotation.x = animation.startRotation.x + rotationAmount;

@@ -220,6 +220,12 @@ function handleGameStart(data) {
     autoStartCountdown = 20;
   }
 
+  // Hide auto-start display
+  const autoStartDisplay = document.getElementById('auto-start-display');
+  if (autoStartDisplay) {
+    autoStartDisplay.style.display = 'none';
+  }
+
   setGameStatus('active');
 
   // Hide start button
@@ -321,14 +327,20 @@ function handleCoinFlipped(data) {
   markPlayerFlipped(slotNumber, targetFace);
 
   // Start flip animation (use power or default to 0.7)
-  startFlipAnimation(slotNumber, targetFace, power || 0.7);
+  const actualPower = power || 0.7;
+  startFlipAnimation(slotNumber, targetFace, actualPower);
 
-  // Show win/loss notification for current player
+  // Calculate actual animation duration based on power (same formula as coin-animator.js)
+  const minDuration = 1000; // 1 second minimum
+  const maxDuration = 4000; // 4 seconds maximum
+  const animationDuration = minDuration + (actualPower * (maxDuration - minDuration));
+
+  // Show win/loss notification ONLY after coin has fully landed
   const state = getGameState();
   if (state.playerSlot === slotNumber) {
     setTimeout(() => {
       showFlipResult(targetHit);
-    }, 1500); // Show after flip completes
+    }, animationDuration + 200); // Show 200ms after animation completes for visual clarity
   }
 
   // TODO: Play flip sound
@@ -492,19 +504,19 @@ function startAutoStartCountdown() {
 
   console.log('⏱️ Starting 20 second auto-start countdown...');
 
-  // Hide start button and show countdown
-  const startButton = document.getElementById('start-game-button');
-  if (startButton) {
-    startButton.textContent = `AUTO-START IN ${autoStartCountdown}s`;
-    startButton.disabled = true;
+  // Show auto-start display element
+  const autoStartDisplay = document.getElementById('auto-start-display');
+  if (autoStartDisplay) {
+    autoStartDisplay.style.display = 'block';
+    autoStartDisplay.textContent = `AUTO-START ${autoStartCountdown}s`;
   }
 
   autoStartTimer = setInterval(() => {
     autoStartCountdown--;
 
-    // Update button text
-    if (startButton) {
-      startButton.textContent = `AUTO-START IN ${autoStartCountdown}s`;
+    // Update display text
+    if (autoStartDisplay) {
+      autoStartDisplay.textContent = `AUTO-START ${autoStartCountdown}s`;
     }
 
     console.log(`⏱️ Auto-start in ${autoStartCountdown} seconds...`);
@@ -514,6 +526,11 @@ function startAutoStartCountdown() {
       clearInterval(autoStartTimer);
       autoStartTimer = null;
       autoStartCountdown = 20; // Reset for next time
+
+      // Hide auto-start display
+      if (autoStartDisplay) {
+        autoStartDisplay.style.display = 'none';
+      }
 
       console.log('🚀 Auto-starting game!');
 
