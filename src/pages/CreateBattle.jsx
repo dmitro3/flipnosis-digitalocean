@@ -40,19 +40,29 @@ const BattleContainer = styled.div`
   }
 `
 
-// New 4-box layout components
+// New 5-box layout (3 boxes top row, 2 boxes bottom row)
 const FourBoxGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: auto auto;
   gap: 1.5rem;
   margin-top: 1.5rem;
 
+  /* Flip Price spans 2 columns */
+  > :nth-child(4) {
+    grid-column: span 2;
+  }
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto;
+    grid-template-rows: auto auto auto auto auto;
     gap: 1rem;
     margin-top: 1rem;
+
+    /* Reset column span on mobile */
+    > :nth-child(4) {
+      grid-column: span 1;
+    }
   }
 `
 
@@ -926,45 +936,6 @@ const CreateBattle = () => {
               </div>
             )}
 
-            {/* Game Mode Selector */}
-            <ModeSelector>
-              <ModeButton
-                type="button"
-                selected={gameMode === '1v1'}
-                onClick={() => setGameMode('1v1')}
-              >
-                1v1
-              </ModeButton>
-              <ModeButton
-                type="button"
-                selected={gameMode === '6player'}
-                onClick={() => setGameMode('6player')}
-              >
-                6 Players
-              </ModeButton>
-              <ModeButton
-                type="button"
-                selected={gameMode === '12player'}
-                onClick={() => setGameMode('12player')}
-              >
-                12 Players
-              </ModeButton>
-              <ModeButton
-                type="button"
-                selected={gameMode === '18player'}
-                onClick={() => setGameMode('18player')}
-              >
-                18 Players
-              </ModeButton>
-              <ModeButton
-                type="button"
-                selected={gameMode === '24player'}
-                onClick={() => setGameMode('24player')}
-              >
-                24 Players
-              </ModeButton>
-            </ModeSelector>
-
             <form onSubmit={handleSubmit}>
               <FourBoxGrid>
                 {/* Top Left: Load Your NFT */}
@@ -1059,6 +1030,48 @@ const CreateBattle = () => {
                       </RoomOption>
                     ))}
                   </RoomGrid>
+                </Box>
+
+                {/* Top Right (3rd column): Room Size */}
+                <Box>
+                  <BoxTitle>Room Size</BoxTitle>
+                  <ModeSelector>
+                    <ModeButton
+                      type="button"
+                      selected={gameMode === '1v1'}
+                      onClick={() => setGameMode('1v1')}
+                    >
+                      1v1
+                    </ModeButton>
+                    <ModeButton
+                      type="button"
+                      selected={gameMode === '6player'}
+                      onClick={() => setGameMode('6player')}
+                    >
+                      6 Players
+                    </ModeButton>
+                    <ModeButton
+                      type="button"
+                      selected={gameMode === '12player'}
+                      onClick={() => setGameMode('12player')}
+                    >
+                      12 Players
+                    </ModeButton>
+                    <ModeButton
+                      type="button"
+                      selected={gameMode === '18player'}
+                      onClick={() => setGameMode('18player')}
+                    >
+                      18 Players
+                    </ModeButton>
+                    <ModeButton
+                      type="button"
+                      selected={gameMode === '24player'}
+                      onClick={() => setGameMode('24player')}
+                    >
+                      24 Players
+                    </ModeButton>
+                  </ModeSelector>
                 </Box>
 
                 {/* Bottom Left: Flip Price */}
