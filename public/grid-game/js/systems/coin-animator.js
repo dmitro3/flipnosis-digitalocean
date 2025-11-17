@@ -46,11 +46,8 @@ export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
   const maxDuration = 7000; // 7 seconds maximum (extended for long tail)
   const duration = minDuration + (power * (maxDuration - minDuration));
 
-  // CHANGED: Don't predetermine the result
-  // Let the coin land naturally, then determine the side based on final position
-  // Add a random final rotation that will land on either heads or tails
-  const randomLanding = Math.random(); // 0-1
-  const finalRotationX = totalRotations * 2 * Math.PI + (randomLanding < 0.5 ? Math.PI / 2 : (3 * Math.PI) / 2);
+  // Just spin continuously - NO predetermined final rotation
+  // Let it land wherever physics takes it, then determine the result
 
   // Create animation state
   const animation = {
@@ -64,7 +61,6 @@ export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
       z: coin.rotation.z,
     },
     totalRotations,
-    finalRotationX,
     power,
     progress: 0,
     completed: false,
@@ -101,23 +97,23 @@ export function updateFlipAnimations() {
     let progress = elapsed / animation.duration;
 
     if (progress >= 1) {
-      // Animation complete
+      // Animation complete - coin has stopped spinning
       progress = 1;
       animation.completed = true;
 
-      // Set final rotation
-      coin.rotation.x = animation.finalRotationX;
-      coin.rotation.y = Math.PI / 2;
-      coin.rotation.z = 0;
+      // DON'T snap to any position - just freeze where it is
+      // The rotation is already set from the animation loop below
 
       coin.userData.isFlipping = false;
 
-      // CHANGED: Determine the face AFTER landing based on final rotation
-      const normalizedRotation = animation.finalRotationX % (2 * Math.PI);
-      const isHeads = (normalizedRotation >= 0 && normalizedRotation < Math.PI) ||
-                      (normalizedRotation >= Math.PI / 4 && normalizedRotation < 3 * Math.PI / 4) ||
-                      (normalizedRotation >= 5 * Math.PI / 4 && normalizedRotation < 7 * Math.PI / 4);
-      const landedFace = isHeads ? 'heads' : 'tails';
+      // Determine the face based on CURRENT rotation (where it naturally landed)
+      const currentRotation = coin.rotation.x;
+      const normalizedRotation = ((currentRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+
+      // Check if it's closer to heads (π/2) or tails (3π/2)
+      const distToHeads = Math.abs(normalizedRotation - Math.PI / 2);
+      const distToTails = Math.abs(normalizedRotation - (3 * Math.PI / 2));
+      const landedFace = distToHeads < distToTails ? 'heads' : 'tails';
 
       coin.userData.currentFace = landedFace;
       coin.userData.targetFace = landedFace;

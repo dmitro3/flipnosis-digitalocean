@@ -255,24 +255,23 @@ export function createCoinBackground(slotNumber, position) {
 
 /**
  * Create neon green charging glow effect behind coin
- * UPDATED: Smaller, smoother, more smokey effect
+ * UPDATED: Simple bright glow, no pixels
  */
 export function createChargeGlow(slotNumber, position) {
   const scene = getScene();
 
-  const glowSize = COIN_CONFIG.RADIUS * 2.0; // SMALLER: reduced from 3.5 to 2.0
+  const glowSize = COIN_CONFIG.RADIUS * 3.0; // Big bright glow
 
-  // Create animated smokey glow using shader material
-  const glowGeometry = new THREE.CircleGeometry(glowSize, 128); // SMOOTHER: increased segments from 64 to 128
+  // Create simple glowing circle with smooth gradient
+  const glowGeometry = new THREE.CircleGeometry(glowSize, 64);
   const glowMaterial = new THREE.ShaderMaterial({
     transparent: true,
     side: THREE.DoubleSide,
     depthWrite: false,
     uniforms: {
       time: { value: 0 },
-      centerColor: { value: new THREE.Color(0x39ff14) }, // Neon green
-      edgeColor: { value: new THREE.Color(0x00ff00) },
-      opacity: { value: 0.6 } // SOFTER: reduced from 0.8 to 0.6
+      glowColor: { value: new THREE.Color(0x39ff14) }, // Neon green
+      opacity: { value: 1.0 }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -282,53 +281,29 @@ export function createChargeGlow(slotNumber, position) {
       }
     `,
     fragmentShader: `
-      uniform vec3 centerColor;
-      uniform vec3 edgeColor;
+      uniform vec3 glowColor;
       uniform float opacity;
       uniform float time;
       varying vec2 vUv;
-
-      // Smooth pseudo-random function (Perlin-style)
-      float random(vec2 st) {
-        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
-      }
-
-      // Smooth noise function
-      float smoothNoise(vec2 st) {
-        vec2 i = floor(st);
-        vec2 f = fract(st);
-        f = f * f * (3.0 - 2.0 * f); // Smooth interpolation
-
-        float a = random(i);
-        float b = random(i + vec2(1.0, 0.0));
-        float c = random(i + vec2(0.0, 1.0));
-        float d = random(i + vec2(1.0, 1.0));
-
-        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-      }
 
       void main() {
         vec2 center = vec2(0.5, 0.5);
         float dist = distance(vUv, center);
 
-        // Gentle pulsing effect (slower and softer)
-        float pulse = sin(time * 4.0) * 0.15 + 0.85;
+        // Simple pulsing
+        float pulse = sin(time * 3.0) * 0.2 + 0.8;
 
-        // SMOKEY: Multiple layers of smooth noise
-        float noise1 = smoothNoise(vUv * 6.0 + time * 1.5) * 0.4;
-        float noise2 = smoothNoise(vUv * 12.0 - time * 0.8) * 0.2;
-        float noise3 = smoothNoise(vUv * 24.0 + time * 2.0) * 0.1;
-        float totalNoise = noise1 + noise2 + noise3;
+        // Smooth radial gradient - very simple, no noise
+        float glow = 1.0 - smoothstep(0.0, 0.5, dist);
+        glow = pow(glow, 2.0); // Make it brighter in center
 
-        // Smooth radial gradient with noise
-        float smoothGradient = smoothstep(0.0, 0.6, dist);
-        vec3 color = mix(centerColor, edgeColor, smoothGradient + totalNoise);
+        // Add extra brightness pulse in center
+        float centerBurst = 1.0 - smoothstep(0.0, 0.2, dist);
+        centerBurst = pow(centerBurst, 3.0);
 
-        // SOFTER: Gentle alpha fade with less sparkle
-        float sparkle = random(vUv * 15.0 + time * 3.0) > 0.95 ? 0.2 : 0.0;
-        float alpha = (opacity * (1.0 - smoothstep(0.05, 0.55, dist)) * pulse) + sparkle;
+        float finalGlow = (glow * 0.7 + centerBurst * 0.3) * pulse * opacity;
 
-        gl_FragColor = vec4(color, alpha);
+        gl_FragColor = vec4(glowColor, finalGlow);
       }
     `
   });

@@ -392,8 +392,8 @@ function setupThemeOptions() {
   // Apply saved theme on load
   if (savedTheme === 'black') {
     sidebar.setAttribute('data-theme', 'black');
-  } else if (savedTheme === 'white') {
-    sidebar.setAttribute('data-theme', 'white');
+  } else if (savedTheme === 'yellow') {
+    sidebar.setAttribute('data-theme', 'yellow');
   } else {
     sidebar.removeAttribute('data-theme'); // Default brass
   }
