@@ -80,26 +80,37 @@ const Box = styled.div`
   max-height: 250px;
   backdrop-filter: blur(10px);
   box-shadow: 0 0 30px rgba(157, 0, 255, 0.3);
-  
+  overflow: auto;
+
   &:hover {
     border-color: #00ffff;
     box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
     transform: translateY(-2px);
   }
-  
-  /* Make the Flip Price container (bottom left) taller */
-  &:nth-child(3) {
+
+  /* Make the Flip Price container (bottom left) taller and scrollable */
+  &:nth-child(4) {
     min-height: 375px;
-    max-height: none;
+    max-height: 450px;
+    overflow-y: auto;
+  }
+
+  @media (max-width: 1024px) {
+    padding: 0.9rem;
+
+    &:nth-child(4) {
+      min-height: auto;
+      max-height: none;
+    }
   }
 
   @media (max-width: 768px) {
     padding: 1rem;
     min-height: auto;
     max-height: none;
-    
+
     /* Reset height constraints on mobile */
-    &:nth-child(3) {
+    &:nth-child(4) {
       min-height: auto;
       max-height: none;
     }
@@ -115,8 +126,13 @@ const BoxTitle = styled.h3`
   text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
   font-family: 'Orbitron', sans-serif;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     font-size: 1.2rem;
+    margin: 0 0 0.6rem 0;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
     margin: 0 0 0.5rem 0;
   }
 `
@@ -191,6 +207,15 @@ const PriceInput = styled(Input)`
   margin-bottom: 0.8rem;
   text-align: center;
   font-size: 1.2rem;
+
+  @media (max-width: 1024px) {
+    font-size: 1.1rem;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    padding: 0.6rem;
+  }
 `
 
 const JoinButton = styled(Button)`
@@ -520,17 +545,27 @@ const BattleSubmitButton = styled(Button)`
   font-family: 'Orbitron', sans-serif;
   box-shadow: 0 0 20px rgba(255, 20, 147, 0.6);
   transition: all 0.3s ease;
-  
+
   &:hover:not(:disabled) {
     background: linear-gradient(135deg, #ff69b4, #ff1493);
     box-shadow: 0 0 30px rgba(255, 20, 147, 0.8);
     transform: translateY(-2px);
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+  }
+
+  @media (max-width: 1024px) {
+    font-size: 1.2rem;
+    padding: 0.9rem;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    padding: 0.8rem;
   }
 `
 
@@ -545,6 +580,18 @@ const ToggleContainer = styled.div`
   margin-bottom: 1rem;
   backdrop-filter: blur(5px);
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+  gap: 0.5rem;
+
+  @media (max-width: 1024px) {
+    padding: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.7rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `
 
 const ToggleLabel = styled.div`
@@ -553,6 +600,14 @@ const ToggleLabel = styled.div`
   font-size: 1rem;
   font-family: 'Orbitron', sans-serif;
   text-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+
+  @media (max-width: 1024px) {
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+  }
 `
 
 const ToggleDescription = styled.div`
@@ -560,6 +615,14 @@ const ToggleDescription = styled.div`
   font-size: 0.9rem;
   margin-top: 0.25rem;
   font-family: 'Orbitron', sans-serif;
+
+  @media (max-width: 1024px) {
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
 `
 
 const ToggleSwitch = styled.label`
@@ -567,6 +630,7 @@ const ToggleSwitch = styled.label`
   display: inline-block;
   width: 60px;
   height: 34px;
+  flex-shrink: 0;
 
   input {
     opacity: 0;
@@ -609,6 +673,10 @@ const ToggleSwitch = styled.label`
   input:checked + .slider:before {
     transform: translateX(26px);
   }
+
+  @media (max-width: 768px) {
+    margin-top: 0.5rem;
+  }
 `
 
 const ModeSelector = styled.div`
@@ -618,9 +686,84 @@ const ModeSelector = styled.div`
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
 
+  @media (max-width: 1024px) {
+    gap: 0.7rem;
+    margin-bottom: 1.2rem;
+  }
+
   @media (max-width: 768px) {
     gap: 0.5rem;
     margin-bottom: 1rem;
+  }
+`
+
+// Price Breakdown Box
+const PriceBreakdownBox = styled.div`
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1));
+  border: 2px solid #00ffff;
+  border-radius: 12px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+
+  @media (max-width: 1200px) {
+    font-size: 1rem;
+    padding: 0.65rem;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    padding: 0.6rem;
+    border-radius: 8px;
+  }
+`
+
+const PriceBreakdownRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  gap: 0.5rem;
+
+  @media (max-width: 768px) {
+    flex-direction: ${props => props.allowWrap ? 'column' : 'row'};
+    align-items: ${props => props.allowWrap ? 'flex-start' : 'center'};
+    gap: 0.3rem;
+  }
+`
+
+const PriceLabel = styled.span`
+  word-break: break-word;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
+`
+
+const PriceValue = styled.span`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  word-break: break-all;
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
+`
+
+const PriceSubValue = styled.span`
+  font-size: 0.95rem;
+  color: ${props => props.theme.colors.textSecondary};
+  margin-top: 0.15rem;
+
+  @media (max-width: 1024px) {
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
   }
 `
 
@@ -650,9 +793,14 @@ const ModeButton = styled.button`
       : '0 0 25px rgba(157, 0, 255, 0.4)'};
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1200px) {
     padding: 0.6rem 1rem;
     font-size: 0.95rem;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
   }
 `
 
@@ -1088,7 +1236,11 @@ const CreateBattle = () => {
                   <BoxTitle>Flip Price</BoxTitle>
                   <PricingContainer>
                     <div style={{ marginBottom: '1rem' }}>
-                      <Label style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                      <Label style={{
+                        fontSize: '1.1rem',
+                        marginBottom: '0.5rem',
+                        display: 'block'
+                      }}>
                         Total Price (ETH)
                       </Label>
                       <PriceInput
@@ -1098,9 +1250,9 @@ const CreateBattle = () => {
                         onChange={(e) => setTotalEth(e.target.value)}
                       />
                       {ethPriceUSD > 0 && (
-                        <div style={{ 
-                          color: theme.colors.textSecondary, 
-                          fontSize: '1rem', 
+                        <div style={{
+                          color: theme.colors.textSecondary,
+                          fontSize: '1rem',
                           marginTop: '0.25rem',
                           textAlign: 'center'
                         }}>
@@ -1130,19 +1282,10 @@ const CreateBattle = () => {
                     </ToggleContainer>
 
                     {totalEth && (
-                      <div style={{ 
-                        background: 'linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(157, 0, 255, 0.1))',
-                        border: '2px solid #00ffff',
-                        borderRadius: '12px',
-                        padding: '0.75rem',
-                        marginBottom: '1rem',
-                        fontSize: '1.1rem',
-                        backdropFilter: 'blur(5px)',
-                        boxShadow: '0 0 20px rgba(0, 255, 255, 0.2)'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                          <span>Per Player Entry:</span>
-                          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <PriceBreakdownBox>
+                        <PriceBreakdownRow>
+                          <PriceLabel>Per Player Entry:</PriceLabel>
+                          <PriceValue>
                             <span>{(() => {
                               const n = parseFloat(totalEth || '0')
                               if (!n || n <= 0) return '0 ETH'
@@ -1151,15 +1294,15 @@ const CreateBattle = () => {
                               return parseFloat(perPlayer.toFixed(6)).toString() + ' ETH'
                             })()}</span>
                             {ethPriceUSD > 0 && (
-                              <span style={{ fontSize: '0.95rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
+                              <PriceSubValue theme={theme}>
                                 ≈ ${((parseFloat(totalEth || '0') / getMaxPlayers()) * ethPriceUSD).toFixed(2)} USD
-                              </span>
+                              </PriceSubValue>
                             )}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                          <span>Total Pool:</span>
-                          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          </PriceValue>
+                        </PriceBreakdownRow>
+                        <PriceBreakdownRow>
+                          <PriceLabel>Total Pool:</PriceLabel>
+                          <PriceValue>
                             <span>{(() => {
                               const n = parseFloat(totalEth || '0')
                               if (!n || n <= 0) return '0 ETH'
@@ -1172,43 +1315,43 @@ const CreateBattle = () => {
                               return parseFloat(poolFromOthers.toFixed(6)).toString() + ' ETH'
                             })()}</span>
                             {ethPriceUSD > 0 && (
-                              <span style={{ fontSize: '0.95rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
+                              <PriceSubValue theme={theme}>
                                 ≈ ${((() => {
                                   const n = parseFloat(totalEth || '0')
                                   const maxPlayers = getMaxPlayers()
                                   const payingPlayers = creatorParticipates ? maxPlayers - 1 : maxPlayers
                                   return (n / maxPlayers) * payingPlayers * ethPriceUSD
                                 })()).toFixed(2)} USD
-                              </span>
+                              </PriceSubValue>
                             )}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                          <span>Service Fee (5%):</span>
-                          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          </PriceValue>
+                        </PriceBreakdownRow>
+                        <PriceBreakdownRow>
+                          <PriceLabel>Service Fee (5%):</PriceLabel>
+                          <PriceValue>
                             <span>{(() => {
                               const n = parseFloat(totalEth || '0')
                               if (!n || n <= 0) return '0 ETH'
-                              
+
                               // Service fee is 5% of the total pool amount
                               // Note: Flat fee ($0.50/$1.00) is paid by players when joining, not by creator
                               const serviceFee = n * 0.05
-                              
+
                               // Check for minimum fee if under threshold (currently disabled)
                               // If enabled: if total < $X and minFee > 5%, use minFee instead
-                              
+
                               return parseFloat(serviceFee.toFixed(6)).toString() + ' ETH'
                             })()}</span>
                             {ethPriceUSD > 0 && (
-                              <span style={{ fontSize: '0.95rem', color: theme.colors.textSecondary, marginTop: '0.15rem' }}>
+                              <PriceSubValue theme={theme}>
                                 ≈ ${((parseFloat(totalEth || '0') * 0.05) * ethPriceUSD).toFixed(2)} USD
-                              </span>
+                              </PriceSubValue>
                             )}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00ff88' }}>
-                          <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>Your Earnings:</span>
-                          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          </PriceValue>
+                        </PriceBreakdownRow>
+                        <PriceBreakdownRow style={{ color: '#00ff88' }}>
+                          <PriceLabel style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>Your Earnings:</PriceLabel>
+                          <PriceValue>
                             <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{(() => {
                               const n = parseFloat(totalEth || '0')
                               if (!n || n <= 0) return '0 ETH'
@@ -1240,9 +1383,9 @@ const CreateBattle = () => {
                                 })()).toFixed(2)} USD
                               </span>
                             )}
-                          </span>
-                        </div>
-                      </div>
+                          </PriceValue>
+                        </PriceBreakdownRow>
+                      </PriceBreakdownBox>
                     )}
                   </PricingContainer>
                 </Box>
