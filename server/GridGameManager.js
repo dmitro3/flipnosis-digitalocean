@@ -325,15 +325,21 @@ class GridGameManager {
       return { success: false, error: 'Already flipped this round' };
     }
 
-    // Simulate coin flip result based on power
-    // Power closer to sweet spot (0.7-0.75) has better chance of success
-    const targetHit = this.simulateFlip(power);
+    // Determine if player hit the target
+    // Player must choose the correct face (heads or tails) to hit
+    const choiceMatches = (choice === game.roundTarget);
+
+    // Power affects success - power in sweet spot has better chance
+    const powerSuccess = this.simulateFlip(power);
+
+    // Player hits only if their choice matches AND power is good
+    const targetHit = choiceMatches && powerSuccess;
 
     player.hasFlipped = true;
     player.choice = choice;
     player.targetHit = targetHit; // Store result for endRound()
 
-    console.log(`🎲 Player ${playerAddress} flipped: power=${power}, target=${game.roundTarget}, hit=${targetHit}`);
+    console.log(`🎲 Player ${playerAddress} flipped: choice=${choice}, target=${game.roundTarget}, choiceMatches=${choiceMatches}, powerSuccess=${powerSuccess}, hit=${targetHit}`);
 
     return {
       success: true,

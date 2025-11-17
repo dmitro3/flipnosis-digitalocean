@@ -743,7 +743,7 @@ function updatePowerBar() {
 /**
  * Update game UI elements
  */
-function updateGameUI() {
+export function updateGameUI() {
   const state = getGameState();
 
   // Update round display

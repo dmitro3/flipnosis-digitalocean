@@ -20,6 +20,7 @@ import {
 } from './game-state.js';
 import { startFlipAnimation, getAnimationDuration } from '../systems/coin-animator.js';
 import { markCoinEliminated } from '../systems/coin-creator.js';
+import { updateGameUI } from '../main.js';
 
 let socket = null;
 let isConnected = false;
@@ -298,6 +299,9 @@ function handleRoundEnd(data) {
       markCoinEliminated(slotNumber);
     });
   }
+
+  // Explicitly update UI to reflect eliminations immediately
+  updateGameUI();
 }
 
 /**
@@ -435,6 +439,9 @@ function handleStateUpdate(data) {
   if (roundTimer !== undefined) {
     state.roundTimeRemaining = roundTimer;
   }
+
+  // Explicitly update UI to reflect state changes immediately
+  updateGameUI();
 }
 
 /**
@@ -469,23 +476,20 @@ function startRoundTimer(duration) {
     clearInterval(roundTimerInterval);
   }
 
-  let timeRemaining = duration;
+  const state = getGameState();
+  state.roundTimeRemaining = duration;
 
-  // Update immediately
-  const countdownElement = document.getElementById('countdown');
-  if (countdownElement) {
-    countdownElement.textContent = `${timeRemaining}s`;
-  }
+  // Update UI immediately
+  updateGameUI();
 
   roundTimerInterval = setInterval(() => {
-    timeRemaining--;
+    const state = getGameState();
+    state.roundTimeRemaining--;
 
-    // Update countdown display
-    if (countdownElement) {
-      countdownElement.textContent = `${timeRemaining}s`;
-    }
+    // Update UI to reflect new time
+    updateGameUI();
 
-    if (timeRemaining <= 0) {
+    if (state.roundTimeRemaining <= 0) {
       clearInterval(roundTimerInterval);
       roundTimerInterval = null;
     }
