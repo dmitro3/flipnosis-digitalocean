@@ -40,44 +40,33 @@ const BattleContainer = styled.div`
   }
 `
 
-// New 4-box layout components
+// New 5-box layout: 3 boxes top (NFT small, Room Size small, Room), 2 boxes bottom
 const FourBoxGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 0.8fr 0.8fr 1.4fr; /* NFT and Size smaller, Room larger */
   grid-template-rows: auto auto;
   gap: 1.5rem;
   margin-top: 1.5rem;
 
+  /* Flip Price spans first 2 columns */
+  > :nth-child(4) {
+    grid-column: span 2;
+  }
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto;
+    grid-template-rows: auto auto auto auto auto;
     gap: 1rem;
     margin-top: 1rem;
+
+    /* Reset column span on mobile */
+    > :nth-child(4) {
+      grid-column: span 1;
+    }
   }
 `
 
-const ThinBox = styled.div`
-  background: linear-gradient(135deg, rgba(10, 15, 35, 0.8), rgba(16, 33, 62, 0.8));
-  border: 2px solid #9d00ff;
-  border-radius: 12px;
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 0 30px rgba(157, 0, 255, 0.3);
-  margin-top: 0.75rem;
-
-  &:hover {
-    border-color: #00ffff;
-    box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.6rem;
-    margin-top: 0.5rem;
-  }
-`
+/* Remove ThinBox - not needed anymore */
 
 const Box = styled.div`
   background: linear-gradient(135deg, rgba(10, 15, 35, 0.8), rgba(16, 33, 62, 0.8));
@@ -982,7 +971,49 @@ const CreateBattle = () => {
                   </NFTUploadArea>
                 </Box>
 
-                {/* Top Right: Choose Your Room */}
+                {/* Second Column: Room Size */}
+                <Box>
+                  <BoxTitle>Room Size</BoxTitle>
+                  <ModeSelector style={{ gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <ModeButton
+                      type="button"
+                      selected={gameMode === '1v1'}
+                      onClick={() => setGameMode('1v1')}
+                    >
+                      1v1
+                    </ModeButton>
+                    <ModeButton
+                      type="button"
+                      selected={gameMode === '6player'}
+                      onClick={() => setGameMode('6player')}
+                    >
+                      6 Players
+                    </ModeButton>
+                    <ModeButton
+                      type="button"
+                      selected={gameMode === '12player'}
+                      onClick={() => setGameMode('12player')}
+                    >
+                      12 Players
+                    </ModeButton>
+                    <ModeButton
+                      type="button"
+                      selected={gameMode === '18player'}
+                      onClick={() => setGameMode('18player')}
+                    >
+                      18 Players
+                    </ModeButton>
+                    <ModeButton
+                      type="button"
+                      selected={gameMode === '24player'}
+                      onClick={() => setGameMode('24player')}
+                    >
+                      24 Players
+                    </ModeButton>
+                  </ModeSelector>
+                </Box>
+
+                {/* Third Column: Choose Your Room */}
                 <Box>
                   <BoxTitle>Choose Your Room</BoxTitle>
                   <RoomGrid>
@@ -1043,56 +1074,9 @@ const CreateBattle = () => {
                       </RoomOption>
                     ))}
                   </RoomGrid>
-
-                  {/* Thin Room Size section under Choose Your Room */}
-                  <ThinBox>
-                    <BoxTitle style={{ fontSize: '1rem', marginBottom: '0.6rem' }}>Room Size</BoxTitle>
-                    <ModeSelector style={{ gap: '0.5rem' }}>
-                      <ModeButton
-                        type="button"
-                        selected={gameMode === '1v1'}
-                        onClick={() => setGameMode('1v1')}
-                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}
-                      >
-                        1v1
-                      </ModeButton>
-                      <ModeButton
-                        type="button"
-                        selected={gameMode === '6player'}
-                        onClick={() => setGameMode('6player')}
-                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}
-                      >
-                        6 Players
-                      </ModeButton>
-                      <ModeButton
-                        type="button"
-                        selected={gameMode === '12player'}
-                        onClick={() => setGameMode('12player')}
-                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}
-                      >
-                        12 Players
-                      </ModeButton>
-                      <ModeButton
-                        type="button"
-                        selected={gameMode === '18player'}
-                        onClick={() => setGameMode('18player')}
-                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}
-                      >
-                        18 Players
-                      </ModeButton>
-                      <ModeButton
-                        type="button"
-                        selected={gameMode === '24player'}
-                        onClick={() => setGameMode('24player')}
-                        style={{ padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}
-                      >
-                        24 Players
-                      </ModeButton>
-                    </ModeSelector>
-                  </ThinBox>
                 </Box>
 
-                {/* Bottom Left: Flip Price */}
+                {/* Fourth Box: Flip Price (spans 2 columns) */}
                 <Box>
                   <BoxTitle>Flip Price</BoxTitle>
                   <PricingContainer>
