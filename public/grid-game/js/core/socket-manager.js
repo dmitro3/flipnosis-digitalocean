@@ -18,7 +18,7 @@ import {
   updatePlayerStats,
   getGameState,
 } from './game-state.js';
-import { startFlipAnimation } from '../systems/coin-animator.js';
+import { startFlipAnimation, getAnimationDuration } from '../systems/coin-animator.js';
 import { markCoinEliminated } from '../systems/coin-creator.js';
 
 let socket = null;
@@ -330,17 +330,17 @@ function handleCoinFlipped(data) {
   const actualPower = power || 0.7;
   startFlipAnimation(slotNumber, targetFace, actualPower);
 
-  // Calculate actual animation duration based on power (same formula as coin-animator.js)
-  const minDuration = 1000; // 1 second minimum
-  const maxDuration = 4000; // 4 seconds maximum
-  const animationDuration = minDuration + (actualPower * (maxDuration - minDuration));
+  // Get actual animation duration from coin-animator (ensures sync)
+  const animationDuration = getAnimationDuration(actualPower);
 
-  // Show win/loss notification ONLY after coin has fully landed
+  console.log(`  ⏱️ Animation will run for ${(animationDuration/1000).toFixed(2)}s, then show result: ${targetHit ? 'HIT' : 'MISS'}`);
+
+  // Show win/loss notification ONLY after coin has FULLY STOPPED
   const state = getGameState();
   if (state.playerSlot === slotNumber) {
     setTimeout(() => {
       showFlipResult(targetHit);
-    }, animationDuration + 200); // Show 200ms after animation completes for visual clarity
+    }, animationDuration + 300); // Show 300ms after animation completes to ensure coin is fully settled
   }
 
   // TODO: Play flip sound

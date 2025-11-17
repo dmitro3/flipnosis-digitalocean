@@ -12,7 +12,7 @@ const flipAnimations = new Map();
 
 /**
  * Start flip animation for a coin
- * NO LONGER PREDETERMINES RESULT - determines after landing
+ * Calculates rotations to naturally land on target face with power-based speed
  */
 export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
   const coin = getCoin(slotNumber);
@@ -26,28 +26,42 @@ export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
     return false;
   }
 
-  console.log(`🎲 Starting flip animation for slot ${slotNumber}, power: ${power.toFixed(2)}`);
+  console.log(`🎲 Starting flip animation for slot ${slotNumber}, target: ${targetFace}, power: ${power.toFixed(2)}`);
 
-  // Dramatic rotation scaling based on power
-  // Low power (0-0.2): 3-5 rotations over 2-3 seconds
-  // Medium power (0.2-0.7): 5-10 rotations over 3-4.5 seconds
-  // High power (0.7-1.0): 10-20 rotations over 4.5-7 seconds
-  // INCREASED DURATIONS for longer tail
-  const minRotations = 3;
-  const maxRotations = 20;
-  const powerRotations = minRotations + (power * (maxRotations - minRotations));
-
-  // Add random extra spins (0-2) so it can't be perfectly gamed
-  const randomExtraSpins = Math.random() * 2;
-  const totalRotations = powerRotations + randomExtraSpins;
-
-  // Duration scales with power - MUCH longer for dramatic tail
+  // Duration scales with power - longer power = longer spin time
+  // Low power (0-0.2): 2-3 seconds
+  // Medium power (0.2-0.7): 3-5 seconds
+  // High power (0.7-1.0): 5-8 seconds
   const minDuration = 2000; // 2 seconds minimum
-  const maxDuration = 7000; // 7 seconds maximum (extended for long tail)
+  const maxDuration = 8000; // 8 seconds maximum
   const duration = minDuration + (power * (maxDuration - minDuration));
 
-  // Just spin continuously - NO predetermined final rotation
-  // Let it land wherever physics takes it, then determine the result
+  // Number of rotations scales with power - higher power = more spins
+  // Low power: 3-5 full rotations
+  // Medium power: 5-12 full rotations
+  // High power: 12-25 full rotations
+  const minRotations = 3;
+  const maxRotations = 25;
+  const baseRotations = minRotations + (power * (maxRotations - minRotations));
+
+  // Add small random variation (0-1 rotations) so it's not perfectly predictable
+  const randomExtraSpins = Math.random();
+  const fullRotations = Math.floor(baseRotations + randomExtraSpins);
+
+  // Calculate target rotation based on desired face
+  // Heads: π/2 (90°), Tails: 3π/2 (270°)
+  const targetRotation = targetFace === 'heads' ? Math.PI / 2 : (3 * Math.PI / 2);
+
+  // Get current rotation (normalized to 0-2π)
+  const currentRotation = coin.rotation.x;
+  const normalizedCurrent = ((currentRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+
+  // Calculate total rotation: full spins + final landing rotation
+  // We want to end at targetRotation, so we calculate the difference and add full rotations
+  const rotationDifference = targetRotation - normalizedCurrent;
+  const totalRotation = (fullRotations * 2 * Math.PI) + rotationDifference;
+
+  console.log(`  💫 Will perform ${fullRotations} full rotations + final landing = ${(totalRotation / Math.PI).toFixed(2)}π radians over ${(duration/1000).toFixed(2)}s`);
 
   // Create animation state
   const animation = {
@@ -60,7 +74,8 @@ export function startFlipAnimation(slotNumber, targetFace, power = 0.7) {
       y: coin.rotation.y,
       z: coin.rotation.z,
     },
-    totalRotations,
+    totalRotation, // Total rotation in radians
+    targetRotation, // Final rotation position
     power,
     progress: 0,
     completed: false,
@@ -94,54 +109,48 @@ export function updateFlipAnimations() {
 
     // Calculate progress (0 to 1)
     const elapsed = currentTime - animation.startTime;
-    let progress = elapsed / animation.duration;
+    let progress = Math.min(elapsed / animation.duration, 1);
 
     if (progress >= 1) {
-      // Animation complete - coin has stopped spinning
-      progress = 1;
+      // Animation complete - coin has fully stopped
       animation.completed = true;
 
-      // DON'T snap to any position - just freeze where it is
-      // The rotation is already set from the animation loop below
+      // Set final rotation to exact target (no snap, it should already be very close)
+      coin.rotation.x = animation.startRotation.x + animation.totalRotation;
+      coin.rotation.y = Math.PI / 2; // Fixed facing direction
+      coin.rotation.z = 0; // No tilt
 
       coin.userData.isFlipping = false;
+      coin.userData.currentFace = animation.targetFace;
 
-      // Determine the face based on CURRENT rotation (where it naturally landed)
-      const currentRotation = coin.rotation.x;
-      const normalizedRotation = ((currentRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
-
-      // Check if it's closer to heads (π/2) or tails (3π/2)
-      const distToHeads = Math.abs(normalizedRotation - Math.PI / 2);
-      const distToTails = Math.abs(normalizedRotation - (3 * Math.PI / 2));
-      const landedFace = distToHeads < distToTails ? 'heads' : 'tails';
-
-      coin.userData.currentFace = landedFace;
-      coin.userData.targetFace = landedFace;
-
-      console.log(`✅ Flip animation complete for slot ${slotNumber}: landed on ${landedFace} (rotation: ${normalizedRotation.toFixed(2)})`);
+      console.log(`✅ Flip complete for slot ${slotNumber}: landed on ${animation.targetFace}`);
 
       flipAnimations.delete(slotNumber);
       return;
     }
 
-    // Easing function - EXTREME exponential decay for VERY long, gradual slow-stop
-    // Creates an ultra-long deceleration tail that feels natural
-    // Higher power = more dramatic initial speed, but ALWAYS ends with SUPER gradual stop
-    const easeStrength = 3.5 + (animation.power * 3.5); // 3.5 to 7.0 for VERY strong ease-out
+    // Easing function - creates natural deceleration curve
+    // Higher power = more dramatic initial speed, longer tail
+    // Uses cubic or quartic ease-out for smooth, natural slowdown
+    const easeStrength = 3.0 + (animation.power * 2.0); // 3.0 to 5.0
     const easedProgress = 1 - Math.pow(1 - progress, easeStrength);
 
-    // Apply MUCH MORE smoothing for the last 30% to ensure REALLY gradual stop
-    const smoothProgress = progress > 0.7
-      ? easedProgress * (1 - 0.15 * Math.pow((progress - 0.7) / 0.3, 3))
-      : easedProgress;
+    // Apply extra smoothing in the last 20% for ultra-gradual stop
+    // This creates the "slow landing" effect the user wants
+    let finalProgress = easedProgress;
+    if (progress > 0.8) {
+      const endPhase = (progress - 0.8) / 0.2; // 0 to 1 in last 20%
+      const endSmoothFactor = 1 - (0.12 * Math.pow(endPhase, 2));
+      finalProgress = easedProgress * endSmoothFactor;
+    }
 
-    // Calculate rotation using the smoothed progress for gradual deceleration
-    const rotationAmount = animation.totalRotations * 2 * Math.PI * smoothProgress;
+    // Calculate current rotation based on eased progress
+    const currentRotation = animation.totalRotation * finalProgress;
 
-    // Clean rotation without wobble
-    coin.rotation.x = animation.startRotation.x + rotationAmount;
-    coin.rotation.y = Math.PI / 2; // Fixed facing direction
-    coin.rotation.z = 0; // No tilt
+    // Apply rotation - smooth and continuous
+    coin.rotation.x = animation.startRotation.x + currentRotation;
+    coin.rotation.y = Math.PI / 2; // Keep coin facing camera
+    coin.rotation.z = 0; // No wobble
 
     animation.progress = progress;
   });
@@ -152,6 +161,16 @@ export function updateFlipAnimations() {
  */
 export function isCoinFlipping(slotNumber) {
   return flipAnimations.has(slotNumber);
+}
+
+/**
+ * Calculate animation duration for a given power level
+ * This matches the calculation in startFlipAnimation
+ */
+export function getAnimationDuration(power = 0.7) {
+  const minDuration = 2000; // 2 seconds minimum
+  const maxDuration = 8000; // 8 seconds maximum
+  return minDuration + (power * (maxDuration - minDuration));
 }
 
 /**
@@ -226,6 +245,7 @@ export default {
   startFlipAnimation,
   updateFlipAnimations,
   isCoinFlipping,
+  getAnimationDuration,
   stopAllFlipAnimations,
   setCoinFace,
   getCurrentFace,
