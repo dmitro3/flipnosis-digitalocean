@@ -231,7 +231,7 @@ class GridGameManager {
 
     // Randomly choose heads or tails
     game.roundTarget = Math.random() < 0.5 ? 'heads' : 'tails';
-    game.roundTimer = 30;
+    game.roundTimer = 60; // 60 seconds per round
 
     // Reset player flip states
     Object.values(game.players).forEach(player => {
@@ -271,9 +271,22 @@ class GridGameManager {
     const intervalId = setInterval(() => {
       game.roundTimer--;
 
-      if (game.roundTimer <= 0 || this.allPlayersFlipped(gameId)) {
+      // Check if time ran out
+      if (game.roundTimer <= 0) {
         clearInterval(intervalId);
         this.endRound(gameId);
+        return;
+      }
+
+      // Check if all players flipped - but wait for animations to complete
+      if (this.allPlayersFlipped(gameId)) {
+        clearInterval(intervalId);
+        console.log(`⏱️ All players flipped! Waiting 9 seconds for animations to complete before ending round...`);
+
+        // Wait for max animation duration (8s) + 1s buffer = 9s total
+        setTimeout(() => {
+          this.endRound(gameId);
+        }, 9000);
       }
     }, 1000);
 
