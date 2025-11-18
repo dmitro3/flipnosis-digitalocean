@@ -56,7 +56,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
 
   // ETH Price endpoint - proxies CoinGecko to avoid CORS issues
   let ethPriceCache = { price: null, timestamp: 0 }
-  const PRICE_CACHE_DURATION = 90000 // 90 seconds
+  const PRICE_CACHE_DURATION = 180000 // 3 minutes
 
   router.get('/eth-price', async (req, res) => {
     try {
