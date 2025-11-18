@@ -843,45 +843,50 @@ class ContractService {
   // Get ETH price in USD from Chainlink API with caching
   async getETHPriceUSD() {
     const now = Date.now()
-    
-      // Use cached price if it's still fresh (within 90 seconds)
-      if (this.priceCache.price && (now - this.priceCache.timestamp) < this.cacheDuration) {
-      console.log('ðŸ’° Using cached ETH price:', this.priceCache.price)
+
+    // Use cached price if it's still fresh (within 90 seconds)
+    if (this.priceCache.price && (now - this.priceCache.timestamp) < this.cacheDuration) {
+      console.log('💰 Using cached ETH price:', this.priceCache.price)
       return this.priceCache.price
     }
 
     try {
-      console.log('ðŸ’° Fetching fresh ETH price from Chainlink API...')
-      
-      // Fetch from CoinGecko (free, reliable, uses Chainlink data)
-      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')
-      
+      console.log('💰 Fetching fresh ETH price from backend API...')
+
+      // Fetch from our backend API (avoids CORS issues)
+      const apiUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/api/eth-price`
+        : 'https://flipnosis.fun/api/eth-price'
+
+      const response = await fetch(apiUrl)
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      
+
       const data = await response.json()
-      const price = data.ethereum.usd
-      
-      if (!price || price <= 0) {
-        throw new Error('Invalid price data received')
+
+      if (!data.success || !data.price || data.price <= 0) {
+        throw new Error('Invalid price data received from backend')
       }
-      
+
+      const price = data.price
+
       // Cache the fresh price
       this.priceCache = { price, timestamp: now }
-      
-      console.log('âœ… Fresh ETH price fetched and cached:', price)
+
+      console.log('✅ Fresh ETH price fetched and cached:', price, data.cached ? '(from server cache)' : '(fresh from CoinGecko)')
       return price
-      
+
     } catch (error) {
-      console.error('âŒ Failed to fetch ETH price:', error.message)
-      
+      console.error('❌ Failed to fetch ETH price:', error.message)
+
       // Use cached price as fallback if available
       if (this.priceCache.price) {
-        console.log('ðŸ”„ Using cached ETH price as fallback:', this.priceCache.price)
+        console.log('🔄 Using cached ETH price as fallback:', this.priceCache.price)
         return this.priceCache.price
       }
-      
+
       // No hardcoded fallback - fail cleanly rather than use stale data
       throw new Error('Unable to fetch ETH price and no cached price available. Please try again.')
     }

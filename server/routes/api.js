@@ -44,14 +44,79 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
 
   // Health check
   router.get('/health', (req, res) => {
-    res.json({ 
-      status: 'ok', 
-      server: 'clean-architecture', 
+    res.json({
+      status: 'ok',
+      server: 'clean-architecture',
       timestamp: new Date().toISOString(),
       hasContractOwner: blockchainService.hasOwnerWallet(),
       databaseConnected: !!db,
       databasePath: dbService.databasePath
     })
+  })
+
+  // ETH Price endpoint - proxies CoinGecko to avoid CORS issues
+  let ethPriceCache = { price: null, timestamp: 0 }
+  const PRICE_CACHE_DURATION = 90000 // 90 seconds
+
+  router.get('/eth-price', async (req, res) => {
+    try {
+      const now = Date.now()
+
+      // Return cached price if fresh
+      if (ethPriceCache.price && (now - ethPriceCache.timestamp) < PRICE_CACHE_DURATION) {
+        return res.json({
+          success: true,
+          price: ethPriceCache.price,
+          cached: true,
+          timestamp: ethPriceCache.timestamp
+        })
+      }
+
+      // Fetch fresh price from CoinGecko
+      const fetch = (await import('node-fetch')).default
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')
+
+      if (!response.ok) {
+        throw new Error(`CoinGecko API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      const price = data.ethereum?.usd
+
+      if (!price || price <= 0) {
+        throw new Error('Invalid price data received from CoinGecko')
+      }
+
+      // Update cache
+      ethPriceCache = { price, timestamp: now }
+
+      res.json({
+        success: true,
+        price,
+        cached: false,
+        timestamp: now
+      })
+    } catch (error) {
+      console.error('❌ Failed to fetch ETH price:', error.message)
+
+      // Return cached price as fallback
+      if (ethPriceCache.price) {
+        return res.json({
+          success: true,
+          price: ethPriceCache.price,
+          cached: true,
+          fallback: true,
+          timestamp: ethPriceCache.timestamp
+        })
+      }
+
+      // No cache available
+      res.status(503).json({
+        success: false,
+        error: 'Unable to fetch ETH price',
+        message: error.message
+      })
+    }
   })
   
   // Test endpoint to verify routes are working
